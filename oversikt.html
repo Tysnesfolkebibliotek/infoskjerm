@@ -427,7 +427,8 @@ function tilpassForevising() {
 function førehandsvis(s) {
   $("forevisnamn").textContent = s.namn || "";
   $("forevisfane").href = s.url;
-  $("forevisvindauge").src = s.url;
+  // Karusellar inni ei ramme ventar elles på startbeskjed frå rotasjonen
+  $("forevisvindauge").src = s.url.includes("#vis=1") ? s.url + "&forhand=1" : s.url;
   tilpassForevising();
   $("forevis").showModal();
 }
