@@ -69,6 +69,14 @@
   details.nokkel summary { cursor: pointer; font-weight: 650; }
   details.nokkel input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--bg); color: var(--tekst); margin: 6px 0; }
   details.nokkel ol { padding-left: 20px; }
+  /* Førehandsvising i ståande skjermformat (1080 × 1920, skalert ned) */
+  dialog.forevis { border: none; padding: 0; background: transparent; max-width: none; max-height: none; }
+  dialog.forevis::backdrop { background: rgba(10,10,10,.82); }
+  .forevis .linje { display: flex; gap: 10px; align-items: center; justify-content: space-between; color: #fff; margin-bottom: 8px; font-size: 14px; }
+  .forevis .linje b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .forevis .linje span { display: flex; gap: 8px; flex-shrink: 0; }
+  .forevis .ramme { overflow: hidden; border-radius: 10px; background: #000; box-shadow: 0 0 0 6px #222, 0 10px 40px rgba(0,0,0,.6); }
+  .forevis iframe { width: 1080px; height: 1920px; border: 0; transform-origin: 0 0; display: block; background: #000; }
   code { font-size: 12.5px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
 </style>
 </head>
@@ -101,6 +109,13 @@
     <button type="button" class="hoved" id="lagre" disabled>Lagre</button>
   </div>
 </main>
+
+<dialog class="forevis" id="forevis">
+  <div class="linje"><b id="forevisnamn"></b>
+    <span><a class="knapp" id="forevisfane" target="_blank" rel="noopener">Opne i ny fane</a>
+    <button type="button" id="forevislukk">Lukk</button></span></div>
+  <div class="ramme" id="forevisramme"><iframe id="forevisvindauge" title="Førehandsvising"></iframe></div>
+</dialog>
 
 <script>
 // =========================================================================
@@ -221,7 +236,7 @@ function teikn() {
           el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(sk.nøkkel, i, -1), disabled: i === 0 }, "↑"),
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(sk.nøkkel, i, 1), disabled: i === sider.length - 1 }, "↓"),
           el("button", { type: "button", onclick: () => { open = erOpen ? null : { skjerm: sk.nøkkel, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
-          adresse(s) ? el("a", { class: "knapp", href: adresse(s), target: "_blank", rel: "noopener" }, "Førehandsvis") : null,
+          adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
           el("button", { type: "button", onclick: () => fjern(sk.nøkkel, i) }, "Fjern")),
         erOpen ? skjema(s, sk.nøkkel, i) : null);
       liste.append(li);
@@ -400,6 +415,26 @@ async function lagre() {
   original = innhald;
   oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan 10–15 minutt.", "ok");
 }
+
+// ---- Førehandsvising som på skjermen: ståande 1080 × 1920 ----------------
+const SKJERM_B = 1080, SKJERM_H = 1920;
+function tilpassForevising() {
+  const skala = Math.min((innerHeight - 70) / SKJERM_H, (innerWidth - 32) / SKJERM_B);
+  $("forevisvindauge").style.transform = `scale(${skala})`;
+  $("forevisramme").style.width = SKJERM_B * skala + "px";
+  $("forevisramme").style.height = SKJERM_H * skala + "px";
+}
+function førehandsvis(s) {
+  $("forevisnamn").textContent = s.namn || "";
+  $("forevisfane").href = s.url;
+  $("forevisvindauge").src = s.url;
+  tilpassForevising();
+  $("forevis").showModal();
+}
+$("forevislukk").addEventListener("click", () => $("forevis").close());
+$("forevis").addEventListener("close", () => { $("forevisvindauge").src = "about:blank"; });
+$("forevis").addEventListener("click", e => { if (e.target === $("forevis")) $("forevis").close(); });
+addEventListener("resize", () => { if ($("forevis").open) tilpassForevising(); });
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);
