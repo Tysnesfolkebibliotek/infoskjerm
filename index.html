@@ -169,7 +169,7 @@
   .felt { margin-top: 12px; }
   .felt > label, .felt > .etikett { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
   .hjelp { color: var(--b-dempa); font-size: 12.5px; margin-top: 3px; }
-  input[type=text], input[type=number], select {
+  input[type=text], input[type=search], input[type=number], select {
     width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
     border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst);
   }
@@ -177,6 +177,14 @@
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--b-fokus); outline-offset: 1px; }
   .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .malrad { display: flex; gap: 8px; align-items: stretch; }
+  .malrad input { flex: 1; min-width: 0; }
+  .utvaltreff, .utvalliste { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .utvaltreff li, .utvalliste li { display: flex; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--b-strek); border-radius: 8px; background: var(--b-flate); }
+  .utvaltreff img, .utvalliste img, .utval-utan { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; flex: none; background: var(--b-strek); }
+  .utval-tekst { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.3; }
+  .utval-tekst b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .utval-tekst span { color: var(--b-dempa); }
+  .knapp.liten { padding: 4px 9px; font-size: 13px; }
   .malrad select { flex: 1; min-width: 0; }
   .malrad .knapp { flex: none; white-space: nowrap; }
   .val, .felt > label.val { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 400; cursor: pointer; }
@@ -296,6 +304,7 @@
       <div class="segment" role="radiogroup">
         <label><input type="radio" name="kjelde" value="nyaste"> Nyaste titlar</label>
         <label><input type="radio" name="kjelde" value="sok"> Søk i samlinga</label>
+        <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
       </div>
     </div>
 
@@ -326,7 +335,26 @@
       </div>
     </div>
 
-    <div class="felt">
+    <!-- Handplukka: søk opp bøker og legg dei til éi og éi -->
+    <div id="utvalfelt" hidden>
+      <input type="hidden" id="titlar" name="titlar">
+      <div class="felt">
+        <label for="utvalsok">Finn bøker</label>
+        <div class="malrad">
+          <input type="search" id="utvalsok" placeholder="Tittel, forfattar eller begge">
+          <button type="button" class="knapp sekundær" id="utvalknapp">Søk</button>
+        </div>
+        <p class="hjelp" id="utvalstatus">Søkjer i avdelingane som er kryssa av over.</p>
+        <ul class="utvaltreff" id="utvaltreff"></ul>
+      </div>
+      <div class="felt">
+        <span class="etikett">Valde bøker (<span id="utvaltal">0</span>)</span>
+        <ol class="utvalliste" id="utvalliste"></ol>
+        <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
+      </div>
+    </div>
+
+    <div class="felt" id="antalfelt">
       <label for="antal">Tal bøker</label>
       <input type="number" id="antal" name="antal" min="5" max="60" step="1">
       <label class="val" id="allerad"><input type="checkbox" name="alle" value="1"> Alle bøker som passar (opptil 500)</label>
@@ -490,7 +518,7 @@ const AVD_NAMN = { tyfv: "For vaksne", tyfb: "For born og unge" };
 const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
-  aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
+  aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", namn: "", sek: "12", oppdater: "120", omtale: "1",
 };
 
@@ -801,7 +829,7 @@ function startVisning(cfg) {
 
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
-  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","spraak","alle","namn"]
+  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","spraak","alle","titlar","namn"]
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
 
@@ -1050,6 +1078,7 @@ function flett(lister) {
 async function hentBøker(cfg, framdrift) {
   utelatne = {}; nåddeGrense = false;
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
+  if (cfg.kjelde === "utval") return hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift);
   if (!avdar.length) return [];
   const antal = Math.min(60, Math.max(5, Number(cfg.antal) || 40));
   const alle = cfg.alle === "1" && cfg.kjelde === "sok";     // hent heile trefflista
@@ -1061,6 +1090,57 @@ async function hentBøker(cfg, framdrift) {
     lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld) : await hentSøk(cfg, avd, mål, meld));
   }
   return cfg.kjelde === "nyaste" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
+}
+
+// ---- handplukka bøker ------------------------------------------------
+
+// Hentar éin katalogpost på tittelnummer. Bibliofil har fleire moglege
+// indeksar; vi prøver dei etter tur, hugsar den som verka, og sjekkar at
+// posten som kjem tilbake, faktisk har det tittelnummeret vi bad om.
+const ID_INDEKSAR = [id => `bibliofil.ccl="tnr=${id}"`, id => `dc.identifier=${id}`];
+let idIndeks = null;
+const postCache = new Map();
+async function hentPost(id) {
+  id = String(id).replace(/\D/g, "");
+  if (!id) return null;
+  if (postCache.has(id)) return postCache.get(id);
+  const rekkjefølgje = idIndeks !== null ? [idIndeks, ...ID_INDEKSAR.keys()].filter((v, i, a) => a.indexOf(v) === i) : [...ID_INDEKSAR.keys()];
+  for (const i of rekkjefølgje) {
+    try {
+      const d = await sru({ query: ID_INDEKSAR[i](id), startRecord: 1, maximumRecords: 5 });
+      const post = ((d && d.feed && d.feed.entry) || []).find(p => String(p.id) === id);
+      if (post) { idIndeks = i; postCache.set(id, post); return post; }
+    } catch (e) {}
+  }
+  return null;
+}
+
+async function hentUtval(cfg, avdar, meld) {
+  // Søkjefilter gjeld ikkje handplukka bøker, berre krava (omslag, hylla, plassering)
+  cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "" };
+  const idar = (cfg.titlar || "").split(",").map(s => s.trim()).filter(Boolean);
+  const poster = [];
+  for (const id of idar) { const p = await hentPost(id); if (p) poster.push(p); meld(poster.length, idar.length); }
+  const eks = poster.length ? await hentEksemplar(poster.map(p => String(p.id))) : {};
+  const ut = [];
+  for (const p of poster) {
+    if (!førehand(p, cfg)) continue;
+    // Boka blir vist med eksemplaret frå den første avdelinga som har henne
+    let t = null;
+    for (const avd of avdar) { t = vurder(p, avd, eks, cfg); if (t) break; }
+    if (t) ut.push(t);
+  }
+  return ut;   // i den rekkjefølgja bøkene vart valde
+}
+
+// Fritekstsøk etter tittel eller forfattar, for å finne bøker å leggje til
+async function søkTitlar(tekst, avdar) {
+  const ord = (tekst || "").replace(/["\\]/g, " ").split(/\s+/).filter(o => o.length > 1);
+  if (!ord.length) return [];
+  const cql = ord.map((o, i) => i === ord.length - 1 && o.length > 2 ? `${o}*` : `"${o}"`).join(" and ");
+  const query = `${cql} and bibliofil.ccl="avd=${avdar.join("|")}" and norzig.materialType=l`;
+  const d = await sru({ query, startRecord: 1, maximumRecords: 25 });
+  return (d && d.feed && d.feed.entry) || [];
 }
 
 async function hentNyaste(cfg, avd, mål, meld) {
@@ -1367,6 +1447,10 @@ function startByggjar(startCfg) {
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
     document.getElementById("sokefelt").hidden = kjelde !== "sok";
+    document.getElementById("utvalfelt").hidden = kjelde !== "utval";
+    document.getElementById("antalfelt").hidden = kjelde === "utval";
+    document.getElementById("del-sok").hidden = kjelde === "utval";
+    teiknUtval();
     const alle = skjema.elements.alle;
     document.getElementById("allerad").hidden = kjelde !== "sok";
     skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
@@ -1436,6 +1520,82 @@ function startByggjar(startCfg) {
     malval.value = "";
   }
   malval.addEventListener("change", () => brukMal(malval.value));
+
+  // ---- Handplukka bøker ---------------------------------------------
+  // Funksjonane under kan bli kalla før denne delen har køyrt (når skjemaet
+  // blir fylt ut ved oppstart), så dei slår opp elementa sjølve.
+  function $(id) { return document.getElementById(id); }
+  function valde() { return $("titlar").value.split(",").map(s => s.trim()).filter(Boolean); }
+  function setjValde(idar) {
+    $("titlar").value = idar.join(",");
+    teiknUtval();
+    oppdater(false);
+  }
+  // Kort skildring av ein katalogpost: omslag, tittel, forfattar og år
+  function postRad(p, knappar) {
+    const d = (p && p.sru_recordData) || {};
+    const li = document.createElement("li");
+    const bilete = d.bs_krydderbildeurl ? Object.assign(document.createElement("img"), { src: d.bs_krydderbildeurl, alt: "", loading: "lazy" })
+      : Object.assign(document.createElement("div"), { className: "utval-utan" });
+    const tekst = document.createElement("div"); tekst.className = "utval-tekst";
+    const t = document.createElement("b"); t.textContent = ryddTittel(d.bsdc_title || "")[0] || ("Tittelnr. " + (p && p.id));
+    const u = document.createElement("span");
+    u.textContent = [snuNamn(forfattarFrå(d)), ((d.bsdc_date || "").match(/\d{4}/) || [""])[0]].filter(Boolean).join(" · ");
+    tekst.append(t, u);
+    li.append(bilete, tekst, ...knappar);
+    return li;
+  }
+  function knapp(tekst, tittel, fn) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "knapp sekundær liten"; b.textContent = tekst; b.title = tittel;
+    b.addEventListener("click", fn); return b;
+  }
+  var teikneNr = 0;
+  async function teiknUtval() {
+    const idar = valde(), nr = ++teikneNr;
+    document.getElementById("utvaltal").textContent = idar.length;
+    document.getElementById("utvaltom").hidden = idar.length > 0;
+    const rader = [];
+    for (const [i, id] of idar.entries()) {
+      const p = postCache.get(id) || { id, sru_recordData: { bsdc_title: "Hentar tittelnr. " + id + " …" } };
+      rader.push(postRad(p, [
+        knapp("↑", "Flytt opp", () => { if (i > 0) { const a = valde(); [a[i - 1], a[i]] = [a[i], a[i - 1]]; setjValde(a); } }),
+        knapp("↓", "Flytt ned", () => { const a = valde(); if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; setjValde(a); } }),
+        knapp("✕", "Fjern", () => setjValde(valde().filter(x => x !== id))),
+      ]));
+    }
+    $("utvalliste").replaceChildren(...rader);
+    // Hent titlar vi ikkje har sett før (til dømes frå ei lenkje), og teikn på nytt
+    const manglar = idar.filter(id => !postCache.has(id));
+    if (manglar.length) {
+      for (const id of manglar) await hentPost(id);
+      if (nr === teikneNr) teiknUtval();
+    }
+  }
+  async function søkUtval() {
+    const avdar = (lesSkjema().avd || "").split(",").filter(Boolean);
+    const utvalstatus = $("utvalstatus"), utvaltreff = $("utvaltreff");
+    utvalstatus.textContent = "Søkjer …";
+    utvaltreff.replaceChildren();
+    try {
+      const treff = await søkTitlar($("utvalsok").value, avdar.length ? avdar : ["tyfv", "tyfb"]);
+      for (const p of treff) postCache.set(String(p.id), p);
+      utvalstatus.textContent = treff.length ? `${treff.length} treff${treff.length === 25 ? " (dei 25 første)" : ""}. Klikk «Legg til» på dei du vil ha med.` : "Ingen treff.";
+      utvaltreff.replaceChildren(...treff.map(p => {
+        const id = String(p.id);
+        const leggTil = knapp(valde().includes(id) ? "Lagt til" : "Legg til", "Legg til i karusellen", () => {
+          if (!valde().includes(id)) setjValde([...valde(), id]);
+          leggTil.textContent = "Lagt til";
+        });
+        leggTil.classList.remove("sekundær");
+        return postRad(p, [leggTil]);
+      }));
+    } catch (e) {
+      utvalstatus.textContent = "Fekk ikkje kontakt med biblioteksystemet. Prøv igjen.";
+    }
+  }
+  document.getElementById("utvalknapp").addEventListener("click", søkUtval);
+  $("utvalsok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkUtval(); } });
 
   // «Tøm skjema» brukar den blanke malen
   document.getElementById("tom").addEventListener("click", () => {
