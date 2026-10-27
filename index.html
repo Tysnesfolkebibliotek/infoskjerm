@@ -707,7 +707,7 @@ function startVisning(cfg) {
   if (BAKGRUNN) document.documentElement.dataset.bakgrunn = BAKGRUNN;
   if (["kryss", "glid", "zoom", "vend", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
-  const nøkkel = "karusell:" + datanøkkel(cfg);
+  const nøkkel = "karusell2:" + datanøkkel(cfg);   // «2»: lister med heil omtale (rulletekst)
 
   let titlar = [];
   let i = 0, førre = null, tidtakar = null, gjeldande = null, køyrer = false;
