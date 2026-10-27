@@ -90,16 +90,6 @@
   :root[data-tema="paaske"] { --bakgrunn: #1b1f0f; --tekst: #fbf7e6; --dempa: #d0c99f; --aksent: #f3d23c; --aksent-tekst: #1b1f0f; --skugge: 27,31,15; --reserve-a: #5d5b1d; --reserve-b: #262a12; }
   :root[data-tema="mai17"]  { --bakgrunn: #0e1a33; --tekst: #ffffff; --dempa: #b8c3dc; --aksent: #d9263b; --aksent-tekst: #ffffff; --skugge: 14,26,51; --reserve-a: #7d1b28; --reserve-b: #14264a; }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
-  /* Fargestripe under overskrifta (Pride og Samefolkets dag) */
-  :root[data-tema="pride"] .overskrift::after, :root[data-tema="samisk"] .overskrift::after {
-    content: ""; display: block; height: .8vh; width: 34vw; margin-top: 1.4vh; border-radius: 99px;
-  }
-  :root[data-tema="pride"] .overskrift::after {
-    background: linear-gradient(90deg, #e40303 0 16.66%, #ff8c00 0 33.33%, #ffed00 0 50%, #008026 0 66.66%, #004dff 0 83.33%, #750787 0);
-  }
-  :root[data-tema="samisk"] .overskrift::after {
-    background: linear-gradient(90deg, #e0332a 0 25%, #1f5fbf 0 50%, #2e8b3e 0 75%, #f2c230 0);
-  }
   :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
   :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
   :root[data-tema="sommarles"] {
@@ -947,17 +937,28 @@ function lagPynt(tema) {
   }
 
   if (tema === "samisk") {
-    // Fargeband i dei samiske fargane, og ein svak sirkel (raud og blå halvdel)
-    pynt.append(svg("0 0 100 100", "right:-14vw; bottom:-8vh; width:56vw; fill:none; stroke-width:7; opacity:.16;",
-      `<path d="M50,10 A40,40 0 0,0 50,90" stroke="#e0332a"/><path d="M50,10 A40,40 0 0,1 50,90" stroke="#1f5fbf"/>`));
+    // Det samiske flagget, teikna etter offisielle fargar og proporsjonar (4:3).
+    // Raud, grøn, gul og blå felt, og ringen: blå venstre halvdel, raud høgre.
+    const R = "#dc241f", G = "#007229", Y = "#ffce00", B = "#0035ad";
+    const cx = 497, cy = 480, ro = 304, ri = 254;
+    const halvring = (side, farge) => {
+      const s = side < 0 ? 0 : 1;   // 0 = venstre halvdel, 1 = høgre
+      return `<path fill="${farge}" d="M${cx},${cy - ro} A${ro},${ro} 0 0,${s} ${cx},${cy + ro} L${cx},${cy + ri} A${ri},${ri} 0 0,${1 - s} ${cx},${cy - ri} Z"/>`;
+    };
+    pynt.append(svg("0 0 1280 960", "right:6vw; top:5vh; width:17vw; border-radius:.4vw; box-shadow:0 .6vh 1.6vh rgba(0,0,0,.45);",
+      `<rect width="409" height="960" fill="${R}"/><rect x="409" width="88" height="960" fill="${G}"/>` +
+      `<rect x="497" width="89" height="960" fill="${Y}"/><rect x="586" width="694" height="960" fill="${B}"/>` +
+      halvring(-1, B) + halvring(1, R)));
   }
 
   if (tema === "pride") {
-    // Ein stor regnbogeboge som stig opp frå hjørnet nedst til høgre
-    const fargar = ["#e40303", "#ff8c00", "#ffed00", "#008026", "#004dff", "#750787"];
-    let boge = "";
-    fargar.forEach((f, i) => { const r = 95 - i * 7; boge += `<path d="M${100 - r},100 A${r},${r} 0 0,1 100,${100 - r}" stroke="${f}"/>`; });
-    pynt.append(svg("0 0 100 100", "right:0; bottom:0; width:60vw; fill:none; stroke-width:7; opacity:.12;", boge));
+    // Eit regnbogehjarte med dei åtte fargane i det opphavlege prideflagget
+    const fargar = ["#ff7ac2", "#e40303", "#ff8c00", "#ffed00", "#008026", "#14c7c7", "#3b1f9e", "#8a1fa0"];
+    const hjarte = "M50,88 C22,68 3,50 3,29 C3,14 14,3 28,3 C38,3 46,9 50,18 C54,9 62,3 72,3 C86,3 97,14 97,29 C97,50 78,68 50,88 Z";
+    const h = 85 / fargar.length;
+    const striper = fargar.map((f, i) => `<rect x="0" y="${(3 + i * h).toFixed(2)}" width="100" height="${(h + 0.3).toFixed(2)}" fill="${f}"/>`).join("");
+    pynt.append(svg("0 0 100 92", "right:6vw; top:4vh; width:15vw; filter:drop-shadow(0 .6vh 1.2vh rgba(0,0,0,.45));",
+      `<defs><clipPath id="hjarte"><path d="${hjarte}"/></clipPath></defs><g clip-path="url(#hjarte)">${striper}</g>`));
   }
 
   if (tema === "sommarles") {
