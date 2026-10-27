@@ -914,12 +914,31 @@ function ryddSignatur(sig) {
     .join(" ");
 }
 
+// Format- og alderskodar som kan stå i signaturen, men ikkje er ordningsord
+const IKKJE_ORDNINGSORD = new Set(["q", "aa", "a", "b", "bu", "u", "mu", "vu", "v", "n", "f", "s"]);
+
+// Ordningsordet (til dømes «MUN») når signaturen manglar det eller har det med
+// små bokstavar: først eit ord frå signaturen, elles dei tre første bokstavane
+// i etternamnet til forfattaren, elles i tittelen.
+function finnOrdningsord(sig, d) {
+  const iSig = (sig || "").split(/\s+/).find(b => /^[\p{L}]{2,}$/u.test(b) && !IKKJE_ORDNINGSORD.has(b.toLowerCase()));
+  if (iSig) return iSig.toUpperCase();
+  let c = d.bsdc_creator; if (Array.isArray(c)) c = c[0];
+  const namn = ((c && c.name) || "").trim();
+  const kjelde = namn ? namn.split(",")[0] : (d.bsdc_title || "").replace(/^(the|a|an|en|ei|et|eit|den|det|de|dei)\s+/i, "");
+  const bokstavar = kjelde.replace(/[^\p{L}]/gu, "");
+  return bokstavar.slice(0, 3).toUpperCase();
+}
+
 function lagHylle(d, e) {
   const plassering = storForbokstav(((e && e.plc) || "").trim());
-  let signatur = ryddSignatur(((e && e.sign) || d.bs_hyllesignatur || d.bs_hylle || "").trim());
+  const rå = ((e && e.sign) || d.bs_hyllesignatur || d.bs_hylle || "").trim();
+  let signatur = ryddSignatur(rå);
   const id = d.bsdc_identifier || {};
   const dewey = id.hylle || id.dewey || "";
   if (d.bs_lf === "0" && dewey && !/\d/.test(signatur)) signatur = `${dewey} ${signatur}`.trim();
+  // Manglar ordningsordet (ingen del med store bokstavar), legg vi det til
+  if (!signatur.split(" ").some(b => /^\p{Lu}+$/u.test(b))) signatur = `${signatur} ${finnOrdningsord(rå, d)}`.trim();
   return [plassering, signatur].filter(Boolean).join(" · ");
 }
 
