@@ -130,6 +130,16 @@
     opacity: 0; transform: translateY(2vh); transition: opacity .9s ease, transform .9s ease;
   }
   .bok.synleg { opacity: 1; transform: none; }
+  /* ---- Rulletekst: alle bøkene etter kvarandre, med heile omtalen ---- */
+  :root[data-visning="rull"] .scene { overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%); }
+  :root[data-visning="rull"] .hjul { visibility: hidden; }
+  .rull-spor { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+  .rull-spor .bok { position: relative; inset: auto; opacity: 1; transform: none; transition: none; padding: 6vh 0; }
+  .rull-spor .omslag-ramme { flex: none; height: 40vh; }
+  .rull-spor .omslag, .rull-spor .reserve { height: 100%; width: auto; max-width: 80vw; flex: none; object-fit: contain; }
+  .rull-spor .omtale { display: block; -webkit-line-clamp: unset; overflow: visible; max-width: 78vw; }
   /* ---- Overgangar mellom bøkene («overgang=» i lenkja). «.ut» er boka som går. ---- */
   :root[data-overgang="kryss"] .bok:not(.synleg) { transform: none; }
   :root[data-overgang="glid"] .bok:not(.synleg) { transform: translateX(14vw); }
@@ -529,7 +539,7 @@
       </div>
     </details>
 
-    <details class="del" id="del-vis" data-felt="namn,sek,oppdater,omtale">
+    <details class="del" id="del-vis" data-felt="namn,sek,oppdater,omtale,visning,fart">
       <summary>Visning <span class="merke" hidden>endra</span></summary>
       <div class="felt">
         <label for="namn">Undertekst</label>
@@ -546,6 +556,24 @@
         </div>
       </div>
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
+      <div class="rad">
+        <div class="felt">
+          <label for="visning">Visingsmåte</label>
+          <select id="visning" name="visning">
+            <option value="">Éi bok om gongen</option>
+            <option value="rull">Rulletekst</option>
+          </select>
+        </div>
+        <div class="felt">
+          <label for="fart">Fart på rulleteksten</label>
+          <select id="fart" name="fart">
+            <option value="sakte">Sakte</option>
+            <option value="">Middels</option>
+            <option value="rask">Rask</option>
+          </select>
+        </div>
+      </div>
+      <p class="hjelp">Rulletekst viser alle bøkene etter kvarandre med heile omtalen.</p>
     </details>
 
     <div class="b-lenkje">
@@ -578,7 +606,7 @@ const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
-  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", namn: "", sek: "12", oppdater: "120", omtale: "1",
+  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "12", oppdater: "120", omtale: "1",
 };
 
 const MALAR = {
@@ -705,7 +733,7 @@ function startVisning(cfg) {
     førre = null;
   }
 
-  function lagBok(t) {
+  function lagBok(t, heil) {
     const bok = el("article", "bok");
     const ramme = el("div", "omslag-ramme");
     const reserve = () => ramme.replaceChildren(el("div", "reserve", t.tittel));
@@ -729,7 +757,8 @@ function startVisning(cfg) {
     if (t.alder) brikker.append(el("span", "brikke", t.alder));
     for (const s of (t.sjanger || []).slice(0, 2)) brikker.append(el("span", "brikke", s));
     if (brikker.childElementCount) info.append(brikker);
-    if (cfg.omtale === "1" && t.omtale) info.append(el("p", "omtale", t.omtale));
+    const omtale = heil ? (t.omtaleHeil || t.omtale) : t.omtale;
+    if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
     bok.append(ramme, info);
     return bok;
   }
@@ -829,6 +858,7 @@ function startVisning(cfg) {
 
   function neste() {
     if (!titlar.length) return;
+    if (RULL) return startRull();
     titlar.forEach(t => forlast(t.omslag));          // nye forsøk på omslag som feila for lenge sidan
     // Finn neste bok som er klar, frå der vi er
     let funnen = -1;
@@ -859,13 +889,64 @@ function startVisning(cfg) {
     tidtakar = setTimeout(() => { lagreSist(String(t.id)); neste(); }, SEK * 1000);
   }
 
-  function pause() { clearTimeout(tidtakar); tidtakar = null; if (gjeldande) i = gjeldandeIdx; gjeldande = null; ventarPåBilete = false; }
+  // ---- rulletekst ------------------------------------------------------
+  const RULL = cfg.visning === "rull";
+  if (RULL) document.documentElement.dataset.visning = "rull";
+  const FART = { sakte: 2.2, rask: 6 }[cfg.fart] || 3.6;      // skjermhøgder i hundredelar per sekund
+  let rullSpor = null, rullAnim = null, rullY = 0, rullSist = 0, rullSjekk = 0, rullMidt = null;
+
+  // Tre kopiar av lista etter kvarandre, så løkka aldri går tom
+  function byggRull() {
+    rullSpor = el("div", "rull-spor");
+    for (let k = 0; k < 3; k++) {
+      const sett = el("div", "rull-sett");
+      for (const t of titlar) { const b = lagBok(t, true); b.dataset.id = t.id; sett.append(b); }
+      rullSpor.append(sett);
+    }
+    scene.replaceChildren(rullSpor);
+    rullY = 0; rullMidt = null;
+  }
+  function startRull() {
+    if (!titlar.length || rullAnim) return;
+    titlar.forEach(t => forlast(t.omslag));
+    if (!rullSpor) byggRull();
+    rullSist = performance.now();
+    const steg = no => {
+      const dt = Math.min(100, no - rullSist); rullSist = no;
+      const høgd = rullSpor.firstElementChild.offsetHeight;
+      rullY -= FART * innerHeight / 100 * dt / 1000;
+      if (høgd && -rullY >= høgd) rullY += høgd;          // hopp tilbake éin kopi: ser ut som ei endelaus løkke
+      rullSpor.style.transform = `translate3d(0, ${rullY.toFixed(1)}px, 0)`;
+      // Bakgrunn og avdeling følgjer boka som er nærast midten av skjermen
+      if (no - rullSjekk > 500) {
+        rullSjekk = no;
+        const midt = scene.getBoundingClientRect().top + scene.clientHeight / 2;
+        let best = null, avstand = Infinity;
+        for (const b of rullSpor.querySelectorAll(".bok")) {
+          const r = b.getBoundingClientRect();
+          const a = Math.abs(r.top + r.height / 2 - midt);
+          if (a < avstand) { avstand = a; best = b; }
+        }
+        if (best && best.dataset.id !== rullMidt) {
+          rullMidt = best.dataset.id;
+          const t = titlar.find(x => String(x.id) === rullMidt);
+          if (t) { visBakteppe(t.omslag); avdelingFelt.textContent = t.etikett || ""; }
+        }
+      }
+      rullAnim = requestAnimationFrame(steg);
+    };
+    rullAnim = requestAnimationFrame(steg);
+  }
+  function stoppRull() { if (rullAnim) cancelAnimationFrame(rullAnim); rullAnim = null; }
+
+  function pause() { stoppRull(); clearTimeout(tidtakar); tidtakar = null; if (gjeldande) i = gjeldandeIdx; gjeldande = null; ventarPåBilete = false; }
   function fortset() { if (!tidtakar && køyrer && titlar.length) neste(); }
 
   // Byt til ny liste utan å hoppe tilbake til første bok
   function brukListe(nye) {
     const varTom = !titlar.length;
     titlar = nye;
+    if (RULL) { const gjekk = !!rullAnim; stoppRull(); rullSpor = null; if (gjekk || (varTom && køyrer)) startRull(); return; }
     titlar.forEach(t => forlast(t.omslag));
     const sist = titlar.findIndex(t => String(t.id) === lesSist());
     i = sist >= 0 ? sist + 1 : 0;
@@ -1155,6 +1236,7 @@ function vurder(post, avd, eks, cfg) {
     omslag: d.bs_krydderbildeurl || "",
     hylle: lagHylle(d, e), alder, sjanger,
     omtale: kortOmtale(d.bsdc_description || ""),
+    omtaleHeil: kortOmtale(d.bsdc_description || "", 4000),   // til rulleteksten
     etikett: cfg.namn || AVD_NAMN[avd] || avd,
   };
 }
