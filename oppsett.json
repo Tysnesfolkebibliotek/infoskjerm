@@ -10,6 +10,7 @@
   "skjerm2": [
     { "namn": "Nye bøker", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=nyaste&avd=tyfv%2Ctyfb&lf=&sjanger=&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=0&perforf=0&utan=&antal=20&aarfra=&aartil=&alder=&spraak=&alle=0&titlar=&tittel=Nye+b%C3%B8ker&tema=haust&skrift=standard&bakgrunn=zoom&overgang=&visning=&fart=&namn=&sek=12&oppdater=60&omtale=1", "sekund": 180 },
     { "namn": "Halloween (grøssarar for born)", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfb&lf=&sjanger=Gr%C3%B8ssar%2C+Gr%C3%B8ssarar%2C+Gr%C3%B8ssere&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=0&utan=&antal=20&aarfra=&aartil=&alder=&spraak=&alle=0&titlar=&tittel=Halloween&tema=halloween&skrift=standard&bakgrunn=flat&overgang=vend&visning=&fart=&namn=&sek=12&oppdater=60&omtale=1", "sekund": 180, "periode": "10-25/10-31" },
+    { "namn": "Julebøker", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=&sjanger=&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=plass%3Djul&rekkje=tilfeldig&omslag=1&hylla=1&perforf=1&utan=&antal=40&aarfra=&aartil=&alder=&spraak=&alle=1&titlar=&tittel=Juleb%C3%B8ker&tema=jul&skrift=standard&bakgrunn=&overgang=&visning=&fart=&namn=&sek=12&oppdater=120&omtale=1", "sekund": 180, "periode": "11-01/12-31" },
     { "namn": "Kanalside 1", "url": "https://www.tysnesbibliotek.no/nn/kanal/1", "sekund": 180, "frisk": true }
   ]
 }
