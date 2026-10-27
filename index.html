@@ -813,6 +813,17 @@ function lagPynt(tema) {
       pynt.append(f);
     }
   };
+  // Ting som stig sakte opp over skjermen (hjarte, ringar)
+  const stigande = (n, viewBox, innhald, [minB, maksB], [minO, maksO]) => {
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement("div");
+      d.className = "boble";
+      d.style.cssText = `left:${tilf(0, 94)}vw; width:${tilf(minB, maksB)}vw; height:auto; border-radius:0; opacity:${tilf(minO, maksO)};` +
+        `animation-duration:${tilf(26, 44)}s; animation-delay:${-tilf(0, 44)}s;`;
+      const s = svg(viewBox, "position:static; width:100%; height:auto; display:block;", typeof innhald === "function" ? innhald(i) : innhald);
+      d.append(s); pynt.append(d);
+    }
+  };
   // Ting som dalar ned og roterer: lauv, blomsterblad
   const dalande = (n, viewBox, form, fargar, [minB, maksB], [minO, maksO]) => {
     for (let i = 0; i < n; i++) {
@@ -949,6 +960,10 @@ function lagPynt(tema) {
       `<rect width="409" height="960" fill="${R}"/><rect x="409" width="88" height="960" fill="${G}"/>` +
       `<rect x="497" width="89" height="960" fill="${Y}"/><rect x="586" width="694" height="960" fill="${B}"/>` +
       halvring(-1, B) + halvring(1, R)));
+    // Små ringar i blått og raudt som stig sakte i bakgrunnen
+    stigande(9, "0 0 100 100",
+      `<path fill="${B}" d="M50,4 A46,46 0 0,0 50,96 L50,84 A34,34 0 0,1 50,16 Z"/><path fill="${R}" d="M50,4 A46,46 0 0,1 50,96 L50,84 A34,34 0 0,0 50,16 Z"/>`,
+      [3, 6], [0.18, 0.32]);
   }
 
   if (tema === "pride") {
@@ -959,6 +974,10 @@ function lagPynt(tema) {
     const striper = fargar.map((f, i) => `<rect x="0" y="${(3 + i * h).toFixed(2)}" width="100" height="${(h + 0.3).toFixed(2)}" fill="${f}"/>`).join("");
     pynt.append(svg("0 0 100 92", "right:6vw; top:4vh; width:15vw; filter:drop-shadow(0 .6vh 1.2vh rgba(0,0,0,.45));",
       `<defs><clipPath id="hjarte"><path d="${hjarte}"/></clipPath></defs><g clip-path="url(#hjarte)">${striper}</g>`));
+    // Små regnbogehjarte som stig sakte i bakgrunnen
+    stigande(11, "0 0 100 92",
+      i => `<defs><clipPath id="hj${i}"><path d="${hjarte}"/></clipPath></defs><g clip-path="url(#hj${i})">${striper}</g>`,
+      [3, 6], [0.16, 0.3]);
   }
 
   if (tema === "sommarles") {
