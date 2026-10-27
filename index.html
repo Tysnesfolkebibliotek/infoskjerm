@@ -77,6 +77,51 @@
     100% { transform: translate(120vw, 1vh); }
   }
   @keyframes blafr { from { transform: scaleY(1); } to { transform: scaleY(.55); } }
+
+  /* ---- Fleire tema: årstider, høgtider og allmenne ---- */
+  :root[data-tema="vinter"] { --bakgrunn: #0b1724; --tekst: #f2f7fb; --dempa: #a9bccb; --aksent: #8fd3ff; --aksent-tekst: #06121c; --skugge: 11,23,36; --reserve-a: #1d3a55; --reserve-b: #0e1f30; }
+  :root[data-tema="var"]    { --bakgrunn: #12231a; --tekst: #f4f8ee; --dempa: #b9c8ad; --aksent: #a7d977; --aksent-tekst: #10200c; --skugge: 18,35,26; --reserve-a: #2f5530; --reserve-b: #16291c; }
+  :root[data-tema="sommar"] { --bakgrunn: #0a2131; --tekst: #fdf8ef; --dempa: #b9cbd6; --aksent: #f2c46d; --aksent-tekst: #10202b; --skugge: 10,33,49; --reserve-a: #1e5b78; --reserve-b: #0d2c40; }
+  :root[data-tema="paaske"] { --bakgrunn: #1b1f0f; --tekst: #fbf7e6; --dempa: #d0c99f; --aksent: #f3d23c; --aksent-tekst: #1b1f0f; --skugge: 27,31,15; --reserve-a: #5d5b1d; --reserve-b: #262a12; }
+  :root[data-tema="mai17"]  { --bakgrunn: #0e1a33; --tekst: #ffffff; --dempa: #b8c3dc; --aksent: #d9263b; --aksent-tekst: #ffffff; --skugge: 14,26,51; --reserve-a: #7d1b28; --reserve-b: #14264a; }
+  :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
+  :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
+  :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
+  :root[data-tema="sommarles"] {
+    --bakgrunn: #fff4dc; --tekst: #23314a; --dempa: #5b6475; --aksent: #ff7a45; --aksent-tekst: #ffffff;
+    --brikke: rgba(35,49,74,.08); --skugge: 255,244,220; --spor: rgba(35,49,74,.12);
+    --reserve-a: #ffd27a; --reserve-b: #ffb35c; --bakteppe-lys: 1.15;
+  }
+  /* Kontrast: svart, kvitt og gult, større skrift og flat bakgrunn som standard */
+  :root[data-tema="kontrast"] { --bakgrunn: #000000; --tekst: #ffffff; --dempa: #ececec; --aksent: #ffd400; --aksent-tekst: #000000; --brikke: #262626; --skugge: 0,0,0; --spor: rgba(255,255,255,.25); --reserve-a: #262626; --reserve-b: #111111; }
+  :root[data-tema="kontrast"]:not([data-bakgrunn]) .bakteppe,
+  :root[data-tema="kontrast"]:not([data-bakgrunn]) .skugge { display: none; }
+  :root[data-tema="kontrast"] .tittel { font-size: 6.6vw; }
+  :root[data-tema="kontrast"] .forfattar { font-size: 4vw; opacity: 1; }
+  :root[data-tema="kontrast"] .brikke { font-size: 3vw; }
+  :root[data-tema="kontrast"] .omtale { font-size: 3.3vw; color: var(--tekst); }
+  :root[data-tema="kontrast"] .botnnamn { font-size: 3.2vw; }
+
+  /* Generell «dalande» rørsle for lauv og blomsterblad: fell, vaggar og roterer */
+  .dalar { position: absolute; top: -4vh; animation: dal linear infinite; }
+  .dalar svg { position: static; width: 100%; height: auto; }
+  @keyframes dal {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(3vw, 26vh) rotate(90deg); }
+    50%  { transform: translate(-2vw, 52vh) rotate(180deg); }
+    75%  { transform: translate(3vw, 78vh) rotate(270deg); }
+    100% { transform: translate(0, 106vh) rotate(360deg); }
+  }
+  /* Bobler som stig sakte (Sommarles) */
+  .boble { position: absolute; bottom: -6vh; border-radius: 50%; animation: stig linear infinite; }
+  @keyframes stig { from { transform: translate(0, 0); } 50% { transform: translate(2vw, -55vh); } to { transform: translate(-1vw, -112vh); } }
+  /* Stjerner som blinkar (Natt) */
+  .stjerne { position: absolute; border-radius: 50%; background: #fff; animation: blink ease-in-out infinite alternate; }
+  @keyframes blink { from { opacity: .08; } to { opacity: .7; } }
+  /* Bølgjer som glir sakte (Sommar) og sol som roterer (Sommarles) */
+  @keyframes glidSide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes snu { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .dalar, .boble, .stjerne, #pynt * { animation: none !important; } }
   @media (prefers-reduced-motion: reduce) { .snø, .flaggermus, .flaggermus svg { animation: none; } }
   :root[data-tema="haust"] {
     --bakgrunn: #1d0f0b; --tekst: #fbefe6; --dempa: #cfae9d; --aksent: #e9773d;
@@ -443,14 +488,32 @@
       <div class="felt">
         <label for="tema">Tema</label>
         <select id="tema" name="tema">
-          <option value="kveld">Kveld</option>
-          <option value="fjord">Fjord</option>
-          <option value="skog">Skog</option>
-          <option value="lys">Lys</option>
-          <option value="haust">Haust</option>
-          <option value="jul">Jul</option>
-          <option value="halloween">Halloween</option>
-          <option value="libry">Libry content</option>
+          <optgroup label="Faste">
+            <option value="kveld">Kveld</option>
+            <option value="fjord">Fjord</option>
+            <option value="skog">Skog</option>
+            <option value="lys">Lys</option>
+            <option value="natt">Natt</option>
+            <option value="kontrast">Kontrast (lettlesen)</option>
+            <option value="libry">Libry content</option>
+          </optgroup>
+          <optgroup label="Årstider">
+            <option value="vinter">Vinter</option>
+            <option value="var">Vår</option>
+            <option value="sommar">Sommar</option>
+            <option value="haust">Haust</option>
+          </optgroup>
+          <optgroup label="Høgtider og merkedagar">
+            <option value="samisk">Samefolkets dag</option>
+            <option value="paaske">Påske</option>
+            <option value="mai17">17. mai</option>
+            <option value="pride">Pride</option>
+            <option value="halloween">Halloween</option>
+            <option value="jul">Jul</option>
+          </optgroup>
+          <optgroup label="Bibliotek">
+            <option value="sommarles">Sommarles</option>
+          </optgroup>
         </select>
       </div>
       <div class="felt">
@@ -733,16 +796,38 @@ function lagPynt(tema) {
     s.setAttribute("viewBox", viewBox); s.setAttribute("style", stil);
     s.innerHTML = innhald; return s;
   };
-  if (tema === "jul") {
-    // Snøfall: 28 prikkar med ulik storleik, fart og start
-    for (let i = 0; i < 28; i++) {
-      const f = document.createElement("div");
-      const d = 0.25 + Math.random() * 0.55;                   // storleik i vw
+  const tilf = (a, b) => a + Math.random() * (b - a);
+  const vel = liste => liste[Math.floor(Math.random() * liste.length)];
+  // Snøfall: små kvite prikkar
+  const snøfall = (n, opasitet) => {
+    for (let i = 0; i < n; i++) {
+      const f = document.createElement("div"), d = tilf(0.25, 0.8);
       f.className = "snø";
-      f.style.cssText = `left:${Math.random() * 100}vw; width:${d}vw; height:${d}vw; opacity:${0.18 + Math.random() * 0.35};` +
-        `animation-duration:${16 + Math.random() * 18}s; animation-delay:${-Math.random() * 30}s;`;
+      f.style.cssText = `left:${tilf(0, 100)}vw; width:${d}vw; height:${d}vw; opacity:${tilf(opasitet * 0.5, opasitet)};` +
+        `animation-duration:${tilf(16, 34)}s; animation-delay:${-tilf(0, 30)}s;`;
       pynt.append(f);
     }
+  };
+  // Ting som dalar ned og roterer: lauv, blomsterblad
+  const dalande = (n, viewBox, form, fargar, [minB, maksB], [minO, maksO]) => {
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement("div");
+      d.className = "dalar";
+      d.style.cssText = `left:${tilf(0, 96)}vw; width:${tilf(minB, maksB)}vw; opacity:${tilf(minO, maksO)};` +
+        `animation-duration:${tilf(20, 36)}s; animation-delay:${-tilf(0, 36)}s;`;
+      d.append(svg(viewBox, "", form.replace("FARGE", vel(fargar))));
+      pynt.append(d);
+    }
+  };
+  // Fargeband langs venstre kant (Pride, Samefolkets dag)
+  const kantband = fargar => {
+    const b = document.createElement("div");
+    b.style.cssText = `position:absolute; left:0; top:0; bottom:0; width:2.2vw; opacity:.85; display:flex;`;
+    for (const f of fargar) { const s = document.createElement("div"); s.style.cssText = `flex:1; background:${f};`; b.append(s); }
+    pynt.append(b);
+  };
+  if (tema === "jul") {
+    snøfall(28, 0.5);
     // Grantre-silhuettar nedst i begge hjørna
     const tre = (x, h) => `<g transform="translate(${x},${100 - h}) scale(${h / 100})">` +
       `<polygon points="50,0 68,28 60,28 78,55 66,55 88,88 12,88 34,55 22,55 40,28 32,28"/><rect x="45" y="88" width="10" height="12"/></g>`;
@@ -779,11 +864,127 @@ function lagPynt(tema) {
       pynt.append(b);
     }
   }
+
+  if (tema === "vinter") {
+    // Iskrystallar i hjørna (seksarma, med greiner) og litt lett snø
+    const krystall = () => {
+      let g = "";
+      for (let v = 0; v < 360; v += 60) {
+        g += `<g transform="rotate(${v} 50 50)"><line x1="50" y1="50" x2="50" y2="4"/>` +
+             `<line x1="50" y1="22" x2="40" y2="12"/><line x1="50" y1="22" x2="60" y2="12"/>` +
+             `<line x1="50" y1="34" x2="43" y2="27"/><line x1="50" y1="34" x2="57" y2="27"/></g>`;
+      }
+      return g;
+    };
+    pynt.append(svg("0 0 100 100", "left:-4vw; top:-3vh; width:24vw; fill:none; stroke:#dff3ff; stroke-width:1.6; stroke-linecap:round; opacity:.08;", krystall()));
+    pynt.append(svg("0 0 100 100", "right:-3vw; top:6vh; width:14vw; fill:none; stroke:#dff3ff; stroke-width:1.6; stroke-linecap:round; opacity:.07;", krystall()));
+    pynt.append(svg("0 0 100 100", "right:10vw; bottom:-4vh; width:18vw; fill:none; stroke:#dff3ff; stroke-width:1.6; stroke-linecap:round; opacity:.06;", krystall()));
+    snøfall(14, 0.4);
+  }
+
+  if (tema === "var") {
+    // Kvite og rosa blomsterblad som dalar, og små spirer nedst
+    dalande(16, "0 0 12 14", `<path fill="FARGE" d="M6,0 C10,3 10,9 6,14 C2,9 2,3 6,0 Z"/>`,
+      ["#ffffff", "#f7c6d4", "#fbe3ea"], [0.9, 1.7], [0.3, 0.55]);
+    const spire = x => `<g transform="translate(${x},0)"><path d="M10,40 C10,30 10,22 11,14" stroke="#a7d977" stroke-width="1.6" fill="none"/>` +
+      `<path fill="#a7d977" d="M11,16 C6,10 2,12 1,16 C5,18 9,18 11,16 Z"/><path fill="#a7d977" d="M11,13 C15,6 20,7 21,11 C17,14 13,14 11,13 Z"/></g>`;
+    pynt.append(svg("0 0 120 40", "left:0; bottom:0; width:30vw; opacity:.14;", spire(0) + spire(30) + spire(62)));
+    pynt.append(svg("0 0 120 40", "right:0; bottom:0; width:24vw; opacity:.12;", spire(20) + spire(60) + spire(92)));
+  }
+
+  if (tema === "sommar") {
+    // Sol med glød, og tre lag med bølgjer som glir sakte nedst
+    pynt.append(svg("0 0 100 100", "right:4vw; top:7vh; width:18vw; opacity:.18;",
+      `<defs><radialGradient id="sol"><stop offset="45%" stop-color="#ffd27a"/><stop offset="100%" stop-color="#ffd27a" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#sol)"/>`));
+    const bølgje = (y, h) => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 50) d += ` Q${x + 25},${y - h} ${x + 50},${y}`; return d + " L400,60 L0,60 Z"; };
+    [[30, 8, 0.08, 50], [38, 6, 0.11, 36], [46, 5, 0.15, 26]].forEach(([y, h, o, sek]) => {
+      const lag = svg("0 0 400 60", `left:0; bottom:0; width:200vw; opacity:${o}; animation: glidSide ${sek}s linear infinite;`,
+        `<path fill="#bfe6ff" d="${bølgje(y, h)}"/>`);
+      lag.setAttribute("preserveAspectRatio", "none"); lag.style.height = "9vh";
+      pynt.append(lag);
+    });
+  }
+
+  if (tema === "haust") {
+    // Lauv i haustfargar som dalar sakte
+    dalande(12, "0 0 20 22", `<path fill="FARGE" d="M10,0 C13,4 17,5 20,9 C16,10 15,13 16,18 C13,16 11,16 10,19 C9,16 7,16 4,18 C5,13 4,10 0,9 C3,5 7,4 10,0 Z"/><path d="M10,19 L10,22" stroke="FARGE" stroke-width="1"/>`,
+      ["#e9773d", "#c9512b", "#e0a43a", "#a8462a"], [1.6, 3], [0.22, 0.4]);
+  }
+
+  if (tema === "paaske") {
+    // Påskeegg nedst og påskeris i hjørnet øvst til venstre
+    const egg = (x, y, r, farge, stripe) => `<g transform="translate(${x},${y}) rotate(${tilf(-15, 15)})">` +
+      `<ellipse rx="${r * 0.78}" ry="${r}" fill="${farge}"/><path d="M${-r * 0.75},${-r * 0.1} Q0,${-r * 0.35} ${r * 0.75},${-r * 0.1}" stroke="${stripe}" stroke-width="${r * 0.12}" fill="none"/></g>`;
+    pynt.append(svg("0 0 120 40", "left:2vw; bottom:0; width:26vw; opacity:.2;",
+      egg(18, 26, 12, "#f7d8e6", "#f3d23c") + egg(44, 28, 10, "#d8ecc4", "#f7a8c4") + egg(66, 27, 11, "#fff2b3", "#9fd4f0")));
+    pynt.append(svg("0 0 120 40", "right:2vw; bottom:0; width:20vw; opacity:.18;",
+      egg(40, 27, 11, "#cfe8f7", "#f3d23c") + egg(66, 28, 10, "#f7d8e6", "#a7d977")));
+    let ris = "";
+    [[0, 0, 70, 46], [0, 6, 62, 70], [4, 0, 88, 30]].forEach(([x1, y1, x2, y2]) => { ris += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#c9b48a" stroke-width="1"/>`; });
+    [[40, 26, "#f3d23c"], [58, 38, "#f7a8c4"], [36, 41, "#a7d977"], [62, 21, "#9fd4f0"], [74, 34, "#f3d23c"]].forEach(([x, y, f]) => {
+      ris += `<ellipse cx="${x}" cy="${y + 4}" rx="2.6" ry="6" fill="${f}" transform="rotate(${tilf(-30, 30)} ${x} ${y})"/>`;
+    });
+    pynt.append(svg("0 0 100 80", "right:0; top:0; width:26vw; opacity:.3; transform:scaleX(-1);", ris));
+  }
+
+  if (tema === "mai17") {
+    // Vimpelrekkje i raudt, kvitt og blått langs toppen
+    let v = `<path d="M0,2 Q50,12 100,2" stroke="#ffffff" stroke-width=".3" fill="none"/>`;
+    const fargar = ["#d9263b", "#ffffff", "#1f3f8f"];
+    for (let i = 0; i < 14; i++) {
+      const x = 3 + i * 7, t = x / 100, y = 2 + 40 * t * (1 - t) * 0.5;   // følgjer kurva
+      v += `<polygon points="${x - 2.4},${y} ${x + 2.4},${y} ${x},${y + 6}" fill="${fargar[i % 3]}"/>`;
+    }
+    pynt.append(svg("0 0 100 16", "left:0; top:0; width:100vw; opacity:.32;", v));
+  }
+
+  if (tema === "samisk") {
+    // Fargeband i dei samiske fargane, og ein svak sirkel (raud og blå halvdel)
+    kantband(["#e0332a", "#1f5fbf", "#2e8b3e", "#f2c230"]);
+    pynt.append(svg("0 0 100 100", "right:-14vw; bottom:-8vh; width:52vw; fill:none; stroke-width:6; opacity:.09;",
+      `<path d="M50,10 A40,40 0 0,0 50,90" stroke="#e0332a"/><path d="M50,10 A40,40 0 0,1 50,90" stroke="#1f5fbf"/>`));
+  }
+
+  if (tema === "pride") {
+    kantband(["#e40303", "#ff8c00", "#ffed00", "#008026", "#004dff", "#750787"]);
+  }
+
+  if (tema === "sommarles") {
+    // Sol som snur seg sakte, og fargerike bobler som stig
+    let stråler = "";
+    for (let v = 0; v < 360; v += 30) stråler += `<line x1="50" y1="8" x2="50" y2="20" transform="rotate(${v} 50 50)"/>`;
+    const sol = svg("0 0 100 100", "right:3vw; top:5vh; width:20vw; opacity:.55; animation: snu 80s linear infinite;",
+      `<g stroke="#ffb72b" stroke-width="4" stroke-linecap="round">${stråler}</g><circle cx="50" cy="50" r="22" fill="#ffc83d"/>`);
+    pynt.append(sol);
+    for (let i = 0; i < 12; i++) {
+      const b = document.createElement("div"), d = tilf(1, 3.2);
+      b.className = "boble";
+      b.style.cssText = `left:${tilf(0, 96)}vw; width:${d}vw; height:${d}vw; background:${vel(["#ff7a45", "#4cc3d9", "#7bc96f", "#ffc83d", "#b48cf2"])};` +
+        `opacity:${tilf(0.12, 0.25)}; animation-duration:${tilf(22, 40)}s; animation-delay:${-tilf(0, 40)}s;`;
+      pynt.append(b);
+    }
+  }
+
+  if (tema === "natt") {
+    // Stjernehimmel som blinkar, og ein smal månesigd
+    for (let i = 0; i < 70; i++) {
+      const st = document.createElement("div"), d = tilf(0.15, 0.45);
+      st.className = "stjerne";
+      st.style.cssText = `left:${tilf(0, 100)}vw; top:${tilf(0, 100)}vh; width:${d}vw; height:${d}vw;` +
+        `animation-duration:${tilf(2, 6)}s; animation-delay:${-tilf(0, 6)}s;`;
+      pynt.append(st);
+    }
+    pynt.append(svg("0 0 100 100", "right:7vw; top:8vh; width:9vw; opacity:.3;",
+      `<path fill="#e8ecff" d="M60,10 A40,40 0 1,0 60,90 A32,32 0 1,1 60,10 Z"/>`));
+  }
 }
+
+const TEMA = ["fjord", "skog", "lys", "natt", "kontrast", "libry", "vinter", "var", "sommar", "haust",
+  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles"];
 
 function startVisning(cfg) {
   document.body.className = "vis";
-  if (["fjord", "skog", "lys", "haust", "jul", "halloween", "libry"].includes(cfg.tema)) document.documentElement.dataset.tema = cfg.tema;
+  if (TEMA.includes(cfg.tema)) document.documentElement.dataset.tema = cfg.tema;
   lagPynt(cfg.tema);
   // Libry content brukar same skrift som kanalsidene, med mindre ei anna er valt
   brukSkrift(cfg.tema === "libry" && (!cfg.skrift || cfg.skrift === "standard") ? "sourcesans" : cfg.skrift);
