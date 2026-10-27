@@ -100,6 +100,20 @@
     opacity: 0; transition: opacity 1.2s ease;
   }
   .bakteppe.synleg { opacity: 1; }
+  /* ---- Bakgrunn (eige val, «bakgrunn=» i lenkja). Utan val gjeld temaet. ---- */
+  :root[data-bakgrunn="uskarp"] .bakteppe, :root[data-bakgrunn="svak"] .bakteppe,
+  :root[data-bakgrunn="zoom"] .bakteppe, :root[data-bakgrunn="farge"] .bakteppe,
+  :root[data-bakgrunn="uskarp"] .skugge, :root[data-bakgrunn="svak"] .skugge,
+  :root[data-bakgrunn="zoom"] .skugge, :root[data-bakgrunn="farge"] .skugge { display: block; }
+  :root[data-bakgrunn="flat"] .bakteppe, :root[data-bakgrunn="flat"] .skugge { display: none; }
+  /* Svakt uskarpt: motivet kan kjennast att, men er dempa */
+  :root[data-bakgrunn="svak"] .bakteppe { inset: -3%; filter: blur(14px) saturate(1.05) brightness(calc(var(--bakteppe-lys) * .85)); }
+  /* Sakte zoom: omslaget glir og veks langsamt medan boka står */
+  :root[data-bakgrunn="zoom"] .bakteppe { filter: blur(28px) saturate(1.2) brightness(var(--bakteppe-lys)); }
+  :root[data-bakgrunn="zoom"] .bakteppe.synleg { animation: glid var(--sek, 12s) linear both; }
+  @keyframes glid { from { transform: scale(1.05) translate(0, 0); } to { transform: scale(1.3) translate(-3%, -2%); } }
+  /* Fargane frå omslaget: ein rolig fargeovergang i staden for biletet */
+  :root[data-bakgrunn="farge"] .bakteppe.farga { inset: 0; filter: none; }
   .skugge {
     position: fixed; inset: 0;
     background: linear-gradient(to bottom, rgba(var(--skugge),.55) 0%, rgba(var(--skugge),.15) 30%, rgba(var(--skugge),.85) 62%, var(--bakgrunn) 100%);
@@ -152,7 +166,7 @@
   .melding .liten { font-size: 2.4vw; opacity: .8; }
   .snurr { width: 7vw; height: 7vw; border-radius: 50%; border: .7vw solid var(--spor); border-top-color: var(--aksent); animation: snurr 1s linear infinite; }
   @keyframes snurr { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe { transition-duration: .01s; } }
+  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe { transition-duration: .01s; } .bakteppe.synleg { animation: none !important; } }
 
   /* ================================================================== */
   /* BYGGJAR                                                            */
@@ -394,6 +408,17 @@
         </select>
       </div>
     </div>
+    <div class="felt">
+      <label for="bakgrunn">Bakgrunn</label>
+      <select id="bakgrunn" name="bakgrunn">
+        <option value="">Som temaet</option>
+        <option value="uskarp">Uskarpt omslag</option>
+        <option value="svak">Svakt uskarpt omslag</option>
+        <option value="zoom">Omslag med sakte zoom</option>
+        <option value="farge">Fargane frå omslaget</option>
+        <option value="flat">Flat farge</option>
+      </select>
+    </div>
 
     <!-- ---- Avanserte val, lukka som standard ---- -->
     <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
@@ -430,7 +455,7 @@
     <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,alder,spraak,plass,utan">
       <summary>Krav til bøkene <span class="merke" hidden>endra</span></summary>
       <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
-      <label class="val"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
+      <label class="val" id="hyllarad"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
       <label class="val"><input type="checkbox" name="perforf" value="1"> Maks éi bok per forfattar</label>
       <div class="rad">
         <div class="felt">
@@ -529,7 +554,7 @@ const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
-  tittel: "Frå hylla", tema: "kveld", skrift: "standard", namn: "", sek: "12", oppdater: "120", omtale: "1",
+  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", namn: "", sek: "12", oppdater: "120", omtale: "1",
 };
 
 const MALAR = {
@@ -624,6 +649,9 @@ function startVisning(cfg) {
   let aktivtBakteppe = 0;
 
   const SEK = Math.max(4, Number(cfg.sek) || 12);
+  document.documentElement.style.setProperty("--sek", SEK + "s");
+  const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "";
+  if (BAKGRUNN) document.documentElement.dataset.bakgrunn = BAKGRUNN;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell:" + datanøkkel(cfg);
 
@@ -681,9 +709,43 @@ function startVisning(cfg) {
     return bok;
   }
 
+  // Gjennomsnittsfargen i eit omslag. Krev at biletserveren tillèt det (CORS);
+  // gjer han ikkje det, får vi null, og det uskarpe omslaget blir ståande.
+  const fargeCache = new Map();
+  function omslagsfarge(url) {
+    if (fargeCache.has(url)) return fargeCache.get(url);
+    const lova = new Promise(ferdig => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const c = document.createElement("canvas"); c.width = c.height = 12;
+          const x = c.getContext("2d"); x.drawImage(img, 0, 0, 12, 12);
+          const d = x.getImageData(0, 0, 12, 12).data;
+          let r = 0, g = 0, b = 0, n = 0;
+          for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+          ferdig([r / n, g / n, b / n].map(Math.round));
+        } catch (e) { ferdig(null); }
+      };
+      img.onerror = () => ferdig(null);
+      img.src = url;
+    });
+    fargeCache.set(url, lova);
+    return lova;
+  }
+
   function visBakteppe(url) {
     const neste = bakteppe[1 - aktivtBakteppe];
+    neste.classList.remove("farga");
     neste.style.backgroundImage = url ? `url("${url.replace(/"/g, "%22")}")` : "none";
+    if (BAKGRUNN === "farge" && url) {
+      omslagsfarge(url).then(f => {
+        if (!f || !neste.classList.contains("synleg") || !neste.style.backgroundImage.includes(url.slice(-20))) return;
+        const [r, g, b] = f;
+        neste.style.backgroundImage = `radial-gradient(ellipse at 50% 30%, rgba(${r},${g},${b},.95) 0%, rgba(${r},${g},${b},.55) 45%, var(--bakgrunn) 85%)`;
+        neste.classList.add("farga");
+      });
+    }
     neste.classList.add("synleg");
     bakteppe[aktivtBakteppe].classList.remove("synleg");
     aktivtBakteppe = 1 - aktivtBakteppe;
@@ -1126,8 +1188,8 @@ async function hentPost(id) {
 }
 
 async function hentUtval(cfg, avdar, meld) {
-  // Søkjefilter gjeld ikkje handplukka bøker, berre krava (omslag, hylla, plassering)
-  cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "" };
+  // Handplukka bøker blir ikkje filtrerte, bortsett frå «står på hylla» om det er valt
+  cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", omslag: "0", perforf: "0", plass: "", utan: "" };
   const idar = (cfg.titlar || "").split(",").map(s => s.trim()).filter(Boolean);
   const poster = [];
   for (const id of idar) { const p = await hentPost(id); if (p) poster.push(p); meld(poster.length, idar.length); }
@@ -1460,6 +1522,9 @@ function startByggjar(startCfg) {
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     document.getElementById("antalfelt").hidden = kjelde === "utval";
     document.getElementById("del-sok").hidden = kjelde === "utval";
+    // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
+    for (const el of document.getElementById("del-krav").children)
+      if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = kjelde === "utval";
     teiknUtval();
     const alle = skjema.elements.alle;
     document.getElementById("allerad").hidden = kjelde !== "sok";
