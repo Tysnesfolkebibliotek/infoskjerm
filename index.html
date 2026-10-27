@@ -178,6 +178,13 @@
   .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .malrad { display: flex; gap: 8px; align-items: stretch; }
   .malrad input { flex: 1; min-width: 0; }
+  /* Søkjefelt med eige ✕ som tømmer det (Firefox har ikkje noko innebygd) */
+  .sokeboks { position: relative; flex: 1; min-width: 0; display: flex; }
+  .sokeboks input { width: 100%; padding-right: 34px; }
+  .sokeboks input::-webkit-search-cancel-button { display: none; }
+  .tomfelt { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border: 0; border-radius: 50%;
+             background: transparent; color: var(--b-dempa); font-size: 14px; line-height: 1; cursor: pointer; }
+  .tomfelt:hover { background: var(--b-strek); color: var(--b-tekst); }
   .utvaltreff, .utvalliste { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
   .utvaltreff li, .utvalliste li { display: flex; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--b-strek); border-radius: 8px; background: var(--b-flate); }
   .utvaltreff img, .utvalliste img, .utval-utan { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; flex: none; background: var(--b-strek); }
@@ -341,7 +348,10 @@
       <div class="felt">
         <label for="utvalsok">Finn bøker</label>
         <div class="malrad">
-          <input type="search" id="utvalsok" placeholder="Tittel, forfattar eller begge">
+          <span class="sokeboks">
+            <input type="search" id="utvalsok" placeholder="Tittel, forfattar eller begge">
+            <button type="button" class="tomfelt" id="utvaltom-felt" aria-label="Tøm søkjefeltet" title="Tøm" hidden>✕</button>
+          </span>
           <button type="button" class="knapp sekundær" id="utvalknapp">Søk</button>
         </div>
         <p class="hjelp" id="utvalstatus">Søkjer i avdelingane som er kryssa av over.</p>
@@ -1595,6 +1605,10 @@ function startByggjar(startCfg) {
     }
   }
   document.getElementById("utvalknapp").addEventListener("click", søkUtval);
+  // ✕ i søkjefeltet: synleg når det står noko der, tømmer feltet ved klikk
+  const visTøm = () => { $("utvaltom-felt").hidden = !$("utvalsok").value; };
+  $("utvalsok").addEventListener("input", visTøm);
+  $("utvaltom-felt").addEventListener("click", () => { $("utvalsok").value = ""; visTøm(); $("utvalsok").focus(); });
   $("utvalsok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkUtval(); } });
 
   // «Tøm skjema» brukar den blanke malen
