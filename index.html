@@ -324,6 +324,7 @@
         <option value="born_nn">Barnebøker på nynorsk</option>
         <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
         <option value="jul">Julebøker</option>
+        <option value="reservert">Mest reservert akkurat no</option>
       </select>
         <button type="button" class="knapp sekundær" id="tom">Tøm skjema</button>
       </div>
@@ -484,6 +485,7 @@
         <div class="segment" role="radiogroup">
           <label><input type="radio" name="rekkje" value="tilfeldig"> Tilfeldig</label>
           <label><input type="radio" name="rekkje" value="nyaste"> Nyaste utgjeving</label>
+          <label><input type="radio" name="rekkje" value="reservert"> Mest reservert</label>
         </div>
       </div>
     </details>
@@ -612,6 +614,11 @@ const STANDARD = {
 };
 
 const MALAR = {
+  // Mest reservert: dei nyaste bøkene med flest i kø. Reserverte bøker er
+  // som regel utlånte, så «står på hylla» er av.
+  reservert: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "reservert",
+               omslag: "1", hylla: "0", perforf: "0", utan: "", antal: "20", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
+               tittel: "Mest reservert akkurat no", namn: "", sek: "12", oppdater: "60", omtale: "1" },
   // Julebøker: søk direkte på plasseringa «jul» med CCL (plass=jul).
   jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "plass=jul",
          rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
@@ -755,6 +762,7 @@ function startVisning(cfg) {
     if (t.undertittel) info.append(el("div", "undertittel", t.undertittel));
     if (t.forfattar) info.append(el("div", "forfattar", t.forfattar));
     const brikker = el("div", "brikker");
+    if (cfg.rekkje === "reservert" && t.kø) brikker.append(el("span", "brikke", `${t.kø} i kø`));
     if (t.hylle) brikker.append(el("span", "brikke hylle", t.hylle));
     if (t.alder) brikker.append(el("span", "brikke", t.alder));
     for (const s of (t.sjanger || []).slice(0, 2)) brikker.append(el("span", "brikke", s));
@@ -1267,6 +1275,7 @@ function flett(lister) {
 
 // ---- dei to kjeldene -------------------------------------------------
 
+const TAK_ALLE = 500;
 async function hentBøker(cfg, framdrift) {
   utelatne = {}; nåddeGrense = false;
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
@@ -1281,6 +1290,7 @@ async function hentBøker(cfg, framdrift) {
     const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
     lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld) : await hentSøk(cfg, avd, mål, meld));
   }
+  if (cfg.kjelde === "sok" && cfg.rekkje === "reservert") return lister.flat().sort((a, b) => b.kø - a.kø).slice(0, alle ? TAK_ALLE : antal);
   return cfg.kjelde === "nyaste" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
 }
 
@@ -1415,12 +1425,15 @@ function byggSøk(cfg, avd, medAlder, medSpråk) {
 }
 
 async function hentSøk(cfg, avd, mål, meld) {
-  const tilfeldig = cfg.rekkje !== "nyaste";
+  // Mest reservert: dei ca. 400 nyaste bøkene er kandidatar (der samlar
+  // reservasjonane seg), og dei blir sorterte etter kor mange som står i kø.
+  const reservert = cfg.rekkje === "reservert";
+  const tilfeldig = cfg.rekkje !== "nyaste" && !reservert;
   const alle = mål === Infinity;
   const TAK = 500;                           // øvre grense når vi hentar alle
   // Alle: store bunkar i rekkjefølgje. Elles: små bunkar frå tilfeldige stader.
-  const B = alle ? 100 : tilfeldig ? 5 : 25;
-  const MAKS = alle ? 20 : tilfeldig ? 60 : 20;   // alle: leit gjennom opptil 2000 treff for å finne inntil 500
+  const B = alle || reservert ? 100 : tilfeldig ? 5 : 25;
+  const MAKS = reservert ? 4 : alle ? 20 : tilfeldig ? 60 : 20;   // alle: leit gjennom opptil 2000 treff for å finne inntil 500
   // Nyast først, og bøker utan årstal sist (lowValue). Sjå òg retningssjekken under.
   const ekstra = tilfeldig ? {} : { sortKeys: "date,,false,false,lowValue" };
   const årstal = p => Number((((p && p.sru_recordData) || {}).bsdc_date || "").match(/\d{4}/)?.[0] || 0);
@@ -1493,14 +1506,17 @@ async function hentSøk(cfg, avd, mål, meld) {
       const t = vurder(p, avd, eks, cfg);
       if (!t || bøker.has(String(t.id))) continue;
       if (cfg.perforf === "1" && forfattarar.has(t.forfattarNøkkel)) { utelat("same forfattar"); continue; }
+      t.kø = Number((eks[String(p.id)] || {}).holds) || 0;
+      if (reservert && !t.kø) { utelat("ingen reservasjonar"); continue; }
       forfattarar.add(t.forfattarNøkkel); bøker.add(String(t.id)); ut.push(t);
     }
     meld(Math.min(ut.length, mål));
-    if (ut.length >= Math.min(mål, TAK)) { nåddeGrense = true; break; }
+    if (!reservert && ut.length >= Math.min(mål, TAK)) { nåddeGrense = true; break; }
   }
   // Nyaste: sorter til slutt etter år, nyast først og bøker utan årstal sist
-  if (!tilfeldig) ut.sort((a, b) => (årFor.get(String(b.id)) || 0) - (årFor.get(String(a.id)) || 0));
-  return ut.slice(0, Math.min(mål, TAK));
+  if (reservert) ut.sort((a, b) => b.kø - a.kø);
+  else if (!tilfeldig) ut.sort((a, b) => (årFor.get(String(b.id)) || 0) - (årFor.get(String(a.id)) || 0));
+  return reservert ? ut : ut.slice(0, Math.min(mål, TAK));
 }
 
 
