@@ -896,6 +896,14 @@ function startVisning(cfg) {
   if (RULL) document.documentElement.dataset.visning = "rull";
   const FART = { sakte: 2.2, rask: 6 }[cfg.fart] || 3.6;      // skjermhøgder i hundredelar per sekund
   let rullSpor = null, rullAnim = null, rullY = 0, rullSist = 0, rullSjekk = 0, rullMidt = null;
+  let rullMål = null;   // { høgd, bøker: [{ id, midt }] } for første kopi, målt éin gong
+  // Mål høgda og midtpunktet til kvar bok éin gong (og på nytt når eit omslag
+  // har lasta), så vi slepp å måle under sjølve rullinga.
+  function målRull() {
+    const sett = rullSpor && rullSpor.firstElementChild;
+    if (!sett) return;
+    rullMål = { høgd: sett.offsetHeight, bøker: [...sett.children].map(b => ({ id: b.dataset.id, midt: b.offsetTop + b.offsetHeight / 2 })) };
+  }
 
   // Tre kopiar av lista etter kvarandre, så løkka aldri går tom
   function byggRull() {
@@ -907,6 +915,9 @@ function startVisning(cfg) {
     }
     scene.replaceChildren(rullSpor);
     rullY = 0; rullMidt = null;
+    målRull();
+    // Omslag som lastar etterpå, endrar høgdene: mål på nytt
+    rullSpor.querySelectorAll("img").forEach(img => img.addEventListener("load", målRull));
   }
   function startRull() {
     if (!titlar.length || rullAnim) return;
@@ -915,22 +926,22 @@ function startVisning(cfg) {
     rullSist = performance.now();
     const steg = no => {
       const dt = Math.min(100, no - rullSist); rullSist = no;
-      const høgd = rullSpor.firstElementChild.offsetHeight;
+      const høgd = rullMål ? rullMål.høgd : 0;
       rullY -= FART * innerHeight / 100 * dt / 1000;
       if (høgd && -rullY >= høgd) rullY += høgd;          // hopp tilbake éin kopi: ser ut som ei endelaus løkke
       rullSpor.style.transform = `translate3d(0, ${rullY.toFixed(1)}px, 0)`;
       // Bakgrunn og avdeling følgjer boka som er nærast midten av skjermen
-      if (no - rullSjekk > 500) {
+      // Rekna ut frå måla, utan å måle sidene på nytt
+      if (rullMål && rullMål.høgd && no - rullSjekk > 500) {
         rullSjekk = no;
-        const midt = scene.getBoundingClientRect().top + scene.clientHeight / 2;
+        const midt = (scene.clientHeight / 2 - rullY) % rullMål.høgd;
         let best = null, avstand = Infinity;
-        for (const b of rullSpor.querySelectorAll(".bok")) {
-          const r = b.getBoundingClientRect();
-          const a = Math.abs(r.top + r.height / 2 - midt);
+        for (const b of rullMål.bøker) {
+          const a = Math.abs(b.midt - midt);
           if (a < avstand) { avstand = a; best = b; }
         }
-        if (best && best.dataset.id !== rullMidt) {
-          rullMidt = best.dataset.id;
+        if (best && best.id !== rullMidt) {
+          rullMidt = best.id;
           const t = titlar.find(x => String(x.id) === rullMidt);
           if (t) { visBakteppe(t.omslag); avdelingFelt.textContent = t.etikett || ""; }
         }
