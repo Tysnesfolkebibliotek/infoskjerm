@@ -209,7 +209,8 @@
     width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
     border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst);
   }
-  input:disabled { opacity: .45; cursor: not-allowed; }
+  input:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
+  .felt:has(:disabled) > label { opacity: .5; }
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--b-fokus); outline-offset: 1px; }
   .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .malrad { display: flex; gap: 8px; align-items: stretch; }
@@ -1637,6 +1638,11 @@ function startByggjar(startCfg) {
     const alle = skjema.elements.alle;
     document.getElementById("allerad").hidden = kjelde !== "sok";
     skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
+    // Val som ikkje har nokon effekt med den valde visingsmåten, blir grå
+    const rull = skjema.elements.visning.value === "rull";
+    skjema.elements.overgang.disabled = rull;
+    skjema.elements.sek.disabled = rull;
+    skjema.elements.fart.disabled = !rull;
   }
 
   function skaler() {
