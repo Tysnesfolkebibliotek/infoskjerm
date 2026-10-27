@@ -253,6 +253,7 @@
       <label for="mal">Start frå ein mal</label>
       <select id="mal">
         <option value="">Vel mal …</option>
+        <option value="blank">Blankt skjema</option>
         <option value="nyheiter">Nyheiter</option>
         <option value="sakprosa">Frå hylla (sakprosa)</option>
         <option value="krim">Krim</option>
@@ -482,6 +483,10 @@ const STANDARD = {
 };
 
 const MALAR = {
+  // Blankt skjema: begge avdelingane, ingen avgrensingar og ingen krav
+  blank: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+           omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
+           tittel: "", namn: "", sek: "12", oppdater: "120", omtale: "1" },
   nyheiter: { kjelde: "nyaste", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
               omslag: "1", hylla: "0", perforf: "0", utan: "", antal: "20", aarfra: "", aartil: "", alder: "", alle: "0",
               tittel: "Nyheiter", tema: "kveld", namn: "", sek: "12", oppdater: "60", omtale: "1" },
