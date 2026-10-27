@@ -119,6 +119,10 @@
   }
   /* Bobler som stig sakte (Sommarles) */
   .boble { position: absolute; bottom: -6vh; border-radius: 50%; animation: stig linear infinite; }
+  /* Vandrar sakte frå høgre mot venstre (reinsdyr) */
+  .vandrar { position: absolute; left: 0; animation: vandre linear infinite; }
+  .vandrar svg { position: static; width: 100%; height: auto; display: block; }
+  @keyframes vandre { from { transform: translateX(110vw); } to { transform: translateX(-30vw); } }
   @keyframes stig { from { transform: translate(0, 0); } 50% { transform: translate(2vw, -55vh); } to { transform: translate(-1vw, -112vh); } }
   /* Stjerner som blinkar (Natt) */
   .stjerne { position: absolute; border-radius: 50%; background: #fff; animation: blink ease-in-out infinite alternate; }
@@ -960,10 +964,39 @@ function lagPynt(tema) {
       `<rect width="409" height="960" fill="${R}"/><rect x="409" width="88" height="960" fill="${G}"/>` +
       `<rect x="497" width="89" height="960" fill="${Y}"/><rect x="586" width="694" height="960" fill="${B}"/>` +
       halvring(-1, B) + halvring(1, R)));
-    // Små ringar i blått og raudt som stig sakte i bakgrunnen
-    stigande(9, "0 0 100 100",
-      `<path fill="${B}" d="M50,4 A46,46 0 0,0 50,96 L50,84 A34,34 0 0,1 50,16 Z"/><path fill="${R}" d="M50,4 A46,46 0 0,1 50,96 L50,84 A34,34 0 0,0 50,16 Z"/>`,
-      [3, 6], [0.18, 0.32]);
+    // Sola (Beaivi) i tromme-stil: ring delt av eit kryss, stråler i ulik
+    // lengd og éi lang stråle. Nokre stig sakte i bakgrunnen.
+    const sol = () => {
+      let strålar = "";
+      for (let v = 0; v < 360; v += 24) {
+        const lang = v === 0 ? 58 : 36 + ((v * 7) % 11);        // éi lang stråle, resten litt ulike
+        const r = v * Math.PI / 180, b = 2.6;
+        const px = Math.cos(r), py = Math.sin(r), nx = -py, ny = px;
+        const p = (rad, w) => `${(50 + px * rad + nx * w).toFixed(1)},${(50 + py * rad + ny * w).toFixed(1)}`;
+        strålar += `<polygon points="${p(24, b)} ${p(lang, 0.6)} ${p(lang, -0.6)} ${p(24, -b)}"/>`;
+      }
+      return `<g fill="${Y}" stroke="${Y}">${strålar}<circle cx="50" cy="50" r="21" fill="none" stroke-width="6"/>` +
+        `<line x1="45" y1="30" x2="45" y2="70" stroke-width="4.5"/><line x1="30" y1="53" x2="70" y2="53" stroke-width="4.5"/></g>`;
+    };
+    stigande(6, "-12 -12 124 124", sol(), [4, 7], [0.14, 0.24]);
+    // Reinsdyr i same enkle stil, som vandrar langsamt over nedre del av skjermen
+    const rein = `<g fill="#eef1ff" stroke="#eef1ff" stroke-linecap="round" stroke-linejoin="round">` +
+      `<path stroke="none" d="M27,47 C35,42 46,46 58,44 C66,43 73,40 79,38 C82,47 78,59 70,63 C58,67 44,67 35,65 C29,62 27,55 27,47 Z"/>` +
+      `<path stroke="none" d="M33,52 C31,45 27,40 21,38 C16,37 11,39 10,42 C10,45 13,46 17,46 C20,48 22,52 24,55 C27,57 31,56 33,52 Z"/>` +
+      `<g fill="none" stroke-width="2.4"><path d="M21,40 C19,32 20,24 26,19 C27,16 26,13 23,12"/>` +
+      `<path d="M23,40 C31,34 39,29 41,19 C42,13 39,8 34,6"/><path d="M38,29 L46,25"/><path d="M40,23 L48,19"/>` +
+      `<path d="M41,16 L47,11"/><path d="M36,7 L39,2"/><path d="M31,6 L31,1"/></g>` +
+      `<g stroke-width="3.8"><line x1="35" y1="62" x2="33" y2="82"/><line x1="41" y1="63" x2="41" y2="82"/>` +
+      `<line x1="66" y1="62" x2="66" y2="82"/><line x1="72" y1="60" x2="75" y2="82"/></g>` +
+      `<line x1="20" y1="84" x2="86" y2="84" stroke-width="2.6"/></g>`;
+    for (let i = 0; i < 3; i++) {
+      const d = document.createElement("div");
+      d.className = "vandrar";
+      d.style.cssText = `top:${58 + i * 12 + tilf(0, 5)}vh; width:${tilf(9, 13)}vw; opacity:${tilf(0.1, 0.17)};` +
+        `animation-duration:${tilf(70, 100)}s; animation-delay:${-tilf(0, 100)}s;`;
+      d.append(svg("0 0 100 90", "", rein));
+      pynt.append(d);
+    }
   }
 
   if (tema === "pride") {
