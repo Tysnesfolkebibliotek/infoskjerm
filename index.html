@@ -130,6 +130,17 @@
     opacity: 0; transform: translateY(2vh); transition: opacity .9s ease, transform .9s ease;
   }
   .bok.synleg { opacity: 1; transform: none; }
+  /* ---- Overgangar mellom bøkene («overgang=» i lenkja). «.ut» er boka som går. ---- */
+  :root[data-overgang="kryss"] .bok:not(.synleg) { transform: none; }
+  :root[data-overgang="glid"] .bok:not(.synleg) { transform: translateX(14vw); }
+  :root[data-overgang="glid"] .bok.ut { transform: translateX(-14vw); }
+  :root[data-overgang="glid"] .bok { transition-duration: 1s; transition-timing-function: cubic-bezier(.4, 0, .2, 1); }
+  :root[data-overgang="zoom"] .bok:not(.synleg) { transform: scale(.9); }
+  :root[data-overgang="zoom"] .bok.ut { transform: scale(1.08); }
+  :root[data-overgang="vend"] .bok { transform-origin: 50% 50%; transition-duration: 1s; }
+  :root[data-overgang="vend"] .bok:not(.synleg) { transform: perspective(1400px) rotateY(-70deg); }
+  :root[data-overgang="vend"] .bok.ut { transform: perspective(1400px) rotateY(70deg); }
+  :root[data-overgang="ingen"] .bok { transition: none; }
   .omslag-ramme { flex: 1 1 auto; min-height: 0; max-height: 50vh; width: 100%; display: flex; align-items: center; justify-content: center; }
   .omslag { max-height: 100%; max-width: 80vw; border-radius: .6vw; box-shadow: 0 3vh 6vh rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); }
   .reserve {
@@ -408,6 +419,7 @@
         </select>
       </div>
     </div>
+    <div class="rad">
     <div class="felt">
       <label for="bakgrunn">Bakgrunn</label>
       <select id="bakgrunn" name="bakgrunn">
@@ -418,6 +430,18 @@
         <option value="farge">Fargane frå omslaget</option>
         <option value="flat">Flat farge</option>
       </select>
+    </div>
+    <div class="felt">
+      <label for="overgang">Overgang</label>
+      <select id="overgang" name="overgang">
+        <option value="">Ton og løft (standard)</option>
+        <option value="kryss">Krysstoning</option>
+        <option value="glid">Glid frå sida</option>
+        <option value="zoom">Zoom</option>
+        <option value="vend">Vend som eit blad</option>
+        <option value="ingen">Ingen (direkte byte)</option>
+      </select>
+    </div>
     </div>
 
     <!-- ---- Avanserte val, lukka som standard ---- -->
@@ -554,7 +578,7 @@ const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
-  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", namn: "", sek: "12", oppdater: "120", omtale: "1",
+  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", namn: "", sek: "12", oppdater: "120", omtale: "1",
 };
 
 const MALAR = {
@@ -652,6 +676,7 @@ function startVisning(cfg) {
   document.documentElement.style.setProperty("--sek", SEK + "s");
   const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "";
   if (BAKGRUNN) document.documentElement.dataset.bakgrunn = BAKGRUNN;
+  if (["kryss", "glid", "zoom", "vend", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell:" + datanøkkel(cfg);
 
@@ -824,7 +849,7 @@ function startVisning(cfg) {
     const bok = lagBok(t);
     scene.append(bok);
     requestAnimationFrame(() => requestAnimationFrame(() => bok.classList.add("synleg")));
-    if (førre) { const g = førre; g.classList.remove("synleg"); setTimeout(() => g.remove(), 1000); }
+    if (førre) { const g = førre; g.classList.remove("synleg"); g.classList.add("ut"); setTimeout(() => g.remove(), 1200); }
     else scene.querySelectorAll(".melding").forEach(m => m.remove());
     førre = bok;
     avdelingFelt.textContent = t.etikett || "";
