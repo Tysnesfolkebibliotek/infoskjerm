@@ -376,7 +376,7 @@
       </div>
     </details>
 
-    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,alder,plass,utan">
+    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,alder,spraak,plass,utan">
       <summary>Krav til bøkene <span class="merke" hidden>endra</span></summary>
       <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
       <label class="val"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
@@ -402,6 +402,21 @@
           <label class="val"><input type="checkbox" name="alder" value="mu"> 13–16 år</label>
           <label class="val"><input type="checkbox" name="alder" value="vu"> Unge vaksne</label>
           <label class="val"><input type="checkbox" name="alder" value="v"> Vaksne</label>
+        </div>
+      </div>
+      <div class="felt">
+        <span class="etikett">Språk i boka</span>
+        <div class="vallinje kolonnar">
+          <label class="val"><input type="checkbox" name="spraak" value="nob"> Bokmål</label>
+          <label class="val"><input type="checkbox" name="spraak" value="nno"> Nynorsk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="eng"> Engelsk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="swe"> Svensk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="dan"> Dansk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="ger"> Tysk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="ukr"> Ukrainsk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="pol"> Polsk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="ara"> Arabisk</label>
+          <label class="val"><input type="checkbox" name="spraak" value="sme"> Samisk</label>
         </div>
       </div>
       <div class="felt">
@@ -462,7 +477,7 @@ const AVD_NAMN = { tyfv: "For vaksne", tyfb: "For born og unge" };
 const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "40",
-  aarfra: "", aartil: "", alder: "", alle: "0",
+  aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", namn: "", sek: "12", oppdater: "120", omtale: "1",
 };
 
@@ -761,7 +776,7 @@ function startVisning(cfg) {
 
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
-  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","alle","namn"]
+  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","spraak","alle","namn"]
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
 
@@ -923,6 +938,14 @@ function førehand(post, cfg) {
     const har = (d.bs_aldersgruppe || "").split(",").map(x => x.trim());
     if (!ønskt.some(a => har.includes(a))) return utelat("anna aldersgruppe");
   }
+  // Språk: Bibliofil gir språket som ein kode (nob, nno, eng …). Har boka
+  // ein kode som ikkje er vald, fell ho bort. Manglar koden, får ho berre
+  // vere med når Bibliofil sjølv har filtrert på språk i søket.
+  const språk = (cfg.spraak || "").split(",").filter(Boolean);
+  if (språk.length) {
+    const har = [].concat(d.bsdc_language || []).map(x => String(x).trim().toLowerCase());
+    if (har.length ? !språk.some(s => har.includes(s)) : cfg._språkLokalt !== false) return utelat("anna språk");
+  }
   if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
   if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");     // tryggingsnett mot feilkatalogiserte romanar
   return true;
@@ -1027,7 +1050,7 @@ function ordSøk(tekst) {
 // Gir ei liste med søk. Vanlegvis eitt, men med «minst eitt av» og fleire
 // emneord blir det eitt søk per emneord, som blir slått saman etterpå.
 // Då treng vi ikkje «or» og parentesar, som serveren kanskje ikkje støttar.
-function byggSøk(cfg, avd, medAlder) {
+function byggSøk(cfg, avd, medAlder, medSpråk) {
   const rein = s => (s || "").replace(/["\\]/g, "").trim();
   const d = [`bibliofil.ccl="avd=${avd}"`, "norzig.materialType=l"];
   if (cfg.lf) d.push(`bibliofil.ccl="lf=${rein(cfg.lf)}"`);
@@ -1057,8 +1080,13 @@ function byggSøk(cfg, avd, medAlder) {
   const alder = medAlder ? (cfg.alder || "").split(",").map(rein).filter(Boolean) : [];
   const alderVariantar = alder.length ? alder.map(a => [`bibliofil.aldersgruppe=${a}`]) : [[]];
 
+  // Språk: eitt søk per språk, på same måte
+  const språk = medSpråk ? (cfg.spraak || "").split(",").map(rein).filter(Boolean) : [];
+  const språkVariantar = språk.length ? språk.map(s => [`dc.language=${s}`]) : [[]];
+
   const ut = [];
-  for (const e of treffVariantar) for (const a of alderVariantar) ut.push([...d, ...e, ...a].join(" and "));
+  for (const e of treffVariantar) for (const a of alderVariantar) for (const s of språkVariantar)
+    ut.push([...d, ...e, ...a, ...s].join(" and "));
   return ut;
 }
 
@@ -1089,11 +1117,20 @@ async function hentSøk(cfg, avd, mål, meld) {
     || sru({ query, startRecord: n * B + 1, maximumRecords: B, ...ekstra });
 
   meld(0);
-  // Prøv først med aldersgruppe i sjølve søket. Gir det ingen treff (viss
-  // indeksen ikkje er i bruk), søkjer vi utan, og filteret i førehand() tek over.
-  let søk = byggSøk(cfg, avd, true);
-  let bunkar = await finnBunkar(søk);
-  if (!bunkar.length && cfg.alder) { søk = byggSøk(cfg, avd, false); bunkar = await finnBunkar(søk); }
+  // Prøv først med aldersgruppe og språk i sjølve søket. Gir det ingen treff
+  // (viss ein indeks ikkje er i bruk), prøver vi utan, og filtera i
+  // førehand() tek over.
+  const forsøk = [[true, true]];
+  if (cfg.alder) forsøk.push([false, true]);
+  if (cfg.spraak) forsøk.push([true, false]);
+  if (cfg.alder && cfg.spraak) forsøk.push([false, false]);
+  let søk = [], bunkar = [];
+  for (const [medAlder, medSpråk] of forsøk) {
+    søk = byggSøk(cfg, avd, medAlder, medSpråk);
+    bunkar = await finnBunkar(søk);
+    cfg._språkLokalt = !medSpråk;
+    if (bunkar.length) break;
+  }
   if (!bunkar.length) return [];
   // Tilfeldig: stokk alle. Nyaste: ta første bunk frå kvart søk, så andre, osb.
   if (tilfeldig && !alle) stokk(bunkar); else bunkar.sort((a, b) => a.n - b.n);
