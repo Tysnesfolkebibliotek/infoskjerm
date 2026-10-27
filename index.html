@@ -81,7 +81,12 @@
   /* ---- Fleire tema: årstider, høgtider og allmenne ---- */
   :root[data-tema="vinter"] { --bakgrunn: #0b1724; --tekst: #f2f7fb; --dempa: #a9bccb; --aksent: #8fd3ff; --aksent-tekst: #06121c; --skugge: 11,23,36; --reserve-a: #1d3a55; --reserve-b: #0e1f30; }
   :root[data-tema="var"]    { --bakgrunn: #12231a; --tekst: #f4f8ee; --dempa: #b9c8ad; --aksent: #a7d977; --aksent-tekst: #10200c; --skugge: 18,35,26; --reserve-a: #2f5530; --reserve-b: #16291c; }
-  :root[data-tema="sommar"] { --bakgrunn: #0a2131; --tekst: #fdf8ef; --dempa: #b9cbd6; --aksent: #f2c46d; --aksent-tekst: #10202b; --skugge: 10,33,49; --reserve-a: #1e5b78; --reserve-b: #0d2c40; }
+  /* Sommar: lyst og varmt, sand og hav */
+  :root[data-tema="sommar"] {
+    --bakgrunn: #fff0d4; --tekst: #1d3a4f; --dempa: #56687a; --aksent: #ff6b4a; --aksent-tekst: #ffffff;
+    --brikke: rgba(29,58,79,.08); --skugge: 255,240,212; --spor: rgba(29,58,79,.14);
+    --reserve-a: #ffd08a; --reserve-b: #ffb06b; --bakteppe-lys: 1.15;
+  }
   :root[data-tema="paaske"] { --bakgrunn: #1b1f0f; --tekst: #fbf7e6; --dempa: #d0c99f; --aksent: #f3d23c; --aksent-tekst: #1b1f0f; --skugge: 27,31,15; --reserve-a: #5d5b1d; --reserve-b: #262a12; }
   :root[data-tema="mai17"]  { --bakgrunn: #0e1a33; --tekst: #ffffff; --dempa: #b8c3dc; --aksent: #d9263b; --aksent-tekst: #ffffff; --skugge: 14,26,51; --reserve-a: #7d1b28; --reserve-b: #14264a; }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
@@ -894,12 +899,12 @@ function lagPynt(tema) {
 
   if (tema === "sommar") {
     // Sol med glød, og tre lag med bølgjer som glir sakte nedst
-    pynt.append(svg("0 0 100 100", "right:4vw; top:7vh; width:18vw; opacity:.18;",
-      `<defs><radialGradient id="sol"><stop offset="45%" stop-color="#ffd27a"/><stop offset="100%" stop-color="#ffd27a" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#sol)"/>`));
+    pynt.append(svg("0 0 100 100", "right:3vw; top:5vh; width:22vw; opacity:.75;",
+      `<defs><radialGradient id="sol"><stop offset="38%" stop-color="#ffc23d"/><stop offset="55%" stop-color="#ffb13d" stop-opacity=".45"/><stop offset="100%" stop-color="#ff9d3d" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#sol)"/>`));
     const bølgje = (y, h) => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 50) d += ` Q${x + 25},${y - h} ${x + 50},${y}`; return d + " L400,60 L0,60 Z"; };
-    [[30, 8, 0.08, 50], [38, 6, 0.11, 36], [46, 5, 0.15, 26]].forEach(([y, h, o, sek]) => {
+    [[30, 8, 0.18, 50, "#7fd6e3"], [38, 6, 0.26, 36, "#3fbfd2"], [46, 5, 0.34, 26, "#2a9fc0"]].forEach(([y, h, o, sek, farge]) => {
       const lag = svg("0 0 400 60", `left:0; bottom:0; width:200vw; opacity:${o}; animation: glidSide ${sek}s linear infinite;`,
-        `<path fill="#bfe6ff" d="${bølgje(y, h)}"/>`);
+        `<path fill="${farge}" d="${bølgje(y, h)}"/>`);
       lag.setAttribute("preserveAspectRatio", "none"); lag.style.height = "9vh";
       pynt.append(lag);
     });
