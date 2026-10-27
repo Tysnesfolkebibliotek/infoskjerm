@@ -131,12 +131,13 @@
   }
   .bok.synleg { opacity: 1; transform: none; }
   /* ---- Rulletekst: alle bøkene etter kvarandre, med heile omtalen ---- */
-  :root[data-visning="rull"] .scene { overflow: hidden;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
-            mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%); }
+  /* Rulleflata startar like under overskrifta, og bøkene tonar ut over ei kort strekning øvst */
+  :root[data-visning="rull"] .scene { overflow: hidden; margin-top: 1vh;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4%, #000 93%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 4%, #000 93%, transparent 100%); }
   :root[data-visning="rull"] .hjul { visibility: hidden; }
   .rull-spor { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
-  .rull-spor .bok { position: relative; inset: auto; opacity: 1; transform: none; transition: none; padding: 6vh 0; }
+  :root .rull-spor .bok.bok { position: relative; inset: auto; opacity: 1; transform: none; transition: none; padding: 6vh 0; }
   .rull-spor .omslag-ramme { flex: none; height: 40vh; }
   .rull-spor .omslag, .rull-spor .reserve { height: 100%; width: auto; max-width: 80vw; flex: none; object-fit: contain; }
   .rull-spor .omtale { display: block; -webkit-line-clamp: unset; overflow: visible; max-width: 78vw; }
@@ -900,7 +901,7 @@ function startVisning(cfg) {
     rullSpor = el("div", "rull-spor");
     for (let k = 0; k < 3; k++) {
       const sett = el("div", "rull-sett");
-      for (const t of titlar) { const b = lagBok(t, true); b.dataset.id = t.id; sett.append(b); }
+      for (const t of titlar) { const b = lagBok(t, true); b.dataset.id = t.id; b.classList.add("synleg"); sett.append(b); }
       rullSpor.append(sett);
     }
     scene.replaceChildren(rullSpor);
