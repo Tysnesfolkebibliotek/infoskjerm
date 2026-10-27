@@ -142,7 +142,7 @@
   .hjul { display: none; width: 4.6vh; height: 4.6vh; flex: none; transform: rotate(-90deg); }
   .hjul circle { fill: none; stroke-width: 3.5; }
   .hjul .hjul-spor { stroke: var(--spor); }
-  #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25; stroke-dashoffset: 94.25; }
+  #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 94.25px; }
   .melding {
     position: absolute; inset: 0; display: flex; flex-direction: column; gap: 3vh;
     align-items: center; justify-content: center; text-align: center;
@@ -541,6 +541,7 @@ function startVisning(cfg) {
   const avdelingFelt = document.getElementById("avdeling");
   const framdrift = document.getElementById("framdrift");
   const hjul = document.getElementById("hjul");
+  let hjulAnim = null;
   const bakteppe = [document.getElementById("bakteppe-a"), document.getElementById("bakteppe-b")];
   let aktivtBakteppe = 0;
 
@@ -616,12 +617,13 @@ function startVisning(cfg) {
     framdrift.offsetWidth;
     framdrift.style.transition = `width ${SEK}s linear`;
     framdrift.style.width = "100%";
-    // Hjulet (tema «Libry content») fyller seg på same tid
-    hjul.style.transition = "none";
-    hjul.style.strokeDashoffset = "94.25";
-    hjul.getBoundingClientRect();
-    hjul.style.transition = `stroke-dashoffset ${SEK}s linear`;
-    hjul.style.strokeDashoffset = "0";
+    // Hjulet (tema «Libry content») byrjar tomt og fyller seg med klokka på
+    // same tid. Ein eksplisitt animasjon frå tom til full, så nettlesaren
+    // ikkje kan hoppe over startpunktet.
+    if (hjulAnim) hjulAnim.cancel();
+    hjulAnim = hjul.animate(
+      [{ strokeDashoffset: "94.25px" }, { strokeDashoffset: "0px" }],
+      { duration: SEK * 1000, easing: "linear", fill: "forwards" });
   }
 
   // ---- forlasting av omslag ------------------------------------------
