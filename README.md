@@ -8,9 +8,14 @@ Karusellar og rotasjon for infoskjermane på Tysnes folkebibliotek.
 |---|---|
 | `index.html` | Karusellbyggjaren. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
 | `oppsett.json` | Kva kvar skjerm viser, og kor lenge |
+| `oversikt.html` | Oversikt over og redigering av `oppsett.json`. Ikkje lenkja til, og skjult for søkjemotorar. Lagring krev ein GitHub-nøkkel |
 | `skjerm/rotasjon.html` | Fila som køyrer på kvar skjerm. Les `oppsett.json` og vekslar mellom sidene |
 
 ## Byte innhald på ein skjerm
+
+Enklast: opne <https://tysnesfolkebibliotek.github.io/infoskjerm/oversikt.html>,
+endre, og klikk **Lagre**. Første gongen må du lime inn ein nøkkel (sjå
+forklaringa på sida). Alternativt kan du redigere `oppsett.json` direkte:
 
 1. Lag karusellen i byggjaren, og kopier lenkja som viser han på skjerm
    (den med `#vis=1`).

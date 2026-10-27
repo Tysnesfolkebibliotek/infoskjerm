@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Infoskjermar – oversikt</title>
+<style>
+  :root {
+    --bg: #f6f3ee; --flate: #ffffff; --tekst: #22201d; --dempa: #6f675d; --strek: #e3ddd3;
+    --aksent: #b8741a; --aksent-tekst: #ffffff; --fokus: #e8a33d; --ok: #2f7d4a; --åtvar: #b3401f;
+    --no-bg: #e6f2e9; --seinare-bg: #f2efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171513; --flate: #211e1b; --tekst: #f1ebe2; --dempa: #a99f92; --strek: #36312b;
+      --aksent: #e8a33d; --aksent-tekst: #1b140c; --ok: #6cc28b; --åtvar: #f08a6a;
+      --no-bg: #1f2e23; --seinare-bg: #26221e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171513; --flate: #211e1b; --tekst: #f1ebe2; --dempa: #a99f92; --strek: #36312b;
+    --aksent: #e8a33d; --aksent-tekst: #1b140c; --ok: #6cc28b; --åtvar: #f08a6a;
+    --no-bg: #1f2e23; --seinare-bg: #26221e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--tekst); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .ingress { color: var(--dempa); margin: 0 0 20px; }
+  .skjermar { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
+  @media (max-width: 480px) { .skjermar { grid-template-columns: 1fr; } }
+  .skjerm { background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 16px; }
+  .skjerm h2 { font-size: 18px; margin: 0; }
+  .skjerm .kva { color: var(--dempa); font-size: 13px; margin-bottom: 12px; }
+  ol.sider { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .side { border: 1px solid var(--strek); border-radius: 10px; padding: 10px 12px; background: var(--seinare-bg); }
+  .side.no { background: var(--no-bg); border-color: color-mix(in srgb, var(--ok) 40%, var(--strek)); }
+  .side .topp { display: flex; align-items: center; gap: 8px; }
+  .side .namn { font-weight: 650; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .merke { font-size: 12px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+  .merke.no { background: var(--ok); color: #fff; }
+  .merke.ikkje { background: var(--strek); color: var(--dempa); }
+  .side .detaljar { font-size: 13px; color: var(--dempa); margin-top: 3px; }
+  .side .knappar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  button, .knapp { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--strek);
+    background: var(--flate); color: var(--tekst); cursor: pointer; text-decoration: none; display: inline-block; }
+  button.hoved { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 650; font-size: 15px; padding: 8px 16px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--fokus); outline-offset: 1px; }
+  .leggtil { margin-top: 10px; width: 100%; border-style: dashed; padding: 8px; }
+  /* Skjema for éi side */
+  .skjema { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--strek); display: grid; gap: 10px; }
+  .skjema label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
+  .skjema input[type=text], .skjema input[type=url], .skjema input[type=number], .skjema input[type=date], .skjema input[type=time] {
+    width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--flate); color: var(--tekst); }
+  .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dagar { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; }
+  .dagar label { font-weight: 400; display: inline-flex; gap: 4px; align-items: center; margin: 0; }
+  .hjelp { font-size: 12.5px; color: var(--dempa); }
+  .val { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; font-weight: 400 !important; }
+  /* Botnlinje for lagring */
+  .lagrelinje { position: sticky; bottom: 0; margin-top: 24px; background: var(--flate); border: 1px solid var(--strek);
+    border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+  .status { flex: 1; min-width: 200px; font-size: 14px; }
+  .status.feil { color: var(--åtvar); }
+  .status.ok { color: var(--ok); }
+  details.nokkel { margin-top: 20px; background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 12px 16px; }
+  details.nokkel summary { cursor: pointer; font-weight: 650; }
+  details.nokkel input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--bg); color: var(--tekst); margin: 6px 0; }
+  details.nokkel ol { padding-left: 20px; }
+  code { font-size: 12.5px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Infoskjermar</h1>
+  <p class="ingress">Kva skjermane viser no og seinare. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan 10–15 minutt.</p>
+
+  <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
+
+  <details class="nokkel" id="nokkelboks">
+    <summary>Tilgangsnøkkel for å lagre</summary>
+    <p class="hjelp">Alle kan sjå sida, men berre den som har ein tilgangsnøkkel kan lagre endringar. Nøkkelen blir lagra i denne nettlesaren.</p>
+    <input type="password" id="nokkel" placeholder="github_pat_…" autocomplete="off">
+    <button type="button" id="nokkellagre">Lagre nøkkel i nettlesaren</button>
+    <button type="button" id="nokkelfjern">Gløym nøkkelen</button>
+    <p class="hjelp">Slik lagar du ein nøkkel:</p>
+    <ol class="hjelp">
+      <li>Logg inn på GitHub som Tysnesfolkebibliotek og gå til <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+      <li>Gi han eit namn, til dømes «Oversiktssida», og vel kor lenge han skal gjelde.</li>
+      <li>Under <b>Repository access</b>: vel <b>Only select repositories</b> og <b>infoskjerm</b>.</li>
+      <li>Under <b>Permissions → Repository permissions</b>: set <b>Contents</b> til <b>Read and write</b>.</li>
+      <li>Klikk <b>Generate token</b>, kopier nøkkelen og lim han inn over.</li>
+    </ol>
+  </details>
+
+  <div class="lagrelinje">
+    <span class="status" id="status">Ingen endringar.</span>
+    <button type="button" id="angre" disabled>Angre endringar</button>
+    <button type="button" class="hoved" id="lagre" disabled>Lagre</button>
+  </div>
+</main>
+
+<script>
+// =========================================================================
+// oversikt.html — viser og endrar oppsett.json for infoskjermane.
+// Les fila gjennom GitHub sitt API (alltid ferskt) og lagrar med ein
+// tilgangsnøkkel som berre gir skrivetilgang til repoet infoskjerm.
+// =========================================================================
+
+const REPO = "Tysnesfolkebibliotek/infoskjerm";
+const FIL = "oppsett.json";
+const API = `https://api.github.com/repos/${REPO}/contents/${FIL}`;
+const SKJERMAR = [
+  { nøkkel: "skjerm1", namn: "Skjerm 1", kva: "tysnes-infoskjerm, sakprosaavdelinga" },
+  { nøkkel: "skjerm2", namn: "Skjerm 2", kva: "tysnes-infoskjerm-2" },
+];
+const NØKKEL_LAGER = "infoskjerm-oversikt-nokkel";
+
+let oppsett = null, original = "", sha = null, open = null;   // open = { skjerm, i } for skjemaet som er ope
+
+const $ = id => document.getElementById(id);
+const el = (tag, attr = {}, ...barn) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attr)) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+  }
+  e.append(...barn.filter(b => b != null));
+  return e;
+};
+
+// ---- Tidsstyring: same reglar som rotasjon.html -------------------------
+const DAGAR = ["søn", "man", "tys", "ons", "tor", "fre", "lør"];
+const VEKEDAGAR = ["man", "tys", "ons", "tor", "fre", "lør", "søn"];
+const dagnr = d => DAGAR.indexOf(String(d).trim().toLowerCase().slice(0, 3).replace("tir", "tys").replace("lau", "lør").replace("sun", "søn"));
+function iPeriode(periode, no) {
+  const [frå, til] = String(periode).split("/").map(x => x.trim());
+  if (!frå || !til) return true;
+  if (/^\d{4}-/.test(frå)) {
+    const lokal = new Date(no.getTime() - no.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    return lokal >= frå && lokal <= til;
+  }
+  const md = String(no.getMonth() + 1).padStart(2, "0") + "-" + String(no.getDate()).padStart(2, "0");
+  return frå <= til ? (md >= frå && md <= til) : (md >= frå || md <= til);
+}
+function påDag(dagar, no) {
+  const idag = no.getDay();
+  return String(dagar).split(",").some(del => {
+    const [a, b] = del.split("-").map(dagnr);
+    if (a < 0) return false;
+    if (b === undefined || b < 0) return idag === a;
+    return a <= b ? (idag >= a && idag <= b) : (idag >= a || idag <= b);
+  });
+}
+function påTid(tid, no) {
+  const [a, b] = String(tid).split("-").map(t => { const [h, m] = t.trim().split(":").map(Number); return h * 60 + (m || 0); });
+  const min = no.getHours() * 60 + no.getMinutes();
+  if (isNaN(a) || isNaN(b)) return true;
+  return a <= b ? (min >= a && min < b) : (min >= a || min < b);
+}
+const tidsstyrt = s => s.periode || s.dagar || s.tid;
+const gjeld = (s, no = new Date()) => (!s.periode || iPeriode(s.periode, no)) && (!s.dagar || påDag(s.dagar, no)) && (!s.tid || påTid(s.tid, no));
+function aktuelle(sider) {
+  const ut = sider.filter(s => gjeld(s));
+  if (ut.length) return ut;
+  const faste = sider.filter(s => !tidsstyrt(s));
+  return faste.length ? faste : sider;
+}
+
+// ---- Lesbare tekstar ------------------------------------------------------
+const MÅNAD = ["jan.", "feb.", "mars", "apr.", "mai", "juni", "juli", "aug.", "sep.", "okt.", "nov.", "des."];
+function datoTekst(d) {
+  const m = d.match(/^(?:(\d{4})-)?(\d{2})-(\d{2})$/);
+  if (!m) return d;
+  return `${Number(m[3])}. ${MÅNAD[Number(m[2]) - 1]}${m[1] ? " " + m[1] : ""}`;
+}
+function periodeTekst(p) {
+  const [a, b] = String(p).split("/").map(x => x.trim());
+  const kvartÅr = !/^\d{4}/.test(a);
+  return `${datoTekst(a)}–${datoTekst(b)}${kvartÅr ? " kvart år" : ""}`;
+}
+function tidsTekst(s) {
+  const deler = [];
+  if (s.periode) deler.push(periodeTekst(s.periode));
+  if (s.dagar) deler.push(s.dagar);
+  if (s.tid) deler.push("kl. " + s.tid.replace("-", "–"));
+  return deler.length ? deler.join(", ") : "Alltid";
+}
+function typeTekst(s) {
+  if (s.lokal) return "Lokal fil på skjermen";
+  if (/tysnesbibliotek\.no\/.*kanal/.test(s.url || "")) return "Kanalside på tysnesbibliotek.no";
+  if (/github\.io\/infoskjerm/.test(s.url || "")) {
+    const p = new URLSearchParams((s.url.split("#")[1] || ""));
+    const tema = p.get("tema") ? ` · tema ${p.get("tema")}` : "";
+    const visning = p.get("visning") === "rull" ? " · rulletekst" : "";
+    return `Karusell${tema}${visning}`;
+  }
+  return "Nettside";
+}
+const adresse = s => s.lokal ? null : s.url;
+
+// ---- Teikning ------------------------------------------------------------
+function teikn() {
+  const boks = $("skjermar");
+  boks.replaceChildren();
+  for (const sk of SKJERMAR) {
+    const sider = oppsett[sk.nøkkel] || (oppsett[sk.nøkkel] = []);
+    const no = new Set(aktuelle(sider));
+    const liste = el("ol", { class: "sider" });
+    sider.forEach((s, i) => {
+      const erOpen = open && open.skjerm === sk.nøkkel && open.i === i;
+      const vist = no.has(s);
+      const li = el("li", { class: "side" + (vist ? " no" : "") },
+        el("div", { class: "topp" },
+          el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
+          el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
+        el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
+        el("div", { class: "knappar" },
+          el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(sk.nøkkel, i, -1), disabled: i === 0 }, "↑"),
+          el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(sk.nøkkel, i, 1), disabled: i === sider.length - 1 }, "↓"),
+          el("button", { type: "button", onclick: () => { open = erOpen ? null : { skjerm: sk.nøkkel, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
+          adresse(s) ? el("a", { class: "knapp", href: adresse(s), target: "_blank", rel: "noopener" }, "Førehandsvis") : null,
+          el("button", { type: "button", onclick: () => fjern(sk.nøkkel, i) }, "Fjern")),
+        erOpen ? skjema(s, sk.nøkkel, i) : null);
+      liste.append(li);
+    });
+    const nyOpen = open && open.skjerm === sk.nøkkel && open.i === -1;
+    boks.append(el("section", { class: "skjerm" },
+      el("h2", {}, sk.namn), el("div", { class: "kva" }, sk.kva),
+      liste,
+      nyOpen ? el("div", { class: "side" }, skjema({ namn: "", url: "", sekund: 180 }, sk.nøkkel, -1))
+        : el("button", { type: "button", class: "leggtil", onclick: () => { open = { skjerm: sk.nøkkel, i: -1 }; teikn(); } }, "+ Legg til side")));
+  }
+  oppdaterStatus();
+}
+
+// Skjema for å endre eller leggje til éi side
+function skjema(s, skjerm, i) {
+  const periode = String(s.periode || "").split("/").map(x => x.trim());
+  const kvartÅr = !s.periode || !/^\d{4}/.test(periode[0]);
+  const tilDato = (d, år) => !d ? "" : /^\d{4}/.test(d) ? d : `${år}-${d}`;
+  const iÅr = new Date().getFullYear();
+  const dagarValde = new Set();
+  if (s.dagar) for (let d = 0; d < 7; d++) if (påDag(s.dagar, new Date(2026, 0, 4 + d))) dagarValde.add(DAGAR[new Date(2026, 0, 4 + d).getDay()]);
+  const [tidFrå, tidTil] = String(s.tid || "").split("-").map(x => x.trim());
+
+  const f = el("div", { class: "skjema" },
+    el("div", {}, el("label", { for: "f-namn" }, "Namn (berre for deg)"),
+      el("input", { type: "text", id: "f-namn", value: s.namn || "", placeholder: "Til dømes Vinterbøker" })),
+    el("div", {}, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
+      el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
+    el("div", { class: "rad" },
+      el("div", {}, el("label", { for: "f-sek" }, "Sekund på skjermen"),
+        el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: s.sekund || 180 })),
+      el("div", {}, el("label", {}, " "),
+        el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
+    el("div", {}, el("label", {}, "Periode (tomt = heile året)"),
+      el("div", { class: "rad" },
+        el("input", { type: "date", id: "f-fra", value: tilDato(periode[0], iÅr), "aria-label": "Frå dato" }),
+        el("input", { type: "date", id: "f-til", value: tilDato(periode[1], iÅr), "aria-label": "Til dato" })),
+      el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-kvartar", checked: kvartÅr }), "Gjenta kvart år")),
+    el("div", {}, el("label", {}, "Dagar (ingen kryss = alle dagar)"),
+      el("div", { class: "dagar" }, ...VEKEDAGAR.map(d => el("label", {}, el("input", { type: "checkbox", value: d, class: "f-dag", checked: dagarValde.has(d) }), d)))),
+    el("div", {}, el("label", {}, "Klokkeslett (tomt = heile dagen)"),
+      el("div", { class: "rad" },
+        el("input", { type: "time", id: "f-tidfra", value: tidFrå || "", "aria-label": "Frå klokka" }),
+        el("input", { type: "time", id: "f-tidtil", value: tidTil || "", "aria-label": "Til klokka" }))),
+    el("p", { class: "hjelp", id: "f-feil" }),
+    el("div", { class: "knappar" },
+      el("button", { type: "button", class: "hoved", onclick: () => brukSkjema(f, s, skjerm, i) }, i < 0 ? "Legg til" : "Bruk endringane"),
+      el("button", { type: "button", onclick: () => { open = null; teikn(); } }, "Avbryt")));
+  return f;
+}
+
+function brukSkjema(f, gammal, skjerm, i) {
+  const v = id => f.querySelector("#" + id).value.trim();
+  const feil = t => { f.querySelector("#f-feil").textContent = t; f.querySelector("#f-feil").style.color = "var(--åtvar)"; };
+  const url = v("f-url"), sek = Number(v("f-sek"));
+  if (!url) return feil("Lenkja manglar.");
+  if (!(sek >= 5)) return feil("Sekund må vere minst 5.");
+  const ny = { namn: v("f-namn") || "Utan namn" };
+  if (gammal.lokal && url === gammal.lokal) ny.lokal = url; else if (/^https?:\/\//.test(url)) ny.url = url;
+  else return feil("Lenkja må byrje med https://");
+  ny.sekund = sek;
+  if (f.querySelector("#f-frisk").checked) ny.frisk = true;
+  // Periode
+  const frå = v("f-fra"), til = v("f-til"), kvartÅr = f.querySelector("#f-kvartar").checked;
+  if (frå || til) {
+    if (!frå || !til) return feil("Fyll ut både frå- og til-dato, eller ingen av dei.");
+    ny.periode = kvartÅr ? `${frå.slice(5)}/${til.slice(5)}` : `${frå}/${til}`;
+    if (!kvartÅr && frå > til) return feil("Frå-datoen kjem etter til-datoen.");
+  }
+  // Dagar: samanhengande rekkjer blir korta ned, til dømes man-fre
+  const valde = [...f.querySelectorAll(".f-dag")].filter(c => c.checked).map(c => c.value);
+  if (valde.length && valde.length < 7) {
+    const idx = valde.map(d => VEKEDAGAR.indexOf(d));
+    const samanhengande = idx.every((x, k) => k === 0 || x === idx[k - 1] + 1);
+    ny.dagar = samanhengande && valde.length > 2 ? `${valde[0]}-${valde[valde.length - 1]}` : valde.join(",");
+  }
+  // Klokkeslett
+  const tf = v("f-tidfra"), tt = v("f-tidtil");
+  if (tf || tt) {
+    if (!tf || !tt) return feil("Fyll ut både frå- og til-klokkeslett, eller ingen av dei.");
+    ny.tid = `${tf}-${tt}`;
+  }
+  if (i < 0) oppsett[skjerm].push(ny); else oppsett[skjerm][i] = ny;
+  open = null;
+  teikn();
+}
+
+function flytt(skjerm, i, retning) {
+  const l = oppsett[skjerm], j = i + retning;
+  if (j < 0 || j >= l.length) return;
+  [l[i], l[j]] = [l[j], l[i]];
+  open = null; teikn();
+}
+function fjern(skjerm, i) {
+  const s = oppsett[skjerm][i];
+  if (!confirm(`Fjerne «${s.namn}» frå ${SKJERMAR.find(x => x.nøkkel === skjerm).namn}?`)) return;
+  oppsett[skjerm].splice(i, 1);
+  open = null; teikn();
+}
+
+// ---- JSON i same stil som før: éi linje per side --------------------------
+function tilJson(o) {
+  const linjer = ["{"];
+  const nøklar = Object.keys(o);
+  nøklar.forEach((k, ki) => {
+    const siste = ki === nøklar.length - 1;
+    if (Array.isArray(o[k])) {
+      linjer.push(`  ${JSON.stringify(k)}: [`);
+      o[k].forEach((s, si) => {
+        const rekkje = ["namn", "url", "lokal", "sekund", "frisk", "periode", "dagar", "tid"];
+        const ordna = {};
+        for (const n of rekkje) if (s[n] !== undefined) ordna[n] = s[n];
+        for (const n of Object.keys(s)) if (!(n in ordna)) ordna[n] = s[n];
+        const delar = Object.entries(ordna).map(([n, v]) => `${JSON.stringify(n)}: ${JSON.stringify(v)}`);
+        linjer.push(`    { ${delar.join(", ")} }${si < o[k].length - 1 ? "," : ""}`);
+      });
+      linjer.push(`  ]${siste ? "" : ","}`);
+    } else {
+      linjer.push(`  ${JSON.stringify(k)}: ${JSON.stringify(o[k])}${siste ? "" : ","}`);
+    }
+    if (!siste) linjer.push("");
+  });
+  linjer.push("}");
+  return linjer.join("\n") + "\n";
+}
+
+// ---- Henting og lagring --------------------------------------------------
+const b64 = s => { let t = ""; for (const b of new TextEncoder().encode(s)) t += String.fromCharCode(b); return btoa(t); };
+const frå64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0)));
+const lesNøkkel = () => { try { return localStorage.getItem(NØKKEL_LAGER) || ""; } catch (e) { return ""; } };
+
+async function hent() {
+  const nøkkel = lesNøkkel();
+  const svar = await fetch(API + "?t=" + Date.now(), {
+    headers: { Accept: "application/vnd.github+json", ...(nøkkel ? { Authorization: "Bearer " + nøkkel } : {}) }, cache: "no-store" });
+  if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
+  const d = await svar.json();
+  sha = d.sha;
+  oppsett = JSON.parse(frå64(d.content));
+  original = tilJson(oppsett);
+  open = null;
+  teikn();
+}
+
+function endra() { return oppsett && tilJson(oppsett) !== original; }
+function oppdaterStatus(tekst, klasse) {
+  const st = $("status");
+  st.className = "status" + (klasse ? " " + klasse : "");
+  st.textContent = tekst || (endra() ? "Du har endringar som ikkje er lagra." : "Ingen endringar.");
+  $("lagre").disabled = !endra();
+  $("angre").disabled = !endra();
+}
+
+async function lagre() {
+  const nøkkel = lesNøkkel();
+  if (!nøkkel) { $("nokkelboks").open = true; $("nokkel").focus(); return oppdaterStatus("Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor.", "feil"); }
+  const innhald = tilJson(oppsett);
+  try { JSON.parse(innhald); } catch (e) { return oppdaterStatus("Oppsettet er ugyldig og blir ikkje lagra: " + e.message, "feil"); }
+  $("lagre").disabled = true;
+  oppdaterStatus("Lagrar …");
+  const svar = await fetch(API, {
+    method: "PUT",
+    headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "Endra oppsettet via oversiktssida", content: b64(innhald), sha }),
+  });
+  if (svar.status === 409 || svar.status === 422) {
+    return oppdaterStatus("Nokon har endra oppsettet sidan du opna sida. Last sida på nytt og gjer endringa igjen.", "feil");
+  }
+  if (svar.status === 401 || svar.status === 403) {
+    return oppdaterStatus("Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.", "feil");
+  }
+  if (!svar.ok) return oppdaterStatus(`Lagringa feila (GitHub svarte ${svar.status}).`, "feil");
+  const d = await svar.json();
+  sha = d.content.sha;
+  original = innhald;
+  oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan 10–15 minutt.", "ok");
+}
+
+// ---- Knappar -------------------------------------------------------------
+$("lagre").addEventListener("click", lagre);
+$("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; teikn(); });
+$("nokkellagre").addEventListener("click", () => {
+  try { localStorage.setItem(NØKKEL_LAGER, $("nokkel").value.trim()); $("nokkel").value = ""; oppdaterStatus("Nøkkelen er lagra i denne nettlesaren.", "ok"); }
+  catch (e) { oppdaterStatus("Klarte ikkje lagre nøkkelen i nettlesaren.", "feil"); }
+});
+$("nokkelfjern").addEventListener("click", () => {
+  try { localStorage.removeItem(NØKKEL_LAGER); } catch (e) {}
+  oppdaterStatus("Nøkkelen er fjerna frå denne nettlesaren.");
+});
+window.addEventListener("beforeunload", e => { if (endra()) { e.preventDefault(); e.returnValue = ""; } });
+
+// Status «Vist no» blir rekna på nytt kvart minutt
+setInterval(() => { if (oppsett && !open) teikn(); }, 60000);
+
+hent().catch(e => {
+  $("skjermar").replaceChildren(el("p", {}, "Fekk ikkje henta oppsettet frå GitHub: " + e.message + ". Prøv å laste sida på nytt."));
+});
+</script>
+</body>
+</html>
