@@ -175,6 +175,9 @@
   input:disabled { opacity: .45; cursor: not-allowed; }
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--b-fokus); outline-offset: 1px; }
   .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .malrad { display: flex; gap: 8px; align-items: stretch; }
+  .malrad select { flex: 1; min-width: 0; }
+  .malrad .knapp { flex: none; white-space: nowrap; }
   .val, .felt > label.val { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 400; cursor: pointer; }
   .val input { margin-top: 3px; accent-color: var(--b-aksent); }
   .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
@@ -251,9 +254,9 @@
 
     <div class="felt">
       <label for="mal">Start frå ein mal</label>
+      <div class="malrad">
       <select id="mal">
         <option value="">Vel mal …</option>
-        <option value="blank">Blankt skjema</option>
         <option value="nyheiter">Nyheiter</option>
         <option value="sakprosa">Frå hylla (sakprosa)</option>
         <option value="krim">Krim</option>
@@ -266,6 +269,8 @@
         <option value="fotball">Fotball (born)</option>
         <option value="teikne">Teikneseriar (born)</option>
       </select>
+        <button type="button" class="knapp sekundær" id="tom">Tøm skjema</button>
+      </div>
     </div>
 
     <div class="felt">
@@ -1368,14 +1373,20 @@ function startByggjar(startCfg) {
   skjema.addEventListener("submit", e => e.preventDefault());
 
   const malval = document.getElementById("mal");
-  malval.addEventListener("change", () => {
-    const mal = MALAR[malval.value];
+  function brukMal(namn) {
+    const mal = MALAR[namn];
     if (!mal) return;
     const no = lesSkjema();
     fyllInn({ ...STANDARD, ...mal, tema: no.tema, skrift: no.skrift });   // behald tema og skrift
     oppdater(true);
     forslagFor = ""; emneval.replaceChildren(new Option("Legg til eit vanleg emne …", "")); forslagstatus.textContent = "";
     malval.value = "";
+  }
+  malval.addEventListener("change", () => brukMal(malval.value));
+
+  // «Tøm skjema» brukar den blanke malen
+  document.getElementById("tom").addEventListener("click", () => {
+    brukMal("blank");
   });
 
   document.getElementById("kopier").addEventListener("click", async e => {
