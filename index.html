@@ -1186,11 +1186,18 @@ const FORSLAG_DAGAR = 7;
 
 // Nøkkel for å slå saman variantar av same ord: utan vokalar («Romanar/Romaner»)
 // og utan fleirtals-r på slutten («Roman/Romanar», «Hest/Hestar»).
-const vokalfri = ord => ord.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "").replace(/[aeiouyæøåéèêüö]/g, "")
+// Nokre nynorsk- og bokmålsformer skil seg i meir enn vokalane. Dei blir
+// gjorde like før samanlikninga, så «Teikneseriar» og «Tegneserie» blir eitt.
+const MÅLFORM = [
+  [/teikn/g, "tegn"], [/eljing/g, "elling"], [/bilet/g, "bilde"], [/skodespel/g, "skuespill"],
+  [/heim/g, "hjem"], [/kjærleik/g, "kjærlighet"], [/røynd/g, "virkelighet"], [/spel/g, "spill"],
+];
+const vokalfri = ord => MÅLFORM.reduce((o, [fra, til]) => o.replace(fra, til), ord.toLowerCase())
+  .replace(/[^\p{L}\p{N}]/gu, "").replace(/[aeiouyæøåéèêüö]/g, "")
   .replace(/(.{2,}?)r+$/, "$1");
 
 async function hentForslag(avd) {
-  const nøkkel = "forslag4:" + avd;   // ny nøkkel, så gamle lister frå mindre utval blir hoppa over
+  const nøkkel = "forslag5:" + avd;   // ny nøkkel, så gamle lister frå mindre utval blir hoppa over
   try {
     const lagra = JSON.parse(localStorage.getItem(nøkkel) || "null");
     if (lagra && Date.now() - lagra.tid < FORSLAG_DAGAR * 864e5) return lagra;
