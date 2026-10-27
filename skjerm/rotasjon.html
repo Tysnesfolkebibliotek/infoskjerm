@@ -24,8 +24,9 @@
 // blir endringa teken i bruk innan om lag 10–15 minutt.
 //
 // Kvar skjerm vel oppsett med adressa i kiosk.desktop:
-//   rotasjon.html                    → «nyheiter» (standard)
-//   rotasjon.html?oppsett=sakprosa   → «sakprosa»
+//   rotasjon.html?oppsett=skjerm1   → tysnes-infoskjerm
+//   rotasjon.html?oppsett=skjerm2   → tysnes-infoskjerm-2 (standard utan ?oppsett=)
+// Dei gamle namna fungerer framleis: «sakprosa» = skjerm1, «nyheiter» = skjerm2.
 //
 // Fila ligg lokalt på kvar skjerm (~/nytt-paa-hylla/rotasjon.html), så
 // skjermen fungerer sjølv om GitHub eller nettet er nede.
@@ -33,16 +34,19 @@
 
 const OPPSETT_URL = new URLSearchParams(location.search).get("kjelde")
   || "https://tysnesfolkebibliotek.github.io/infoskjerm/oppsett.json";
-const NAMN = new URLSearchParams(location.search).get("oppsett") || "nyheiter";
+const GAMLE_NAMN = { sakprosa: "skjerm1", nyheiter: "skjerm2" };
+const NYE_TIL_GAMLE = { skjerm1: "sakprosa", skjerm2: "nyheiter" };
+const valt = new URLSearchParams(location.search).get("oppsett") || "skjerm2";
+const NAMN = GAMLE_NAMN[valt] || valt;
 
 // Reserve: blir brukt viss skjermen aldri har fått henta oppsett.json,
 // eller viss ingen av sidene i oppsettet svarar.
 const RESERVE = {
-  nyheiter: [
+  skjerm2: [
     { lokal: "index.html",                                sekund: 180 },
     { url: "https://www.tysnesbibliotek.no/nn/kanal/1",   sekund: 180, frisk: true },
   ],
-  sakprosa: [
+  skjerm1: [
     { lokal: "index.html?data=sakprosa.js&tittel=Frå+hylla", sekund: 180 },
     { url: "https://www.tysnesbibliotek.no/nn/kanal/2",      sekund: 180, frisk: true },
   ],
@@ -78,7 +82,8 @@ async function hentOppsett() {
       { cache: "no-store", signal: AbortSignal.timeout(SJEKK_NETT_MS) });
     if (!svar.ok) throw new Error("HTTP " + svar.status);
     const alt = await svar.json();
-    const sider = alt[NAMN];
+    // Godtek både nye («skjerm1») og gamle («sakprosa») namn i oppsett.json
+    const sider = alt[NAMN] || alt[NYE_TIL_GAMLE[NAMN]];
     if (!gyldig(sider)) throw new Error("oppsett «" + NAMN + "» manglar eller er ugyldig");
     return sider;
   } catch (e) {
@@ -226,7 +231,7 @@ async function vis(n) {
       if (hoppaOver >= SIDER.length) {
         hoppaOver = 0;
         const json = "reserve";
-        if (aktivJSON !== json) { bytOppsett(RESERVE[NAMN] || RESERVE.nyheiter, json); return vis(0); }
+        if (aktivJSON !== json) { bytOppsett(RESERVE[NAMN] || RESERVE.skjerm2, json); return vis(0); }
         // Reserven svarar heller ikkje: vent litt før vi prøver igjen.
         return setTimeout(neste, 30000);
       }
@@ -268,7 +273,7 @@ async function vis(n) {
   if (fersk) skrivMinne(fersk);
   ALLE = fersk || lesMinne();
   if (ALLE) { const sider = aktuelle(ALLE); bytOppsett(sider, JSON.stringify(sider)); }
-  else bytOppsett(RESERVE[NAMN] || RESERVE.nyheiter, "reserve");
+  else bytOppsett(RESERVE[NAMN] || RESERVE.skjerm2, "reserve");
   vis(0);
 })();
 </script>
