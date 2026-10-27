@@ -936,7 +936,11 @@ function lagHylle(d, e) {
   let signatur = ryddSignatur(rå);
   const id = d.bsdc_identifier || {};
   const dewey = id.hylle || id.dewey || "";
-  if (d.bs_lf === "0" && dewey && !/\d/.test(signatur)) signatur = `${dewey} ${signatur}`.trim();
+  // Litteratur med deweynummer som byrjar på 82 (til dømes engelsk litteratur)
+  // står på etternamn, så nummeret blir teke bort og berre ordningsordet står att.
+  const er82 = /^82/.test(dewey) || signatur.split(" ").some(b => /^82/.test(b));
+  if (er82) signatur = signatur.split(" ").filter(b => !/^\d/.test(b)).join(" ");
+  else if (d.bs_lf === "0" && dewey && !/\d/.test(signatur)) signatur = `${dewey} ${signatur}`.trim();
   // Manglar ordningsordet (ingen del med store bokstavar), legg vi det til
   if (!signatur.split(" ").some(b => /^\p{Lu}+$/u.test(b))) signatur = `${signatur} ${finnOrdningsord(rå, d)}`.trim();
   return [plassering, signatur].filter(Boolean).join(" · ");
