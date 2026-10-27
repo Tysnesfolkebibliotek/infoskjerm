@@ -82,3 +82,13 @@ cd ~/nytt-paa-hylla
 cp rotasjon.html rotasjon.html.gammal
 curl -fsSL -o rotasjon.html https://tysnesfolkebibliotek.github.io/infoskjerm/skjerm/rotasjon.html
 ```
+
+## Skjermbilete over SSH
+
+Kiosken er starta med `--remote-debugging-port=9222` og ei eiga profilmappe, så
+`skjerm/skjermbilete.py` kan be Chromium om eit bilete av det skjermen viser.
+Frå Fedora:
+
+```bash
+ssh tysnes-folkebibliotek@tysnes-infoskjerm-2 "python3 ~/nytt-paa-hylla/skjermbilete.py" > skjerm2.png
+```
