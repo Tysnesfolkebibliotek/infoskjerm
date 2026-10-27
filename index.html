@@ -1425,7 +1425,7 @@ function byggSøk(cfg, avd, medAlder, medSpråk) {
 }
 
 async function hentSøk(cfg, avd, mål, meld) {
-  // Mest reservert: dei ca. 400 nyaste bøkene er kandidatar (der samlar
+  // Mest reservert: dei ca. 1500 nyaste bøkene er kandidatar (der samlar
   // reservasjonane seg), og dei blir sorterte etter kor mange som står i kø.
   const reservert = cfg.rekkje === "reservert";
   const tilfeldig = cfg.rekkje !== "nyaste" && !reservert;
@@ -1433,7 +1433,7 @@ async function hentSøk(cfg, avd, mål, meld) {
   const TAK = 500;                           // øvre grense når vi hentar alle
   // Alle: store bunkar i rekkjefølgje. Elles: små bunkar frå tilfeldige stader.
   const B = alle || reservert ? 100 : tilfeldig ? 5 : 25;
-  const MAKS = reservert ? 4 : alle ? 20 : tilfeldig ? 60 : 20;   // alle: leit gjennom opptil 2000 treff for å finne inntil 500
+  const MAKS = reservert ? 15 : alle ? 20 : tilfeldig ? 60 : 20;   // reservert: dei ca. 1500 nyaste per avdeling   // alle: leit gjennom opptil 2000 treff for å finne inntil 500
   // Nyast først, og bøker utan årstal sist (lowValue). Sjå òg retningssjekken under.
   const ekstra = tilfeldig ? {} : { sortKeys: "date,,false,false,lowValue" };
   const årstal = p => Number((((p && p.sru_recordData) || {}).bsdc_date || "").match(/\d{4}/)?.[0] || 0);
