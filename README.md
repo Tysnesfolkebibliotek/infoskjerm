@@ -43,6 +43,25 @@ du ser henne på skjermen.
 - **`frisk`**: `true` lastar sida på nytt kvar gong ho blir vist.
 - **`namn`**: berre for deg, skjermen bryr seg ikkje om det.
 
+### Tidsstyring
+
+Kvar linje kan få tre valfrie felt som avgjer når ho skal visast:
+
+```json
+{ "namn": "Julebøker", "url": "…", "sekund": 120, "periode": "12-01/12-24" },
+{ "namn": "Barnebøker", "url": "…", "sekund": 120, "dagar": "man-fre", "tid": "13:00-17:00" },
+{ "namn": "Boktober", "url": "…", "sekund": 120, "periode": "2026-10-01/2026-10-31" }
+```
+
+- **`periode`**: `12-01/12-24` gjeld kvart år, og kan gå over nyttår (`11-15/01-15`).
+  Med årstal (`2026-10-01/2026-10-31`) gjeld det berre den eine gongen.
+- **`dagar`**: `man-fre`, `lør,søn`, `tys` osv.
+- **`tid`**: `13:00-17:00`.
+- Linjer utan desse felta blir alltid viste. Gjeld ingen linjer akkurat no,
+  viser skjermen dei utan tidsstyring.
+
+Skjermen sjekkar ved starten av kvar runde kva som gjeld.
+
 Pass på kommaa: det skal vere komma mellom linjene, men ikkje etter den siste
 i kvar liste. Er fila ugyldig, held skjermane fram med det førre oppsettet.
 

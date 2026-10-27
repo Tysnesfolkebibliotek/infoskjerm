@@ -87,6 +87,55 @@ async function hentOppsett() {
   }
 }
 
+// ---- Tidsstyring -----------------------------------------------------------
+// Kvar side kan ha «periode», «dagar» og «tid». Sider utan desse blir alltid viste.
+//   "periode": "12-01/12-24"            kvart år (kan gå over nyttår: "11-15/01-15")
+//   "periode": "2026-10-01/2026-10-31"  berre den eine gongen
+//   "dagar":   "man-fre", "lør,søn", "tys"
+//   "tid":     "13:00-17:00"
+const DAGAR = ["søn", "man", "tys", "ons", "tor", "fre", "lør"];
+const dagnr = d => {
+  const k = String(d).trim().toLowerCase().slice(0, 3).replace("tir", "tys").replace("lau", "lør").replace("sun", "søn");
+  return DAGAR.indexOf(k);
+};
+function iPeriode(periode, no) {
+  const [frå, til] = String(periode).split("/").map(x => x.trim());
+  if (!frå || !til) return true;
+  if (/^\d{4}-/.test(frå)) {                                   // med årstal: ein gong
+    const lokal = new Date(no.getTime() - no.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    return lokal >= frå && lokal <= til;
+  }
+  const md = String(no.getMonth() + 1).padStart(2, "0") + "-" + String(no.getDate()).padStart(2, "0");
+  return frå <= til ? (md >= frå && md <= til) : (md >= frå || md <= til);   // over nyttår
+}
+function påDag(dagar, no) {
+  const idag = no.getDay();
+  return String(dagar).split(",").some(del => {
+    const [a, b] = del.split("-").map(dagnr);
+    if (a < 0) return false;
+    if (b === undefined || b < 0) return idag === a;
+    return a <= b ? (idag >= a && idag <= b) : (idag >= a || idag <= b);
+  });
+}
+function påTid(tid, no) {
+  const [a, b] = String(tid).split("-").map(t => { const [h, m] = t.trim().split(":").map(Number); return h * 60 + (m || 0); });
+  const min = no.getHours() * 60 + no.getMinutes();
+  if (isNaN(a) || isNaN(b)) return true;
+  return a <= b ? (min >= a && min < b) : (min >= a || min < b);
+}
+const tidsstyrt = s => s.periode || s.dagar || s.tid;
+function gjeld(s, no = new Date()) {
+  return (!s.periode || iPeriode(s.periode, no)) && (!s.dagar || påDag(s.dagar, no)) && (!s.tid || påTid(s.tid, no));
+}
+// Sidene som gjeld no. Gjeld ingen, viser vi dei utan tidsstyring, og elles alle.
+function aktuelle(sider) {
+  const no = new Date();
+  const ut = sider.filter(s => gjeld(s, no));
+  if (ut.length) return ut;
+  const faste = sider.filter(s => !tidsstyrt(s));
+  return faste.length ? faste : sider;
+}
+
 // ---- Sidene ---------------------------------------------------------------
 
 const adresse = s => s.lokal || s.url;
@@ -101,7 +150,9 @@ async function svarar(url) {
   } catch (e) { return false; }
 }
 
-let SIDER = [], rammer = [], aktivJSON = "", aktivRamme = null, ventande = null;
+let SIDER = [], rammer = [], aktivJSON = "", aktivRamme = null;
+let ALLE = null;   // heile oppsettet for skjermen, før tidsstyringa er brukt
+let nyHenta = false;
 
 function byggRammer(sider) {
   return sider.map(side => {
@@ -151,15 +202,16 @@ function lastInn(r, url) {
 let hoppaOver = 0;
 
 async function vis(n) {
-  // Ny runde: ta i bruk nytt oppsett om det har kome, og spør etter endå eit.
+  // Ny runde: finn ut kva sider som gjeld no (oppsett og klokke), og spør
+  // etter eit ferskt oppsett til neste runde.
   if (n === 0) {
-    if (ventande) { bytOppsett(ventande.sider, ventande.json); ventande = null; }
-    hentOppsett().then(sider => {
-      if (!sider) return;
-      skrivMinne(sider);
-      const json = JSON.stringify(sider);
-      if (json !== aktivJSON) ventande = { sider, json };
-    });
+    // På reserven (ingen sider svarte) blir vi verande til nettet er tilbake
+    if (ALLE && (aktivJSON !== "reserve" || nyHenta)) {
+      const sider = aktuelle(ALLE), json = JSON.stringify(sider);
+      if (json !== aktivJSON) bytOppsett(sider, json);
+    }
+    nyHenta = false;
+    hentOppsett().then(sider => { if (sider) { skrivMinne(sider); ALLE = sider; nyHenta = true; } });
   }
 
   const side = SIDER[n], r = rammer[n];
@@ -214,8 +266,9 @@ async function vis(n) {
 (async function start() {
   const fersk = await hentOppsett();
   if (fersk) skrivMinne(fersk);
-  const sider = fersk || lesMinne();
-  bytOppsett(sider || RESERVE[NAMN] || RESERVE.nyheiter, sider ? JSON.stringify(sider) : "reserve");
+  ALLE = fersk || lesMinne();
+  if (ALLE) { const sider = aktuelle(ALLE); bytOppsett(sider, JSON.stringify(sider)); }
+  else bytOppsett(RESERVE[NAMN] || RESERVE.nyheiter, "reserve");
   vis(0);
 })();
 </script>
