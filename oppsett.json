@@ -1,0 +1,13 @@
+{
+  "_forklaring": "Kva kvar infoskjerm viser. «nyheiter» = tysnes-infoskjerm-2, «sakprosa» = tysnes-infoskjerm. Kvar side har anten «url» (ei nettadresse, til dømes ei lenkje frå karusellbyggjaren) eller «lokal» (ei fil på skjermen). «sekund» er kor lenge sida blir vist. «frisk»: true lastar sida på nytt kvar gong ho blir vist.",
+
+  "nyheiter": [
+    { "namn": "Nyheiter (lokal)", "lokal": "index.html", "sekund": 180 },
+    { "namn": "Kanalside 1", "url": "https://www.tysnesbibliotek.no/nn/kanal/1", "sekund": 180, "frisk": true }
+  ],
+
+  "sakprosa": [
+    { "namn": "Frå hylla (lokal)", "lokal": "index.html?data=sakprosa.js&tittel=Frå+hylla", "sekund": 180 },
+    { "namn": "Kanalside 2", "url": "https://www.tysnesbibliotek.no/nn/kanal/2", "sekund": 180, "frisk": true }
+  ]
+}

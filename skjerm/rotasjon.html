@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<title>Infoskjerm</title>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; background: #14110f; overflow: hidden; cursor: none; }
+  iframe {
+    position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
+    opacity: 0; transition: opacity 1.5s ease-in-out;
+    pointer-events: none;
+  }
+  iframe.synleg { opacity: 1; }
+</style>
+</head>
+<body>
+<script>
+// =========================================================================
+// rotasjon.html — vekslar mellom sidene ein infoskjerm skal vise.
+//
+// Kva sider kvar skjerm viser, står i oppsett.json på GitHub:
+//   https://github.com/Tysnesfolkebibliotek/infoskjerm/blob/main/oppsett.json
+// Skjermen hentar fila på nytt ved starten av kvar runde. Endrar du ho,
+// blir endringa teken i bruk innan om lag 10–15 minutt.
+//
+// Kvar skjerm vel oppsett med adressa i kiosk.desktop:
+//   rotasjon.html                    → «nyheiter» (standard)
+//   rotasjon.html?oppsett=sakprosa   → «sakprosa»
+//
+// Fila ligg lokalt på kvar skjerm (~/nytt-paa-hylla/rotasjon.html), så
+// skjermen fungerer sjølv om GitHub eller nettet er nede.
+// =========================================================================
+
+const OPPSETT_URL = new URLSearchParams(location.search).get("kjelde")
+  || "https://tysnesfolkebibliotek.github.io/infoskjerm/oppsett.json";
+const NAMN = new URLSearchParams(location.search).get("oppsett") || "nyheiter";
+
+// Reserve: blir brukt viss skjermen aldri har fått henta oppsett.json,
+// eller viss ingen av sidene i oppsettet svarar.
+const RESERVE = {
+  nyheiter: [
+    { lokal: "index.html",                                sekund: 180 },
+    { url: "https://www.tysnesbibliotek.no/nn/kanal/1",   sekund: 180, frisk: true },
+  ],
+  sakprosa: [
+    { lokal: "index.html?data=sakprosa.js&tittel=Frå+hylla", sekund: 180 },
+    { url: "https://www.tysnesbibliotek.no/nn/kanal/2",      sekund: 180, frisk: true },
+  ],
+};
+
+const OVERTONING_MS = 1500;      // må passe med «transition» i stilen over
+const VENT_ETTER_LAST_MS = 1500; // gi sida tid til å teikne bilete og skrift
+const MAKS_LASTETID_MS = 15000;  // gi opp ventinga om sida ikkje svarar
+const SJEKK_NETT_MS = 8000;      // kor lenge vi ventar på svar før ei nettside blir hoppa over
+const MINNE = "infoskjerm-oppsett:" + NAMN;
+// --------------------------------------------------------------------------
+
+// ---- Oppsettet ------------------------------------------------------------
+
+// Godtek berre ei liste med sider som kvar har adresse og tal sekund.
+function gyldig(sider) {
+  return Array.isArray(sider) && sider.length > 0 && sider.every(s =>
+    s && typeof (s.url || s.lokal) === "string" && Number(s.sekund) >= 5);
+}
+
+function lesMinne() {
+  try { const s = JSON.parse(localStorage.getItem(MINNE)); return gyldig(s) ? s : null; }
+  catch (e) { return null; }
+}
+function skrivMinne(sider) {
+  try { localStorage.setItem(MINNE, JSON.stringify(sider)); } catch (e) {}
+}
+
+// Hentar oppsett.json. Gir sidene for denne skjermen, eller null ved feil.
+async function hentOppsett() {
+  try {
+    const svar = await fetch(OPPSETT_URL + "?t=" + Date.now(),
+      { cache: "no-store", signal: AbortSignal.timeout(SJEKK_NETT_MS) });
+    if (!svar.ok) throw new Error("HTTP " + svar.status);
+    const alt = await svar.json();
+    const sider = alt[NAMN];
+    if (!gyldig(sider)) throw new Error("oppsett «" + NAMN + "» manglar eller er ugyldig");
+    return sider;
+  } catch (e) {
+    console.warn("Fekk ikkje henta oppsett.json:", e.message);
+    return null;
+  }
+}
+
+// ---- Sidene ---------------------------------------------------------------
+
+const adresse = s => s.lokal || s.url;
+const erNett = s => !s.lokal && /^https?:/i.test(s.url);
+
+// Svarar nettsida? «no-cors» gjer at vi berre får vite om ho svarar,
+// ikkje kva ho inneheld, men det er nok.
+async function svarar(url) {
+  try {
+    await fetch(url, { mode: "no-cors", cache: "no-store", signal: AbortSignal.timeout(SJEKK_NETT_MS) });
+    return true;
+  } catch (e) { return false; }
+}
+
+let SIDER = [], rammer = [], aktivJSON = "", aktivRamme = null, ventande = null;
+
+function byggRammer(sider) {
+  return sider.map(side => {
+    const f = document.createElement("iframe");
+    // Lokale sider blir lasta med ein gong. Nettsider blir lasta når dei skal
+    // visast første gong, så vi kan sjekke at nettet er oppe først.
+    f.src = side.lokal ? side.lokal : "about:blank";
+    f.dataset.lasta = side.lokal ? "1" : "";
+    document.body.append(f);
+    return f;
+  });
+}
+
+function bytOppsett(sider, json) {
+  const gamle = rammer;
+  SIDER = sider;
+  aktivJSON = json;
+  rammer = byggRammer(sider);
+  // Dei gamle rammene blir fjerna når den nye sida har tona inn.
+  setTimeout(() => gamle.forEach(r => r !== aktivRamme && r.remove()), OVERTONING_MS + 500);
+}
+
+// Nyheiter-sida (index.html) kan ta pause når ho ikkje blir vist, så ho
+// hugsar kvar ho slapp. Andre sider bryr seg ikkje om desse beskjedane.
+function send(ramme, beskjed) {
+  try { ramme.contentWindow.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {}
+}
+window.addEventListener("message", e => {
+  if (!e.data || e.data.nyheiter !== "klar") return;
+  const r = [...document.querySelectorAll("iframe")].find(r => r.contentWindow === e.source);
+  if (r) send(r, r === aktivRamme ? "vis" : "skjul");
+});
+
+// Lastar sida og ventar til ho er ferdig, men ikkje lenger enn MAKS_LASTETID_MS.
+function lastInn(r, url) {
+  return new Promise(ferdig => {
+    let gjort = false;
+    const slutt = () => { if (!gjort) { gjort = true; setTimeout(ferdig, VENT_ETTER_LAST_MS); } };
+    r.addEventListener("load", slutt, { once: true });
+    setTimeout(slutt, MAKS_LASTETID_MS);
+    r.src = url;
+  });
+}
+
+// ---- Rotasjonen -----------------------------------------------------------
+
+let hoppaOver = 0;
+
+async function vis(n) {
+  // Ny runde: ta i bruk nytt oppsett om det har kome, og spør etter endå eit.
+  if (n === 0) {
+    if (ventande) { bytOppsett(ventande.sider, ventande.json); ventande = null; }
+    hentOppsett().then(sider => {
+      if (!sider) return;
+      skrivMinne(sider);
+      const json = JSON.stringify(sider);
+      if (json !== aktivJSON) ventande = { sider, json };
+    });
+  }
+
+  const side = SIDER[n], r = rammer[n];
+  const neste = () => vis((n + 1) % SIDER.length);
+
+  // Nettsider blir sjekka før dei blir viste. Svarar dei ikkje, hoppar vi
+  // over dei, og den førre sida blir ståande.
+  if (erNett(side)) {
+    if (!(await svarar(side.url))) {
+      hoppaOver++;
+      // Svarar ingen av sidene, går vi over til reserven.
+      if (hoppaOver >= SIDER.length) {
+        hoppaOver = 0;
+        const json = "reserve";
+        if (aktivJSON !== json) { bytOppsett(RESERVE[NAMN] || RESERVE.nyheiter, json); return vis(0); }
+        // Reserven svarar heller ikkje: vent litt før vi prøver igjen.
+        return setTimeout(neste, 30000);
+      }
+      return neste();
+    }
+    if (side.frisk || !r.dataset.lasta) {
+      await lastInn(r, side.url);
+      r.dataset.lasta = "1";
+    }
+  }
+  hoppaOver = 0;
+
+  const førre = aktivRamme;
+  aktivRamme = r;
+  r.classList.add("synleg");
+  send(r, "vis");
+
+  if (førre && førre !== r) {
+    førre.classList.remove("synleg");
+    send(førre, "skjul");
+    if (!rammer.includes(førre)) {
+      // Frå eit gammalt oppsett: fjern ho når ho har tona ut.
+      setTimeout(() => førre.remove(), OVERTONING_MS + 200);
+    } else {
+      // Tøm ei «frisk» side når ho har tona ut, så ho ikkje køyrer i bakgrunnen.
+      const i = rammer.indexOf(førre);
+      if (SIDER[i] && SIDER[i].frisk) {
+        setTimeout(() => { if (aktivRamme !== førre) { førre.src = "about:blank"; } }, OVERTONING_MS + 200);
+      }
+    }
+  }
+  setTimeout(neste, Number(side.sekund) * 1000);
+}
+
+// Ved oppstart: prøv å hente oppsett.json først. Går ikkje det, bruk det sist
+// henta oppsettet, og har vi heller ikkje det, bruk reserven.
+(async function start() {
+  const fersk = await hentOppsett();
+  if (fersk) skrivMinne(fersk);
+  const sider = fersk || lesMinne();
+  bytOppsett(sider || RESERVE[NAMN] || RESERVE.nyheiter, sider ? JSON.stringify(sider) : "reserve");
+  vis(0);
+})();
+</script>
+</body>
+</html>
