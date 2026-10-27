@@ -90,6 +90,16 @@
   :root[data-tema="paaske"] { --bakgrunn: #1b1f0f; --tekst: #fbf7e6; --dempa: #d0c99f; --aksent: #f3d23c; --aksent-tekst: #1b1f0f; --skugge: 27,31,15; --reserve-a: #5d5b1d; --reserve-b: #262a12; }
   :root[data-tema="mai17"]  { --bakgrunn: #0e1a33; --tekst: #ffffff; --dempa: #b8c3dc; --aksent: #d9263b; --aksent-tekst: #ffffff; --skugge: 14,26,51; --reserve-a: #7d1b28; --reserve-b: #14264a; }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
+  /* Fargestripe under overskrifta (Pride og Samefolkets dag) */
+  :root[data-tema="pride"] .overskrift::after, :root[data-tema="samisk"] .overskrift::after {
+    content: ""; display: block; height: .8vh; width: 34vw; margin-top: 1.4vh; border-radius: 99px;
+  }
+  :root[data-tema="pride"] .overskrift::after {
+    background: linear-gradient(90deg, #e40303 0 16.66%, #ff8c00 0 33.33%, #ffed00 0 50%, #008026 0 66.66%, #004dff 0 83.33%, #750787 0);
+  }
+  :root[data-tema="samisk"] .overskrift::after {
+    background: linear-gradient(90deg, #e0332a 0 25%, #1f5fbf 0 50%, #2e8b3e 0 75%, #f2c230 0);
+  }
   :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
   :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
   :root[data-tema="sommarles"] {
@@ -824,13 +834,6 @@ function lagPynt(tema) {
       pynt.append(d);
     }
   };
-  // Fargeband langs venstre kant (Pride, Samefolkets dag)
-  const kantband = fargar => {
-    const b = document.createElement("div");
-    b.style.cssText = `position:absolute; left:0; top:0; bottom:0; width:2.2vw; opacity:.85; display:flex;`;
-    for (const f of fargar) { const s = document.createElement("div"); s.style.cssText = `flex:1; background:${f};`; b.append(s); }
-    pynt.append(b);
-  };
   if (tema === "jul") {
     snøfall(28, 0.5);
     // Grantre-silhuettar nedst i begge hjørna
@@ -945,13 +948,16 @@ function lagPynt(tema) {
 
   if (tema === "samisk") {
     // Fargeband i dei samiske fargane, og ein svak sirkel (raud og blå halvdel)
-    kantband(["#e0332a", "#1f5fbf", "#2e8b3e", "#f2c230"]);
-    pynt.append(svg("0 0 100 100", "right:-14vw; bottom:-8vh; width:52vw; fill:none; stroke-width:6; opacity:.09;",
+    pynt.append(svg("0 0 100 100", "right:-14vw; bottom:-8vh; width:56vw; fill:none; stroke-width:7; opacity:.16;",
       `<path d="M50,10 A40,40 0 0,0 50,90" stroke="#e0332a"/><path d="M50,10 A40,40 0 0,1 50,90" stroke="#1f5fbf"/>`));
   }
 
   if (tema === "pride") {
-    kantband(["#e40303", "#ff8c00", "#ffed00", "#008026", "#004dff", "#750787"]);
+    // Ein stor regnbogeboge som stig opp frå hjørnet nedst til høgre
+    const fargar = ["#e40303", "#ff8c00", "#ffed00", "#008026", "#004dff", "#750787"];
+    let boge = "";
+    fargar.forEach((f, i) => { const r = 95 - i * 7; boge += `<path d="M${100 - r},100 A${r},${r} 0 0,1 100,${100 - r}" stroke="${f}"/>`; });
+    pynt.append(svg("0 0 100 100", "right:0; bottom:0; width:60vw; fill:none; stroke-width:7; opacity:.12;", boge));
   }
 
   if (tema === "sommarles") {
