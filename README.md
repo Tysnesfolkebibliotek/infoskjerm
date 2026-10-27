@@ -25,15 +25,15 @@ du ser henne på skjermen.
 ### Oppsettet
 
 ```json
-"nyheiter": [
+"skjerm2": [
   { "namn": "Nyheiter (lokal)", "lokal": "index.html", "sekund": 180 },
   { "namn": "Kanalside 1", "url": "https://www.tysnesbibliotek.no/nn/kanal/1", "sekund": 180, "frisk": true }
 ]
 ```
 
-- **`nyheiter`** er oppsettet for tysnes-infoskjerm-2, **`sakprosa`** for
+- **`skjerm2`** er oppsettet for tysnes-infoskjerm-2, **`skjerm1`** for
   tysnes-infoskjerm. Kva skjerm som brukar kva, står i `kiosk.desktop` på
-  skjermen (`rotasjon.html?oppsett=sakprosa`).
+  skjermen (`rotasjon.html?oppsett=skjerm1`).
 - **`url`**: ei nettadresse, til dømes ei lenkje frå karusellbyggjaren eller ei
   kanalside på tysnesbibliotek.no.
 - **`lokal`**: ei fil som ligg på skjermen, i `~/nytt-paa-hylla/`. Dei lokale
