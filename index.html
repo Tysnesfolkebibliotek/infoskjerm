@@ -1191,13 +1191,15 @@ const FORSLAG_DAGAR = 7;
 const MÅLFORM = [
   [/teikn/g, "tegn"], [/eljing/g, "elling"], [/bilet/g, "bilde"], [/skodespel/g, "skuespill"],
   [/heim/g, "hjem"], [/kjærleik/g, "kjærlighet"], [/røynd/g, "virkelighet"], [/spel/g, "spill"],
+  // Ulike ord som tyder det same
+  [/^kriminal$/, "krim"], [/^humoristisk(e)?$/, "humor"],
 ];
 const vokalfri = ord => MÅLFORM.reduce((o, [fra, til]) => o.replace(fra, til), ord.toLowerCase())
   .replace(/[^\p{L}\p{N}]/gu, "").replace(/[aeiouyæøåéèêüö]/g, "")
   .replace(/(.{2,}?)r+$/, "$1");
 
 async function hentForslag(avd) {
-  const nøkkel = "forslag5:" + avd;   // ny nøkkel, så gamle lister frå mindre utval blir hoppa over
+  const nøkkel = "forslag6:" + avd;   // ny nøkkel, så gamle lister frå mindre utval blir hoppa over
   try {
     const lagra = JSON.parse(localStorage.getItem(nøkkel) || "null");
     if (lagra && Date.now() - lagra.tid < FORSLAG_DAGAR * 864e5) return lagra;
