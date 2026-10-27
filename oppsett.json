@@ -2,7 +2,7 @@
   "_forklaring": "Kva kvar infoskjerm viser. «skjerm1» = tysnes-infoskjerm, «skjerm2» = tysnes-infoskjerm-2. Kvar side har anten «url» (ei nettadresse, til dømes ei lenkje frå karusellbyggjaren) eller «lokal» (ei fil på skjermen). «sekund» er kor lenge sida blir vist. «frisk»: true lastar sida på nytt kvar gong ho blir vist. Valfritt: «periode», «dagar» og «tid» (sjå README).",
 
   "skjerm1": [
-    { "namn": "Frå hylla (lokal)", "lokal": "index.html?data=sakprosa.js&tittel=Frå+hylla", "sekund": 180 },
+    { "namn": "Klima og miljø", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=0&sjanger=&plass=&emne=klima%2C+milj%C3%B8&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=0&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&alder=&spraak=&alle=1&titlar=&tittel=Klima+og+milj%C3%B8&tema=skog&skrift=standard&bakgrunn=&overgang=&visning=&fart=&namn=&sek=12&oppdater=120&omtale=1", "sekund": 180 },
     { "namn": "Kanalside 2", "url": "https://www.tysnesbibliotek.no/nn/kanal/2", "sekund": 180, "frisk": true }
   ],
 
