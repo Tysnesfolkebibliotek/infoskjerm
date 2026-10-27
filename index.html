@@ -272,6 +272,7 @@
         <option value="biletbok_nn">Biletbøker på nynorsk</option>
         <option value="born_nn">Barnebøker på nynorsk</option>
         <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
+        <option value="jul">Julebøker</option>
       </select>
         <button type="button" class="knapp sekundær" id="tom">Tøm skjema</button>
       </div>
@@ -492,6 +493,11 @@ const STANDARD = {
 };
 
 const MALAR = {
+  // Julebøker: Bibliofil kan ikkje søkje på plassering, så vi finn kandidatane
+  // med emneord og held berre på dei som står på ei plassering med «jul».
+  jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "jul", emne: "jul, nissar, advent", emnemodus: "eitt", dewey: "", serie: "", ccl: "",
+         rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
+         tittel: "Julebøker", namn: "", sek: "12", oppdater: "120", omtale: "1" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
   biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "12", oppdater: "120", omtale: "1", avd: "tyfb", sjanger: "Biletbøker, Bildebøker, Biletbok, Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
   born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "12", oppdater: "120", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
