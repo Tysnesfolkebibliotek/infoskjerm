@@ -48,6 +48,36 @@
     --bakgrunn: #0e1712; --tekst: #f0f3ec; --dempa: #a9b8a6; --aksent: #9cc96b;
     --aksent-tekst: #122008; --skugge: 14,23,18; --reserve-a: #233a2a; --reserve-b: #111c15;
   }
+  /* ---- Sesongtema med diskré pynt (sjå lagPynt i skriptet) ---- */
+  :root[data-tema="jul"] {
+    --bakgrunn: #0d1f17; --tekst: #fbf5ea; --dempa: #c9bda6; --aksent: #c9392f;
+    --aksent-tekst: #ffffff; --skugge: 13,31,23; --reserve-a: #6b1e19; --reserve-b: #123326;
+  }
+  :root[data-tema="halloween"] {
+    --bakgrunn: #140c1b; --tekst: #f7efe4; --dempa: #b9a5c6; --aksent: #f07c1b;
+    --aksent-tekst: #140c1b; --skugge: 20,12,27; --reserve-a: #4a2366; --reserve-b: #1d1028;
+  }
+  #pynt { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  #pynt svg { position: absolute; }
+  /* Snø: små prikkar som fell sakte og vaggar litt */
+  .snø { position: absolute; top: -2vh; border-radius: 50%; background: #fff; animation: snøfall linear infinite; }
+  @keyframes snøfall {
+    0%   { transform: translate(0, 0); }
+    50%  { transform: translate(1.5vw, 52vh); }
+    100% { transform: translate(-1vw, 105vh); }
+  }
+  /* Flaggermus: flyg sakte over skjermen og blafrar litt */
+  .flaggermus { position: absolute; animation: flyg linear infinite; }
+  .flaggermus svg { position: static; width: 100%; height: auto; animation: blafr 0.6s ease-in-out infinite alternate; transform-origin: 50% 60%; }
+  @keyframes flyg {
+    0%   { transform: translate(-15vw, 0); }
+    25%  { transform: translate(25vw, -3vh); }
+    50%  { transform: translate(55vw, 2vh); }
+    75%  { transform: translate(85vw, -2vh); }
+    100% { transform: translate(120vw, 1vh); }
+  }
+  @keyframes blafr { from { transform: scaleY(1); } to { transform: scaleY(.55); } }
+  @media (prefers-reduced-motion: reduce) { .snø, .flaggermus, .flaggermus svg { animation: none; } }
   :root[data-tema="haust"] {
     --bakgrunn: #1d0f0b; --tekst: #fbefe6; --dempa: #cfae9d; --aksent: #e9773d;
     --aksent-tekst: #1d0f0b; --skugge: 29,15,11; --reserve-a: #5c2b1b; --reserve-b: #2b130c;
@@ -282,6 +312,7 @@
   <div class="bakteppe" id="bakteppe-a"></div>
   <div class="bakteppe" id="bakteppe-b"></div>
   <div class="skugge"></div>
+  <div id="pynt" aria-hidden="true"></div>
   <main>
     <header>
       <h1 class="overskrift" id="overskrift"></h1>
@@ -417,6 +448,8 @@
           <option value="skog">Skog</option>
           <option value="lys">Lys</option>
           <option value="haust">Haust</option>
+          <option value="jul">Jul</option>
+          <option value="halloween">Halloween</option>
           <option value="libry">Libry content</option>
         </select>
       </div>
@@ -689,9 +722,69 @@ function brukSkrift(namn) {
 // VISNING
 // =====================================================================
 
+// ---- Pynt for sesongtema ------------------------------------------------
+// Enkle, svake former teikna med SVG, bak bøkene. Skal ikkje ta merksemd.
+function lagPynt(tema) {
+  const pynt = document.getElementById("pynt");
+  if (!pynt) return;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = (viewBox, stil, innhald) => {
+    const s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", viewBox); s.setAttribute("style", stil);
+    s.innerHTML = innhald; return s;
+  };
+  if (tema === "jul") {
+    // Snøfall: 28 prikkar med ulik storleik, fart og start
+    for (let i = 0; i < 28; i++) {
+      const f = document.createElement("div");
+      const d = 0.25 + Math.random() * 0.55;                   // storleik i vw
+      f.className = "snø";
+      f.style.cssText = `left:${Math.random() * 100}vw; width:${d}vw; height:${d}vw; opacity:${0.18 + Math.random() * 0.35};` +
+        `animation-duration:${16 + Math.random() * 18}s; animation-delay:${-Math.random() * 30}s;`;
+      pynt.append(f);
+    }
+    // Grantre-silhuettar nedst i begge hjørna
+    const tre = (x, h) => `<g transform="translate(${x},${100 - h}) scale(${h / 100})">` +
+      `<polygon points="50,0 68,28 60,28 78,55 66,55 88,88 12,88 34,55 22,55 40,28 32,28"/><rect x="45" y="88" width="10" height="12"/></g>`;
+    pynt.append(svg("0 0 300 100", "left:-2vw; bottom:0; width:40vw; fill:#fff; opacity:.05;", tre(0, 80) + tre(70, 100) + tre(150, 65)));
+    pynt.append(svg("0 0 300 100", "right:-2vw; bottom:0; width:34vw; fill:#fff; opacity:.05;", tre(40, 70) + tre(120, 95) + tre(210, 60)));
+  }
+  if (tema === "halloween") {
+    // Måne øvst til høgre, med ein mjuk glød
+    pynt.append(svg("0 0 100 100", "right:6vw; top:9vh; width:16vw; opacity:.22;",
+      `<defs><radialGradient id="glod"><stop offset="55%" stop-color="#ffe9b0"/><stop offset="100%" stop-color="#ffe9b0" stop-opacity="0"/></radialGradient></defs>` +
+      `<circle cx="50" cy="50" r="50" fill="url(#glod)"/><circle cx="50" cy="50" r="30" fill="#ffe7a8"/>`));
+    // Spindelvev i hjørnet øvst til venstre
+    let vev = "";
+    for (let v = 0; v <= 90; v += 15) { const r = v * Math.PI / 180; vev += `<line x1="0" y1="0" x2="${(Math.cos(r) * 100).toFixed(1)}" y2="${(Math.sin(r) * 100).toFixed(1)}"/>`; }
+    for (const ring of [22, 40, 58, 76, 94]) {
+      let d = "";
+      for (let v = 0; v <= 90; v += 15) {
+        const r = v * Math.PI / 180, x = (Math.cos(r) * ring).toFixed(1), y = (Math.sin(r) * ring).toFixed(1);
+        d += v === 0 ? `M${x},${y}` : ` Q${(Math.cos(r - 0.13) * ring * 0.9).toFixed(1)},${(Math.sin(r - 0.13) * ring * 0.9).toFixed(1)} ${x},${y}`;
+      }
+      vev += `<path d="${d}"/>`;
+    }
+    pynt.append(svg("0 0 100 100", "left:0; top:0; width:26vw; fill:none; stroke:#fff; stroke-width:.5; opacity:.09;", vev));
+    // Fire flaggermus som flyg sakte over skjermen på ulike høgder
+    const bat = `<path fill="#000" d="M0,6 C2,2 5,1 7,4 C8,2 9.5,2 10,4 L10.6,2.6 L11.4,2.6 L12,4 C12.5,2 14,2 15,4 C17,1 20,2 22,6 C19.5,4.8 17.5,5.8 16.5,8 C15.5,6.8 14,6.8 13,8 L11,10 L9,8 C8,6.8 6.5,6.8 5.5,8 C4.5,5.8 2.5,4.8 0,6 Z"/>`;
+    for (let i = 0; i < 4; i++) {
+      const b = document.createElement("div");
+      b.className = "flaggermus";
+      b.style.cssText = `left:0; top:${8 + i * 17 + Math.random() * 8}vh; width:${4.5 + Math.random() * 3}vw; opacity:${0.28 + Math.random() * 0.15};` +
+        `animation-duration:${28 + Math.random() * 20}s; animation-delay:${-Math.random() * 40}s;`;
+      b.append(svg("0 0 22 10", "", bat.replace('#000', '#0a0610')));
+      // Silhuetten blir svak lilla mot den mørke bakgrunnen
+      b.querySelector("path").setAttribute("fill", "#cdb6e0");
+      pynt.append(b);
+    }
+  }
+}
+
 function startVisning(cfg) {
   document.body.className = "vis";
-  if (["fjord", "skog", "lys", "haust", "libry"].includes(cfg.tema)) document.documentElement.dataset.tema = cfg.tema;
+  if (["fjord", "skog", "lys", "haust", "jul", "halloween", "libry"].includes(cfg.tema)) document.documentElement.dataset.tema = cfg.tema;
+  lagPynt(cfg.tema);
   // Libry content brukar same skrift som kanalsidene, med mindre ei anna er valt
   brukSkrift(cfg.tema === "libry" && (!cfg.skrift || cfg.skrift === "standard") ? "sourcesans" : cfg.skrift);
   document.getElementById("visning").hidden = false;
