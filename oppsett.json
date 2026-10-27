@@ -3,6 +3,7 @@
 
   "skjerm1": [
     { "namn": "Klima og miljø", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=0&sjanger=&plass=&emne=klima%2C+milj%C3%B8&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=0&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&alder=&spraak=&alle=1&titlar=&tittel=Klima+og+milj%C3%B8&tema=skog&skrift=standard&bakgrunn=&overgang=&visning=&fart=&namn=&sek=12&oppdater=120&omtale=1", "sekund": 180 },
+    { "namn": "Biografiar", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv&lf=0&sjanger=Biografiar&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=1&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&alder=&spraak=&alle=0&titlar=&tittel=Biografiar&tema=kveld&skrift=standard&bakgrunn=zoom&overgang=&visning=&fart=&namn=&sek=12&oppdater=120&omtale=1", "sekund": 180 },
     { "namn": "Kanalside 2", "url": "https://www.tysnesbibliotek.no/nn/kanal/2", "sekund": 180, "frisk": true }
   ],
 
