@@ -493,9 +493,8 @@ const STANDARD = {
 };
 
 const MALAR = {
-  // Julebøker: Bibliofil kan ikkje søkje på plassering, så vi finn kandidatane
-  // med emneord og held berre på dei som står på ei plassering med «jul».
-  jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "jul", emne: "jul, nissar, advent", emnemodus: "eitt", dewey: "", serie: "", ccl: "",
+  // Julebøker: søk direkte på plasseringa «jul» med CCL (plass=jul).
+  jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "plass=jul",
          rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
          tittel: "Julebøker", namn: "", sek: "12", oppdater: "120", omtale: "1" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
@@ -1148,7 +1147,10 @@ async function hentSøk(cfg, avd, mål, meld) {
   // Alle: store bunkar i rekkjefølgje. Elles: små bunkar frå tilfeldige stader.
   const B = alle ? 100 : tilfeldig ? 5 : 25;
   const MAKS = alle ? 20 : tilfeldig ? 60 : 20;   // alle: leit gjennom opptil 2000 treff for å finne inntil 500
-  const ekstra = tilfeldig ? {} : { sortKeys: "date" };
+  // Nyast først, og bøker utan årstal sist (lowValue). Sjå òg retningssjekken under.
+  const ekstra = tilfeldig ? {} : { sortKeys: "date,,false,false,lowValue" };
+  const årstal = p => Number((((p && p.sru_recordData) || {}).bsdc_date || "").match(/\d{4}/)?.[0] || 0);
+  const nyastÅr = svar => Math.max(0, ...(((svar && svar.feed && svar.feed.entry) || []).map(årstal)));
 
   // Første bunk frå kvart søk gir både treff og totalt tal, så vi slepp eit eige
   // teljesøk. Svaret blir teke vare på og brukt når den bunken står for tur.
@@ -1161,8 +1163,16 @@ async function hentSøk(cfg, avd, mål, meld) {
       førsteSvar.set(nøkkel(query, 0), første);
       const totalt = Number((første && første.feed && første.feed.sru_numberOfRecords) || 0);
       const tal = Math.ceil(totalt / B);
-      // «s» er kor langt bunken ligg frå slutten av trefflista
-      for (let n = 0; n < tal; n++) bunkar.push({ query, n, s: tal - 1 - n });
+      // Nyaste: sjekk kva veg Bibliofil faktisk har sortert ved å samanlikne
+      // første og siste bunk. Er dei nyaste bøkene til slutt, les vi bakfrå.
+      let fraSlutt = false;
+      if (!tilfeldig && tal > 1) {
+        const siste = await sru({ query, startRecord: (tal - 1) * B + 1, maximumRecords: B, ...ekstra });
+        førsteSvar.set(nøkkel(query, tal - 1), siste);
+        fraSlutt = nyastÅr(siste) > nyastÅr(første);
+      }
+      // «p» er rekkjefølgja bunkane blir lesne i
+      for (let n = 0; n < tal; n++) bunkar.push({ query, n, fraSlutt, p: fraSlutt ? tal - 1 - n : n });
     }
     return bunkar;
   }
@@ -1188,11 +1198,11 @@ async function hentSøk(cfg, avd, mål, meld) {
   // Tilfeldig: stokk alle. Nyaste: ta første bunk frå kvart søk, så andre, osb.
   // Nyaste: Bibliofil sorterer eldst først, så vi tek bunkane frå slutten.
   if (tilfeldig && !alle) stokk(bunkar);
-  else if (!tilfeldig) bunkar.sort((a, b) => a.s - b.s);
+  else if (!tilfeldig) bunkar.sort((a, b) => a.p - b.p);
   else bunkar.sort((a, b) => a.n - b.n);
   bunkar = bunkar.slice(0, MAKS * søk.length);
 
-  const ut = [], forfattarar = new Set(), bøker = new Set(), sjekka = new Set();
+  const ut = [], forfattarar = new Set(), bøker = new Set(), sjekka = new Set(), årFor = new Map();
   // Neste søk startar medan førre bunk blir sjekka mot eksemplarinfo
   let neste = bunkar.length ? Promise.resolve(hentBunk(bunkar[0])) : null;
   for (let i = 0; i < bunkar.length; i++) {
@@ -1204,7 +1214,8 @@ async function hentSøk(cfg, avd, mål, meld) {
       .filter(p => !sjekka.has(String(p.id)) && (sjekka.add(String(p.id)), førehand(p, cfg)));
     if (!poster.length) continue;
     const eks = await hentEksemplar(poster.map(p => String(p.id)));
-    for (const p of (tilfeldig ? stokk(poster) : poster.slice().reverse())) {
+    for (const p of (tilfeldig ? stokk(poster) : bunkar[i].fraSlutt ? poster.slice().reverse() : poster)) {
+      årFor.set(String(p.id), årstal(p));
       const t = vurder(p, avd, eks, cfg);
       if (!t || bøker.has(String(t.id))) continue;
       if (cfg.perforf === "1" && forfattarar.has(t.forfattarNøkkel)) { utelat("same forfattar"); continue; }
@@ -1213,6 +1224,8 @@ async function hentSøk(cfg, avd, mål, meld) {
     meld(Math.min(ut.length, mål));
     if (ut.length >= Math.min(mål, TAK)) { nåddeGrense = true; break; }
   }
+  // Nyaste: sorter til slutt etter år, nyast først og bøker utan årstal sist
+  if (!tilfeldig) ut.sort((a, b) => (årFor.get(String(b.id)) || 0) - (årFor.get(String(a.id)) || 0));
   return ut.slice(0, Math.min(mål, TAK));
 }
 
