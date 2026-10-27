@@ -1,0 +1,1353 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karusellbyggjar</title>
+<!--
+  Karusell for Tysnes folkebibliotek — pilot.
+
+  Éi fil, to roller:
+    karusell.html                 → byggjaren (skjema + førehandsvising)
+    karusell.html#vis=1&…         → sjølve karusellen, slik skjermen viser han
+
+  Alle innstillingane står i adressa etter #. Bøkene blir henta rett frå
+  Bibliofil i nettlesaren (JSONP), så fila treng ingen server og kan opnast
+  rett frå Nedlastingar.
+-->
+<style>
+  :root {
+    --bakgrunn: #14110f;
+    --tekst: #f5efe6;
+    --dempa: #b8ab98;
+    --aksent: #e8a33d;
+    --brikke: rgba(255,255,255,.10);
+    --aksent-tekst: #1b140c;
+    --skugge: 20,17,15;              /* bakgrunnsfargen som RGB, for overgangane */
+    --spor: rgba(255,255,255,.12);
+    --reserve-a: #3b2f25; --reserve-b: #1f1914;
+    --bakteppe-lys: .45;
+    --skrift: "Ubuntu", "DejaVu Sans", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Byggjaren */
+    --b-bg: #f6f3ee;
+    --b-flate: #ffffff;
+    --b-tekst: #22201d;
+    --b-dempa: #6f675d;
+    --b-strek: #e3ddd3;
+    --b-aksent: #b8741a;
+    --b-aksent-tekst: #ffffff;
+    --b-fokus: #e8a33d;
+  }
+  /* ---- Tema for visninga. Vel i byggjaren («tema=» i lenkja). ---- */
+  :root[data-tema="fjord"] {
+    --bakgrunn: #0a1822; --tekst: #eef6fb; --dempa: #9db5c4; --aksent: #2fb2ee;
+    --aksent-tekst: #04141d; --skugge: 10,24,34; --reserve-a: #17384c; --reserve-b: #0b1c27;
+  }
+  :root[data-tema="skog"] {
+    --bakgrunn: #0e1712; --tekst: #f0f3ec; --dempa: #a9b8a6; --aksent: #9cc96b;
+    --aksent-tekst: #122008; --skugge: 14,23,18; --reserve-a: #233a2a; --reserve-b: #111c15;
+  }
+  :root[data-tema="lys"] {
+    --bakgrunn: #f4efe6; --tekst: #1f1b16; --dempa: #62584c; --aksent: #b8741a;
+    --aksent-tekst: #ffffff; --brikke: rgba(0,0,0,.07); --skugge: 244,239,230;
+    --spor: rgba(0,0,0,.10); --reserve-a: #e4d8c4; --reserve-b: #d3c3a9; --bakteppe-lys: 1.15;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --b-bg: #171513; --b-flate: #211e1b; --b-tekst: #f1ebe2; --b-dempa: #a99f92;
+      --b-strek: #36312b; --b-aksent: #e8a33d; --b-aksent-tekst: #1b140c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --b-bg: #171513; --b-flate: #211e1b; --b-tekst: #f1ebe2; --b-dempa: #a99f92;
+    --b-strek: #36312b; --b-aksent: #e8a33d; --b-aksent-tekst: #1b140c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { width: 100%; height: 100%; font-family: var(--skrift); }
+
+  /* ================================================================== */
+  /* VISNING                                                            */
+  /* ================================================================== */
+  body.vis { background: var(--bakgrunn); color: var(--tekst); overflow: hidden; cursor: none; }
+
+  .bakteppe {
+    position: fixed; inset: -10%;
+    background-size: cover; background-position: center;
+    filter: blur(60px) saturate(1.3) brightness(var(--bakteppe-lys));
+    opacity: 0; transition: opacity 1.2s ease;
+  }
+  .bakteppe.synleg { opacity: 1; }
+  .skugge {
+    position: fixed; inset: 0;
+    background: linear-gradient(to bottom, rgba(var(--skugge),.55) 0%, rgba(var(--skugge),.15) 30%, rgba(var(--skugge),.85) 62%, var(--bakgrunn) 100%);
+  }
+  #visning { position: fixed; inset: 0; }
+  #visning main { position: relative; height: 100%; display: flex; flex-direction: column; padding: 5vh 7vw 4vh; }
+  #visning header { display: flex; flex-direction: column; gap: 1.2vh; }
+  .overskrift { font-weight: 700; font-size: 6.2vw; letter-spacing: .01em; }
+  .avdeling { font-size: 2.6vw; color: var(--aksent); text-transform: uppercase; letter-spacing: .14em; font-weight: 700; min-height: 1.2em; }
+
+  .scene { flex: 1; position: relative; margin-top: 3.5vh; min-height: 0; }
+  .bok {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    opacity: 0; transform: translateY(2vh); transition: opacity .9s ease, transform .9s ease;
+  }
+  .bok.synleg { opacity: 1; transform: none; }
+  .omslag-ramme { flex: 1 1 auto; min-height: 0; max-height: 50vh; width: 100%; display: flex; align-items: center; justify-content: center; }
+  .omslag { max-height: 100%; max-width: 80vw; border-radius: .6vw; box-shadow: 0 3vh 6vh rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); }
+  .reserve {
+    height: 100%; aspect-ratio: 2 / 3; border-radius: .6vw;
+    background: linear-gradient(160deg, var(--reserve-a), var(--reserve-b)); box-shadow: 0 3vh 6vh rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center; padding: 4vw; text-align: center;
+    font-size: 4vw; line-height: 1.2; border-left: 1.2vw solid var(--aksent);
+  }
+  .info { width: 100%; margin-top: 4vh; text-align: center; flex: none; }
+  .tittel { font-weight: 700; font-size: 5.6vw; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .undertittel { font-style: italic; font-size: 3vw; color: var(--dempa); margin-top: .8vh; }
+  .forfattar { font-size: 3.4vw; margin-top: 1.6vh; opacity: .92; }
+  .brikker { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4vw; margin-top: 2.6vh; }
+  .brikke { background: var(--brikke); border-radius: 99px; padding: .9vh 2.4vw; font-size: 2.5vw; }
+  .brikke.hylle { background: var(--aksent); color: var(--aksent-tekst); font-weight: 700; }
+  .omtale { font-size: 2.8vw; line-height: 1.5; color: var(--dempa); margin: 2.8vh auto 0; max-width: 82vw; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  #visning footer { display: flex; align-items: center; justify-content: space-between; gap: 3vw; margin-top: 3vh; flex: none; }
+  .framdrift { flex: 1; height: .5vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
+  .framdrift > div { height: 100%; width: 0; background: var(--aksent); }
+  .botnmerke { display: flex; align-items: center; gap: 1.6vw; flex: none; }
+  .vapen { height: 4.4vh; width: auto; filter: drop-shadow(0 .3vh .6vh rgba(0,0,0,.4)); }
+  .botnnamn { font-size: 2.5vw; color: var(--tekst); opacity: .85; letter-spacing: .04em; white-space: nowrap; }
+  .melding {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 3vh;
+    align-items: center; justify-content: center; text-align: center;
+    font-size: 3.4vw; color: var(--dempa); padding: 10vw; line-height: 1.4;
+  }
+  .melding .liten { font-size: 2.4vw; opacity: .8; }
+  .snurr { width: 7vw; height: 7vw; border-radius: 50%; border: .7vw solid var(--spor); border-top-color: var(--aksent); animation: snurr 1s linear infinite; }
+  @keyframes snurr { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe { transition-duration: .01s; } }
+
+  /* ================================================================== */
+  /* BYGGJAR                                                            */
+  /* ================================================================== */
+  body.byggjar { background: var(--b-bg); color: var(--b-tekst); font-size: 15px; line-height: 1.45; }
+  .b-ramme { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; height: 100vh; }
+  .b-skjema { overflow-y: auto; padding: 24px 24px 40px; border-right: 1px solid var(--b-strek); background: var(--b-flate); }
+  .b-skjema h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+  .b-skjema .ingress { color: var(--b-dempa); margin: 4px 0 18px; font-size: 14px; }
+
+
+  fieldset { border: 0; border-top: 1px solid var(--b-strek); padding: 18px 0 4px; margin-top: 14px; }
+  legend { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--b-dempa); padding-right: 8px; }
+  .felt { margin-top: 12px; }
+  .felt > label, .felt > .etikett { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .hjelp { color: var(--b-dempa); font-size: 12.5px; margin-top: 3px; }
+  input[type=text], input[type=number], select {
+    width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst);
+  }
+  input:disabled { opacity: .45; cursor: not-allowed; }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--b-fokus); outline-offset: 1px; }
+  .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .val, .felt > label.val { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 400; cursor: pointer; }
+  .val input { margin-top: 3px; accent-color: var(--b-aksent); }
+  .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
+  .segment label { flex: 1; text-align: center; padding: 8px 6px; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
+  .segment label:last-child { border-right: 0; }
+  .segment input { position: absolute; opacity: 0; pointer-events: none; }
+  .segment label:has(input:checked) { background: var(--b-aksent); color: var(--b-aksent-tekst); font-weight: 600; }
+  .segment label:has(input:focus-visible) { outline: 2px solid var(--b-fokus); outline-offset: -2px; }
+  .vallinje { display: flex; gap: 6px 18px; flex-wrap: wrap; }
+  .vallinje.kolonnar { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .del { border-top: 1px solid var(--b-strek); margin-top: 18px; }
+  .del > summary {
+    list-style: none; display: flex; align-items: center; gap: 8px; padding: 14px 0 6px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--b-dempa); cursor: pointer; user-select: none;
+  }
+  .del > summary::-webkit-details-marker { display: none; }
+  .del > summary::before { content: "▸"; font-size: 13px; transition: transform .15s ease; }
+  .del[open] > summary::before { transform: rotate(90deg); }
+  .del > summary:hover { color: var(--b-tekst); }
+  .del[open] { padding-bottom: 6px; }
+  .merke { background: var(--b-aksent); color: var(--b-aksent-tekst); border-radius: 99px; padding: 1px 8px;
+           font-size: 11px; letter-spacing: 0; text-transform: none; font-weight: 600; }
+
+  .b-lenkje { margin-top: 22px; padding: 14px; border-radius: 10px; background: var(--b-bg); border: 1px solid var(--b-strek); }
+  .b-lenkje .etikett { font-weight: 700; font-size: 14px; }
+  .b-lenkje code { display: block; margin: 8px 0 10px; font-size: 12px; word-break: break-all; color: var(--b-dempa); max-height: 6.5em; overflow: auto; }
+  .knappar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .knapp { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--b-aksent); background: var(--b-aksent); color: var(--b-aksent-tekst); cursor: pointer; text-decoration: none; }
+  .knapp.sekundær { background: transparent; color: var(--b-tekst); border-color: var(--b-strek); }
+
+  .b-forhand { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 12px; min-width: 0; }
+  .b-skjerm { position: relative; height: min(calc(100vh - 110px), 1100px); aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; background: #000; box-shadow: 0 0 0 10px #2a2622, 0 20px 50px rgba(0,0,0,.35); }
+  .b-skjerm iframe { position: absolute; top: 0; left: 0; width: 1080px; height: 1920px; border: 0; transform-origin: 0 0; }
+  .b-status { font-size: 13px; color: var(--b-dempa); text-align: center; min-height: 1.4em; }
+
+  @media (max-width: 820px) {
+    .b-ramme { grid-template-columns: 1fr; height: auto; }
+    .b-skjema { border-right: 0; border-bottom: 1px solid var(--b-strek); padding: 20px 16px 28px; }
+    .b-forhand { padding: 20px 16px 32px; }
+    .b-skjerm { height: auto; width: min(100%, 360px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= VISNING ======================= -->
+<div id="visning" hidden>
+  <div class="bakteppe" id="bakteppe-a"></div>
+  <div class="bakteppe" id="bakteppe-b"></div>
+  <div class="skugge"></div>
+  <main>
+    <header>
+      <h1 class="overskrift" id="overskrift"></h1>
+      <div class="avdeling" id="avdeling"></div>
+    </header>
+    <section class="scene" id="scene"></section>
+    <footer>
+      <div class="framdrift"><div id="framdrift"></div></div>
+      <div class="botnmerke">
+        <img class="vapen" alt="" src="data:image/png;base64,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">
+        <span class="botnnamn">Tysnes folkebibliotek</span>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<!-- ======================= BYGGJAR ======================= -->
+<div id="byggjar" class="b-ramme" hidden>
+  <form class="b-skjema" id="skjema" autocomplete="off">
+    <h1>Karusellbyggjar</h1>
+    <p class="ingress">Lag ein karusell, sjå han med ekte bøker, og kopier lenkja til skjermen.</p>
+
+    <div class="felt">
+      <label for="mal">Start frå ein mal</label>
+      <select id="mal">
+        <option value="">Vel mal …</option>
+        <option value="nyheiter">Nyheiter</option>
+        <option value="sakprosa">Frå hylla (sakprosa)</option>
+        <option value="krim">Krim</option>
+        <option value="biografi">Biografiar</option>
+        <option value="lokal">Lokalhistorie</option>
+        <option value="natur">Natur og friluftsliv</option>
+        <option value="klima">Klima og miljø</option>
+        <option value="handarbeid">Sy og strikk</option>
+        <option value="fantasy">Fantasy (born)</option>
+        <option value="fotball">Fotball (born)</option>
+        <option value="teikne">Teikneseriar (born)</option>
+      </select>
+    </div>
+
+    <div class="felt">
+      <label for="tittel">Overskrift</label>
+      <input type="text" id="tittel" name="tittel">
+    </div>
+
+    <div class="felt">
+      <span class="etikett">Avdeling</span>
+      <div class="vallinje">
+        <label class="val"><input type="checkbox" name="avd" value="tyfv"> Vaksen</label>
+        <label class="val"><input type="checkbox" name="avd" value="tyfb"> Born og unge</label>
+      </div>
+    </div>
+
+    <div class="felt">
+      <span class="etikett">Kjelde</span>
+      <div class="segment" role="radiogroup">
+        <label><input type="radio" name="kjelde" value="nyaste"> Nyaste titlar</label>
+        <label><input type="radio" name="kjelde" value="sok"> Søk i samlinga</label>
+      </div>
+    </div>
+
+    <div id="sokefelt">
+      <div class="felt">
+        <label for="lf">Litteraturform</label>
+        <select id="lf" name="lf">
+          <option value="">Alle</option>
+          <option value="0">Sakprosa</option>
+          <option value="1">Skjønnlitteratur</option>
+        </select>
+      </div>
+      <div class="felt">
+        <label for="sjanger">Sjanger</label>
+        <input type="text" id="sjanger" name="sjanger" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
+        <datalist id="sjangrar">
+          <option value="Fantasy"><option value="Krim"><option value="Spenning"><option value="Humor">
+          <option value="Teikneseriar"><option value="Manga"><option value="Biografiar"><option value="Kokebøker">
+        </datalist>
+      </div>
+      <div class="felt">
+        <label for="emne">Emne</label>
+        <input type="text" id="emne" name="emne" placeholder="til dømes klima, fuglar">
+        <select id="emneval" aria-label="Legg til eit vanleg emne" style="margin-top:6px">
+          <option value="">Legg til eit vanleg emne …</option>
+        </select>
+        <p class="hjelp" id="forslagstatus"></p>
+      </div>
+    </div>
+
+    <div class="felt">
+      <label for="antal">Tal bøker</label>
+      <input type="number" id="antal" name="antal" min="5" max="60" step="1">
+      <label class="val" id="allerad"><input type="checkbox" name="alle" value="1"> Alle bøker som passar (opptil 500)</label>
+      <p class="hjelp" id="allehjelp" hidden></p>
+    </div>
+
+    <div class="rad">
+      <div class="felt">
+        <label for="tema">Tema</label>
+        <select id="tema" name="tema">
+          <option value="kveld">Kveld</option>
+          <option value="fjord">Fjord</option>
+          <option value="skog">Skog</option>
+          <option value="lys">Lys</option>
+        </select>
+      </div>
+      <div class="felt">
+        <label for="skrift">Skrift</label>
+        <select id="skrift" name="skrift">
+          <option value="standard">Standard</option>
+          <option value="atkinson">Atkinson (lettlesen)</option>
+          <option value="nunito">Nunito (rund)</option>
+          <option value="montserrat">Montserrat (kraftig)</option>
+          <option value="sourcesans">Source Sans (nøytral)</option>
+          <option value="lora">Lora (med serifar)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ---- Avanserte val, lukka som standard ---- -->
+    <details class="del" id="del-sok" data-felt="emnemodus,dewey,serie,rekkje">
+      <summary>Fleire søkjeval <span class="merke" hidden>endra</span></summary>
+      <div class="felt">
+        <span class="etikett">Fleire emneord</span>
+        <div class="segment" role="radiogroup">
+          <label><input type="radio" name="emnemodus" value="eitt"> Minst eitt av dei</label>
+          <label><input type="radio" name="emnemodus" value="alle"> Alle saman</label>
+        </div>
+      </div>
+      <div class="rad">
+        <div class="felt">
+          <label for="dewey">Dewey byrjar på</label>
+          <input type="text" id="dewey" name="dewey" placeholder="796.334">
+        </div>
+        <div class="felt">
+          <label for="serie">Serie</label>
+          <input type="text" id="serie" name="serie" placeholder="Fotballstjerner">
+        </div>
+      </div>
+      <p class="hjelp">Ei bok kjem med viss ho passar emneordet, deweynummeret <em>eller</em> serien. Dewey fangar fagbøker utan emneord.</p>
+      <div class="felt">
+        <span class="etikett">Rekkjefølgje</span>
+        <div class="segment" role="radiogroup">
+          <label><input type="radio" name="rekkje" value="tilfeldig"> Tilfeldig</label>
+          <label><input type="radio" name="rekkje" value="nyaste"> Nyaste utgjeving</label>
+        </div>
+      </div>
+    </details>
+
+    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,alder,plass,utan">
+      <summary>Krav til bøkene <span class="merke" hidden>endra</span></summary>
+      <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
+      <label class="val"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
+      <label class="val"><input type="checkbox" name="perforf" value="1"> Maks éi bok per forfattar</label>
+      <div class="rad">
+        <div class="felt">
+          <label for="aarfra">Utgjeve frå år</label>
+          <input type="number" id="aarfra" name="aarfra" min="1800" max="2100" placeholder="2020">
+        </div>
+        <div class="felt">
+          <label for="aartil">til og med år</label>
+          <input type="number" id="aartil" name="aartil" min="1800" max="2100" placeholder="i dag">
+        </div>
+      </div>
+      <div class="felt">
+        <span class="etikett">Aldersgruppe</span>
+        <div class="vallinje kolonnar">
+          <label class="val"><input type="checkbox" name="alder" value="aa"> 0–3 år</label>
+          <label class="val"><input type="checkbox" name="alder" value="a"> 3–6 år</label>
+          <label class="val"><input type="checkbox" name="alder" value="b"> 6–9 år</label>
+          <label class="val"><input type="checkbox" name="alder" value="bu"> 9–11 år</label>
+          <label class="val"><input type="checkbox" name="alder" value="u"> 11–13 år</label>
+          <label class="val"><input type="checkbox" name="alder" value="mu"> 13–16 år</label>
+          <label class="val"><input type="checkbox" name="alder" value="vu"> Unge vaksne</label>
+          <label class="val"><input type="checkbox" name="alder" value="v"> Vaksne</label>
+        </div>
+      </div>
+      <div class="felt">
+        <label for="plass">Berre plasseringar som inneheld</label>
+        <input type="text" id="plass" name="plass" placeholder="fantasy, kriminal">
+      </div>
+      <div class="felt">
+        <label for="utan">Hopp over plasseringar som inneheld</label>
+        <input type="text" id="utan" name="utan" placeholder="magasin">
+      </div>
+    </details>
+
+    <details class="del" id="del-vis" data-felt="namn,sek,oppdater,omtale">
+      <summary>Visning <span class="merke" hidden>endra</span></summary>
+      <div class="felt">
+        <label for="namn">Undertekst</label>
+        <input type="text" id="namn" name="namn" placeholder="Tomt = namnet på avdelinga">
+      </div>
+      <div class="rad">
+        <div class="felt">
+          <label for="sek">Sekund per bok</label>
+          <input type="number" id="sek" name="sek" min="4" max="60">
+        </div>
+        <div class="felt">
+          <label for="oppdater">Hent nytt (min)</label>
+          <input type="number" id="oppdater" name="oppdater" min="15" max="1440">
+        </div>
+      </div>
+      <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
+    </details>
+
+    <div class="b-lenkje">
+      <div class="etikett">Lenkje til skjermen</div>
+      <code id="lenkje"></code>
+      <div class="knappar">
+        <button type="button" class="knapp" id="kopier">Kopier lenkje</button>
+        <a class="knapp sekundær" id="opne" target="_blank" rel="noopener">Opne i nytt vindauge</a>
+      </div>
+    </div>
+  </form>
+
+  <section class="b-forhand" aria-label="Førehandsvising">
+    <div class="b-skjerm" id="skjerm"><iframe id="forhand" title="Førehandsvising av karusellen"></iframe></div>
+    <p class="b-status" id="b-status">Førehandsvisinga hentar ekte bøker frå Bibliofil. Første gong kan det ta litt tid.</p>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+// =====================================================================
+// FELLES: innstillingar i adressa
+// =====================================================================
+
+const SERVER = "https://strdbib.bib.no";
+const AVD_NAMN = { tyfv: "For vaksne", tyfb: "For born og unge" };
+
+const STANDARD = {
+  kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+  omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "40",
+  aarfra: "", aartil: "", alder: "", alle: "0",
+  tittel: "Frå hylla", tema: "kveld", skrift: "standard", namn: "", sek: "12", oppdater: "120", omtale: "1",
+};
+
+const MALAR = {
+  nyheiter: { kjelde: "nyaste", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
+              omslag: "1", hylla: "0", perforf: "0", utan: "", antal: "20", aarfra: "", aartil: "", alder: "", alle: "0",
+              tittel: "Nyheiter", tema: "kveld", namn: "", sek: "12", oppdater: "60", omtale: "1" },
+  sakprosa: { ...STANDARD },
+  fantasy:  { kjelde: "sok", avd: "tyfb", lf: "1", sjanger: "Fantasy", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
+              omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "30", aarfra: "", aartil: "", alder: "", alle: "0",
+              tittel: "Fantasy", tema: "kveld", namn: "For born og unge", sek: "12", oppdater: "120", omtale: "1" },
+  krim: { kjelde: "sok", avd: "tyfv", lf: "1", sjanger: "Krim", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Krim", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  fotball: { kjelde: "sok", avd: "tyfb", lf: "", sjanger: "", plass: "", emne: "fotball", emnemodus: "eitt", dewey: "796.334", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Fotball", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  lokal: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "tysnes, sunnhordland", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "0", hylla: "1", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Lokalhistorie", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  teikne: { kjelde: "sok", avd: "tyfb", lf: "", sjanger: "Teikneseriar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Teikneseriar", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  biografi: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "Biografiar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Biografiar", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  natur: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "natur, friluftsliv", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Natur og friluftsliv", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  klima: { kjelde: "sok", avd: "tyfv,tyfb", lf: "0", sjanger: "", plass: "", emne: "klima, miljø", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Klima og miljø", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+  handarbeid: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "strikking, søm, hekling, handarbeid, håndarbeid", emnemodus: "eitt", dewey: "746.4, 646.2", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Sy og strikk", tema: "kveld", namn: "", sek: "12", oppdater: "120", omtale: "1" },
+};
+
+const NØKLAR = Object.keys(STANDARD);
+
+function lesAdresse() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  const cfg = { ...STANDARD };
+  for (const k of NØKLAR) if (p.has(k)) cfg[k] = p.get(k);
+  return { cfg, vis: p.get("vis") === "1" };
+}
+
+function lagHash(cfg, vis) {
+  const p = new URLSearchParams();
+  if (vis) p.set("vis", "1");
+  for (const k of NØKLAR) p.set(k, cfg[k] ?? "");
+  return p.toString();
+}
+
+
+
+// ---- Skrifter. «standard» brukar skrifta på maskina; dei andre kjem frå
+// Google Fonts. Manglar nettet, fell sida tilbake til standardskrifta.
+const SKRIFTER = {
+  atkinson:   ["Atkinson Hyperlegible", "Atkinson+Hyperlegible:wght@400;700"],
+  nunito:     ["Nunito", "Nunito:wght@400;600;700;800"],
+  montserrat: ["Montserrat", "Montserrat:wght@400;600;700"],
+  sourcesans: ["Source Sans 3", "Source+Sans+3:wght@400;600;700"],
+  lora:       ["Lora", "Lora:ital,wght@0,400;0,600;0,700;1,400"],
+};
+function brukSkrift(namn) {
+  const s = SKRIFTER[namn];
+  if (!s) return;
+  const lenkje = document.createElement("link");
+  lenkje.rel = "stylesheet";
+  lenkje.href = `https://fonts.googleapis.com/css2?family=${s[1]}&display=swap`;
+  document.head.append(lenkje);
+  document.documentElement.style.setProperty("--skrift", `"${s[0]}", "Ubuntu", "DejaVu Sans", system-ui, sans-serif`);
+}
+
+// =====================================================================
+// VISNING
+// =====================================================================
+
+function startVisning(cfg) {
+  document.body.className = "vis";
+  if (["fjord", "skog", "lys"].includes(cfg.tema)) document.documentElement.dataset.tema = cfg.tema;
+  brukSkrift(cfg.skrift);
+  document.getElementById("visning").hidden = false;
+  document.title = cfg.tittel || "Karusell";
+  document.getElementById("overskrift").textContent = cfg.tittel;
+
+  // Byggjaren endrar adressa når du redigerer. Då startar vi på nytt.
+  window.addEventListener("hashchange", () => location.reload());
+
+  const scene = document.getElementById("scene");
+  const avdelingFelt = document.getElementById("avdeling");
+  const framdrift = document.getElementById("framdrift");
+  const bakteppe = [document.getElementById("bakteppe-a"), document.getElementById("bakteppe-b")];
+  let aktivtBakteppe = 0;
+
+  const SEK = Math.max(4, Number(cfg.sek) || 12);
+  const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
+  const nøkkel = "karusell:" + datanøkkel(cfg);
+
+  let titlar = [];
+  let i = 0, førre = null, tidtakar = null, gjeldande = null, køyrer = false;
+
+  // ---- hugse kvar vi slapp -------------------------------------------
+  const lesSist = () => { try { return localStorage.getItem(nøkkel + ":sist"); } catch (e) { return null; } };
+  const lagreSist = id => { try { localStorage.setItem(nøkkel + ":sist", id); } catch (e) {} };
+
+  // ---- teikning -------------------------------------------------------
+  function el(tag, klasse, tekst) {
+    const e = document.createElement(tag);
+    if (klasse) e.className = klasse;
+    if (tekst) e.textContent = tekst;
+    return e;
+  }
+
+  function visMelding(hovud, liten, snurr) {
+    scene.replaceChildren();
+    const m = el("div", "melding");
+    if (snurr) m.append(el("div", "snurr"));
+    m.append(el("div", "", hovud));
+    if (liten) m.append(el("div", "liten", liten));
+    scene.append(m);
+    førre = null;
+  }
+
+  function lagBok(t) {
+    const bok = el("article", "bok");
+    const ramme = el("div", "omslag-ramme");
+    const reserve = () => ramme.replaceChildren(el("div", "reserve", t.tittel));
+    const img = el("img", "omslag");
+    img.alt = "";
+    if (t.omslag && bilete.get(t.omslag) === "ok") {
+      img.src = t.omslag; img.onerror = reserve;
+      ramme.append(img);
+    } else {
+      // Omslaget er ikkje klart: vis tittelkort, og byt til omslaget om det kjem
+      reserve();
+      if (t.omslag) { img.onload = () => ramme.replaceChildren(img); img.src = t.omslag; }
+    }
+
+    const info = el("div", "info");
+    info.append(el("h2", "tittel", t.tittel));
+    if (t.undertittel) info.append(el("div", "undertittel", t.undertittel));
+    if (t.forfattar) info.append(el("div", "forfattar", t.forfattar));
+    const brikker = el("div", "brikker");
+    if (t.hylle) brikker.append(el("span", "brikke hylle", t.hylle));
+    if (t.alder) brikker.append(el("span", "brikke", t.alder));
+    for (const s of (t.sjanger || []).slice(0, 2)) brikker.append(el("span", "brikke", s));
+    if (brikker.childElementCount) info.append(brikker);
+    if (cfg.omtale === "1" && t.omtale) info.append(el("p", "omtale", t.omtale));
+    bok.append(ramme, info);
+    return bok;
+  }
+
+  function visBakteppe(url) {
+    const neste = bakteppe[1 - aktivtBakteppe];
+    neste.style.backgroundImage = url ? `url("${url.replace(/"/g, "%22")}")` : "none";
+    neste.classList.add("synleg");
+    bakteppe[aktivtBakteppe].classList.remove("synleg");
+    aktivtBakteppe = 1 - aktivtBakteppe;
+  }
+
+  function startFramdrift() {
+    framdrift.style.transition = "none";
+    framdrift.style.width = "0";
+    framdrift.offsetWidth;
+    framdrift.style.transition = `width ${SEK}s linear`;
+    framdrift.style.width = "100%";
+  }
+
+  // ---- forlasting av omslag ------------------------------------------
+  // Biletserveren kan vere treig. Alle omslag blir difor henta i bakgrunnen
+  // med ein gong, og karusellen viser berre bøker der omslaget er ferdig.
+  const bilete = new Map();   // adresse → "lastar" | "ok" | "feil"
+  const PRØV_IGJEN_MIN = 2;
+
+  function forlast(url) {
+    if (!url || bilete.has(url)) return;
+    bilete.set(url, "lastar"); lastarSidan.set(url, Date.now());
+    const img = new Image();
+    img.onload = () => { bilete.set(url, "ok"); if (ventarPåBilete) { ventarPåBilete = false; clearTimeout(tidtakar); tidtakar = null; fortset(); } };
+    img.onerror = () => { bilete.set(url, "feil"); setTimeout(() => bilete.delete(url), PRØV_IGJEN_MIN * 60000); };
+    img.src = url;
+  }
+
+  // Krev vi omslag, må biletet vere lasta. Elles kan boka visast med tittelkort.
+  // Ei bok er klar når omslaget er lasta, har feila, eller har brukt meir enn
+  // MAKS_VENT_SEK. Då får ho tittelkort, så karusellen aldri stoppar opp.
+  const MAKS_VENT_SEK = 15;
+  const lastarSidan = new Map();
+  // Lastar dei fleste omslag fint, hoppar vi over dei som feilar eller er treige.
+  // Lastar få (til dømes når biletserveren slit), viser vi tittelkort.
+  const klar = t => {
+    if (!t.omslag) return true;
+    const st = bilete.get(t.omslag);
+    if (st === "ok") return true;
+    // Hoppar berre over når mange nok omslag lastar. Slit biletserveren,
+    // er det betre å vise bøkene med tittelkort enn å vise berre nokre få.
+    const talOk = titlar.filter(b => b.omslag && bilete.get(b.omslag) === "ok").length;
+    const mangeOk = talOk >= Math.min(8, Math.ceil(titlar.length / 2));
+    if (mangeOk) return false;
+    if (st === "feil") return true;
+    return Date.now() - (lastarSidan.get(t.omslag) || Date.now()) > MAKS_VENT_SEK * 1000;
+  };
+
+  let ventarPåBilete = false, gjeldandeIdx = 0;
+
+  function neste() {
+    if (!titlar.length) return;
+    titlar.forEach(t => forlast(t.omslag));          // nye forsøk på omslag som feila for lenge sidan
+    // Finn neste bok som er klar, frå der vi er
+    let funnen = -1;
+    for (let n = 0; n < titlar.length; n++) {
+      if (klar(titlar[(i + n) % titlar.length])) { funnen = (i + n) % titlar.length; break; }
+    }
+    if (funnen < 0) {
+      // Ingen omslag er klare enno. Vent, og prøv igjen om litt.
+      ventarPåBilete = true;
+      if (!førre) visMelding("Hentar omslag …", "Biletserveren er treig akkurat no.", true);
+      tidtakar = setTimeout(() => { tidtakar = null; ventarPåBilete = false; neste(); }, 3000);
+      return;
+    }
+    i = funnen;
+    gjeldandeIdx = funnen;
+    const t = titlar[funnen];
+    gjeldande = t;
+    const bok = lagBok(t);
+    scene.append(bok);
+    requestAnimationFrame(() => requestAnimationFrame(() => bok.classList.add("synleg")));
+    if (førre) { const g = førre; g.classList.remove("synleg"); setTimeout(() => g.remove(), 1000); }
+    else scene.querySelectorAll(".melding").forEach(m => m.remove());
+    førre = bok;
+    avdelingFelt.textContent = t.etikett || "";
+    visBakteppe(t.omslag);
+    startFramdrift();
+    i++;
+    tidtakar = setTimeout(() => { lagreSist(String(t.id)); neste(); }, SEK * 1000);
+  }
+
+  function pause() { clearTimeout(tidtakar); tidtakar = null; if (gjeldande) i = gjeldandeIdx; gjeldande = null; ventarPåBilete = false; }
+  function fortset() { if (!tidtakar && køyrer && titlar.length) neste(); }
+
+  // Byt til ny liste utan å hoppe tilbake til første bok
+  function brukListe(nye) {
+    const varTom = !titlar.length;
+    titlar = nye;
+    titlar.forEach(t => forlast(t.omslag));
+    const sist = titlar.findIndex(t => String(t.id) === lesSist());
+    i = sist >= 0 ? sist + 1 : 0;
+    if (varTom && køyrer) fortset();
+  }
+
+  // ---- henting og mellomlagring --------------------------------------
+  function lesLager() {
+    try { return JSON.parse(localStorage.getItem(nøkkel) || "null"); } catch (e) { return null; }
+  }
+  function skrivLager(liste) {
+    try { localStorage.setItem(nøkkel, JSON.stringify({ tid: Date.now(), titlar: liste })); } catch (e) {}
+  }
+
+  async function oppdater() {
+    const t0 = Date.now();
+    try {
+      const nye = await hentBøker(cfg, (funne, mål) => {
+        if (!titlar.length) visMelding("Hentar bøker frå biblioteket …", mål ? `${funne} av ${mål} funne` : funne ? `${funne} funne så langt` : "", true);
+        meldTilByggjar({ status: "hentar", funne, mål });
+      });
+      if (nye.length) { skrivLager(nye); brukListe(nye); }
+      else if (!titlar.length) visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava.");
+      meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1", sek: Math.round((Date.now() - t0) / 1000) });
+    } catch (e) {
+      if (!titlar.length) visMelding("Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
+      meldTilByggjar({ status: "feil", melding: e.message });
+      setTimeout(oppdater, 5 * 60 * 1000);
+    }
+  }
+
+  function meldTilByggjar(m) {
+    if (window.parent !== window) try { window.parent.postMessage({ karusell: m }, "*"); } catch (e) {}
+  }
+
+  // ---- start ----------------------------------------------------------
+  const lagra = lesLager();
+  if (lagra && lagra.titlar && lagra.titlar.length) brukListe(lagra.titlar);
+  else visMelding("Hentar bøker frå biblioteket …", "", true);
+
+  const forGammal = !lagra || Date.now() - lagra.tid > OPPDATER_MIN * 60000;
+  if (forGammal) oppdater();
+  setInterval(oppdater, OPPDATER_MIN * 60000);
+
+  // Inne i rotasjonssida ventar vi på beskjed; åleine startar vi sjølv.
+  // (Same beskjedar som Nyheiter-sida brukar i dag.)
+  const iRotasjon = window.parent !== window && !new URLSearchParams(location.hash.slice(1)).has("forhand");
+  if (iRotasjon) {
+    window.addEventListener("message", e => {
+      if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); }
+      if (e.data && e.data.nyheiter === "skjul") { køyrer = false; pause(); }
+    });
+    window.parent.postMessage({ nyheiter: "klar" }, "*");
+  } else {
+    køyrer = true; fortset();
+  }
+}
+
+// Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
+function datanøkkel(cfg) {
+  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","alle","namn"]
+    .map(k => k + "=" + (cfg[k] || "")).join("&");
+}
+
+
+// =====================================================================
+// HENTING FRÅ BIBLIOFIL (JSONP)
+// =====================================================================
+//
+// Nettlesaren får ikkje lese data frå andre nettstader med vanlege
+// førespurnader. Med JSONP kjem dataa i staden som eit lite skript som
+// kallar ein funksjon vi har laga: callback({...}).
+//
+// SRU brukar alltid funksjonsnamnet «callback», så SRU-førespurnader må gå
+// éin om gongen (ein kø). copies let oss velje namn, så dei får unike namn.
+
+function jsonp(url, namn, ms) {
+  return new Promise((ok, feil) => {
+    const s = document.createElement("script");
+    let ferdig = false;
+    const slutt = (fn, v) => { if (ferdig) return; ferdig = true; clearTimeout(t); s.remove(); try { delete window[namn]; } catch (e) { window[namn] = undefined; } fn(v); };
+    const t = setTimeout(() => slutt(feil, new Error("Bibliofil svarte ikkje i tide")), ms);
+    window[namn] = data => slutt(ok, data);
+    s.onerror = () => slutt(feil, new Error("Fekk ikkje kontakt med Bibliofil"));
+    s.onload = () => setTimeout(() => slutt(feil, new Error("Uventa svar frå Bibliofil")), 0);
+    s.src = url;
+    document.head.append(s);
+  });
+}
+
+function sruUrl(param) {
+  const alle = { operation: "searchRetrieve", recordSchema: "bsdc", responseType: "text/javascript", ...param };
+  // Kolon blir ståande ukoda, slik Bibliofil viser i dokumentasjonen
+  return SERVER + "/cgi-bin/sru?" + Object.entries(alle)
+    .map(([k, v]) => k + "=" + encodeURIComponent(String(v)).replace(/%3A/gi, ":")).join("&");
+}
+
+let sruKø = Promise.resolve();
+function sru(param, ms = 60000) {
+  const jobb = sruKø.then(() => jsonp(sruUrl(param), "callback", ms));
+  sruKø = jobb.catch(() => {});
+  return jobb;
+}
+
+let kopiTeljar = 0;
+async function hentEksemplar(idar) {
+  // copies let oss velje funksjonsnamn, så alle porsjonane kan hentast samstundes
+  const bitar = [];
+  for (let n = 0; n < idar.length; n += 25) bitar.push(idar.slice(n, n + 25));
+  const svar = await Promise.all(bitar.map(bit => {
+    const namn = "kopiar" + (++kopiTeljar) + "_" + Date.now();
+    const url = `${SERVER}/cgi-bin/rest_service/copies/1.0/data/${bit.map(encodeURIComponent).join(",")}?fields=full&exfields=full&jsoncallback=${namn}`;
+    return jsonp(url, namn, 30000);
+  }));
+  const ut = {};
+  for (const d of svar) Object.assign(ut, (d && d.elements) || {});
+  return ut;
+}
+
+// ---- rydding (same reglar som Python-skripta) -----------------------
+
+const storForbokstav = s => s ? s[0].toUpperCase() + s.slice(1) : "";
+
+function snuNamn(namn) {
+  if (!namn) return "";
+  if (namn.includes(",")) { const [e, f] = namn.split(/,(.*)/s); return `${f.trim()} ${e.trim()}`; }
+  return namn.trim();
+}
+
+function kortOmtale(tekst, maks = 220) {
+  if (!tekst) return "";
+  tekst = tekst.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (tekst.length <= maks) return tekst;
+  const kutt = tekst.slice(0, maks);
+  const siste = Math.max(kutt.lastIndexOf(". "), kutt.lastIndexOf("! "), kutt.lastIndexOf("? "));
+  if (siste > maks * 0.5) return kutt.slice(0, siste + 1);
+  return kutt.replace(/\s+\S*$/, "") + " …";
+}
+
+function ryddTittel(t) {
+  if (t.includes(" : ")) {
+    const [hovud, ...resten] = t.split(" : ");
+    let under = resten.join(" : ").trim();
+    if (under.split(/\s+/).length === 1) under = "";   // «kriminalroman», «roman» osb.
+    return [hovud.trim(), storForbokstav(under)];
+  }
+  return [t.trim(), ""];
+}
+
+const forfattarFrå = d => {
+  let c = d.bsdc_creator || {};
+  if (Array.isArray(c)) c = c[0] || {};
+  return c.name || "";
+};
+
+const påHylla = e => !!e && !!e.in && !e.rdy;
+
+function finnEksemplar(eks, id, avd) {
+  const kopiar = ((eks[String(id)] || {}).copies || []).filter(k => k.loc === avd);
+  return kopiar.find(påHylla) || kopiar[0] || null;
+}
+
+const SKJØNNSJANGRAR = new Set(["romanar", "romaner", "noveller", "dikt", "skodespel", "skuespill"]);
+function serUtSomFag(d) {
+  if (d.bs_littform === "R") return false;
+  if ((d.bs_genre || []).some(g => SKJØNNSJANGRAR.has(g.toLowerCase()))) return false;
+  const id = d.bsdc_identifier || {};
+  return !!(id.dewey || id.hylle);
+}
+
+// Behald berre deweynummer og forfattarkode: «q a,b 363.73 D» → «363.73 D»,
+// «SOL bu,u» → «SOL», «q641.5 GRA» → «641.5 GRA». Små bokstavar er format- og
+// alderskodar som ikkje hjelper publikum å finne boka.
+function ryddSignatur(sig) {
+  return (sig || "").split(/\s+/)
+    .map(b => b.replace(/^[a-zæøå]+(?=\d)/, ""))
+    .filter(b => /^\d/.test(b) || (/[A-ZÆØÅ]/.test(b) && b === b.toUpperCase() && !b.includes(",")))
+    .join(" ");
+}
+
+function lagHylle(d, e) {
+  const plassering = storForbokstav(((e && e.plc) || "").trim());
+  let signatur = ryddSignatur(((e && e.sign) || d.bs_hyllesignatur || d.bs_hylle || "").trim());
+  const id = d.bsdc_identifier || {};
+  const dewey = id.hylle || id.dewey || "";
+  if (d.bs_lf === "0" && dewey && !/\d/.test(signatur)) signatur = `${dewey} ${signatur}`.trim();
+  return [plassering, signatur].filter(Boolean).join(" · ");
+}
+
+// Aldersgrupper etter Biblioteksentralen. Teksten blir laga frå kodane, så han
+// alltid følgjer tabellen: «a,b» → «3–9 år», «bu,u» → «9–13 år», «vu» → «Frå 16 år».
+const ALDER = { aa: [0, 3], a: [3, 6], b: [6, 9], bu: [9, 11], u: [11, 13], mu: [13, 16], vu: [16, null] };
+function alderstekst(kodar) {
+  const g = (kodar || "").split(",").map(k => k.trim()).filter(k => ALDER[k]);
+  if (!g.length) return "";                       // berre «v» (vaksne) eller ukjende kodar
+  const frå = Math.min(...g.map(k => ALDER[k][0]));
+  const opent = g.some(k => ALDER[k][1] === null);
+  const til = Math.max(...g.map(k => ALDER[k][1] ?? 0));
+  return opent ? `Frå ${frå} år` : `${frå}–${til} år`;
+}
+const bibliofilAlder = t => (t && /\d/.test(t)) ? t : "";   // reserve viss kodane manglar
+
+// Førehandssjekk på katalogposten, før vi spør etter eksemplar
+// Tel kvifor bøker fell bort, så byggjaren kan fortelje det
+let utelatne = {};
+let nåddeGrense = false;   // stoppa fordi «Tal bøker» var nådd, før alle treff var sjekka
+const utelat = grunn => { utelatne[grunn] = (utelatne[grunn] || 0) + 1; return false; };
+
+function førehand(post, cfg) {
+  const d = post.sru_recordData || {};
+  // Utgjevingsår: «2026», «[2025]» og «c2019» gir alle eit årstal
+  const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
+  if (fra || til) {
+    const år = Number(((d.bsdc_date || "").match(/\d{4}/) || [])[0] || 0);
+    if (!år || (fra && år < fra) || (til && år > til)) return utelat("utanfor utgjevingsåra");
+  }
+  // Aldersgruppe: boka må ha minst éi av gruppene som er valde
+  const ønskt = (cfg.alder || "").split(",").filter(Boolean);
+  if (ønskt.length) {
+    const har = (d.bs_aldersgruppe || "").split(",").map(x => x.trim());
+    if (!ønskt.some(a => har.includes(a))) return utelat("anna aldersgruppe");
+  }
+  if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
+  if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");     // tryggingsnett mot feilkatalogiserte romanar
+  return true;
+}
+
+// Full vurdering med eksemplarinfo. Gir ei rydda bok, eller null.
+function vurder(post, avd, eks, cfg) {
+  const d = post.sru_recordData || {};
+  const e = finnEksemplar(eks, post.id, avd);
+  // Boka må ha eit fysisk eksemplar i avdelinga. Det sorterer ut e-bøker, men
+  // tek med papirbøker som ved ein feil er katalogiserte som «elektronisk ressurs».
+  if (!e) return utelat("ikkje eksemplar i avdelinga (til dømes e-bok)") || null;
+  if (cfg.hylla === "1" && !påHylla(e)) return utelat("ikkje på hylla (utlånt eller reservert)") || null;
+  const ord = f => (f || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const plc = ((e && e.plc) || "").toLowerCase();
+  const berre = ord(cfg.plass);
+  if (berre.length && !berre.some(o => plc.includes(o))) return utelat("anna plassering") || null;   // plasseringa må innehalde eitt av orda
+  if (ord(cfg.utan).some(o => plc.includes(o))) return utelat("utelaten plassering") || null;
+
+  const [tittel, undertittel] = ryddTittel(d.bsdc_title || "");
+  if (!tittel) return null;
+  const alder = alderstekst(d.bs_aldersgruppe) || bibliofilAlder(d.bs_aldersgruppetekst);
+  const plcLåg = plc.trim();
+  // Sjangrar står ofte både på bokmål og nynorsk. Vi tek dei nynorske når dei finst.
+  const emnar = Array.isArray(d.bsdc_subject) ? d.bsdc_subject : [];
+  const nynorske = emnar.filter(e => e.id === "genre" && e.lang === "nno").map(e => e.name);
+  const sjanger = [...new Set(nynorske.length ? nynorske : (d.bs_genre || []))]
+    .filter(g => g !== "Romaner" && g.toLowerCase() !== plcLåg).slice(0, 3);
+  return {
+    id: post.id, tittel, undertittel,
+    forfattar: snuNamn(forfattarFrå(d)),
+    forfattarNøkkel: (forfattarFrå(d) || "").trim().toLowerCase() || "utan-" + post.id,
+    omslag: d.bs_krydderbildeurl || "",
+    hylle: lagHylle(d, e), alder, sjanger,
+    omtale: kortOmtale(d.bsdc_description || ""),
+    etikett: cfg.namn || AVD_NAMN[avd] || avd,
+  };
+}
+
+function stokk(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+function flett(lister) {
+  const ut = [];
+  for (let i = 0; lister.some(l => i < l.length); i++) for (const l of lister) if (i < l.length) ut.push(l[i]);
+  return ut;
+}
+
+// ---- dei to kjeldene -------------------------------------------------
+
+async function hentBøker(cfg, framdrift) {
+  utelatne = {}; nåddeGrense = false;
+  const avdar = (cfg.avd || "").split(",").filter(Boolean);
+  if (!avdar.length) return [];
+  const antal = Math.min(60, Math.max(5, Number(cfg.antal) || 40));
+  const alle = cfg.alle === "1" && cfg.kjelde === "sok";     // hent heile trefflista
+  const lister = [];
+  for (const avd of avdar) {
+    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? antal : Math.ceil(antal / avdar.length);
+    const funneFør = lister.reduce((s, l) => s + l.length, 0);
+    const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
+    lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld) : await hentSøk(cfg, avd, mål, meld));
+  }
+  return cfg.kjelde === "nyaste" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
+}
+
+async function hentNyaste(cfg, avd, mål, meld) {
+  meld(0);
+  const d = await sru({
+    query: "norzig.materialType=l",
+    maximumRecords: mål,
+    extraRequestData: `bibliofil:stat:nyeste:${mål}:45:${cfg.omslag === "1" ? 1 : 0}:${avd}`,
+  }, 90000);
+  const poster = ((d && d.feed && d.feed.entry) || []).filter(p => førehand(p, cfg));
+  const eks = await hentEksemplar(poster.map(p => String(p.id)));
+  const ut = [], sett = new Set();
+  for (const p of poster) {
+    const t = vurder(p, avd, eks, cfg);
+    if (!t) continue;
+    if (cfg.perforf === "1" && sett.has(t.forfattarNøkkel)) { utelat("same forfattar"); continue; }
+    sett.add(t.forfattarNøkkel); ut.push(t);
+  }
+  meld(ut.length);
+  return ut;
+}
+
+// Eitt ord blir trunkert (klima → klima*), så det treff alle emneord som
+// byrjar på ordet. Fleire ord blir søkte som frase i hermeteikn.
+// Søkjeindeksen lagrar ord utan teiknsetjing, så «LHBT+» må søkjast som «lhbt».
+// Vi behald bokstavar, tal, mellomrom, bindestrek og punktum (dewey-liknande ord).
+function reinOrd(tekst) {
+  return (tekst || "").replace(/[^\p{L}\p{N}\s.-]/gu, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+function ordSøk(tekst) {
+  const t = reinOrd(tekst);
+  if (!t) return "";
+  return /\s/.test(t) ? `"${t}"` : `${t}*`;
+}
+
+// Gir ei liste med søk. Vanlegvis eitt, men med «minst eitt av» og fleire
+// emneord blir det eitt søk per emneord, som blir slått saman etterpå.
+// Då treng vi ikkje «or» og parentesar, som serveren kanskje ikkje støttar.
+function byggSøk(cfg, avd, medAlder) {
+  const rein = s => (s || "").replace(/["\\]/g, "").trim();
+  const d = [`bibliofil.ccl="avd=${avd}"`, "norzig.materialType=l"];
+  if (cfg.lf) d.push(`bibliofil.ccl="lf=${rein(cfg.lf)}"`);
+  // Sjanger ligg i same indeks som emneord, men blir søkt utan trunkering,
+  // så «krim» ikkje òg treff emneordet «Kriminalitet».
+  if (reinOrd(cfg.sjanger)) d.push(`dc.subject="${reinOrd(cfg.sjanger)}"`);
+  if (rein(cfg.ccl)) d.push(`bibliofil.ccl="${rein(cfg.ccl)}"`);
+
+  // Emneord: «alle saman» i eitt søk, «minst eitt av» som eitt søk per ord
+  const emne = (cfg.emne || "").split(",").map(ordSøk).filter(Boolean);
+  const emneVariantar = !emne.length ? []
+    : (cfg.emnemodus === "alle" || emne.length === 1) ? [emne.map(e => `dc.subject=${e}`)]
+    : emne.map(e => [`dc.subject=${e}`]);
+
+  // Dewey og serie er alternativ til emneorda («eller»): eitt søk per verdi,
+  // og treffa blir slått saman. 796.334 → bib.classification=796.334*
+  const dewey = (cfg.dewey || "").split(",").map(d => d.replace(/[^\d.]/g, "")).filter(d => /^\d/.test(d));
+  const serie = (cfg.serie || "").split(",").map(ordSøk).filter(Boolean);
+  const kvarAv = [
+    ...emneVariantar,
+    ...dewey.map(d => [`bib.classification=${d}*`]),
+    ...serie.map(s => [`bib.titleSeries=${s}`]),
+  ];
+  const treffVariantar = kvarAv.length ? kvarAv : [[]];
+
+  // Aldersgruppe: eitt søk per gruppe, så Bibliofil berre gir bøker som passar
+  const alder = medAlder ? (cfg.alder || "").split(",").map(rein).filter(Boolean) : [];
+  const alderVariantar = alder.length ? alder.map(a => [`bibliofil.aldersgruppe=${a}`]) : [[]];
+
+  const ut = [];
+  for (const e of treffVariantar) for (const a of alderVariantar) ut.push([...d, ...e, ...a].join(" and "));
+  return ut;
+}
+
+async function hentSøk(cfg, avd, mål, meld) {
+  const tilfeldig = cfg.rekkje !== "nyaste";
+  const alle = mål === Infinity;
+  const TAK = 500;                           // øvre grense når vi hentar alle
+  // Alle: store bunkar i rekkjefølgje. Elles: små bunkar frå tilfeldige stader.
+  const B = alle ? 100 : tilfeldig ? 5 : 25;
+  const MAKS = alle ? 20 : tilfeldig ? 60 : 20;   // alle: leit gjennom opptil 2000 treff for å finne inntil 500
+  const ekstra = tilfeldig ? {} : { sortKeys: "date" };
+
+  // Første bunk frå kvart søk gir både treff og totalt tal, så vi slepp eit eige
+  // teljesøk. Svaret blir teke vare på og brukt når den bunken står for tur.
+  const førsteSvar = new Map();
+  const nøkkel = (q, n) => q + "#" + n;
+  async function finnBunkar(søk) {
+    const bunkar = [];
+    for (const query of søk) {
+      const første = await sru({ query, startRecord: 1, maximumRecords: B, ...ekstra });
+      førsteSvar.set(nøkkel(query, 0), første);
+      const totalt = Number((første && første.feed && første.feed.sru_numberOfRecords) || 0);
+      for (let n = 0; n < Math.ceil(totalt / B); n++) bunkar.push({ query, n });
+    }
+    return bunkar;
+  }
+  const hentBunk = ({ query, n }) => førsteSvar.get(nøkkel(query, n))
+    || sru({ query, startRecord: n * B + 1, maximumRecords: B, ...ekstra });
+
+  meld(0);
+  // Prøv først med aldersgruppe i sjølve søket. Gir det ingen treff (viss
+  // indeksen ikkje er i bruk), søkjer vi utan, og filteret i førehand() tek over.
+  let søk = byggSøk(cfg, avd, true);
+  let bunkar = await finnBunkar(søk);
+  if (!bunkar.length && cfg.alder) { søk = byggSøk(cfg, avd, false); bunkar = await finnBunkar(søk); }
+  if (!bunkar.length) return [];
+  // Tilfeldig: stokk alle. Nyaste: ta første bunk frå kvart søk, så andre, osb.
+  if (tilfeldig && !alle) stokk(bunkar); else bunkar.sort((a, b) => a.n - b.n);
+  bunkar = bunkar.slice(0, MAKS * søk.length);
+
+  const ut = [], forfattarar = new Set(), bøker = new Set(), sjekka = new Set();
+  // Neste søk startar medan førre bunk blir sjekka mot eksemplarinfo
+  let neste = bunkar.length ? Promise.resolve(hentBunk(bunkar[0])) : null;
+  for (let i = 0; i < bunkar.length; i++) {
+    const d = await neste;
+    neste = i + 1 < bunkar.length ? Promise.resolve(hentBunk(bunkar[i + 1])) : null;
+    if (neste) neste.catch(() => {});
+    // Same bok kan kome frå fleire søk (emne, dewey, serie): sjekk ho berre éin gong
+    const poster = ((d && d.feed && d.feed.entry) || [])
+      .filter(p => !sjekka.has(String(p.id)) && (sjekka.add(String(p.id)), førehand(p, cfg)));
+    if (!poster.length) continue;
+    const eks = await hentEksemplar(poster.map(p => String(p.id)));
+    for (const p of (tilfeldig ? stokk(poster) : poster)) {
+      const t = vurder(p, avd, eks, cfg);
+      if (!t || bøker.has(String(t.id))) continue;
+      if (cfg.perforf === "1" && forfattarar.has(t.forfattarNøkkel)) { utelat("same forfattar"); continue; }
+      forfattarar.add(t.forfattarNøkkel); bøker.add(String(t.id)); ut.push(t);
+    }
+    meld(Math.min(ut.length, mål));
+    if (ut.length >= Math.min(mål, TAK)) { nåddeGrense = true; break; }
+  }
+  return ut.slice(0, Math.min(mål, TAK));
+}
+
+
+// =====================================================================
+// BYGGJAR
+// =====================================================================
+
+// =====================================================================
+// VANLEGE EMNE OG SJANGRAR
+// =====================================================================
+// Bibliofil gir ikkje emneord som fasettar, så vi hentar eit tilfeldig utval
+// av titlane i avdelinga og tel kva emne og sjangrar som går igjen.
+// Resultatet blir lagra i nettlesaren i ei veke.
+
+const FORSLAG_UTVAL = 10;       // tal bunkar
+const FORSLAG_BUNK = 100;       // titlar per bunk → om lag 1000 titlar
+const FORSLAG_DAGAR = 7;
+
+const vokalfri = ord => ord.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "").replace(/[aeiouyæøåéèêüö]/g, "");
+
+async function hentForslag(avd) {
+  const nøkkel = "forslag3:" + avd;   // ny nøkkel, så gamle lister frå mindre utval blir hoppa over
+  try {
+    const lagra = JSON.parse(localStorage.getItem(nøkkel) || "null");
+    if (lagra && Date.now() - lagra.tid < FORSLAG_DAGAR * 864e5) return lagra;
+  } catch (e) {}
+
+  const query = `bibliofil.ccl="avd=${avd}" and norzig.materialType=l`;
+  const første = await sru({ query, startRecord: 1, maximumRecords: 1 });
+  const totalt = Number((første && første.feed && første.feed.sru_numberOfRecords) || 0);
+  const emne = {}, sjanger = {};
+  let sett = 0;
+  const startar = stokk(Array.from({ length: Math.max(1, Math.ceil(totalt / FORSLAG_BUNK)) }, (_, n) => n * FORSLAG_BUNK + 1))
+    .slice(0, FORSLAG_UTVAL);
+  for (const start of startar) {
+    const d = await sru({ query, startRecord: start, maximumRecords: FORSLAG_BUNK }, 90000);
+    for (const p of ((d && d.feed && d.feed.entry) || [])) {
+      sett++;
+      const alle = (p.sru_recordData || {}).bsdc_subject || [];
+      for (const [type, mål] of [["genre", sjanger], ["anna", emne]]) {
+        // Nynorsk og bokmål av same ord («Romanar/Romaner», «Hestar/Hester») skil seg
+        // som regel berre i vokalane. Vi slår dei saman med ein nøkkel utan vokalar,
+        // og viser den nynorske forma. Ord som berre finst på eitt språk, kjem med.
+        const iBoka = new Map();
+        for (const e of alle) {
+          if ((type === "genre") !== (e.id === "genre")) continue;
+          const namn = (e.name || "").trim(); if (!namn) continue;
+          const k = vokalfri(namn);
+          const før = iBoka.get(k);
+          if (!før || (e.lang === "nno" && før.lang !== "nno")) iBoka.set(k, { namn, lang: e.lang });
+        }
+        for (const [k, { namn, lang }] of iBoka) {
+          const m = mål[k] || (mål[k] = { n: 0, namn, nno: false });
+          m.n++;
+          if (lang === "nno" && !m.nno) { m.namn = namn; m.nno = true; }
+        }
+      }
+    }
+  }
+  const skaler = n => Math.round(n * totalt / Math.max(1, sett));
+  const topp = (o, n) => Object.values(o).sort((a, b) => b.n - a.n).slice(0, n).map(m => [m.namn, skaler(m.n)]);
+  const res = { tid: Date.now(), totalt, sett, emne: topp(emne, 150), sjanger: topp(sjanger, 50) };
+  try { localStorage.setItem(nøkkel, JSON.stringify(res)); } catch (e) {}
+  return res;
+}
+
+// Slår saman forslag for fleire avdelingar
+function slåSaman(lister) {
+  const sum = {};
+  for (const l of lister) for (const [namn, n] of l) sum[namn] = (sum[namn] || 0) + n;
+  return Object.entries(sum).sort((a, b) => b[1] - a[1]);
+}
+
+function startByggjar(startCfg) {
+  document.body.className = "byggjar";
+  document.getElementById("byggjar").hidden = false;
+
+  const skjema = document.getElementById("skjema");
+  const iframe = document.getElementById("forhand");
+  const skjerm = document.getElementById("skjerm");
+  const status = document.getElementById("b-status");
+  const lenkjeFelt = document.getElementById("lenkje");
+  const opne = document.getElementById("opne");
+  const base = location.href.split("#")[0];
+
+  function fyllInn(cfg) {
+    for (const k of NØKLAR) {
+      const felt = skjema.elements[k];
+      if (!felt) continue;
+      const v = cfg[k] ?? "";
+      if (felt instanceof RadioNodeList || (felt.length && felt[0] && felt[0].type)) {
+        const liste = felt.length !== undefined ? Array.from(felt) : [felt];
+        if (liste[0].type === "radio") liste.forEach(r => r.checked = r.value === v);
+        else if (liste[0].type === "checkbox") { const val = v.split(","); liste.forEach(c => c.checked = val.includes(c.value)); }
+        else felt.value = v;
+      } else if (felt.type === "checkbox") felt.checked = v === felt.value;
+      else felt.value = v;
+    }
+    oppdaterSynlege();
+    const endra = endraDelar(cfg);
+    delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
+  }
+
+  function lesSkjema() {
+    const cfg = {};
+    for (const k of NØKLAR) {
+      const felt = skjema.elements[k];
+      if (!felt) { cfg[k] = STANDARD[k]; continue; }
+      if (felt.length !== undefined && felt[0] && (felt[0].type === "radio" || felt[0].type === "checkbox")) {
+        const liste = Array.from(felt);
+        cfg[k] = liste[0].type === "radio"
+          ? (liste.find(r => r.checked) || {}).value || ""
+          : liste.filter(c => c.checked).map(c => c.value).join(",");
+      } else if (felt.type === "checkbox") cfg[k] = felt.checked ? "1" : "0";
+      else cfg[k] = String(felt.value).trim();
+    }
+    return cfg;
+  }
+
+  function oppdaterSynlege() {
+    const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
+    document.getElementById("sokefelt").hidden = kjelde !== "sok";
+    const alle = skjema.elements.alle;
+    document.getElementById("allerad").hidden = kjelde !== "sok";
+    skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
+  }
+
+  function skaler() {
+    iframe.style.transform = `scale(${skjerm.clientWidth / 1080})`;
+  }
+
+  let ventar = null, sistHash = "";
+  // Merk dei samanfaldbare delane som inneheld val som er endra frå standard
+  const delar = [...document.querySelectorAll("details.del")];
+  function endraDelar(cfg) {
+    return delar.filter(d => {
+      const endra = d.dataset.felt.split(",").some(k => (cfg[k] ?? "") !== (STANDARD[k] ?? ""));
+      d.querySelector(".merke").hidden = !endra;
+      return endra;
+    });
+  }
+
+  function oppdater(straks) {
+    oppdaterSynlege();
+    endraDelar(lesSkjema());
+    const cfg = lesSkjema();
+    const visHash = lagHash(cfg, true);
+    const lenkje = base + "#" + visHash;
+    lenkjeFelt.textContent = lenkje;
+    opne.href = lenkje;
+    history.replaceState(null, "", "#" + lagHash(cfg, false));   // byggjaren hugsar skjemaet ved omlasting
+
+    clearTimeout(ventar);
+    ventar = setTimeout(() => {
+      const ny = visHash + "&forhand=1";
+      if (ny === sistHash) return;
+      sistHash = ny;
+      status.textContent = "Hentar bøker …";
+      iframe.src = base + "#" + ny;
+    }, straks ? 0 : 900);
+  }
+
+  window.addEventListener("message", e => {
+    const m = e.data && e.data.karusell;
+    if (!m || e.source !== iframe.contentWindow) return;
+    if (m.status === "hentar") status.textContent = m.mål ? `Hentar bøker … ${m.funne} av ${m.mål} funne` : m.funne ? `Hentar bøker … ${m.funne} funne så langt` : "Hentar bøker …";
+    if (m.status === "ferdig") {
+      const grunnar = Object.entries(m.utelatne || {}).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${n} ${g}`);
+      status.textContent = (m.tal ? `${m.tal} bøker funne` : "Fann ingen bøker som passar") + (m.sek ? ` på ${m.sek} s.` : ".")
+        + (grunnar.length ? ` Utelatne: ${grunnar.join(", ")}.` : "")
+        + (m.nåddeGrense ? (m.alle ? " Stoppa ved taket på 500."
+            : " Stoppa då «Tal bøker» var nådd, så resten av treffa vart ikkje sjekka. Kryss av for «Alle bøker som passar» for å få med alle.") : "");
+    }
+    if (m.status === "feil") status.textContent = "Fekk ikkje kontakt med Bibliofil: " + m.melding;
+  });
+
+  skjema.addEventListener("input", () => oppdater(false));
+  skjema.addEventListener("change", () => oppdater(false));
+  skjema.addEventListener("submit", e => e.preventDefault());
+
+  const malval = document.getElementById("mal");
+  malval.addEventListener("change", () => {
+    const mal = MALAR[malval.value];
+    if (!mal) return;
+    const no = lesSkjema();
+    fyllInn({ ...STANDARD, ...mal, tema: no.tema, skrift: no.skrift });   // behald tema og skrift
+    oppdater(true);
+    forslagFor = ""; emneval.replaceChildren(new Option("Legg til eit vanleg emne …", "")); forslagstatus.textContent = "";
+    malval.value = "";
+  });
+
+  document.getElementById("kopier").addEventListener("click", async e => {
+    const knapp = e.currentTarget;
+    try { await navigator.clipboard.writeText(lenkjeFelt.textContent); }
+    catch (err) {
+      const r = document.createRange(); r.selectNodeContents(lenkjeFelt);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand("copy");
+    }
+    knapp.textContent = "Kopiert!";
+    setTimeout(() => knapp.textContent = "Kopier lenkje", 1800);
+  });
+
+  new ResizeObserver(skaler).observe(skjerm);
+  // ---- forslag til emne og sjanger ----
+  const emneval = document.getElementById("emneval");
+  const sjangerliste = document.getElementById("sjangrar");
+  const forslagstatus = document.getElementById("forslagstatus");
+  let forslagFor = "";
+  async function oppdaterForslag() {
+    const avdar = lesSkjema().avd.split(",").filter(Boolean);
+    const nøkkel = avdar.join(",");
+    if (!avdar.length || nøkkel === forslagFor) return;
+    forslagFor = nøkkel;
+    forslagstatus.textContent = "Hentar vanlege emne og sjangrar for avdelinga …";
+    emneval.replaceChildren(new Option("Hentar vanlege emne …", ""));
+    try {
+      const res = [];
+      for (const a of avdar) res.push(await hentForslag(a));
+      if (forslagFor !== nøkkel) return;              // avdelinga vart endra medan vi henta
+      const emne = slåSaman(res.map(r => r.emne)).slice(0, 150);
+      const sjangrar = slåSaman(res.map(r => r.sjanger)).slice(0, 50);
+      emneval.replaceChildren(new Option("Legg til eit vanleg emne …", ""),
+        ...emne.map(([namn, n]) => new Option(`${namn} (ca. ${n})`, namn)));
+      sjangerliste.replaceChildren(...sjangrar.map(([namn, n]) => { const o = new Option(`ca. ${n} titlar`, namn); return o; }));
+      const sett = res.reduce((s, r) => s + r.sett, 0), totalt = res.reduce((s, r) => s + r.totalt, 0);
+      forslagstatus.textContent = `Forslaga byggjer på eit tilfeldig utval av ${sett} av ${totalt} titlar, så tala er omtrentlege.`;
+    } catch (e) {
+      forslagstatus.textContent = "Fekk ikkje henta forslag frå Bibliofil.";
+      forslagFor = "";
+    }
+  }
+  emneval.addEventListener("change", () => {
+    // Komma skil emneord i feltet, så komma inne i eit emneord blir til mellomrom
+    const v = emneval.value.replace(/,/g, " ").replace(/\s+/g, " ").trim(); if (!v) return;
+    const felt = skjema.elements.emne;
+    const ord = felt.value.split(",").map(s => s.trim()).filter(Boolean);
+    if (!ord.some(o => o.toLowerCase() === v.toLowerCase())) ord.push(v);
+    felt.value = ord.join(", ");
+    emneval.value = "";
+    oppdater(true);
+  });
+  // Forslaga blir henta først når du opnar menyen, så dei ikkje konkurrerer med førehandsvisinga
+  for (const felt of [emneval, document.getElementById("sjanger")])
+    for (const hending of ["focus", "mousedown"]) felt.addEventListener(hending, () => oppdaterForslag());
+  skjema.addEventListener("change", e => {
+    if (e.target.name !== "avd") return;
+    forslagFor = "";
+    emneval.replaceChildren(new Option("Legg til eit vanleg emne …", ""));
+    forslagstatus.textContent = "";
+  });
+
+  fyllInn(startCfg);
+  skaler();
+  oppdater(true);
+}
+
+
+// =====================================================================
+// START (til slutt, når alle funksjonar og variablar finst)
+// =====================================================================
+const { cfg: CFG, vis: VIS } = lesAdresse();
+if (VIS) startVisning(CFG); else startByggjar(CFG);
+</script>
+</body>
+</html>
