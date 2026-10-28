@@ -1,0 +1,31 @@
+# Lagar emneord.json på nytt éin gong i månaden, eller når du klikkar
+# «Run workflow» under Actions → «Oppdater emneord» på GitHub.
+name: Oppdater emneord
+
+on:
+  schedule:
+    - cron: "23 4 2 * *"     # kl. 04:23 UTC den 2. i kvar månad
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  emneord:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Hent emneord frå Bibliofil
+        run: python3 verktoy/hent_emneord.py
+      - name: Lagre om lista er endra
+        run: |
+          git config user.name "Tysnesfolkebibliotek"
+          git config user.email "Tysnesfolkebibliotek@users.noreply.github.com"
+          git add emneord.json
+          if git diff --cached --quiet; then echo "Ingen endringar."; exit 0; fi
+          git commit -m "Oppdater emneord"
+          git push
