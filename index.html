@@ -1797,11 +1797,22 @@ async function forrigebokBerik(liste, cfg) {
 }
 
 // Finn katalogpostar på ISBN (dc.identifier). Alle ISBN-ane høyrer til same
-// verk, så eitkvart treff er rett bok.
+// verk, så eitkvart treff er rett bok. Vi prøver først alle ISBN-ane i eitt
+// søk med «or». Gir det ingenting, prøver vi dei éin og éin, og fann vi noko
+// då, hugsar vi at «or» ikkje verkar.
+let isbnEinOgEin = false;
 async function finnPåIsbn(isbnar) {
   if (!isbnar.length) return [];
-  const d = await sru({ query: `(${isbnar.map(i => `dc.identifier=${i}`).join(" or ")}) and norzig.materialType=l`, startRecord: 1, maximumRecords: 10 });
-  return (d && d.feed && d.feed.entry) || [];
+  const treff = d => (d && d.feed && d.feed.entry) || [];
+  if (!isbnEinOgEin && isbnar.length > 1) {
+    const poster = treff(await sru({ query: isbnar.map(i => `dc.identifier=${i}`).join(" or "), startRecord: 1, maximumRecords: 10 }));
+    if (poster.length) return poster;
+  }
+  for (const i of isbnar.slice(0, isbnEinOgEin ? 8 : 4)) {
+    const poster = treff(await sru({ query: `dc.identifier=${i}`, startRecord: 1, maximumRecords: 5 }));
+    if (poster.length) { if (isbnar.length > 1) isbnEinOgEin = true; return poster; }
+  }
+  return [];
 }
 
 // Likte du …? Liknande bøker frå Forrige bok som finst i samlinga
