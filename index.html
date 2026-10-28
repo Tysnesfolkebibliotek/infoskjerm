@@ -524,7 +524,11 @@
         <input type="text" id="appellsok" list="appelltermar" placeholder="til dømes spennande, lettlesen">
         <datalist id="appelltermar"></datalist>
         <div class="vallinje" id="appellvalde"></div>
-        <p class="hjelp" id="appellhjelp">Frå Forrige bok. Berre bøker som Biblioteksentralen har skildra med minst éin av desse blir med. Mange eldre bøker og fagbøker er ikkje skildra.</p>
+        <div class="segment" role="radiogroup" id="appellmodusval" style="margin-top:8px" hidden>
+          <label><input type="radio" name="appellmodus" value="alle"> Alle saman</label>
+          <label><input type="radio" name="appellmodus" value="eitt"> Minst éin av dei</label>
+        </div>
+        <p class="hjelp" id="appellhjelp">Frå Forrige bok. Berre bøker som Biblioteksentralen har skildra slik, blir med. Mange eldre bøker og fagbøker er ikkje skildra.</p>
       </div>
 
       <div class="felt" id="antalfelt">
@@ -759,7 +763,7 @@ const STANDARD = {
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "12", oppdater: "360", omtale: "1",
-  likte: "", liktenamn: "", appell: "", merkelapp: "0",
+  likte: "", liktenamn: "", appell: "", appellmodus: "alle", merkelapp: "0",
 };
 
 const MALAR = {
@@ -1414,6 +1418,7 @@ function startVisning(cfg) {
 function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","spraak","alle","titlar","namn"]
     .concat(["likte", "appell", "merkelapp"].filter(k => cfg[k] && cfg[k] !== "0"))
+    .concat(cfg.appell && cfg.appellmodus === "eitt" ? ["appellmodus"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
 
@@ -1792,7 +1797,8 @@ async function forrigebokBerik(liste, cfg) {
   for (const t of liste) {
     const v = t.forrigebok ? verkUtdrag(t.forrigebok) : funne.get(t.id);
     delete t.forrigebok;
-    if (ønskte.size && !(v && v.t.some(id => ønskte.has(id)))) {
+    const passar = v && (cfg.appellmodus === "eitt" ? [...ønskte].some(id => v.t.includes(id)) : [...ønskte].every(id => v.t.includes(id)));
+    if (ønskte.size && !passar) {
       utelat(funne.has(t.id) || v ? "ikkje skildra med appellfaktoren" : "ikkje slått opp i Forrige bok enno"); continue;
     }
     // Merkelappar: dei valde appellfaktorane først, så dei tydelegaste andre
@@ -2467,6 +2473,7 @@ function startByggjar(startCfg) {
   function valdeAppell() { return $("appell").value.split(",").filter(Boolean); }
   async function teiknAppell() {
     const idar = valdeAppell();
+    $("appellmodusval").hidden = idar.length < 2;
     if (idar.length) await lastAppellOrd();
     $("appellvalde").replaceChildren(...idar.map(id => {
       const o = (appellOrd || []).find(o => o.id === id);
