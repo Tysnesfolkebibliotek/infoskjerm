@@ -72,7 +72,7 @@
   /* Skjema for éi side */
   .skjema { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--strek); display: grid; gap: 10px; }
   .skjema label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
-  .skjema input[type=text], .skjema input[type=url], .skjema input[type=number], .skjema input[type=date], .skjema input[type=time] {
+  .skjema select, .skjema input[type=text], .skjema input[type=url], .skjema input[type=number], .skjema input[type=date], .skjema input[type=time] {
     width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--flate); color: var(--tekst); }
   .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .dagar { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; }
@@ -307,7 +307,6 @@ function teikn() {
       const erOpen = erOpenFor(lk, i);
       const vist = no.has(s);
       const pos = synlege.indexOf(i);
-      const annan = SKJERMAR.find(x => x.nøkkel !== lk);
       liste.append(dra(el("li", { class: "side" + (vist ? " no" : "") },
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
@@ -317,7 +316,6 @@ function teikn() {
           el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
           ...felleKnappar(s, lk, i, erOpen),
-          el("button", { type: "button", title: `Flytt sida til ${annan.namn}`, onclick: () => flyttSide({ lk, i }, { lk: annan.nøkkel }) }, `Til ${annan.namn.toLowerCase()}`),
           el("button", { type: "button", title: "Ta sida av skjermen, men ta vare på henne", onclick: () => avpubliser(lk, i) }, "Avpubliser"),
           el("button", { type: "button", class: "fare", onclick: () => slett(lk, i) }, "Slett")),
         erOpen ? skjema(s, lk, i) : null), lk, i));
@@ -451,8 +449,11 @@ function skjema(s, lk, i) {
   const [tidFrå, tidTil] = String(s.tid || "").split("-").map(x => x.trim());
 
   const f = el("div", { class: "skjema" },
-    el("div", {}, el("label", { for: "f-namn" }, "Namn (berre for deg)"),
-      el("input", { type: "text", id: "f-namn", value: s.namn || "", placeholder: "Til dømes Vinterbøker" })),
+    el("div", { class: "rad" },
+      el("div", {}, el("label", { for: "f-namn" }, "Namn (berre for deg)"),
+        el("input", { type: "text", id: "f-namn", value: s.namn || "", placeholder: "Til dømes Vinterbøker" })),
+      el("div", {}, el("label", { for: "f-skjerm" }, "Skjerm"),
+        el("select", { id: "f-skjerm" }, ...SKJERMAR.map(x => { const o = new Option(x.namn, x.nøkkel); o.selected = x.nøkkel === skjermFor(lk); return o; })))),
     el("div", {}, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
@@ -509,7 +510,13 @@ function brukSkjema(f, gammal, lk, i) {
     if (!tf || !tt) return feil("Fyll ut både frå- og til-klokkeslett, eller ingen av dei.");
     ny.tid = `${tf}-${tt}`;
   }
-  if (i < 0) oppsett[lk].push(ny); else oppsett[lk][i] = ny;
+  // Skjerm: er ein annan valt, blir sida flytta dit (nedst), som publisert eller avpublisert som før
+  const nySkjerm = f.querySelector("#f-skjerm").value;
+  const tilLk = nySkjerm === skjermFor(lk) ? lk : (lk === skjermFor(lk) ? nySkjerm : AV(nySkjerm));
+  if (tilLk !== lk && i >= 0 && lk === skjermFor(lk) && oppsett[lk].length <= 1) return feil("Minst éi side må vere publisert på kvar skjerm, så denne kan ikkje flyttast.");
+  if (i < 0) (oppsett[tilLk] || (oppsett[tilLk] = [])).push(ny);
+  else if (tilLk === lk) oppsett[lk][i] = ny;
+  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); return; }
   open = null;
   teikn();
 }
