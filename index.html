@@ -1739,7 +1739,8 @@ function sameBok(t, w) {
 function lesFbLager() { try { return JSON.parse(localStorage.getItem(FB_LAGER) || "{}"); } catch (e) { return {}; } }
 function skrivFbLager(l) { try { localStorage.setItem(FB_LAGER, JSON.stringify(l)); } catch (e) {} }
 // Kort utdrag av eit verk: id, appelltermar (id) og merkelappar
-const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w) });
+const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w),
+  l: appellMerke(w, 12, true) });
 async function forrigebokFor(liste, maks = 200) {
   const lager = lesFbLager(), no = Date.now(), ut = new Map();
   const manglar = [];
@@ -1768,11 +1769,11 @@ async function forrigebokFor(liste, maks = 200) {
 }
 
 // Dei tydelegaste appellfaktorane for eit verk, som korte merkelappar
-function appellMerke(w, maks = 3) {
+function appellMerke(w, maks = 3, medId = false) {
   return (w.appealTerms || [])
     .filter(a => a.term && a.term.label && (a.averageWeight ?? 0) >= 0.5)
     .sort((a, b) => (b.globalWeight ?? b.averageWeight) - (a.globalWeight ?? a.averageWeight))
-    .slice(0, maks).map(a => storForbokstav(a.term.label));
+    .slice(0, maks).map(a => medId ? [a.term.id, storForbokstav(a.term.label)] : storForbokstav(a.term.label));
 }
 
 // Legg på merkelappar og filtrerer på appellfaktor
@@ -1794,7 +1795,8 @@ async function forrigebokBerik(liste, cfg) {
     if (ønskte.size && !(v && v.t.some(id => ønskte.has(id)))) {
       utelat(funne.has(t.id) || v ? "ikkje skildra med appellfaktoren" : "ikkje slått opp i Forrige bok enno"); continue;
     }
-    if (v && merkelapp) t.appell = v.a;
+    // Merkelappar: dei valde appellfaktorane først, så dei tydelegaste andre
+    if (v && merkelapp) t.appell = v.l ? [...v.l.filter(([id]) => ønskte.has(id)), ...v.l.filter(([id]) => !ønskte.has(id))].slice(0, 3).map(([, l]) => l) : v.a;
     ut.push(t);
   }
   return ut;
@@ -2481,6 +2483,8 @@ function startByggjar(startCfg) {
     const v = $("appellsok").value.trim().toLowerCase();
     const o = (ord || []).find(o => o.namn.toLowerCase() === v) || (ord || []).find(o => o.syn.some(s => s.toLowerCase() === v));
     if (!o) return;
+    // Første appellfaktoren slår på merkelappane, så ein ser kvifor bøkene er med
+    if (!valdeAppell().length) skjema.elements.merkelapp.checked = true;
     if (!valdeAppell().includes(o.id)) $("appell").value = [...valdeAppell(), o.id].join(",");
     $("appellsok").value = "";
     teiknAppell(); oppdater(false);
