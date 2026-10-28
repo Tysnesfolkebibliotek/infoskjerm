@@ -1758,6 +1758,15 @@ async function hentBøker(cfg, framdrift) {
   // Med appellfaktor hentar vi heile trefflista og filtrerer, sidan berre ein del av bøkene er skildra
   const appell = !!cfg.appell;
   const visAlle = cfg.alle === "1" && cfg.kjelde === "sok";
+  if (appell) {
+    // Appellfaktorane står i forrigebok.json. Bøker utan dei blir hoppa over
+    // med ein gong, så dei ikkje tel mot taket på 500.
+    const ix = await forrigebokIndeks();
+    cfg = { ...cfg, _fbSjekk: fbSjekk(ix, cfg) };
+    // Er appellfaktor det einaste innhaldskravet, hentar vi bøkene rett på
+    // tittelnummera i indeksen i tilfeldig rekkjefølgje. Då er heile samlinga med.
+    if (berreAppell(cfg)) return forrigebokBerik(await hentFråIndeks(cfg, ix, avdar, visAlle ? TAK_ALLE : antal, visAlle, framdrift), cfg);
+  }
   const alle = (visAlle || appell) && cfg.kjelde === "sok";     // hent heile trefflista
   const lister = [];
   for (const avd of avdar) {
@@ -1836,6 +1845,85 @@ function fbFråIndeks(ix, id) {
 // Kort utdrag av eit verk («Likte du?» har verket med seg): appelltermar (id) og merkelappar
 const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w),
   l: appellMerke(w, 12, true) });
+// Kvifor ei bok ikkje passar appellfilteret, eller null når ho passar
+function fbGrunn(v, ønskte, modus, ix, id) {
+  const passar = v && (modus === "eitt" ? [...ønskte].some(a => v.t.includes(a)) : [...ønskte].every(a => v.t.includes(a)));
+  if (passar) return null;
+  if (v) return "manglar appellfaktoren";
+  // Tittelnummer som er nyare enn indeksen, har ikkje vore prøvde enno
+  return ix && ix.nyasteTnr && Number(id) > ix.nyasteTnr ? "nyare enn Forrige bok-indeksen" : "ikkje skildra i Forrige bok";
+}
+function fbSjekk(ix, cfg) {
+  const ønskte = new Set((cfg.appell || "").split(",").filter(Boolean));
+  return id => fbGrunn(fbFråIndeks(ix, id), ønskte, cfg.appellmodus, ix, id);
+}
+// Hoppar over bøker som ikkje har appellfaktoren, før vi slår opp eksemplar
+function fbOk(p, cfg) {
+  if (!cfg._fbSjekk) return true;
+  const grunn = cfg._fbSjekk(String(p.id));
+  return grunn ? utelat(grunn) : true;
+}
+
+// Søk der appellfaktor er det einaste innhaldskravet (ikkje sjanger, emne,
+// dewey, serie eller eige CCL-søk), i tilfeldig rekkjefølgje
+function berreAppell(cfg) {
+  return cfg.kjelde === "sok" && !!cfg.appell && (cfg.rekkje || "tilfeldig") === "tilfeldig"
+    && !["sjanger", "emne", "dewey", "serie", "ccl"].some(k => String(cfg[k] || "").trim());
+}
+// Hentar bøker rett på tittelnummera i indeksen som har appellfaktorane.
+// Kandidatane blir stokka og henta 25 om gongen til vi har nok.
+async function hentFråIndeks(cfg, ix, avdar, mål, visAlle, meld) {
+  const kandidatar = stokk(Object.keys(ix.bok).filter(id => !cfg._fbSjekk(id)));
+  // Bibliofil har ikkje filtrert noko på språk, så førehand() må gjere det
+  const kfg = { ...cfg, _språkLokalt: true };
+  const ut = [], forfattarar = new Set();
+  meld(0, visAlle ? 0 : mål);
+  for (let n = 0; n < kandidatar.length && ut.length < mål; n += 25) {
+    const poster = (await hentPostar(kandidatar.slice(n, n + 25))).filter(p => førehand(p, kfg));
+    if (!poster.length) continue;
+    const eks = await hentEksemplar(poster.map(p => String(p.id)));
+    for (const p of poster) {
+      const avd = avdar.find(a => finnEksemplar(eks, p.id, a));
+      if (!avd) { utelat("ikkje eksemplar i avdelinga"); continue; }
+      const t = vurder(p, avd, eks, kfg);
+      if (!t) continue;
+      if (cfg.perforf === "1" && forfattarar.has(t.forfattarNøkkel)) { utelat("same forfattar"); continue; }
+      forfattarar.add(t.forfattarNøkkel); ut.push(t);
+      if (ut.length >= mål) break;
+    }
+    meld(ut.length, visAlle ? 0 : mål);
+  }
+  if (visAlle && ut.length >= mål) nåddeGrense = true;
+  return ut;
+}
+
+// Hentar fleire katalogpostar på tittelnummer i eitt søk («tnr=1 or tnr=2 …»).
+// Gir det ingenting, prøver vi dei éin og éin med hentPost, og finn vi noko då,
+// hugsar vi at «or» ikkje verkar.
+let tnrEller = null;      // null: ikkje prøvd, true: verkar, false: verkar ikkje
+async function hentPostar(idar) {
+  idar = idar.map(id => String(id).replace(/\D/g, "")).filter(Boolean);
+  const ut = [], manglar = [];
+  for (const id of idar) (postCache.has(id) ? ut : manglar).push(postCache.get(id) || id);
+  if (!manglar.length) return ut.filter(Boolean);
+  if (tnrEller !== false) {
+    try {
+      const d = await sru({ query: manglar.map(id => `bibliofil.ccl="tnr=${id}"`).join(" or "), startRecord: 1, maximumRecords: manglar.length * 2 });
+      const ønskt = new Set(manglar);
+      const funne = ((d && d.feed && d.feed.entry) || []).filter(p => ønskt.has(String(p.id)));
+      if (funne.length) {
+        tnrEller = true;
+        for (const p of funne) { postCache.set(String(p.id), p); ut.push(p); }
+        return ut.filter(Boolean);       // dei som mangla i svaret, finst ikkje lenger
+      }
+    } catch (e) {}
+  }
+  for (const id of manglar) {
+    const p = await hentPost(id);
+    if (p) { ut.push(p); if (tnrEller === null) tnrEller = false; }
+  }
+  return ut.filter(Boolean);
+}
 
 // Dei tydelegaste appellfaktorane for eit verk, som korte merkelappar
 function appellMerke(w, maks = 3, medId = false) {
@@ -1865,10 +1953,9 @@ async function forrigebokBerik(liste, cfg) {
   for (const t of liste) {
     const v = t.forrigebok ? verkUtdrag(t.forrigebok) : ix ? fbFråIndeks(ix, t.id) : null;
     delete t.forrigebok;
-    const passar = v && (cfg.appellmodus === "eitt" ? [...ønskte].some(id => v.t.includes(id)) : [...ønskte].every(id => v.t.includes(id)));
-    if (ønskte.size && !passar) {
-      // Tittelnummer som er nyare enn indeksen, har ikkje vore prøvde enno
-      utelat(v ? "manglar appellfaktoren" : ix && ix.nyasteTnr && Number(t.id) > ix.nyasteTnr ? "nyare enn Forrige bok-indeksen" : "ikkje skildra i Forrige bok"); continue;
+    if (ønskte.size) {
+      const grunn = fbGrunn(v, ønskte, cfg.appellmodus, ix, t.id);
+      if (grunn) { utelat(grunn); continue; }
     }
     // Merkelappar: dei valde appellfaktorane først, så dei tydelegaste andre
     if (v && merkelapp) t.appell = v.l ? [...v.l.filter(([id]) => ønskte.has(id)), ...v.l.filter(([id]) => !ønskte.has(id))].slice(0, 3).map(([, l]) => l) : v.a;
@@ -2023,7 +2110,7 @@ async function hentNyaste(cfg, avd, mål, meld) {
     maximumRecords: mål,
     extraRequestData: `bibliofil:stat:nyeste:${mål}:45:${cfg.omslag === "1" ? 1 : 0}:${avd}`,
   }, 90000);
-  const poster = ((d && d.feed && d.feed.entry) || []).filter(p => førehand(p, cfg));
+  const poster = ((d && d.feed && d.feed.entry) || []).filter(p => førehand(p, cfg) && fbOk(p, cfg));
   const eks = await hentEksemplar(poster.map(p => String(p.id)));
   const ut = [], sett = new Set();
   for (const p of poster) {
@@ -2156,9 +2243,11 @@ async function hentSøk(cfg, avd, mål, meld) {
     if (bunkar.length) break;
   }
   if (!bunkar.length) return [];
-  // Tilfeldig: stokk alle. Nyaste: ta første bunk frå kvart søk, så andre, osb.
+  // Tilfeldig: stokk alle, også når vi hentar heile trefflista, så utvalet
+  // varierer når trefflista er lengre enn det vi les.
+  // Nyaste: ta første bunk frå kvart søk, så andre, osb.
   // Nyaste: Bibliofil sorterer eldst først, så vi tek bunkane frå slutten.
-  if (tilfeldig && !alle) stokk(bunkar);
+  if (tilfeldig) stokk(bunkar);
   else if (!tilfeldig) bunkar.sort((a, b) => a.p - b.p);
   else bunkar.sort((a, b) => a.n - b.n);
   bunkar = bunkar.slice(0, MAKS * søk.length);
@@ -2172,7 +2261,7 @@ async function hentSøk(cfg, avd, mål, meld) {
     if (neste) neste.catch(() => {});
     // Same bok kan kome frå fleire søk (emne, dewey, serie): sjekk ho berre éin gong
     const poster = ((d && d.feed && d.feed.entry) || [])
-      .filter(p => !sjekka.has(String(p.id)) && (sjekka.add(String(p.id)), førehand(p, cfg)));
+      .filter(p => !sjekka.has(String(p.id)) && (sjekka.add(String(p.id)), førehand(p, cfg)) && fbOk(p, cfg));
     if (!poster.length) continue;
     const eks = await hentEksemplar(poster.map(p => String(p.id)));
     for (const p of (tilfeldig ? stokk(poster) : bunkar[i].fraSlutt ? poster.slice().reverse() : poster)) {

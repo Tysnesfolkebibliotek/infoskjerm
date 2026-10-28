@@ -74,6 +74,12 @@ i blant, til dømes kvar månad. Bøker som har kome inn etter at fila vart laga
 er ikkje med når ein filtrerer på appellfaktor før fila er laga på nytt.
 «Likte du?» hentar framleis frå Forrige bok direkte.
 
+Når appellfaktor er det einaste innhaldskravet i eit Søk (ikkje sjanger, emne,
+dewey, serie eller eige CCL-søk) og rekkjefølgja er tilfeldig, hentar karusellen
+bøkene rett på tittelnummera i `forrigebok.json`. Då er heile samlinga med, og
+utvalet varierer. Elles søkjer han i Bibliofil som før, men hoppar over bøker
+utan appellfaktoren før dei tel mot taket på 500.
+
 Data frå Forrige bok (Biblioteksentralen) er lisensierte under CC BY-NC 4.0.
 Karusellar som brukar dei, viser kjelda nedst.
 
