@@ -206,6 +206,10 @@
   #visning main { position: relative; height: 100%; display: flex; flex-direction: column; padding: 5vh 7vw 4vh; }
   #visning header { display: flex; flex-direction: column; gap: 1.2vh; }
   .overskrift { font-weight: 700; font-size: 6.2vw; letter-spacing: .01em; }
+  /* «Likte du?»: omslaget til boka det heile tek utgangspunkt i, lite og til høgre for overskrifta */
+  #visning header.med-kjelde { position: relative; padding-right: 19vw; min-height: 13vh; }
+  .kjeldeomslag { position: absolute; right: 0; top: 0; height: 13vh; max-width: 16vw; object-fit: cover;
+                  border-radius: .5vw; box-shadow: 0 1vh 3vh rgba(0,0,0,.45); transform: rotate(3deg); }
   .avdeling { font-size: 2.6vw; color: var(--aksent); text-transform: uppercase; letter-spacing: .14em; font-weight: 700; min-height: 1.2em; }
 
   .scene { flex: 1; position: relative; margin-top: 3.5vh; min-height: 0; }
@@ -503,6 +507,7 @@
       <div id="liktefelt" hidden>
         <input type="hidden" id="likte" name="likte">
         <input type="hidden" id="liktenamn" name="liktenamn">
+        <input type="hidden" id="liktebilete" name="liktebilete">
         <div class="felt">
           <label for="liktesok">Ei bok som lesaren likte</label>
           <div class="malrad">
@@ -763,7 +768,7 @@ const STANDARD = {
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "12", oppdater: "360", omtale: "1",
-  likte: "", liktenamn: "", appell: "", appellmodus: "alle", merkelapp: "0",
+  likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
 };
 
 const MALAR = {
@@ -1083,6 +1088,13 @@ function startVisning(cfg) {
   document.getElementById("visning").hidden = false;
   document.title = cfg.tittel || "Karusell";
   document.getElementById("overskrift").textContent = cfg.tittel;
+  if (cfg.kjelde === "likte" && cfg.liktebilete) {
+    const img = Object.assign(document.createElement("img"), { className: "kjeldeomslag", alt: "" });
+    img.onerror = () => { img.remove(); document.querySelector("#visning header").classList.remove("med-kjelde"); };
+    img.src = cfg.liktebilete;
+    const hovud = document.querySelector("#visning header");
+    hovud.classList.add("med-kjelde"); hovud.append(img);
+  }
 
   // Byggjaren endrar adressa når du redigerer. Då startar vi på nytt.
   window.addEventListener("hashchange", () => location.reload());
@@ -2425,9 +2437,9 @@ function startByggjar(startCfg) {
     const id = $("likte").value;
     $("liktevald").hidden = !id;
     if (!id) return $("liktevaldliste").replaceChildren();
-    const vis = w || { id, simplifiedPresentationMetadata: { title: $("liktenamn").value || "Verk " + id } };
+    const vis = w || { id, simplifiedPresentationMetadata: { title: $("liktenamn").value || "Verk " + id, coverImage: $("liktebilete").value || undefined } };
     $("liktevaldliste").replaceChildren(verkRad(vis, [knapp("✕", "Fjern", () => {
-      $("likte").value = ""; $("liktenamn").value = ""; teiknLikte(); oppdater(false);
+      $("likte").value = ""; $("liktenamn").value = ""; $("liktebilete").value = ""; teiknLikte(); oppdater(false);
     })]));
   }
   async function søkLikte() {
@@ -2447,6 +2459,7 @@ function startByggjar(startCfg) {
           const tittelFør = skjema.elements.tittel.value.trim();
           $("likte").value = w.id;
           $("liktenamn").value = m.title || "";
+          $("liktebilete").value = m.coverImage || ((w.publications || []).find(p => p.coverImage) || {}).coverImage || "";
           if (!tittelFør || tittelFør === STANDARD.tittel || tittelFør.startsWith("Likte du")) skjema.elements.tittel.value = `Likte du ${m.title}?`;
           treffliste.replaceChildren(); status.textContent = "";
           teiknLikte(w); oppdater(true);
