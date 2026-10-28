@@ -40,6 +40,14 @@
   .toppline .knapp { text-decoration: none; color: inherit; }
   .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
   .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+  .side[draggable=true] { cursor: grab; }
+  .side.drar { opacity: .4; }
+  .side.slipp-før { box-shadow: 0 -4px 0 var(--aksent); }
+  .side.slipp-etter { box-shadow: 0 4px 0 var(--aksent); }
+  .sider.slipp-her, .avgruppe.slipp-her, .avslipp.slipp-her { outline: 2px dashed var(--aksent); outline-offset: 4px; border-radius: 10px; }
+  .sider { min-height: 24px; }
+  .avslipp { display: none; margin-top: 12px; font-size: 12.5px; color: var(--dempa); text-align: center; padding: 6px; border-radius: 8px; opacity: .7; }
+  body.drar-no .avslipp { display: block; }
   .side.av { opacity: .75; border-style: dashed; }
   .avgruppe { margin-top: 12px; }
   .avgruppe summary { cursor: pointer; font-size: 13px; font-weight: 650; color: var(--dempa); padding: 4px 2px; }
@@ -299,7 +307,8 @@ function teikn() {
       const erOpen = erOpenFor(lk, i);
       const vist = no.has(s);
       const pos = synlege.indexOf(i);
-      liste.append(el("li", { class: "side" + (vist ? " no" : "") },
+      const annan = SKJERMAR.find(x => x.nøkkel !== lk);
+      liste.append(dra(el("li", { class: "side" + (vist ? " no" : "") },
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
           el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
@@ -308,9 +317,10 @@ function teikn() {
           el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
           ...felleKnappar(s, lk, i, erOpen),
+          el("button", { type: "button", title: `Flytt sida til ${annan.namn}`, onclick: () => flyttSide({ lk, i }, { lk: annan.nøkkel }) }, `Til ${annan.namn.toLowerCase()}`),
           el("button", { type: "button", title: "Ta sida av skjermen, men ta vare på henne", onclick: () => avpubliser(lk, i) }, "Avpubliser"),
           el("button", { type: "button", class: "fare", onclick: () => slett(lk, i) }, "Slett")),
-        erOpen ? skjema(s, lk, i) : null));
+        erOpen ? skjema(s, lk, i) : null), lk, i));
     });
     // Avpubliserte: samanfalda, men opne når ei av dei blir endra eller filteret er av
     let avgruppe = null;
@@ -318,7 +328,7 @@ function teikn() {
       const avliste = el("ol", { class: "sider" });
       avsider.forEach((s, i) => {
         const erOpen = erOpenFor(AV(lk), i);
-        avliste.append(el("li", { class: "side av" },
+        avliste.append(dra(el("li", { class: "side av" },
           el("div", { class: "topp" },
             el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
             el("span", { class: "merke ikkje" }, "Avpublisert")),
@@ -327,13 +337,16 @@ function teikn() {
             el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser"),
             ...felleKnappar(s, AV(lk), i, erOpen),
             el("button", { type: "button", class: "fare", onclick: () => slett(AV(lk), i) }, "Slett")),
-          erOpen ? skjema(s, AV(lk), i) : null));
+          erOpen ? skjema(s, AV(lk), i) : null), AV(lk), i));
       });
-      avgruppe = el("details", { class: "avgruppe" }, el("summary", {}, `Avpubliserte (${avsider.length})`), avliste);
+      avgruppe = slippMål(el("details", { class: "avgruppe" }, el("summary", {}, `Avpubliserte (${avsider.length})`), avliste), AV(lk));
       avgruppe.open = visAlle || (open && open.lk === AV(lk)) || avOpne.has(lk);
       avgruppe.addEventListener("toggle", () => { if (avgruppe.open) avOpne.add(lk); else avOpne.delete(lk); });
     }
     const nyOpen = erOpenFor(lk, -1);
+    // Er det ingen avpubliserte, kan ein likevel dra ei side hit for å avpublisere henne
+    if (!avgruppe) avgruppe = slippMål(el("div", { class: "avslipp" }, "Dra ei side hit for å avpublisere henne"), AV(lk));
+    slippMål(liste, lk);
     boks.append(el("section", { class: "skjerm" },
       el("h2", {}, sk.namn), el("div", { class: "kva" }, sk.kva),
       liste,
@@ -345,7 +358,60 @@ function teikn() {
   }
   oppdaterStatus();
 }
-const avOpne = new Set();   // kva skjermar som har den avpubliserte lista open
+const avOpne = new Set();
+
+// ---- Flytting: med knapp eller ved å dra ----------------------------------
+// fra = { lk, i }. til = { lk, før } der «før» er indeksen sida skal inn framfor
+// (utan «før»: nedst). Avpubliserte lister får alltid sida nedst.
+function flyttSide(fra, til) {
+  const kjelde = oppsett[fra.lk];
+  if (!kjelde || !kjelde[fra.i]) return;
+  if (fra.lk === skjermFor(fra.lk) && til.lk !== fra.lk && kjelde.length <= 1)
+    return oppdaterStatus("Minst éi side må vere publisert på kvar skjerm.", "feil");
+  const mål = oppsett[til.lk] || (oppsett[til.lk] = []);
+  let før = til.før ?? mål.length;
+  const [side] = kjelde.splice(fra.i, 1);
+  if (fra.lk === til.lk && fra.i < før) før--;          // lista vart eitt kortare framfor målet
+  mål.splice(Math.max(0, Math.min(før, mål.length)), 0, side);
+  for (const k of [fra.lk, til.lk]) if (k !== skjermFor(k) && !oppsett[k].length) delete oppsett[k];
+  open = null; teikn();
+  const namn = lk => (lk === skjermFor(lk) ? "" : "avpubliserte på ") + SKJERMAR.find(x => x.nøkkel === skjermFor(lk)).namn.toLowerCase();
+  if (fra.lk !== til.lk) oppdaterStatus(`«${side.namn}» er flytta til ${namn(til.lk)}. Klikk Lagre.`);
+}
+let drege = null;   // { lk, i } for sida som blir dregen
+function dra(li, lk, i) {
+  li.draggable = true;
+  li.addEventListener("dragstart", e => {
+    if (e.target.closest("input, textarea, select")) return e.preventDefault();
+    drege = { lk, i }; li.classList.add("drar"); document.body.classList.add("drar-no");
+    e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", "");
+  });
+  li.addEventListener("dragend", () => { drege = null; document.body.classList.remove("drar-no"); document.querySelectorAll(".drar, .slipp-før, .slipp-etter, .slipp-her").forEach(x => x.classList.remove("drar", "slipp-før", "slipp-etter", "slipp-her")); });
+  // Slepp på ei anna side: inn framfor eller etter henne, etter kvar på sida musa er
+  li.addEventListener("dragover", e => {
+    if (!drege) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = li.getBoundingClientRect();
+    const etter = e.clientY > r.top + r.height / 2;
+    li.classList.toggle("slipp-etter", etter); li.classList.toggle("slipp-før", !etter);
+  });
+  li.addEventListener("dragleave", () => li.classList.remove("slipp-før", "slipp-etter"));
+  li.addEventListener("drop", e => {
+    if (!drege) return;
+    e.preventDefault(); e.stopPropagation();
+    const etter = li.classList.contains("slipp-etter");
+    const fra = drege; drege = null;
+    flyttSide(fra, { lk, før: i + (etter ? 1 : 0) });
+  });
+  return li;
+}
+// Slepp på lista eller den avpubliserte delen: nedst
+function slippMål(elem, lk) {
+  elem.addEventListener("dragover", e => { if (!drege) return; e.preventDefault(); elem.classList.add("slipp-her"); });
+  elem.addEventListener("dragleave", e => { if (!elem.contains(e.relatedTarget)) elem.classList.remove("slipp-her"); });
+  elem.addEventListener("drop", e => { if (!drege) return; e.preventDefault(); const fra = drege; drege = null; flyttSide(fra, { lk }); });
+  return elem;
+}   // kva skjermar som har den avpubliserte lista open
 
 // Knappar som er like for publiserte og avpubliserte sider
 function felleKnappar(s, lk, i, erOpen) {
