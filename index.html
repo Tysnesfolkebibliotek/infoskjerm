@@ -1379,7 +1379,7 @@ function startVisning(cfg) {
       });
       if (nye.length) { skrivLager(nye); brukListe(nye); }
       else if (!titlar.length) visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava.");
-      meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1", sek: Math.round((Date.now() - t0) / 1000) });
+      meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1" || (!!cfg.appell && cfg.kjelde === "sok"), appell: !!cfg.appell, appellalle: cfg.appellmodus !== "eitt" && (cfg.appell || "").includes(","), sek: Math.round((Date.now() - t0) / 1000) });
     } catch (e) {
       if (!titlar.length) visMelding("Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
       meldTilByggjar({ status: "feil", melding: e.message });
@@ -1799,7 +1799,7 @@ async function forrigebokBerik(liste, cfg) {
     delete t.forrigebok;
     const passar = v && (cfg.appellmodus === "eitt" ? [...ønskte].some(id => v.t.includes(id)) : [...ønskte].every(id => v.t.includes(id)));
     if (ønskte.size && !passar) {
-      utelat(funne.has(t.id) || v ? "ikkje skildra med appellfaktoren" : "ikkje slått opp i Forrige bok enno"); continue;
+      utelat(v ? "manglar appellfaktoren" : funne.has(t.id) ? "ikkje skildra i Forrige bok" : "ikkje slått opp i Forrige bok enno"); continue;
     }
     // Merkelappar: dei valde appellfaktorane først, så dei tydelegaste andre
     if (v && merkelapp) t.appell = v.l ? [...v.l.filter(([id]) => ønskte.has(id)), ...v.l.filter(([id]) => !ønskte.has(id))].slice(0, 3).map(([, l]) => l) : v.a;
@@ -2300,7 +2300,8 @@ function startByggjar(startCfg) {
       const grunnar = Object.entries(m.utelatne || {}).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${n} ${g}`);
       status.textContent = (m.tal ? `${m.tal} bøker funne` : "Fann ingen bøker som passar") + (m.sek ? ` på ${m.sek} s.` : ".")
         + (grunnar.length ? ` Utelatne: ${grunnar.join(", ")}.` : "")
-        + (m.nåddeGrense ? (m.alle ? " Stoppa ved taket på 500."
+        + (!m.tal && m.appellalle ? " Ingen av bøkene hadde alle appellfaktorane. Prøv færre, eller «Minst éin av dei»." : "")
+        + (m.nåddeGrense ? (m.alle ? " Stoppa ved taket på 500 bøker."
             : " Stoppa då «Tal bøker» var nådd, så resten av treffa vart ikkje sjekka. Kryss av for «Alle bøker som passar» for å få med alle.") : "");
     }
     if (m.status === "feil") status.textContent = "Fekk ikkje kontakt med Bibliofil: " + m.melding;
