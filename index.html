@@ -1483,7 +1483,7 @@ function ryddLager(behald, alt = false) {
         try { tid = JSON.parse(localStorage.getItem(k)).tid || 0; } catch (e) {}
         if (no - tid > LAGER_DAGAR * 864e5) localStorage.removeItem(k);
       } else if (/^forslag\d*:/.test(k)) localStorage.removeItem(k);     // gamle emneforslag (no i emneord.json)
-      else if (k === "forrigebok-tnr") localStorage.removeItem(k);    // gammal versjon av oppslaga
+      else if (k === "forrigebok-tnr" || k === "forrigebok-tnr2") localStorage.removeItem(k);    // gamle oppslag per bok (no i forrigebok.json)
     }
   } catch (e) {}
 }
@@ -1780,8 +1780,8 @@ async function hentBøker(cfg, framdrift) {
 // Appellfaktorar («Lett», «Godt driv» …) og liknande bøker. Fritt for
 // bibliotek (CC BY-NC 4.0), men kjelda må nemnast: sjå «kjeldetekst» nedst
 // på karusellen. «Likte du?» koplar bøkene til Bibliofil på ISBN.
-// Appellfaktorar og merkelappar koplar på tittel og forfattar, sidan
-// Bibliofil-postane ikkje har ISBN.
+// Appellfaktorar og merkelappar for andre bøker kjem frå forrigebok.json
+// (sjå forrigebokIndeks nedanfor).
 const FORRIGEBOK = "https://forrigebok.no/api/v2023-01-12";
 const FORRIGEBOK_ID = "Tysnes folkebibliotek infoskjerm (biblioteket@tysnes.kommune.no)";
 async function forrigebok(sti, ms = 20000) {
@@ -1812,53 +1812,30 @@ function isbn13(tekst) {
   }
   return null;
 }
-// Bibliofil-postane har ikkje ISBN, så vi finn boka i Forrige bok på tittel
-// og forfattar. Svaret (også «ikkje funne») blir lagra i 30 dagar per tittelnummer.
-const FB_LAGER = "forrigebok-tnr2", FB_DAGAR = 30;   // 2: gamle oppslag (tittel + forfattar) gav feil «ikkje funne»
-const norm = t => String(t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
-function etternamn(forfattar) { const o = norm(forfattar).split(" "); return o[o.length - 1] || ""; }
-function sameBok(t, w) {
-  const m = w.simplifiedPresentationMetadata || {};
-  const a = norm(t.tittel), b = norm(m.title);
-  if (!a || !b || !(a === b || a.startsWith(b + " ") || b.startsWith(a + " "))) return false;
-  const e = etternamn(t.forfattar);
-  return !e || norm((m.authors || []).join(" ")).split(" ").includes(e);
+// Appellfaktorar for bøkene i samlinga ligg i forrigebok.json, som blir laga
+// med knappen på oversikt.html: heile Forrige bok-katalogen kopla til
+// tittelnummera våre på tittel og forfattar. Då treng ikkje karusellen slå
+// opp kvar bok. Fila blir henta på nytt når ho er over ein time gammal.
+let fbIndeks = null, fbIndeksTid = 0;
+function forrigebokIndeks() {
+  if (fbIndeks && Date.now() - fbIndeksTid < 36e5) return fbIndeks;
+  fbIndeksTid = Date.now();
+  fbIndeks = fetch(new URL("forrigebok.json", location.href), { cache: "no-cache" })
+    .then(svar => { if (!svar.ok) throw new Error(); return svar.json(); })
+    .then(d => { if (!d || !Array.isArray(d.termar) || !d.bok) throw new Error(); return d; })
+    .catch(() => { fbIndeks = null; throw new Error("Fann ikkje Forrige bok-indeksen (forrigebok.json)"); });
+  return fbIndeks;
 }
-function lesFbLager() { try { return JSON.parse(localStorage.getItem(FB_LAGER) || "{}"); } catch (e) { return {}; } }
-function skrivFbLager(l) {
-  const no = Date.now();
-  for (const k of Object.keys(l)) if (!l[k] || no - l[k].tid > FB_DAGAR * 864e5) delete l[k];   // utgåtte oppslag
-  try { localStorage.setItem(FB_LAGER, JSON.stringify(l)); } catch (e) {}
+// Utdrag for ei bok i indeksen, i same form som verkUtdrag
+function fbFråIndeks(ix, id) {
+  const nr = ix.bok[String(id)];
+  if (!nr) return null;
+  const l = nr.map(i => ix.termar[i]).filter(Boolean);
+  return { t: l.map(([id]) => id), l };
 }
-// Kort utdrag av eit verk: id, appelltermar (id) og merkelappar
+// Kort utdrag av eit verk («Likte du?» har verket med seg): appelltermar (id) og merkelappar
 const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w),
   l: appellMerke(w, 12, true) });
-async function forrigebokFor(liste, maks = 200) {
-  const lager = lesFbLager(), no = Date.now(), ut = new Map();
-  const manglar = [];
-  for (const t of liste) {
-    const l = lager[t.id];
-    if (l && no - l.tid < FB_DAGAR * 864e5) ut.set(t.id, l.v);
-    else if (manglar.length < maks) manglar.push(t);
-  }
-  let feil = null;
-  async function arbeidar() {
-    while (manglar.length && !feil) {
-      const t = manglar.shift();
-      try {
-        // Søket tolar ikkje tittel og forfattar saman, så vi søkjer på tittelen og sjekkar forfattaren sjølve
-        const d = await forrigebok(`/works?language=nn&limit=20&query=${encodeURIComponent(t.tittel.slice(0, 50))}`);
-        const w = (d.works || []).find(w => sameBok(t, w));
-        const v = w ? verkUtdrag(w) : null;
-        lager[t.id] = { tid: no, v }; ut.set(t.id, v);
-      } catch (e) { feil = e; }
-    }
-  }
-  await Promise.all([arbeidar(), arbeidar(), arbeidar()]);   // tre om gongen
-  skrivFbLager(lager);
-  if (feil && !ut.size) throw feil;
-  return ut;
-}
 
 // Dei tydelegaste appellfaktorane for eit verk, som korte merkelappar
 function appellMerke(w, maks = 3, medId = false) {
@@ -1876,20 +1853,22 @@ async function forrigebokBerik(liste, cfg) {
   const ønskte = new Set(filtrer ? (cfg.appell || "").split(",").filter(Boolean) : []);
   const merkelapp = cfg.merkelapp === "1";
   if (!liste.length || (!ønskte.size && !merkelapp)) { liste.forEach(t => delete t.forrigebok); return liste; }
-  // Bøker frå «Likte du?» har verket med seg frå før
-  const utan = liste.filter(t => !t.forrigebok);
-  let funne = new Map();
-  try { if (utan.length) funne = await forrigebokFor(utan); }
-  catch (e) {
-    if (ønskte.size) throw e;          // utan Forrige bok kan vi ikkje filtrere: behald den gamle lista
+  // Bøker frå «Likte du?» har verket med seg frå før. Dei andre finn vi i indeksen.
+  let ix = null;
+  if (liste.some(t => !t.forrigebok)) {
+    try { ix = await forrigebokIndeks(); }
+    catch (e) {
+      if (ønskte.size) throw e;          // utan indeksen kan vi ikkje filtrere: behald den gamle lista
+    }
   }
   const ut = [];
   for (const t of liste) {
-    const v = t.forrigebok ? verkUtdrag(t.forrigebok) : funne.get(t.id);
+    const v = t.forrigebok ? verkUtdrag(t.forrigebok) : ix ? fbFråIndeks(ix, t.id) : null;
     delete t.forrigebok;
     const passar = v && (cfg.appellmodus === "eitt" ? [...ønskte].some(id => v.t.includes(id)) : [...ønskte].every(id => v.t.includes(id)));
     if (ønskte.size && !passar) {
-      utelat(v ? "manglar appellfaktoren" : funne.has(t.id) ? "ikkje skildra i Forrige bok" : "ikkje slått opp i Forrige bok enno"); continue;
+      // Tittelnummer som er nyare enn indeksen, har ikkje vore prøvde enno
+      utelat(v ? "manglar appellfaktoren" : ix && ix.nyasteTnr && Number(t.id) > ix.nyasteTnr ? "nyare enn Forrige bok-indeksen" : "ikkje skildra i Forrige bok"); continue;
     }
     // Merkelappar: dei valde appellfaktorane først, så dei tydelegaste andre
     if (v && merkelapp) t.appell = v.l ? [...v.l.filter(([id]) => ønskte.has(id)), ...v.l.filter(([id]) => !ønskte.has(id))].slice(0, 3).map(([, l]) => l) : v.a;

@@ -9,6 +9,8 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | `index.html` | Karusellbyggjaren, og sjølve karusellen når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
 | `oversikt.html` | Oversikt over og redigering av kva skjermane viser. Ikkje lenkja til frå byggjaren for andre, og skjult for søkjemotorar. Lagring krev ein GitHub-nøkkel |
 | `oppsett.json` | Kva kvar skjerm viser, kor lenge og når. Blir endra frå oversiktssida |
+| `emneord.json` | Emneord og sjangrar til forslaga i byggjaren. Blir laga med knappen på oversiktssida |
+| `forrigebok.json` | Appellfaktorar frå Forrige bok for bøkene i samlinga, per tittelnummer. Blir laga med same knappen |
 | `skjerm/rotasjon.html` | Fila som køyrer på kvar skjerm. Les `oppsett.json` og vekslar mellom sidene |
 | `skjerm/skjermbilete.py` | Tek eit bilete av det skjermen viser, over SSH |
 | `skjerm/hent_nytt.py`, `skjerm/hent_sakprosa.py` | Lagar dei gamle lokale karusellane, som no berre er reserve |
@@ -62,6 +64,15 @@ Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøk
 og **Likte du?** (liknande bøker frå Forrige bok). Søk og Nyaste kan òg
 avgrensast med **appellfaktorar** frå Forrige bok, og bøkene kan få
 **merkelappar** med appellfaktorar.
+
+Appellfaktorane og merkelappane kjem frå `forrigebok.json`, så karusellen
+slepp å slå opp kvar bok. Fila blir laga med knappen **Oppdater emneordlista og
+Forrige bok-indeksen** på oversiktssida (i boksen nedst): sida les alle titlane
+i Vaksen og Born og unge frå Bibliofil, lastar ned heile katalogen til Forrige
+bok og koplar verka til tittelnummera på tittel og forfattar. Køyr han ein gong
+i blant, til dømes kvar månad. Bøker som har kome inn etter at fila vart laga,
+er ikkje med når ein filtrerer på appellfaktor før fila er laga på nytt.
+«Likte du?» hentar framleis frå Forrige bok direkte.
 
 Data frå Forrige bok (Biblioteksentralen) er lisensierte under CC BY-NC 4.0.
 Karusellar som brukar dei, viser kjelda nedst.

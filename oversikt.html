@@ -110,10 +110,11 @@
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
 
   <details class="nokkel" id="emneboks">
-    <summary>Emneordlista til byggjaren</summary>
-    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord og sjangrar som er i bruk i Vaksen og Born og unge. Oppdater lista ein gong i blant, til dømes kvar månad. Det tek eitt–to minutt og krev nøkkelen nedanfor.</p>
+    <summary>Emneordlista og Forrige bok-indeksen</summary>
+    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord og sjangrar som er i bruk i Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong i blant, til dømes kvar månad. Det tek nokre minutt og krev nøkkelen nedanfor.</p>
     <p id="emneinfo">Hentar informasjon om lista …</p>
-    <button type="button" id="emneknapp">Oppdater emneordlista</button>
+    <p id="fbinfo"></p>
+    <button type="button" id="emneknapp">Oppdater emneordlista og Forrige bok-indeksen</button>
     <p class="hjelp" id="emnestatus"></p>
   </details>
 
@@ -713,10 +714,12 @@ async function visEmneinfo() {
 
 async function oppdaterEmneord() {
   const nøkkel = lesNøkkel(), st = $("emnestatus");
-  if (!nøkkel) { $("nokkelboks").open = true; st.textContent = "Du treng ein tilgangsnøkkel for å lagre lista. Sjå nedanfor."; return; }
+  if (!nøkkel) { $("nokkelboks").open = true; st.textContent = "Du treng ein tilgangsnøkkel for å lagre listene. Sjå nedanfor."; return; }
   $("emneknapp").disabled = true;
+  let emneOk = false;
   try {
     const tabellar = { emne: {}, sjanger: {} }, titlar = {};
+    const allePostar = new Map();      // tittelnummer → tittel og forfattar, til Forrige bok-indeksen
     for (const avd of EMNE_AVD) {
       const query = `bibliofil.ccl="avd=${avd}" and norzig.materialType=l`;
       let start = 1, totalt = 1;
@@ -725,7 +728,7 @@ async function oppdaterEmneord() {
         const d = await sruJsonp({ query, startRecord: start, maximumRecords: 500 });
         totalt = Number((d && d.feed && d.feed.sru_numberOfRecords) || 0);
         titlar[avd] = totalt;
-        for (const p of (d && d.feed && d.feed.entry) || []) telEmne(p, avd, tabellar);
+        for (const p of (d && d.feed && d.feed.entry) || []) { telEmne(p, avd, tabellar); husk(p, allePostar); }
         start += 500;
       }
     }
@@ -737,17 +740,199 @@ async function oppdaterEmneord() {
       forklaring: "Kvar rad: [namn, titlar i tyfv, titlar i tyfb, alle formene skilde med komma]. Laga med «Oppdater emneordlista» på oversikt.html.",
       emne: ferdig(tabellar.emne, 5000), sjanger: ferdig(tabellar.sjanger, 300) };
     st.textContent = `Fann ${liste.emne.length} emneord og ${liste.sjanger.length} sjangrar. Lagrar …`;
-    const sha = await visEmneinfo();
-    const svar = await fetch(EMNE_API, { method: "PUT",
-      headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Oppdater emneordlista", content: b64(JSON.stringify(liste) + "\n"), ...(sha ? { sha } : {}), author: FORFATTAR, committer: FORFATTAR }) });
-    if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjå nedanfor.");
-    if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
+    await lagreIRepo(EMNE_API, JSON.stringify(liste) + "\n", "Oppdater emneordlista", nøkkel);
+    emneOk = true;
     await visEmneinfo();
-    st.textContent = "Lista er lagra. Byggjaren brukar henne om nokre minutt.";
+
+    // Forrige bok: heile katalogen, kopla til tittelnummera vi nett las
+    const fbStart = Date.now();
+    const verk = await hentAlleVerk((n, av) => {
+      st.textContent = `Emneordlista er lagra. Lastar ned Forrige bok-katalogen … ${n} av ${av || "?"} verk`;
+    });
+    const indeks = lagFbIndeks([...allePostar.values()], verk);
+    st.textContent = `Kopla ${indeks.kopla} av ${indeks.titlar} titlar til Forrige bok. Lagrar …`;
+    const json = JSON.stringify(indeks) + "\n";
+    await lagreIRepo(FB_API, json, "Oppdater Forrige bok-indeksen", nøkkel);
+    await visFbInfo();
+    st.textContent = `Begge listene er lagra (Forrige bok-indeksen er ${Math.round(new Blob([json]).size / 1024)} kB, tok ${Math.round((Date.now() - fbStart) / 1000)} sek). Byggjaren og skjermane brukar dei om nokre minutt.`;
   } catch (e) {
-    st.textContent = "Klarte ikkje lage lista: " + e.message;
+    st.textContent = (emneOk ? "Emneordlista er lagra, men Forrige bok-indeksen vart ikkje laga: " : "Klarte ikkje lage lista: ") + e.message;
   } finally { $("emneknapp").disabled = false; }
+}
+
+// Lagrar ei fil i repoet. Hentar først sha-en til fila som ligg der (om ho finst).
+async function lagreIRepo(api, innhald, melding, nøkkel) {
+  const hode = { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel };
+  let sha = null;
+  const før = await fetch(api + "?t=" + Date.now(), { headers: hode, cache: "no-store" });
+  if (før.ok) sha = (await før.json()).sha;
+  const svar = await fetch(api, { method: "PUT", headers: { ...hode, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: melding, content: b64(innhald), ...(sha ? { sha } : {}), author: FORFATTAR, committer: FORFATTAR }) });
+  if (svar.status === 401 || svar.status === 403) { $("nokkelboks").open = true; throw new Error("Nøkkelen vart avvist. Sjå nedanfor."); }
+  if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
+}
+
+// ---- Forrige bok-indeksen (forrigebok.json) --------------------------------
+// Karusellane treng appellfaktorar for bøkene sine. I staden for å slå opp
+// kvar bok i Forrige bok, lastar vi her ned heile katalogen deira (100 verk
+// om gongen), koplar verka til tittelnummera våre på tittel og forfattar, og
+// lagrar resultatet i repoet. Fila har éi felles liste over appelltermar
+// («termar»: [id, merkelapp]) og, per tittelnummer, nummera på termane boka
+// har (vekt minst 0,5), dei tydelegaste først.
+const FB_API = `https://api.github.com/repos/${REPO}/contents/forrigebok.json`;
+const FORRIGEBOK = "https://forrigebok.no/api/v2023-01-12";
+const FORRIGEBOK_ID = "Tysnes folkebibliotek infoskjerm (biblioteket@tysnes.kommune.no)";
+const FB_SIDE = 100;
+
+async function forrigebok(sti, ms = 30000) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const svar = await fetch(FORRIGEBOK + sti, { headers: { "client-identifier": FORRIGEBOK_ID }, signal: ctl.signal });
+    if (!svar.ok) throw new Error("Forrige bok svarte " + svar.status);
+    return await svar.json();
+  } catch (e) {
+    throw new Error(e.name === "AbortError" ? "Forrige bok svarte ikkje i tide" : e.message.startsWith("Forrige") ? e.message : "Fekk ikkje kontakt med Forrige bok");
+  } finally { clearTimeout(t); }
+}
+
+// Det vi treng av eit verk: tittel, forfattarar og appelltermane (vekt minst
+// 0,5), sorterte med dei tydelegaste først, som merkelappane i karusellen.
+function kortVerk(w) {
+  const m = w.simplifiedPresentationMetadata || {};
+  return { id: w.id, simplifiedPresentationMetadata: { title: m.title || "", authors: m.authors || [] },
+    termar: (w.appealTerms || [])
+      .filter(a => a.term && a.term.id && (a.averageWeight ?? 0) >= 0.5)
+      .sort((a, b) => (b.globalWeight ?? b.averageWeight) - (a.globalWeight ?? a.averageWeight))
+      .map(a => [a.term.id, a.term.label || ""]) };
+}
+
+// Hentar heile katalogen. Kva parameter API-et brukar for å bla, er ikkje
+// dokumentert, så vi prøver dei vanlege og tek den første som gir andre verk
+// enn første sida. Sidene blir henta tre om gongen.
+async function hentAlleVerk(meld) {
+  const side = ekstra => forrigebok(`/works?language=nn&limit=${FB_SIDE}${ekstra ? "&" + ekstra : ""}`);
+  const verk = new Map();
+  const ta = d => { for (const w of (d && d.works) || []) if (w && w.id) verk.set(w.id, kortVerk(w)); };
+  const første = await side("");
+  const total = Number(første.total) || 0;
+  ta(første);
+  meld(verk.size, total);
+  if ((første.works || []).length < FB_SIDE || verk.size >= total) return [...verk.values()];
+  const førsteIdar = new Set(første.works.map(w => w.id));
+  const nye = d => !!(d && d.works && d.works.length) && d.works.every(w => !førsteIdar.has(w.id));
+  const prøv = async ekstra => { try { const d = await side(ekstra); return nye(d) ? d : null; } catch (e) { return null; } };
+  let blad = null, d;
+  for (const p of ["offset", "skip", "from", "start"]) {
+    if ((d = await prøv(`${p}=${FB_SIDE}`))) { blad = n => `${p}=${n * FB_SIDE}`; break; }
+  }
+  if (!blad) {
+    // page=1 er anten den andre sida (talt frå 0) eller den første (talt frå 1)
+    if ((d = await prøv("page=1"))) blad = n => `page=${n}`;
+    else if ((d = await prøv("page=2"))) blad = n => `page=${n + 1}`;
+  }
+  if (!blad) throw new Error("fann ikkje ut korleis ein blar i Forrige bok-katalogen");
+  ta(d);
+  meld(verk.size, total);
+  const sider = Math.ceil(total / FB_SIDE);
+  let neste = 2;
+  async function arbeidar() {
+    while (neste < sider) {
+      const n = neste++;
+      let svar;
+      try { svar = await side(blad(n)); } catch (e) { svar = await side(blad(n)); }   // éin ny freistnad
+      ta(svar);
+      meld(verk.size, total);
+    }
+  }
+  await Promise.all([arbeidar(), arbeidar(), arbeidar()]);
+  if (verk.size < total * 0.9) throw new Error(`fekk berre ${verk.size} av ${total} verk frå Forrige bok`);
+  return [...verk.values()];
+}
+
+// Tittel og forfattar som karusellen ser dei (same rydding som i index.html)
+const storForbokstav = s => s ? s[0].toUpperCase() + s.slice(1) : "";
+function snuNamn(namn) {
+  if (!namn) return "";
+  if (namn.includes(",")) { const [e, f] = namn.split(/,(.*)/s); return `${f.trim()} ${e.trim()}`; }
+  return namn.trim();
+}
+function ryddTittel(t) {
+  if (t.includes(" : ")) {
+    const [hovud, ...resten] = t.split(" : ");
+    let under = resten.join(" : ").trim();
+    if (under.split(/\s+/).length === 1) under = "";   // «kriminalroman», «roman» osb.
+    return [hovud.trim(), storForbokstav(under)];
+  }
+  return [t.trim(), ""];
+}
+const forfattarFrå = d => {
+  let c = d.bsdc_creator || {};
+  if (Array.isArray(c)) c = c[0] || {};
+  return c.name || "";
+};
+function husk(post, alle) {
+  const d = post.sru_recordData || {};
+  const tittel = ryddTittel(d.bsdc_title || "")[0];
+  if (post.id && tittel) alle.set(String(post.id), { id: String(post.id), tittel, forfattar: snuNamn(forfattarFrå(d)) });
+}
+
+// Koplingsregelen frå sameBok() i index.html: titlane må vere like, eller den
+// eine må byrje med heile den andre (ord for ord), og etternamnet til
+// forfattaren må stå blant forfattarane til verket.
+const norm = t => String(t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+function etternamn(forfattar) { const o = norm(forfattar).split(" "); return o[o.length - 1] || ""; }
+function sameBok(t, w) {
+  const m = w.simplifiedPresentationMetadata || {};
+  const a = norm(t.tittel), b = norm(m.title);
+  if (!a || !b || !(a === b || a.startsWith(b + " ") || b.startsWith(a + " "))) return false;
+  const e = etternamn(t.forfattar);
+  return !e || norm((m.authors || []).join(" ")).split(" ").includes(e);
+}
+
+// Lagar indeksen. Verka blir sorterte på første ord i tittelen, sidan to
+// titlar som passar saman etter regelen over, alltid har same første ord.
+function lagFbIndeks(titlar, verk) {
+  const etterOrd = new Map();
+  for (const w of verk) {
+    const b = norm(w.simplifiedPresentationMetadata.title);
+    if (!b) continue;
+    const k = b.split(" ")[0];
+    if (!etterOrd.has(k)) etterOrd.set(k, []);
+    etterOrd.get(k).push(w);
+  }
+  const termar = [], termNr = new Map(), bok = {};
+  let kopla = 0, nyasteTnr = 0;
+  for (const t of titlar) {
+    nyasteTnr = Math.max(nyasteTnr, Number(t.id) || 0);
+    const a = norm(t.tittel);
+    if (!a) continue;
+    const treff = (etterOrd.get(a.split(" ")[0]) || []).filter(w => sameBok(t, w));
+    if (!treff.length) continue;
+    // Fleire treff: helst heilt lik tittel, deretter verket som er best skildra
+    const lik = w => norm(w.simplifiedPresentationMetadata.title) === a ? 1 : 0;
+    treff.sort((x, y) => lik(y) - lik(x) || y.termar.length - x.termar.length);
+    kopla++;
+    bok[t.id] = treff[0].termar.map(([id, merke]) => {
+      if (!termNr.has(id)) { termNr.set(id, termar.length); termar.push([id, storForbokstav(merke)]); }
+      return termNr.get(id);
+    });
+  }
+  return {
+    laga: new Date().toISOString().slice(0, 10),
+    kjelde: "Forrige bok, Biblioteksentralen (CC BY-NC 4.0)",
+    forklaring: "termar: [id, merkelapp]. bok: tittelnummer → nummera i termar som boka har (vekt minst 0,5), dei tydelegaste først. Tom liste: kopla, men utan appellfaktorar. Titlar som manglar, er ikkje funne i Forrige bok. nyasteTnr: høgste tittelnummer som var med. Laga med knappen på oversikt.html.",
+    verk: verk.length, titlar: titlar.length, kopla, nyasteTnr, termar, bok,
+  };
+}
+
+async function visFbInfo() {
+  try {
+    const svar = await fetch(FB_API + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
+    if (!svar.ok) throw new Error();
+    const l = await svar.json();
+    $("fbinfo").textContent = `Forrige bok-indeksen, sist laga ${l.laga.split("-").reverse().join(".")}: ${l.kopla} av ${l.titlar} titlar kopla til ${l.verk} verk i Forrige bok.`;
+  } catch (e) { $("fbinfo").textContent = "Forrige bok-indeksen er ikkje laga enno."; }
 }
 
 // Same samanslåing som før: nynorsk og bokmål av same ord blir eitt, med nynorsk form
@@ -773,7 +958,7 @@ function telEmne(post, avd, tabellar) {
   }
 }
 $("emneknapp").addEventListener("click", oppdaterEmneord);
-$("emneboks").addEventListener("toggle", () => { if ($("emneboks").open) visEmneinfo(); }, { once: true });
+$("emneboks").addEventListener("toggle", () => { if ($("emneboks").open) { visEmneinfo(); visFbInfo(); } }, { once: true });
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);
