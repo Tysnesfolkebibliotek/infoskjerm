@@ -1379,7 +1379,7 @@ function startVisning(cfg) {
       });
       if (nye.length) { skrivLager(nye); brukListe(nye); }
       else if (!titlar.length) visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava.");
-      meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1" || (!!cfg.appell && cfg.kjelde === "sok"), appell: !!cfg.appell, appellalle: cfg.appellmodus !== "eitt" && (cfg.appell || "").includes(","), sek: Math.round((Date.now() - t0) / 1000) });
+      meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1" || (!!cfg.appell && cfg.kjelde === "sok"), appell: !!cfg.appell && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"), appellalle: cfg.appellmodus !== "eitt" && (cfg.appell || "").includes(",") && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"), sek: Math.round((Date.now() - t0) / 1000) });
     } catch (e) {
       if (!titlar.length) visMelding("Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
       meldTilByggjar({ status: "feil", melding: e.message });
@@ -1783,7 +1783,10 @@ function appellMerke(w, maks = 3, medId = false) {
 
 // Legg på merkelappar og filtrerer på appellfaktor
 async function forrigebokBerik(liste, cfg) {
-  const ønskte = new Set((cfg.appell || "").split(",").filter(Boolean));
+  // Appellfilteret gjeld berre Søk og Nyaste. For Handplukka og «Likte du?»
+  // er bøkene valde på førehand, og feltet er gøymt, så ein gammal verdi skal ikkje telje.
+  const filtrer = cfg.kjelde === "sok" || cfg.kjelde === "nyaste";
+  const ønskte = new Set(filtrer ? (cfg.appell || "").split(",").filter(Boolean) : []);
   const merkelapp = cfg.merkelapp === "1";
   if (!liste.length || (!ønskte.size && !merkelapp)) return liste;
   // Bøker frå «Likte du?» har verket med seg frå før
