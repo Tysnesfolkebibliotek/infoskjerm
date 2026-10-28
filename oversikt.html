@@ -776,7 +776,8 @@ async function lagreIRepo(api, innhald, melding, nøkkel) {
 // Karusellane treng appellfaktorar for bøkene sine. I staden for å slå opp
 // kvar bok i Forrige bok, lastar vi her ned heile katalogen deira (100 verk
 // om gongen), koplar verka til tittelnummera våre på tittel og forfattar, og
-// lagrar resultatet i repoet. Fila har éi felles liste over appelltermar
+// lagrar resultatet i repoet (sjå API-dokumentasjonen på forrigebok.no/api).
+// Fila har éi felles liste over appelltermar
 // («termar»: [id, merkelapp]) og, per tittelnummer, nummera på termane boka
 // har (vekt minst 0,5), dei tydelegaste først.
 const FB_API = `https://api.github.com/repos/${REPO}/contents/forrigebok.json`;
@@ -807,40 +808,30 @@ function kortVerk(w) {
       .map(a => [a.term.id, a.term.label || ""]) };
 }
 
-// Hentar heile katalogen. Kva parameter API-et brukar for å bla, er ikkje
-// dokumentert, så vi prøver dei vanlege og tek den første som gir andre verk
-// enn første sida. Sidene blir henta tre om gongen.
+// Hentar heile katalogen med parameteren «start» (nummeret på det første
+// verket). Dokumentasjonen seier ikkje om første verket er nummer 0 eller 1,
+// så vi sjekkar det med eit lite kall først. Sortert på sist endra, så
+// rekkjefølgja står i ro medan vi hentar. Sidene blir henta tre om gongen.
 async function hentAlleVerk(meld) {
-  const side = ekstra => forrigebok(`/works?language=nn&limit=${FB_SIDE}${ekstra ? "&" + ekstra : ""}`);
+  const side = (start, limit = FB_SIDE) => forrigebok(`/works?language=nn&sort=dateUpdated&limit=${limit}${start != null ? "&start=" + start : ""}`);
   const verk = new Map();
   const ta = d => { for (const w of (d && d.works) || []) if (w && w.id) verk.set(w.id, kortVerk(w)); };
-  const første = await side("");
+  const første = await side(null);
   const total = Number(første.total) || 0;
   ta(første);
   meld(verk.size, total);
   if ((første.works || []).length < FB_SIDE || verk.size >= total) return [...verk.values()];
-  const førsteIdar = new Set(første.works.map(w => w.id));
-  const nye = d => !!(d && d.works && d.works.length) && d.works.every(w => !førsteIdar.has(w.id));
-  const prøv = async ekstra => { try { const d = await side(ekstra); return nye(d) ? d : null; } catch (e) { return null; } };
-  let blad = null, d;
-  for (const p of ["offset", "skip", "from", "start"]) {
-    if ((d = await prøv(`${p}=${FB_SIDE}`))) { blad = n => `${p}=${n * FB_SIDE}`; break; }
-  }
-  if (!blad) {
-    // page=1 er anten den andre sida (talt frå 0) eller den første (talt frå 1)
-    if ((d = await prøv("page=1"))) blad = n => `page=${n}`;
-    else if ((d = await prøv("page=2"))) blad = n => `page=${n + 1}`;
-  }
-  if (!blad) throw new Error("fann ikkje ut korleis ein blar i Forrige bok-katalogen");
-  ta(d);
-  meld(verk.size, total);
+  // Er start=1 det andre verket, tel API-et frå 0. Er det det første, frå 1.
+  const prøve = ((await side(1, 1)).works || [])[0];
+  const base = prøve && prøve.id === første.works[1].id ? 0 : prøve && prøve.id === første.works[0].id ? 1 : null;
+  if (base === null) throw new Error("Forrige bok svarte ikkje som venta på «start». Prøv igjen seinare");
   const sider = Math.ceil(total / FB_SIDE);
-  let neste = 2;
+  let neste = 1;
   async function arbeidar() {
     while (neste < sider) {
       const n = neste++;
       let svar;
-      try { svar = await side(blad(n)); } catch (e) { svar = await side(blad(n)); }   // éin ny freistnad
+      try { svar = await side(n * FB_SIDE + base); } catch (e) { svar = await side(n * FB_SIDE + base); }   // éin ny freistnad
       ta(svar);
       meld(verk.size, total);
     }
