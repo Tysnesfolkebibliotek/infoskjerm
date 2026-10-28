@@ -101,6 +101,14 @@
 
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
 
+  <details class="nokkel" id="emneboks">
+    <summary>Emneordlista til byggjaren</summary>
+    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord og sjangrar som er i bruk i Vaksen og Born og unge. Oppdater lista ein gong i blant, til dømes kvar månad. Det tek eitt–to minutt og krev nøkkelen nedanfor.</p>
+    <p id="emneinfo">Hentar informasjon om lista …</p>
+    <button type="button" id="emneknapp">Oppdater emneordlista</button>
+    <p class="hjelp" id="emnestatus"></p>
+  </details>
+
   <details class="nokkel" id="nokkelboks">
     <summary>Tilgangsnøkkel for å lagre</summary>
     <p class="hjelp">Alle kan sjå sida, men berre den som har ein tilgangsnøkkel kan lagre endringar. Nøkkelen blir lagra i denne nettlesaren.</p>
@@ -590,6 +598,109 @@ const FILTER_LAGER = "infoskjerm-oversikt-visalle";
 function lagreFilter() { try { localStorage.setItem(FILTER_LAGER, $("visalle").checked ? "1" : "0"); } catch (e) {} }
 try { $("visalle").checked = localStorage.getItem(FILTER_LAGER) === "1"; } catch (e) {}
 $("visalle").addEventListener("change", () => { lagreFilter(); if (oppsett) teikn(); });
+
+// ---- Emneordlista (emneord.json) -------------------------------------------
+// Bibliofil svarar ikkje GitHub sine maskiner, men nettlesaren, så teljinga
+// skjer her. Vi går gjennom alle titlane i avdelingane (500 om gongen), tel
+// emneord og sjangrar, slår saman nynorsk og bokmål, og lagrar fila i repoet.
+const EMNE_API = `https://api.github.com/repos/${REPO}/contents/emneord.json`;
+const SRU = "https://strdbib.bib.no/cgi-bin/sru";
+const EMNE_AVD = ["tyfv", "tyfb"];
+const MÅLFORM = [
+  [/teikn/g, "tegn"], [/eljing/g, "elling"], [/bilet/g, "bilde"], [/skodespel/g, "skuespill"],
+  [/heim/g, "hjem"], [/kjærleik/g, "kjærlighet"], [/røynd/g, "virkelighet"], [/spel/g, "spill"],
+  [/^kriminal$/, "krim"], [/^humoristisk(e)?$/, "humor"],
+];
+const vokalfri = ord => MÅLFORM.reduce((o, [fra, til]) => o.replace(fra, til), ord.toLowerCase())
+  .replace(/[^\p{L}\p{N}]/gu, "").replace(/[aeiouyæøåéèêüö]/g, "").replace(/(.{2,}?)r+$/, "$1");
+
+function sruJsonp(param, ms = 120000) {
+  return new Promise((ok, feil) => {
+    const s = document.createElement("script");
+    const url = SRU + "?" + Object.entries({ operation: "searchRetrieve", recordSchema: "bsdc", responseType: "text/javascript", ...param })
+      .map(([k, v]) => k + "=" + encodeURIComponent(String(v)).replace(/%3A/gi, ":")).join("&");
+    let ferdig = false;
+    const slutt = (fn, v) => { if (ferdig) return; ferdig = true; clearTimeout(t); s.remove(); window.callback = () => {}; fn(v); };
+    const t = setTimeout(() => slutt(feil, new Error("Bibliofil svarte ikkje i tide")), ms);
+    window.callback = d => slutt(ok, d);
+    s.onerror = () => slutt(feil, new Error("Fekk ikkje kontakt med Bibliofil"));
+    s.src = url; document.head.append(s);
+  });
+}
+
+async function visEmneinfo() {
+  try {
+    const d = await (await fetch(EMNE_API + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" })).json();
+    if (!d.content) throw new Error();
+    const l = JSON.parse(frå64(d.content));
+    $("emneinfo").textContent = `Sist laga ${l.laga.split("-").reverse().join(".")}: ${l.emne.length} emneord og ${l.sjanger.length} sjangrar frå ${Object.values(l.titlar).reduce((a, b) => a + b, 0)} titlar.`;
+    return d.sha;
+  } catch (e) { $("emneinfo").textContent = "Lista er ikkje laga enno."; return null; }
+}
+
+async function oppdaterEmneord() {
+  const nøkkel = lesNøkkel(), st = $("emnestatus");
+  if (!nøkkel) { $("nokkelboks").open = true; st.textContent = "Du treng ein tilgangsnøkkel for å lagre lista. Sjå nedanfor."; return; }
+  $("emneknapp").disabled = true;
+  try {
+    const tabellar = { emne: {}, sjanger: {} }, titlar = {};
+    for (const avd of EMNE_AVD) {
+      const query = `bibliofil.ccl="avd=${avd}" and norzig.materialType=l`;
+      let start = 1, totalt = 1;
+      while (start <= totalt) {
+        st.textContent = `Les titlar i ${avd === "tyfv" ? "Vaksen" : "Born og unge"} … ${start > 1 ? `${start - 1} av ${totalt}` : ""}`;
+        const d = await sruJsonp({ query, startRecord: start, maximumRecords: 500 });
+        totalt = Number((d && d.feed && d.feed.sru_numberOfRecords) || 0);
+        titlar[avd] = totalt;
+        for (const p of (d && d.feed && d.feed.entry) || []) telEmne(p, avd, tabellar);
+        start += 500;
+      }
+    }
+    const ferdig = (tabell, maks) => Object.values(tabell)
+      .map(m => [m.namn, ...EMNE_AVD.map(a => m.tal[a] || 0), [m.namn, ...[...m.former].filter(f => f !== m.namn).sort()].join(", ")])
+      .filter(r => r[1] + r[2] >= 2)                           // berre emneord på minst to titlar
+      .sort((a, b) => (b[1] + b[2]) - (a[1] + a[2])).slice(0, maks);
+    const liste = { laga: new Date().toISOString().slice(0, 10), avdelingar: EMNE_AVD, titlar,
+      forklaring: "Kvar rad: [namn, titlar i tyfv, titlar i tyfb, alle formene skilde med komma]. Laga med «Oppdater emneordlista» på oversikt.html.",
+      emne: ferdig(tabellar.emne, 5000), sjanger: ferdig(tabellar.sjanger, 300) };
+    st.textContent = `Fann ${liste.emne.length} emneord og ${liste.sjanger.length} sjangrar. Lagrar …`;
+    const sha = await visEmneinfo();
+    const svar = await fetch(EMNE_API, { method: "PUT",
+      headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Oppdater emneordlista", content: b64(JSON.stringify(liste) + "\n"), ...(sha ? { sha } : {}), author: FORFATTAR, committer: FORFATTAR }) });
+    if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjå nedanfor.");
+    if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
+    await visEmneinfo();
+    st.textContent = "Lista er lagra. Byggjaren brukar henne om nokre minutt.";
+  } catch (e) {
+    st.textContent = "Klarte ikkje lage lista: " + e.message;
+  } finally { $("emneknapp").disabled = false; }
+}
+
+// Same samanslåing som før: nynorsk og bokmål av same ord blir eitt, med nynorsk form
+function telEmne(post, avd, tabellar) {
+  let alle = (post.sru_recordData || {}).bsdc_subject || [];
+  if (!Array.isArray(alle)) alle = [alle];
+  for (const [type, tabell] of [["genre", tabellar.sjanger], ["anna", tabellar.emne]]) {
+    const iBoka = new Map();
+    for (const e of alle) {
+      if (!e || (type === "genre") !== (e.id === "genre")) continue;
+      const namn = String(e.name || "").normalize("NFC").trim(); if (!namn) continue;
+      const k = vokalfri(namn); if (!k) continue;
+      const før = iBoka.get(k);
+      if (!før) iBoka.set(k, { namn, nno: e.lang === "nno", former: new Set([namn]) });
+      else { før.former.add(namn); if (e.lang === "nno" && !før.nno) { før.namn = namn; før.nno = true; } }
+    }
+    for (const [k, b] of iBoka) {
+      const m = tabell[k] || (tabell[k] = { namn: b.namn, nno: b.nno, former: new Set(), tal: {} });
+      m.tal[avd] = (m.tal[avd] || 0) + 1;
+      b.former.forEach(f => m.former.add(f));
+      if (b.nno && !m.nno) { m.namn = b.namn; m.nno = true; }
+    }
+  }
+}
+$("emneknapp").addEventListener("click", oppdaterEmneord);
+$("emneboks").addEventListener("toggle", () => { if ($("emneboks").open) visEmneinfo(); }, { once: true });
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);

@@ -476,11 +476,11 @@
           </datalist>
         </div>
         <div class="felt">
-          <label for="emne">Emne</label>
-          <input type="text" id="emne" name="emne" placeholder="til dømes klima, fuglar">
-          <select id="emneval" aria-label="Legg til eit vanleg emne" style="margin-top:6px">
-            <option value="">Legg til eit vanleg emne …</option>
-          </select>
+          <label for="emnesok">Emne</label>
+          <input type="hidden" id="emne" name="emne">
+          <input type="text" id="emnesok" list="emneliste" placeholder="Skriv for forslag, eller eit eige emneord + Enter">
+          <datalist id="emneliste"></datalist>
+          <div class="vallinje" id="emnevalde"></div>
           <p class="hjelp" id="forslagstatus"></p>
         </div>
       </div>
@@ -1482,7 +1482,7 @@ function ryddLager(behald, alt = false) {
         let tid = 0;
         try { tid = JSON.parse(localStorage.getItem(k)).tid || 0; } catch (e) {}
         if (no - tid > LAGER_DAGAR * 864e5) localStorage.removeItem(k);
-      } else if (/^forslag\d*:/.test(k) && !k.startsWith("forslag6:")) localStorage.removeItem(k);
+      } else if (/^forslag\d*:/.test(k)) localStorage.removeItem(k);     // gamle emneforslag (no i emneord.json)
       else if (k === "forrigebok-tnr") localStorage.removeItem(k);    // gammal versjon av oppslaga
     }
   } catch (e) {}
@@ -2084,10 +2084,13 @@ function byggSøk(cfg, avd, medAlder, medSpråk) {
   if (rein(cfg.ccl)) d.push(`bibliofil.ccl="${rein(cfg.ccl)}"`);
 
   // Emneord: «alle saman» i eitt søk, «minst eitt av» som eitt søk per ord
-  const emne = (cfg.emne || "").split(",").map(ordSøk).filter(Boolean);
+  // Eit emne kan ha fleire former («Hestar|Hester»), som tyder «eller».
+  // «Alle saman»: eitt søk per kombinasjon av former. «Minst eitt»: eitt søk per form.
+  const emne = (cfg.emne || "").split(",").map(g => g.split("|").map(ordSøk).filter(Boolean)).filter(g => g.length);
+  const kombinasjonar = grupper => grupper.reduce((acc, g) => acc.flatMap(a => g.map(f => [...a, f])), [[]]);
   const emneVariantar = !emne.length ? []
-    : (cfg.emnemodus === "alle" || emne.length === 1) ? [emne.map(e => `dc.subject=${e}`)]
-    : emne.map(e => [`dc.subject=${e}`]);
+    : (cfg.emnemodus === "alle" || emne.length === 1) ? kombinasjonar(emne).map(k => k.map(e => `dc.subject=${e}`))
+    : emne.flat().map(e => [`dc.subject=${e}`]);
 
   // Dewey og serie er alternativ til emneorda («eller»): eitt søk per verdi,
   // og treffa blir slått saman. 796.334 → bib.classification=796.334*
@@ -2216,88 +2219,6 @@ async function hentSøk(cfg, avd, mål, meld) {
 // BYGGJAR
 // =====================================================================
 
-// =====================================================================
-// VANLEGE EMNE OG SJANGRAR
-// =====================================================================
-// Bibliofil gir ikkje emneord som fasettar, så vi hentar eit tilfeldig utval
-// av titlane i avdelinga og tel kva emne og sjangrar som går igjen.
-// Resultatet blir lagra i nettlesaren i ei veke.
-
-const FORSLAG_UTVAL = 10;       // tal bunkar
-const FORSLAG_BUNK = 100;       // titlar per bunk → om lag 1000 titlar
-const FORSLAG_DAGAR = 7;
-
-// Nøkkel for å slå saman variantar av same ord: utan vokalar («Romanar/Romaner»)
-// og utan fleirtals-r på slutten («Roman/Romanar», «Hest/Hestar»).
-// Nokre nynorsk- og bokmålsformer skil seg i meir enn vokalane. Dei blir
-// gjorde like før samanlikninga, så «Teikneseriar» og «Tegneserie» blir eitt.
-const MÅLFORM = [
-  [/teikn/g, "tegn"], [/eljing/g, "elling"], [/bilet/g, "bilde"], [/skodespel/g, "skuespill"],
-  [/heim/g, "hjem"], [/kjærleik/g, "kjærlighet"], [/røynd/g, "virkelighet"], [/spel/g, "spill"],
-  // Ulike ord som tyder det same
-  [/^kriminal$/, "krim"], [/^humoristisk(e)?$/, "humor"],
-];
-const vokalfri = ord => MÅLFORM.reduce((o, [fra, til]) => o.replace(fra, til), ord.toLowerCase())
-  .replace(/[^\p{L}\p{N}]/gu, "").replace(/[aeiouyæøåéèêüö]/g, "")
-  .replace(/(.{2,}?)r+$/, "$1");
-
-async function hentForslag(avd) {
-  const nøkkel = "forslag6:" + avd;   // ny nøkkel, så gamle lister frå mindre utval blir hoppa over
-  try {
-    const lagra = JSON.parse(localStorage.getItem(nøkkel) || "null");
-    if (lagra && Date.now() - lagra.tid < FORSLAG_DAGAR * 864e5) return lagra;
-  } catch (e) {}
-
-  const query = `bibliofil.ccl="avd=${avd}" and norzig.materialType=l`;
-  const første = await sru({ query, startRecord: 1, maximumRecords: 1 });
-  const totalt = Number((første && første.feed && første.feed.sru_numberOfRecords) || 0);
-  const emne = {}, sjanger = {};
-  let sett = 0;
-  const startar = stokk(Array.from({ length: Math.max(1, Math.ceil(totalt / FORSLAG_BUNK)) }, (_, n) => n * FORSLAG_BUNK + 1))
-    .slice(0, FORSLAG_UTVAL);
-  for (const start of startar) {
-    const d = await sru({ query, startRecord: start, maximumRecords: FORSLAG_BUNK }, 90000);
-    for (const p of ((d && d.feed && d.feed.entry) || [])) {
-      sett++;
-      const alle = (p.sru_recordData || {}).bsdc_subject || [];
-      for (const [type, mål] of [["genre", sjanger], ["anna", emne]]) {
-        // Nynorsk og bokmål av same ord («Romanar/Romaner», «Hestar/Hester») skil seg
-        // som regel berre i vokalane. Vi slår dei saman med ein nøkkel utan vokalar,
-        // og viser den nynorske forma. Ord som berre finst på eitt språk, kjem med.
-        const iBoka = new Map();
-        for (const e of alle) {
-          if ((type === "genre") !== (e.id === "genre")) continue;
-          const namn = (e.name || "").trim(); if (!namn) continue;
-          const k = vokalfri(namn);
-          const før = iBoka.get(k);
-          if (før && !før.alle.includes(namn)) før.alle.push(namn);
-          if (!før || (e.lang === "nno" && før.lang !== "nno")) iBoka.set(k, { namn, lang: e.lang, alle: før ? før.alle : [namn] });
-        }
-        for (const [k, { namn, lang, alle: former }] of iBoka) {
-          const m = mål[k] || (mål[k] = { n: 0, namn, nno: false, former: [] });
-          m.n++;
-          for (const f of former) if (!m.former.includes(f)) m.former.push(f);
-          if (lang === "nno" && !m.nno) { m.namn = namn; m.nno = true; }
-        }
-      }
-    }
-  }
-  const skaler = n => Math.round(n * totalt / Math.max(1, sett));
-  // Tredje element: alle formene vi har sett, med den viste først
-  const topp = (o, n) => Object.values(o).sort((a, b) => b.n - a.n).slice(0, n)
-    .map(m => [m.namn, skaler(m.n), [m.namn, ...m.former.filter(f => f !== m.namn)].join(", ")]);
-  const res = { tid: Date.now(), totalt, sett, emne: topp(emne, 150), sjanger: topp(sjanger, 50) };
-  try { localStorage.setItem(nøkkel, JSON.stringify(res)); } catch (e) {}
-  return res;
-}
-
-// Slår saman forslag for fleire avdelingar
-function slåSaman(lister) {
-  const sum = {}, verdi = {};
-  for (const l of lister) for (const [namn, n, v] of l) { sum[namn] = (sum[namn] || 0) + n; verdi[namn] = verdi[namn] || v || namn; }
-  return Object.entries(sum).sort((a, b) => b[1] - a[1]).map(([namn, n]) => [namn, n, verdi[namn]]);
-}
-
 function startByggjar(startCfg) {
   document.body.className = "byggjar";
   document.getElementById("byggjar").hidden = false;
@@ -2324,7 +2245,7 @@ function startByggjar(startCfg) {
       else felt.value = v;
     }
     oppdaterSynlege();
-    teiknLikte(); teiknAppell();
+    teiknLikte(); teiknAppell(); teiknEmne();
     const endra = endraDelar(cfg);
     delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
   }
@@ -2431,7 +2352,6 @@ function startByggjar(startCfg) {
     const no = lesSkjema();
     fyllInn({ ...STANDARD, ...mal, tema: no.tema, skrift: no.skrift });   // behald tema og skrift
     oppdater(true);
-    forslagFor = ""; emneval.replaceChildren(new Option("Legg til eit vanleg emne …", "")); forslagstatus.textContent = "";
     malval.value = "";
   }
   malval.addEventListener("change", () => brukMal(malval.value));
@@ -2661,54 +2581,70 @@ function startByggjar(startCfg) {
   });
 
   new ResizeObserver(skaler).observe(skjerm);
-  // ---- forslag til emne og sjanger ----
-  const emneval = document.getElementById("emneval");
-  const sjangerliste = document.getElementById("sjangrar");
-  const forslagstatus = document.getElementById("forslagstatus");
-  let forslagFor = "";
-  async function oppdaterForslag() {
-    const avdar = lesSkjema().avd.split(",").filter(Boolean);
-    const nøkkel = avdar.join(",");
-    if (!avdar.length || nøkkel === forslagFor) return;
-    forslagFor = nøkkel;
-    forslagstatus.textContent = "Hentar vanlege emne og sjangrar for avdelinga …";
-    emneval.replaceChildren(new Option("Hentar vanlege emne …", ""));
-    try {
-      const res = [];
-      for (const a of avdar) res.push(await hentForslag(a));
-      if (forslagFor !== nøkkel) return;              // avdelinga vart endra medan vi henta
-      const emne = slåSaman(res.map(r => r.emne)).slice(0, 150);
-      const sjangrar = slåSaman(res.map(r => r.sjanger)).slice(0, 50);
-      emneval.replaceChildren(new Option("Legg til eit vanleg emne …", ""),
-        ...emne.map(([namn, n]) => new Option(`${namn} (ca. ${n})`, namn)));
-      sjangerliste.replaceChildren(...sjangrar.map(([namn, n, verdi]) => new Option(`${namn} (ca. ${n} titlar)`, verdi)));
-      const sett = res.reduce((s, r) => s + r.sett, 0), totalt = res.reduce((s, r) => s + r.totalt, 0);
-      forslagstatus.textContent = `Forslaga byggjer på eit tilfeldig utval av ${sett} av ${totalt} titlar, så tala er omtrentlege.`;
-    } catch (e) {
-      forslagstatus.textContent = "Fekk ikkje henta forslag frå Bibliofil.";
-      forslagFor = "";
-    }
+  // ---- Emne og sjanger: forslag frå emneord.json ------------------------
+  // Lista blir laga på oversiktssida («Oppdater emneordlista») og inneheld alle
+  // emneord og sjangrar i bruk, med tal titlar per avdeling. Eit emne med fleire
+  // former (nynorsk/bokmål) blir lagra som «Hestar|Hester» og søkt som «eller».
+  var emneord = null, emneLasting = null;   // var: kan bli brukt før denne linja har køyrt
+  async function lastEmneord() {
+    if (emneord) return emneord;
+    if (!emneLasting) emneLasting = fetch("emneord.json", { cache: "no-cache" })
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(d => { emneord = d; teiknForslag(); return d; })
+      .catch(() => { $("forslagstatus").textContent = "Lista over emneord er ikkje laga enno. Ho blir laga på oversiktssida. Du kan likevel skrive inn emneord."; return null; });
+    return emneLasting;
   }
-  emneval.addEventListener("change", () => {
-    // Komma skil emneord i feltet, så komma inne i eit emneord blir til mellomrom
-    const v = emneval.value.replace(/,/g, " ").replace(/\s+/g, " ").trim(); if (!v) return;
-    const felt = skjema.elements.emne;
-    const ord = felt.value.split(",").map(s => s.trim()).filter(Boolean);
-    if (!ord.some(o => o.toLowerCase() === v.toLowerCase())) ord.push(v);
-    felt.value = ord.join(", ");
-    emneval.value = "";
-    oppdater(true);
+  // Forslaga, sorterte etter kor mange titlar dei har i dei valde avdelingane
+  function teiknForslag() {
+    if (!emneord) return;
+    const avdar = (lesSkjema().avd || "").split(",").filter(Boolean);
+    const kol = avdar.map(a => 1 + emneord.avdelingar.indexOf(a)).filter(k => k > 0);
+    const tal = rad => kol.reduce((s, k) => s + (rad[k] || 0), 0);
+    const ordna = rader => rader.map(r => [r, tal(r)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    $("emneliste").replaceChildren(...ordna(emneord.emne).map(([r, n]) => new Option(`${r[0]} (${n})`, r[0])));
+    $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[r.length - 1])));
+    const dato = emneord.laga ? emneord.laga.split("-").reverse().join(".") : "";
+    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre.`;
+  }
+  const emneDelar = () => $("emne").value.split(",").map(x => x.trim()).filter(Boolean);
+  function teiknEmne() {
+    $("emnevalde").replaceChildren(...emneDelar().map(del => {
+      const former = del.split("|");
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "appellbrikke";
+      b.title = former.length > 1 ? `Søkjer på ${former.join(" eller ")}. Klikk for å fjerne.` : "Fjern";
+      b.append(former[0], Object.assign(document.createElement("span"), { textContent: "✕" }));
+      b.addEventListener("click", () => { $("emne").value = emneDelar().filter(x => x !== del).join(", "); teiknEmne(); oppdater(false); });
+      return b;
+    }));
+  }
+  // Legg til eit emne. Står det i lista, kjem alle formene med; elles det som er skrive.
+  function leggTilEmne(tekst) {
+    const rein = t => t.replace(/[,|]/g, " ").replace(/\s+/g, " ").trim();
+    const v = rein(tekst);
+    if (!v) return false;
+    const rad = emneord && emneord.emne.find(r => r[0].toLowerCase() === v.toLowerCase());
+    const del = rad ? String(rad[rad.length - 1]).split(",").map(rein).filter(Boolean).join("|") : v;
+    const har = emneDelar();
+    if (!har.some(x => x.toLowerCase().split("|").includes(v.toLowerCase()))) $("emne").value = [...har, del].join(", ");
+    $("emnesok").value = "";
+    teiknEmne(); oppdater(false);
+    return true;
+  }
+  // Vel ein frå lista: blir lagt til med ein gong. Eige ord: Enter (komma skil fleire).
+  $("emnesok").addEventListener("input", e => {
+    // Når eit forslag blir valt, skriv nettlesaren inn heile ordet på ein gong
+    // (inputType «insertReplacementText», eller ingen i somme nettlesarar). Vanleg skriving er «insertText».
+    if (e.inputType && e.inputType !== "insertReplacementText") return;
+    const v = $("emnesok").value.trim().toLowerCase();
+    if (emneord && v && emneord.emne.some(r => r[0].toLowerCase() === v)) leggTilEmne($("emnesok").value);
   });
-  // Forslaga blir henta først når du opnar menyen, så dei ikkje konkurrerer med førehandsvisinga
-  for (const felt of [emneval, document.getElementById("sjanger")])
-    for (const hending of ["focus", "mousedown"]) felt.addEventListener(hending, () => oppdaterForslag());
-  skjema.addEventListener("change", e => {
-    if (e.target.name !== "avd") return;
-    forslagFor = "";
-    emneval.replaceChildren(new Option("Legg til eit vanleg emne …", ""));
-    forslagstatus.textContent = "";
+  $("emnesok").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); $("emnesok").value.split(",").forEach(leggTilEmne); }
   });
-
+  $("emnesok").addEventListener("blur", () => { if ($("emnesok").value.trim()) $("forslagstatus").textContent = "Trykk Enter for å leggje til emneordet du har skrive."; });
+  for (const felt of [$("emnesok"), $("sjanger")]) felt.addEventListener("focus", lastEmneord);
+  skjema.addEventListener("change", e => { if (e.target.name === "avd") teiknForslag(); });
   fyllInn(startCfg);
   skaler();
   oppdater(true);
