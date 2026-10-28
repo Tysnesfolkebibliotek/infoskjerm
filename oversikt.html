@@ -36,6 +36,8 @@
   ol.sider { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
   .side { border: 1px solid var(--strek); border-radius: 10px; padding: 10px 12px; background: var(--seinare-bg); }
   .filter { margin: 0 0 14px; }
+  .toppline { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .toppline .knapp { text-decoration: none; color: inherit; }
   .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
   .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
   .side.no { background: var(--no-bg); border-color: color-mix(in srgb, var(--ok) 40%, var(--strek)); }
@@ -85,7 +87,7 @@
 </head>
 <body>
 <main>
-  <h1>Infoskjermar</h1>
+  <div class="toppline"><h1>Infoskjermar</h1><a class="knapp" href="index.html">+ Lag ny karusell</a></div>
   <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan 10–15 minutt.</p>
 
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
@@ -138,7 +140,8 @@ const SKJERMAR = [
 ];
 const NØKKEL_LAGER = "infoskjerm-oversikt-nokkel";
 
-let oppsett = null, original = "", sha = null, open = null;   // open = { skjerm, i } for skjemaet som er ope
+let oppsett = null, original = "", sha = null, open = null;
+let nyFørehand = null;   // utfylt skjema for ny side, når vi kjem frå byggjaren   // open = { skjerm, i } for skjemaet som er ope
 
 const $ = id => document.getElementById(id);
 const el = (tag, attr = {}, ...barn) => {
@@ -221,6 +224,41 @@ function typeTekst(s) {
 }
 const adresse = s => s.lokal ? null : s.url;
 
+// ---- Samspel med karusellbyggjaren ---------------------------------------
+const erKarusell = s => !s.lokal && /github\.io\/infoskjerm\/(index\.html)?#vis=1/.test(s.url || "");
+// Opnar karusellen i byggjaren (utan vis=1), med beskjed om kvar han skal tilbake
+function tilByggjaren(s, skjerm, i) {
+  const [, hash = ""] = s.url.split("#");
+  const p = new URLSearchParams(hash);
+  p.delete("vis");
+  p.set("retur", `${skjerm}:${i}`);
+  p.set("returnamn", s.namn || "");
+  return "index.html#" + p.toString();
+}
+// Når byggjaren sender oss hit: «#skjerm=…&url=…» (ny side) eller «…&endre=3» (endre side 3)
+function fråByggjaren() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  if (!p.has("url") || !p.has("skjerm")) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  const skjerm = p.get("skjerm"), url = p.get("url");
+  if (!oppsett[skjerm]) return;
+  if (p.has("endre")) {
+    const l = oppsett[skjerm], i = Number(p.get("endre")), namn = p.get("namn") || "";
+    // Har lista endra seg sidan byggjaren vart opna, finn vi sida på namnet
+    const j = l[i] && (!namn || l[i].namn === namn) ? i : l.findIndex(x => x.namn === namn);
+    if (j >= 0) {
+      l[j].url = url;
+      open = { skjerm, i: j }; teikn();
+      oppdaterStatus(`«${l[j].namn}» er oppdatert frå byggjaren. Sjå over og klikk Lagre.`);
+      return;
+    }
+  }
+  nyFørehand = { namn: p.get("tittel") || "", url, sekund: 180 };
+  open = { skjerm, i: -1 }; teikn();
+  oppdaterStatus("Karusellen frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «Legg til» og så Lagre.");
+  setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } }, 50);
+}
+
 // ---- Teikning ------------------------------------------------------------
 function teikn() {
   const boks = $("skjermar");
@@ -247,6 +285,7 @@ function teikn() {
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(sk.nøkkel, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
           el("button", { type: "button", onclick: () => { open = erOpen ? null : { skjerm: sk.nøkkel, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
           adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
+          erKarusell(s) ? el("button", { type: "button", title: "Opne karusellen i byggjaren. Du kjem tilbake hit etterpå.", onclick: () => { location.href = tilByggjaren(s, sk.nøkkel, i); } }, "Endre i byggjaren") : null,
           el("button", { type: "button", onclick: () => fjern(sk.nøkkel, i) }, "Fjern")),
         erOpen ? skjema(s, sk.nøkkel, i) : null);
       liste.append(li);
@@ -257,8 +296,8 @@ function teikn() {
       liste,
       sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi dei ikkje er i bruk no. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
-      nyOpen ? el("div", { class: "side" }, skjema({ namn: "", url: "", sekund: 180 }, sk.nøkkel, -1))
-        : el("button", { type: "button", class: "leggtil", onclick: () => { open = { skjerm: sk.nøkkel, i: -1 }; teikn(); } }, "+ Legg til side")));
+      nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, sk.nøkkel, -1))
+        : el("button", { type: "button", class: "leggtil", onclick: () => { nyFørehand = null; open = { skjerm: sk.nøkkel, i: -1 }; teikn(); } }, "+ Legg til side")));
   }
   oppdaterStatus();
 }
@@ -475,7 +514,7 @@ window.addEventListener("beforeunload", e => { if (endra()) { e.preventDefault()
 // Status «Vist no» blir rekna på nytt kvart minutt
 setInterval(() => { if (oppsett && !open) teikn(); }, 60000);
 
-hent().catch(e => {
+hent().then(fråByggjaren).catch(e => {
   $("skjermar").replaceChildren(el("p", {}, "Fekk ikkje henta oppsettet frå GitHub: " + e.message + ". Prøv å laste sida på nytt."));
 });
 </script>

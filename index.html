@@ -351,6 +351,9 @@
   .b-lenkje .etikett { font-weight: 700; font-size: 14px; }
   .b-lenkje code { display: block; margin: 8px 0 10px; font-size: 12px; word-break: break-all; color: var(--b-dempa); max-height: 6.5em; overflow: auto; }
   .knappar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tilskjerm { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--b-strek); }
+  .tilskjerm .etikett { margin-bottom: 8px; }
+  .tilskjerm .knapp { text-decoration: none; }
   .knapp { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--b-aksent); background: var(--b-aksent); color: var(--b-aksent-tekst); cursor: pointer; text-decoration: none; }
   .knapp.sekundær { background: transparent; color: var(--b-tekst); border-color: var(--b-strek); }
 
@@ -743,6 +746,12 @@
       <div class="knappar">
         <button type="button" class="knapp" id="kopier">Kopier lenkje</button>
         <a class="knapp sekundær" id="opne" target="_blank" rel="noopener">Opne i nytt vindauge</a>
+      </div>
+      <!-- Berre synleg for den som har lagra ein nøkkel på oversiktssida -->
+      <div class="tilskjerm" id="tilskjerm" hidden>
+        <div class="etikett">Til skjermane</div>
+        <div class="knappar" id="tilskjermknappar"></div>
+        <p class="hjelp">Opnar oversikta med karusellen fylt ut. Ingenting blir endra på skjermane før du klikkar Lagre der.</p>
       </div>
     </div>
   </form>
@@ -2295,6 +2304,7 @@ function startByggjar(startCfg) {
     const lenkje = base + "#" + visHash;
     lenkjeFelt.textContent = lenkje;
     opne.href = lenkje;
+    teiknTilSkjerm(cfg, lenkje);
     history.replaceState(null, "", "#" + lagHash(cfg, false));   // byggjaren hugsar skjemaet ved omlasting
 
     clearTimeout(ventar);
@@ -2513,6 +2523,37 @@ function startByggjar(startCfg) {
     $("appellsok").value = "";
     teiknAppell(); oppdater(false);
   });
+
+  // ---- Til skjermane (oversiktssida) ---------------------------------
+  // Kom vi frå «Endre i byggjaren», hugsar vi kva side som skal oppdaterast,
+  // også om sida blir lasta på nytt (byggjaren skriv om adressa undervegs).
+  function retur() {
+    try {
+      const p = new URLSearchParams(location.hash.slice(1));
+      if (p.has("retur")) sessionStorage.setItem("infoskjerm-retur", JSON.stringify({ r: p.get("retur"), namn: p.get("returnamn") || "" }));
+      return JSON.parse(sessionStorage.getItem("infoskjerm-retur") || "null");
+    } catch (e) { return null; }
+  }
+  var returInfo;   // var: blir sett før denne linja har køyrt
+  function harNøkkel() { try { return !!localStorage.getItem("infoskjerm-oversikt-nokkel"); } catch (e) { return false; } }
+  function teiknTilSkjerm(cfg, lenkje) {
+    if (returInfo === undefined) returInfo = retur();
+    const boks = $("tilskjerm");
+    boks.hidden = !harNøkkel();
+    if (boks.hidden) return;
+    const til = p => "oversikt.html#" + new URLSearchParams(p).toString();
+    const a = (tekst, href, hoved) => Object.assign(document.createElement("a"), { className: "knapp" + (hoved ? "" : " sekundær"), href, textContent: tekst });
+    const knappar = [];
+    if (returInfo) {
+      const [skjerm, i] = returInfo.r.split(":");
+      const oppdater = a(`Oppdater «${returInfo.namn || "sida"}» på skjerm ${skjerm.slice(-1)}`, til({ skjerm, endre: i, namn: returInfo.namn, url: lenkje }), true);
+      oppdater.addEventListener("click", () => { try { sessionStorage.removeItem("infoskjerm-retur"); } catch (e) {} });
+      knappar.push(oppdater);
+    }
+    for (const n of ["1", "2"]) knappar.push(a(`Legg på skjerm ${n}`, til({ skjerm: "skjerm" + n, tittel: cfg.tittel || "", url: lenkje }), !returInfo));
+    knappar.push(a("Til oversikta", "oversikt.html", false));
+    $("tilskjermknappar").replaceChildren(...knappar);
+  }
 
   // «Tøm skjema» brukar den blanke malen
   document.getElementById("tom").addEventListener("click", () => {
