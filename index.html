@@ -449,15 +449,15 @@
         </div>
       </div>
 
+      <div class="felt" id="lffelt">
+        <label for="lf">Litteraturform</label>
+        <select id="lf" name="lf">
+          <option value="">Alle</option>
+          <option value="0">Sakprosa</option>
+          <option value="1">Skjønnlitteratur</option>
+        </select>
+      </div>
       <div id="sokefelt">
-        <div class="felt">
-          <label for="lf">Litteraturform</label>
-          <select id="lf" name="lf">
-            <option value="">Alle</option>
-            <option value="0">Sakprosa</option>
-            <option value="1">Skjønnlitteratur</option>
-          </select>
-        </div>
         <div class="felt">
           <label for="sjanger">Sjanger</label>
           <input type="text" id="sjanger" name="sjanger" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
@@ -1608,7 +1608,9 @@ function førehand(post, cfg) {
     if (har.length ? !språk.some(s => har.includes(s)) : cfg._språkLokalt !== false) return utelat("anna språk");
   }
   if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
-  if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");     // tryggingsnett mot feilkatalogiserte romanar
+  if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");
+  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");          // for Nyaste, der søket ikkje filtrerer
+  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");                     // for Nyaste, der søket ikkje filtrerer     // tryggingsnett mot feilkatalogiserte romanar
   return true;
 }
 
@@ -1674,7 +1676,8 @@ async function hentBøker(cfg, framdrift) {
   const alle = (visAlle || appell) && cfg.kjelde === "sok";     // hent heile trefflista
   const lister = [];
   for (const avd of avdar) {
-    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? antal : Math.ceil(antal / avdar.length);
+    // Nyaste med appellfaktor: hent fleire, sidan berre nokre av dei er skildra
+    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? (appell ? Math.min(200, antal * 4) : antal) : Math.ceil(antal / avdar.length);
     const funneFør = lister.reduce((s, l) => s + l.length, 0);
     const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
     lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld) : await hentSøk(cfg, avd, mål, meld));
@@ -1723,7 +1726,7 @@ function isbn13(tekst) {
 }
 // Bibliofil-postane har ikkje ISBN, så vi finn boka i Forrige bok på tittel
 // og forfattar. Svaret (også «ikkje funne») blir lagra i 30 dagar per tittelnummer.
-const FB_LAGER = "forrigebok-tnr", FB_DAGAR = 30;
+const FB_LAGER = "forrigebok-tnr2", FB_DAGAR = 30;   // 2: gamle oppslag (tittel + forfattar) gav feil «ikkje funne»
 const norm = t => String(t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 function etternamn(forfattar) { const o = norm(forfattar).split(" "); return o[o.length - 1] || ""; }
 function sameBok(t, w) {
@@ -1750,7 +1753,8 @@ async function forrigebokFor(liste, maks = 200) {
     while (manglar.length && !feil) {
       const t = manglar.shift();
       try {
-        const d = await forrigebok(`/works?language=nn&limit=5&query=${encodeURIComponent(`${t.tittel} ${etternamn(t.forfattar)}`.slice(0, 50))}`);
+        // Søket tolar ikkje tittel og forfattar saman, så vi søkjer på tittelen og sjekkar forfattaren sjølve
+        const d = await forrigebok(`/works?language=nn&limit=20&query=${encodeURIComponent(t.tittel.slice(0, 50))}`);
         const w = (d.works || []).find(w => sameBok(t, w));
         const v = w ? verkUtdrag(w) : null;
         lager[t.id] = { tid: no, v }; ut.set(t.id, v);
@@ -1825,7 +1829,8 @@ async function hentLikte(cfg, avdar, meld) {
   const ut = [];
   for (const [n, w] of verk.entries()) {
     meld(ut.length, verk.length);
-    const isbnar = (w.publications || []).filter(p => !p.type || p.type === "Book").map(p => isbn13(p.isbn)).filter(Boolean).slice(0, 12);
+    // Utgåvetypen kan heite «bok», «Bok», «Book», «lydbok», «E-bok» … Vi tek alt som ikkje er lyd, e-bok, film eller spel.
+    const isbnar = (w.publications || []).filter(p => !/lyd|audio|e-?bo|film|movie|spel|spill|game/i.test(p.type || "")).map(p => isbn13(p.isbn)).filter(Boolean).slice(0, 12);
     const poster = await finnPåIsbn(isbnar);
     if (!poster.length) { utelat("finst ikkje i samlinga"); continue; }
     const eks = await hentEksemplar(poster.map(p => String(p.id)));
@@ -2227,6 +2232,7 @@ function startByggjar(startCfg) {
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     document.getElementById("liktefelt").hidden = kjelde !== "likte";
     document.getElementById("appellfelt").hidden = fast;
+    document.getElementById("lffelt").hidden = fast;
     document.getElementById("antalfelt").hidden = fast;
     document.getElementById("del-sok").hidden = fast;
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
