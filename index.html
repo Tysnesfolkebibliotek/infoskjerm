@@ -2634,7 +2634,8 @@ function startByggjar(startCfg) {
     const knappar = [];
     if (returInfo) {
       const [skjerm, i] = returInfo.r.split(":");
-      const oppdater = a(`Oppdater «${returInfo.namn || "sida"}» på skjerm ${skjerm.slice(-1)}`, til({ skjerm, endre: i, namn: returInfo.namn, url: lenkje }), true);
+      const nr = (skjerm.match(/skjerm(\d)/) || [])[1] || "";
+      const oppdater = a(`Oppdater «${returInfo.namn || "sida"}» ${skjerm.includes("avpublisert") ? `(avpublisert, skjerm ${nr})` : `på skjerm ${nr}`}`, til({ skjerm, endre: i, namn: returInfo.namn, url: lenkje }), true);
       oppdater.addEventListener("click", () => { try { sessionStorage.removeItem("infoskjerm-retur"); } catch (e) {} });
       knappar.push(oppdater);
     }

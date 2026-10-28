@@ -40,6 +40,13 @@
   .toppline .knapp { text-decoration: none; color: inherit; }
   .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
   .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+  .side.av { opacity: .75; border-style: dashed; }
+  .avgruppe { margin-top: 12px; }
+  .avgruppe summary { cursor: pointer; font-size: 13px; font-weight: 650; color: var(--dempa); padding: 4px 2px; }
+  .avgruppe .sider { margin-top: 8px; }
+  button.publiser { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 650; }
+  button.fare { color: var(--åtvar); border-color: color-mix(in srgb, var(--åtvar) 45%, var(--strek)); }
+  button.fare:hover { background: color-mix(in srgb, var(--åtvar) 12%, transparent); }
   .side.no { background: var(--no-bg); border-color: color-mix(in srgb, var(--ok) 40%, var(--strek)); }
   .side .topp { display: flex; align-items: center; gap: 8px; }
   .side .namn { font-weight: 650; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -249,62 +256,118 @@ function fråByggjaren() {
     const j = l[i] && (!namn || l[i].namn === namn) ? i : l.findIndex(x => x.namn === namn);
     if (j >= 0) {
       l[j].url = url;
-      open = { skjerm, i: j }; teikn();
+      open = { lk: skjerm, i: j }; teikn();
       oppdaterStatus(`«${l[j].namn}» er oppdatert frå byggjaren. Sjå over og klikk Lagre.`);
       return;
     }
   }
   nyFørehand = { namn: p.get("tittel") || "", url, sekund: 180 };
-  open = { skjerm, i: -1 }; teikn();
+  open = { lk: skjerm, i: -1 }; teikn();
   oppdaterStatus("Karusellen frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «Legg til» og så Lagre.");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } }, 50);
 }
 
 // ---- Teikning ------------------------------------------------------------
+// Avpubliserte sider ligg i ei eiga liste, til dømes «skjerm1_avpublisert».
+// Skjermane les berre «skjerm1»/«skjerm2», så dei ser ikkje desse.
+const AV = sk => sk + "_avpublisert";
+const skjermFor = lk => lk.replace(/_avpublisert$/, "");
+const erOpenFor = (lk, i) => open && open.lk === lk && open.i === i;
+
 function teikn() {
   const boks = $("skjermar");
   boks.replaceChildren();
   for (const sk of SKJERMAR) {
-    const sider = oppsett[sk.nøkkel] || (oppsett[sk.nøkkel] = []);
+    const lk = sk.nøkkel;
+    const sider = oppsett[lk] || (oppsett[lk] = []);
+    const avsider = oppsett[AV(lk)] || [];
     const no = new Set(aktuelle(sider));
     const liste = el("ol", { class: "sider" });
     // Med filteret på blir sider som ikkje er i bruk no, gøymde (men ikkje den som er open for endring)
     const visAlle = $("visalle").checked;
-    const synlege = sider.map((s, i) => i).filter(i => visAlle || no.has(sider[i]) || (open && open.skjerm === sk.nøkkel && open.i === i));
+    const synlege = sider.map((s, i) => i).filter(i => visAlle || no.has(sider[i]) || erOpenFor(lk, i));
     sider.forEach((s, i) => {
       if (!synlege.includes(i)) return;
-      const erOpen = open && open.skjerm === sk.nøkkel && open.i === i;
+      const erOpen = erOpenFor(lk, i);
       const vist = no.has(s);
       const pos = synlege.indexOf(i);
-      const li = el("li", { class: "side" + (vist ? " no" : "") },
+      liste.append(el("li", { class: "side" + (vist ? " no" : "") },
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
           el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
         el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
         el("div", { class: "knappar" },
-          el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(sk.nøkkel, i, -1, synlege), disabled: pos === 0 }, "↑"),
-          el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(sk.nøkkel, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
-          el("button", { type: "button", onclick: () => { open = erOpen ? null : { skjerm: sk.nøkkel, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
-          adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
-          erKarusell(s) ? el("button", { type: "button", title: "Opne karusellen i byggjaren. Du kjem tilbake hit etterpå.", onclick: () => { location.href = tilByggjaren(s, sk.nøkkel, i); } }, "Endre i byggjaren") : null,
-          el("button", { type: "button", onclick: () => fjern(sk.nøkkel, i) }, "Fjern")),
-        erOpen ? skjema(s, sk.nøkkel, i) : null);
-      liste.append(li);
+          el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
+          el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
+          ...felleKnappar(s, lk, i, erOpen),
+          el("button", { type: "button", title: "Ta sida av skjermen, men ta vare på henne", onclick: () => avpubliser(lk, i) }, "Avpubliser"),
+          el("button", { type: "button", class: "fare", onclick: () => slett(lk, i) }, "Slett")),
+        erOpen ? skjema(s, lk, i) : null));
     });
-    const nyOpen = open && open.skjerm === sk.nøkkel && open.i === -1;
+    // Avpubliserte: samanfalda, men opne når ei av dei blir endra eller filteret er av
+    let avgruppe = null;
+    if (avsider.length) {
+      const avliste = el("ol", { class: "sider" });
+      avsider.forEach((s, i) => {
+        const erOpen = erOpenFor(AV(lk), i);
+        avliste.append(el("li", { class: "side av" },
+          el("div", { class: "topp" },
+            el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
+            el("span", { class: "merke ikkje" }, "Avpublisert")),
+          el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
+          el("div", { class: "knappar" },
+            el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser"),
+            ...felleKnappar(s, AV(lk), i, erOpen),
+            el("button", { type: "button", class: "fare", onclick: () => slett(AV(lk), i) }, "Slett")),
+          erOpen ? skjema(s, AV(lk), i) : null));
+      });
+      avgruppe = el("details", { class: "avgruppe" }, el("summary", {}, `Avpubliserte (${avsider.length})`), avliste);
+      avgruppe.open = visAlle || (open && open.lk === AV(lk)) || avOpne.has(lk);
+      avgruppe.addEventListener("toggle", () => { if (avgruppe.open) avOpne.add(lk); else avOpne.delete(lk); });
+    }
+    const nyOpen = erOpenFor(lk, -1);
     boks.append(el("section", { class: "skjerm" },
       el("h2", {}, sk.namn), el("div", { class: "kva" }, sk.kva),
       liste,
       sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi dei ikkje er i bruk no. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
-      nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, sk.nøkkel, -1))
-        : el("button", { type: "button", class: "leggtil", onclick: () => { nyFørehand = null; open = { skjerm: sk.nøkkel, i: -1 }; teikn(); } }, "+ Legg til side")));
+      nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1))
+        : el("button", { type: "button", class: "leggtil", onclick: () => { nyFørehand = null; open = { lk, i: -1 }; teikn(); } }, "+ Legg til side"),
+      avgruppe));
   }
   oppdaterStatus();
 }
+const avOpne = new Set();   // kva skjermar som har den avpubliserte lista open
+
+// Knappar som er like for publiserte og avpubliserte sider
+function felleKnappar(s, lk, i, erOpen) {
+  return [
+    el("button", { type: "button", onclick: () => { open = erOpen ? null : { lk, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
+    adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
+    erKarusell(s) ? el("button", { type: "button", title: "Opne karusellen i byggjaren. Du kjem tilbake hit etterpå.", onclick: () => { location.href = tilByggjaren(s, lk, i); } }, "Endre i byggjaren") : null,
+  ];
+}
+
+// Ta ei side av skjermen (men ta vare på henne), og set henne tilbake
+function avpubliser(lk, i) {
+  const l = oppsett[lk];
+  if (l.length <= 1) return oppdaterStatus("Minst éi side må vere publisert på kvar skjerm. Legg til ei anna side først.", "feil");
+  const [side] = l.splice(i, 1);
+  (oppsett[AV(lk)] || (oppsett[AV(lk)] = [])).push(side);
+  open = null; teikn();
+  oppdaterStatus(`«${side.namn}» er avpublisert. Klikk Lagre for å ta henne av skjermen.`);
+}
+function publiser(lk, i) {
+  const al = oppsett[AV(lk)];
+  const [side] = al.splice(i, 1);
+  if (!al.length) delete oppsett[AV(lk)];
+  oppsett[lk].push(side);
+  open = null; teikn();
+  oppdaterStatus(`«${side.namn}» er publisert att, nedst i lista. Klikk Lagre for å setje henne på skjermen.`);
+}
 
 // Skjema for å endre eller leggje til éi side
-function skjema(s, skjerm, i) {
+function skjema(s, lk, i) {
   const periode = String(s.periode || "").split("/").map(x => x.trim());
   const kvartÅr = !s.periode || !/^\d{4}/.test(periode[0]);
   const tilDato = (d, år) => !d ? "" : /^\d{4}/.test(d) ? d : `${år}-${d}`;
@@ -336,12 +399,12 @@ function skjema(s, skjerm, i) {
         el("input", { type: "time", id: "f-tidtil", value: tidTil || "", "aria-label": "Til klokka" }))),
     el("p", { class: "hjelp", id: "f-feil" }),
     el("div", { class: "knappar" },
-      el("button", { type: "button", class: "hoved", onclick: () => brukSkjema(f, s, skjerm, i) }, i < 0 ? "Legg til" : "Bruk endringane"),
+      el("button", { type: "button", class: "hoved", onclick: () => brukSkjema(f, s, lk, i) }, i < 0 ? "Legg til" : "Bruk endringane"),
       el("button", { type: "button", onclick: () => { open = null; teikn(); } }, "Avbryt")));
   return f;
 }
 
-function brukSkjema(f, gammal, skjerm, i) {
+function brukSkjema(f, gammal, lk, i) {
   const v = id => f.querySelector("#" + id).value.trim();
   const feil = t => { f.querySelector("#f-feil").textContent = t; f.querySelector("#f-feil").style.color = "var(--åtvar)"; };
   const url = v("f-url"), sek = Number(v("f-sek"));
@@ -372,14 +435,14 @@ function brukSkjema(f, gammal, skjerm, i) {
     if (!tf || !tt) return feil("Fyll ut både frå- og til-klokkeslett, eller ingen av dei.");
     ny.tid = `${tf}-${tt}`;
   }
-  if (i < 0) oppsett[skjerm].push(ny); else oppsett[skjerm][i] = ny;
+  if (i < 0) oppsett[lk].push(ny); else oppsett[lk][i] = ny;
   open = null;
   teikn();
 }
 
 // Med filteret på byter sida plass med den næraste synlege sida
-function flytt(skjerm, i, retning, synlege) {
-  const l = oppsett[skjerm];
+function flytt(lk, i, retning, synlege) {
+  const l = oppsett[lk];
   const k = synlege.indexOf(i), j = synlege[k + retning];
   if (j === undefined) return;
   // Flytt sida forbi naboen (dei gøymde sidene mellom blir ståande i same rekkjefølgje)
@@ -387,10 +450,13 @@ function flytt(skjerm, i, retning, synlege) {
   l.splice(j, 0, side);   // opp: inn før naboen. Ned: naboen har flytta seg eitt steg opp, så ho hamnar etter han
   open = null; teikn();
 }
-function fjern(skjerm, i) {
-  const s = oppsett[skjerm][i];
-  if (!confirm(`Fjerne «${s.namn}» frå ${SKJERMAR.find(x => x.nøkkel === skjerm).namn}?`)) return;
-  oppsett[skjerm].splice(i, 1);
+function slett(lk, i) {
+  const l = oppsett[lk], s = l[i];
+  if (lk === skjermFor(lk) && l.length <= 1) return oppdaterStatus("Minst éi side må vere publisert på kvar skjerm.", "feil");
+  const skjerm = SKJERMAR.find(x => x.nøkkel === skjermFor(lk)).namn;
+  if (!confirm(`Slette «${s.namn}» frå ${skjerm} for godt?\n\nVil du berre ta henne av skjermen og ta vare på henne, vel Avbryt og bruk Avpubliser.`)) return;
+  l.splice(i, 1);
+  if (!l.length && lk !== skjermFor(lk)) delete oppsett[lk];
   open = null; teikn();
 }
 
