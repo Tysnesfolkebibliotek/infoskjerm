@@ -251,6 +251,7 @@
   .brikker { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4vw; margin-top: 2.6vh; }
   .brikke { background: var(--brikke); border-radius: 99px; padding: .9vh 2.4vw; font-size: 2.5vw; }
   .brikke.hylle { background: var(--aksent); color: var(--aksent-tekst); font-weight: 700; }
+  .brikke.appell { background: transparent; box-shadow: inset 0 0 0 .3vw var(--brikke); font-style: italic; }
   .omtale { font-size: 2.8vw; line-height: 1.5; color: var(--dempa); margin: 2.8vh auto 0; max-width: 82vw; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
   #visning footer { display: flex; align-items: center; justify-content: space-between; gap: 3vw; margin-top: 3vh; flex: none; }
   .framdrift { flex: 1; height: .5vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
@@ -313,12 +314,15 @@
   .utval-tekst b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .utval-tekst span { color: var(--b-dempa); }
   .knapp.liten { padding: 4px 9px; font-size: 13px; }
+  .appellbrikke { display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; padding: 3px 4px 3px 10px; border-radius: 99px;
+                  background: var(--b-aksent); color: var(--b-aksent-tekst); font-size: 13px; font-weight: 600; border: 0; cursor: pointer; }
+  .appellbrikke span { opacity: .8; padding: 0 5px; }
   .malrad select { flex: 1; min-width: 0; }
   .malrad .knapp { flex: none; white-space: nowrap; }
   .val, .felt > label.val { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 400; cursor: pointer; }
   .val input { margin-top: 3px; accent-color: var(--b-aksent); }
   .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
-  .segment label { flex: 1; text-align: center; padding: 8px 6px; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
+  .segment label { flex: 1; text-align: center; padding: 8px 4px; white-space: nowrap; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
   .segment label:last-child { border-right: 0; }
   .segment input { position: absolute; opacity: 0; pointer-events: none; }
   .segment label:has(input:checked) { background: var(--b-aksent); color: var(--b-aksent-tekst); font-weight: 600; }
@@ -415,157 +419,126 @@
       </div>
     </div>
 
-    <div class="felt">
-      <label for="tittel">Overskrift</label>
-      <input type="text" id="tittel" name="tittel">
-    </div>
-
-    <div class="felt">
-      <span class="etikett">Avdeling</span>
-      <div class="vallinje">
-        <label class="val"><input type="checkbox" name="avd" value="tyfv"> Vaksen</label>
-        <label class="val"><input type="checkbox" name="avd" value="tyfb"> Born og unge</label>
+    <div class="rad">
+      <div class="felt">
+        <label for="tittel">Overskrift</label>
+        <input type="text" id="tittel" name="tittel">
       </div>
-    </div>
-
-    <div class="felt">
-      <span class="etikett">Kjelde</span>
-      <div class="segment" role="radiogroup">
-        <label><input type="radio" name="kjelde" value="nyaste"> Nyaste titlar</label>
-        <label><input type="radio" name="kjelde" value="sok"> Søk i samlinga</label>
-        <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
+      <div class="felt">
+        <label for="namn">Undertekst</label>
+        <input type="text" id="namn" name="namn" placeholder="Tomt = avdelinga">
       </div>
     </div>
 
-    <div id="sokefelt">
+    <fieldset>
+      <legend>Kva bøker</legend>
       <div class="felt">
-        <label for="lf">Litteraturform</label>
-        <select id="lf" name="lf">
-          <option value="">Alle</option>
-          <option value="0">Sakprosa</option>
-          <option value="1">Skjønnlitteratur</option>
-        </select>
-      </div>
-      <div class="felt">
-        <label for="sjanger">Sjanger</label>
-        <input type="text" id="sjanger" name="sjanger" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
-        <datalist id="sjangrar">
-          <option value="Fantasy"><option value="Krim"><option value="Spenning"><option value="Humor">
-          <option value="Teikneseriar"><option value="Manga"><option value="Biografiar"><option value="Kokebøker">
-        </datalist>
-      </div>
-      <div class="felt">
-        <label for="emne">Emne</label>
-        <input type="text" id="emne" name="emne" placeholder="til dømes klima, fuglar">
-        <select id="emneval" aria-label="Legg til eit vanleg emne" style="margin-top:6px">
-          <option value="">Legg til eit vanleg emne …</option>
-        </select>
-        <p class="hjelp" id="forslagstatus"></p>
-      </div>
-    </div>
-
-    <!-- Handplukka: søk opp bøker og legg dei til éi og éi -->
-    <div id="utvalfelt" hidden>
-      <input type="hidden" id="titlar" name="titlar">
-      <div class="felt">
-        <label for="utvalsok">Finn bøker</label>
-        <div class="malrad">
-          <span class="sokeboks">
-            <input type="search" id="utvalsok" placeholder="Tittel, forfattar eller begge">
-            <button type="button" class="tomfelt" id="utvaltom-felt" aria-label="Tøm søkjefeltet" title="Tøm" hidden>✕</button>
-          </span>
-          <button type="button" class="knapp sekundær" id="utvalknapp">Søk</button>
+        <span class="etikett">Kjelde</span>
+        <div class="segment" role="radiogroup">
+          <label><input type="radio" name="kjelde" value="nyaste"> Nyaste</label>
+          <label><input type="radio" name="kjelde" value="sok"> Søk</label>
+          <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
+          <label><input type="radio" name="kjelde" value="likte"> Likte du?</label>
         </div>
-        <p class="hjelp" id="utvalstatus">Søkjer i avdelingane som er kryssa av over.</p>
-        <ul class="utvaltreff" id="utvaltreff"></ul>
       </div>
       <div class="felt">
-        <span class="etikett">Valde bøker (<span id="utvaltal">0</span>)</span>
-        <ol class="utvalliste" id="utvalliste"></ol>
-        <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
+        <span class="etikett">Avdeling</span>
+        <div class="vallinje">
+          <label class="val"><input type="checkbox" name="avd" value="tyfv"> Vaksen</label>
+          <label class="val"><input type="checkbox" name="avd" value="tyfb"> Born og unge</label>
+        </div>
       </div>
-    </div>
 
-    <div class="felt" id="antalfelt">
-      <label for="antal">Tal bøker</label>
-      <input type="number" id="antal" name="antal" min="5" max="60" step="1">
-      <label class="val" id="allerad"><input type="checkbox" name="alle" value="1"> Alle bøker som passar (opptil 500)</label>
-      <p class="hjelp" id="allehjelp" hidden></p>
-    </div>
-
-    <div class="rad">
-      <div class="felt">
-        <label for="tema">Tema</label>
-        <select id="tema" name="tema">
-          <optgroup label="Faste">
-            <option value="kveld">Kveld</option>
-            <option value="fjord">Fjord</option>
-            <option value="skog">Skog</option>
-            <option value="lys">Lys</option>
-            <option value="natt">Natt</option>
-            <option value="kontrast">Kontrast (lettlesen)</option>
-            <option value="libry">Libry content</option>
-          </optgroup>
-          <optgroup label="Årstider">
-            <option value="vinter">Vinter</option>
-            <option value="var">Vår</option>
-            <option value="sommar">Sommar</option>
-            <option value="haust">Haust</option>
-          </optgroup>
-          <optgroup label="Høgtider og merkedagar">
-            <option value="samisk">Samefolkets dag</option>
-            <option value="paaske">Påske</option>
-            <option value="mai17">17. mai</option>
-            <option value="pride">Pride</option>
-            <option value="halloween">Halloween</option>
-            <option value="jul">Jul</option>
-          </optgroup>
-          <optgroup label="Bibliotek">
-            <option value="sommarles">Sommarles</option>
-          </optgroup>
-        </select>
+      <div id="sokefelt">
+        <div class="felt">
+          <label for="lf">Litteraturform</label>
+          <select id="lf" name="lf">
+            <option value="">Alle</option>
+            <option value="0">Sakprosa</option>
+            <option value="1">Skjønnlitteratur</option>
+          </select>
+        </div>
+        <div class="felt">
+          <label for="sjanger">Sjanger</label>
+          <input type="text" id="sjanger" name="sjanger" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
+          <datalist id="sjangrar">
+            <option value="Fantasy"><option value="Krim"><option value="Spenning"><option value="Humor">
+            <option value="Teikneseriar"><option value="Manga"><option value="Biografiar"><option value="Kokebøker">
+          </datalist>
+        </div>
+        <div class="felt">
+          <label for="emne">Emne</label>
+          <input type="text" id="emne" name="emne" placeholder="til dømes klima, fuglar">
+          <select id="emneval" aria-label="Legg til eit vanleg emne" style="margin-top:6px">
+            <option value="">Legg til eit vanleg emne …</option>
+          </select>
+          <p class="hjelp" id="forslagstatus"></p>
+        </div>
       </div>
-      <div class="felt">
-        <label for="skrift">Skrift</label>
-        <select id="skrift" name="skrift">
-          <option value="standard">Standard</option>
-          <option value="atkinson">Atkinson (lettlesen)</option>
-          <option value="nunito">Nunito (rund)</option>
-          <option value="montserrat">Montserrat (kraftig)</option>
-          <option value="sourcesans">Source Sans (nøytral)</option>
-          <option value="lora">Lora (med serifar)</option>
-        </select>
-      </div>
-    </div>
-    <div class="rad">
-    <div class="felt">
-      <label for="bakgrunn">Bakgrunn</label>
-      <select id="bakgrunn" name="bakgrunn">
-        <option value="">Som temaet</option>
-        <option value="uskarp">Uskarpt omslag</option>
-        <option value="svak">Svakt uskarpt omslag</option>
-        <option value="zoom">Omslag med sakte zoom</option>
-        <option value="farge">Fargane frå omslaget</option>
-        <option value="flat">Flat farge</option>
-      </select>
-    </div>
-    <div class="felt">
-      <label for="overgang">Overgang</label>
-      <select id="overgang" name="overgang">
-        <option value="">Ton og løft (standard)</option>
-        <option value="kryss">Krysstoning</option>
-        <option value="glid">Glid frå sida</option>
-        <option value="zoom">Zoom</option>
-        <option value="vend">Vend som eit blad</option>
-        <option value="ingen">Ingen (direkte byte)</option>
-      </select>
-    </div>
-    </div>
 
-    <!-- ---- Avanserte val, lukka som standard ---- -->
+
+      <!-- Handplukka: søk opp bøker og legg dei til éi og éi -->
+      <div id="utvalfelt" hidden>
+        <input type="hidden" id="titlar" name="titlar">
+        <div class="felt">
+          <label for="utvalsok">Finn bøker</label>
+          <div class="malrad">
+            <span class="sokeboks">
+              <input type="search" id="utvalsok" placeholder="Tittel, forfattar eller begge">
+              <button type="button" class="tomfelt" id="utvaltom-felt" aria-label="Tøm søkjefeltet" title="Tøm" hidden>✕</button>
+            </span>
+            <button type="button" class="knapp sekundær" id="utvalknapp">Søk</button>
+          </div>
+          <p class="hjelp" id="utvalstatus">Søkjer i avdelingane som er kryssa av over.</p>
+          <ul class="utvaltreff" id="utvaltreff"></ul>
+        </div>
+        <div class="felt">
+          <span class="etikett">Valde bøker (<span id="utvaltal">0</span>)</span>
+          <ol class="utvalliste" id="utvalliste"></ol>
+          <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
+        </div>
+      </div>
+
+      <!-- Likte du …? Liknande bøker frå Forrige bok (Biblioteksentralen) -->
+      <div id="liktefelt" hidden>
+        <input type="hidden" id="likte" name="likte">
+        <input type="hidden" id="liktenamn" name="liktenamn">
+        <div class="felt">
+          <label for="liktesok">Ei bok som lesaren likte</label>
+          <div class="malrad">
+            <span class="sokeboks"><input type="search" id="liktesok" placeholder="Tittel, forfattar eller ISBN"></span>
+            <button type="button" class="knapp sekundær" id="likteknapp">Søk</button>
+          </div>
+          <p class="hjelp" id="liktestatus">Søkjer i Forrige bok frå Biblioteksentralen. Karusellen viser opptil 20 liknande bøker, av dei som finst hos oss.</p>
+          <ul class="utvaltreff" id="liktetreff"></ul>
+        </div>
+        <div class="felt" id="liktevald" hidden>
+          <span class="etikett">Vald bok</span>
+          <ul class="utvalliste" id="liktevaldliste"></ul>
+        </div>
+      </div>
+
+      <div class="felt" id="appellfelt">
+        <label for="appellsok">Appellfaktor</label>
+        <input type="hidden" id="appell" name="appell">
+        <input type="text" id="appellsok" list="appelltermar" placeholder="til dømes spennande, lettlesen">
+        <datalist id="appelltermar"></datalist>
+        <div class="vallinje" id="appellvalde"></div>
+        <p class="hjelp" id="appellhjelp">Frå Forrige bok. Berre bøker som Biblioteksentralen har skildra med minst éin av desse blir med. Mange eldre bøker og fagbøker er ikkje skildra.</p>
+      </div>
+
+      <div class="felt" id="antalfelt">
+        <label for="antal">Tal bøker</label>
+        <input type="number" id="antal" name="antal" min="5" max="60" step="1">
+        <label class="val" id="allerad"><input type="checkbox" name="alle" value="1"> Alle bøker som passar (opptil 500)</label>
+        <p class="hjelp" id="allehjelp" hidden></p>
+      </div>
+
+    </fieldset>
+
     <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
     <input type="hidden" id="ccl" name="ccl">
-    <details class="del" id="del-sok" data-felt="emnemodus,dewey,serie,rekkje">
+    <details class="del" id="del-sok" data-felt="emnemodus,dewey,serie,rekkje,oppdater">
       <summary>Fleire søkjeval <span class="merke" hidden>endra</span></summary>
       <div class="felt">
         <span class="etikett">Fleire emneord</span>
@@ -593,7 +566,15 @@
           <label><input type="radio" name="rekkje" value="reservert"> Mest reservert</label>
         </div>
       </div>
+      <div class="rad">
+        <div class="felt">
+          <label for="oppdater">Hent nytt (min)</label>
+          <input type="number" id="oppdater" name="oppdater" min="15" max="1440">
+        </div>
+      </div>
+      <p class="hjelp">Kor ofte skjermen hentar boklista på nytt frå Bibliofil. Sjeldnare er skånsamt for biblioteksystemet.</p>
     </details>
+
 
     <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,alder,spraak,plass,utan">
       <summary>Krav til bøkene <span class="merke" hidden>endra</span></summary>
@@ -648,23 +629,77 @@
       </div>
     </details>
 
-    <details class="del" id="del-vis" data-felt="namn,sek,oppdater,omtale,visning,fart">
-      <summary>Visning <span class="merke" hidden>endra</span></summary>
-      <div class="felt">
-        <label for="namn">Undertekst</label>
-        <input type="text" id="namn" name="namn" placeholder="Tomt = namnet på avdelinga">
-      </div>
+
+    <details class="del" id="del-vis" data-felt="tema,skrift,bakgrunn,overgang,visning,fart,sek,omtale,merkelapp">
+      <summary>Utsjånad og visning <span class="merke" hidden>endra</span></summary>
       <div class="rad">
         <div class="felt">
-          <label for="sek">Sekund per bok</label>
-          <input type="number" id="sek" name="sek" min="4" max="60">
+          <label for="tema">Tema</label>
+          <select id="tema" name="tema">
+            <optgroup label="Faste">
+              <option value="kveld">Kveld</option>
+              <option value="fjord">Fjord</option>
+              <option value="skog">Skog</option>
+              <option value="lys">Lys</option>
+              <option value="natt">Natt</option>
+              <option value="kontrast">Kontrast (lettlesen)</option>
+              <option value="libry">Libry content</option>
+            </optgroup>
+            <optgroup label="Årstider">
+              <option value="vinter">Vinter</option>
+              <option value="var">Vår</option>
+              <option value="sommar">Sommar</option>
+              <option value="haust">Haust</option>
+            </optgroup>
+            <optgroup label="Høgtider og merkedagar">
+              <option value="samisk">Samefolkets dag</option>
+              <option value="paaske">Påske</option>
+              <option value="mai17">17. mai</option>
+              <option value="pride">Pride</option>
+              <option value="halloween">Halloween</option>
+              <option value="jul">Jul</option>
+            </optgroup>
+            <optgroup label="Bibliotek">
+              <option value="sommarles">Sommarles</option>
+            </optgroup>
+          </select>
         </div>
         <div class="felt">
-          <label for="oppdater">Hent nytt (min)</label>
-          <input type="number" id="oppdater" name="oppdater" min="15" max="1440">
+          <label for="skrift">Skrift</label>
+          <select id="skrift" name="skrift">
+            <option value="standard">Standard</option>
+            <option value="atkinson">Atkinson (lettlesen)</option>
+            <option value="nunito">Nunito (rund)</option>
+            <option value="montserrat">Montserrat (kraftig)</option>
+            <option value="sourcesans">Source Sans (nøytral)</option>
+            <option value="lora">Lora (med serifar)</option>
+          </select>
         </div>
       </div>
-      <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
+      <div class="rad">
+      <div class="felt">
+        <label for="bakgrunn">Bakgrunn</label>
+        <select id="bakgrunn" name="bakgrunn">
+          <option value="">Som temaet</option>
+          <option value="uskarp">Uskarpt omslag</option>
+          <option value="svak">Svakt uskarpt omslag</option>
+          <option value="zoom">Omslag med sakte zoom</option>
+          <option value="farge">Fargane frå omslaget</option>
+          <option value="flat">Flat farge</option>
+        </select>
+      </div>
+      <div class="felt">
+        <label for="overgang">Overgang</label>
+        <select id="overgang" name="overgang">
+          <option value="">Ton og løft (standard)</option>
+          <option value="kryss">Krysstoning</option>
+          <option value="glid">Glid frå sida</option>
+          <option value="zoom">Zoom</option>
+          <option value="vend">Vend som eit blad</option>
+          <option value="ingen">Ingen (direkte byte)</option>
+        </select>
+      </div>
+      </div>
       <div class="rad">
         <div class="felt">
           <label for="visingsmate">Visingsmåte</label>
@@ -682,6 +717,14 @@
           </select>
         </div>
       </div>
+      <div class="rad">
+        <div class="felt">
+          <label for="sek">Sekund per bok</label>
+          <input type="number" id="sek" name="sek" min="4" max="60">
+        </div>
+      </div>
+      <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
+      <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Spennande», «Lettlesen»)</label>
       <p class="hjelp">Rulletekst viser alle bøkene etter kvarandre med heile omtalen.</p>
     </details>
 
@@ -716,6 +759,7 @@ const STANDARD = {
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "12", oppdater: "360", omtale: "1",
+  likte: "", liktenamn: "", appell: "", merkelapp: "0",
 };
 
 const MALAR = {
@@ -1103,7 +1147,9 @@ function startVisning(cfg) {
     if (cfg.rekkje === "reservert" && t.kø) brikker.append(el("span", "brikke", `${t.kø} i kø`));
     if (t.hylle) brikker.append(el("span", "brikke hylle", t.hylle));
     if (t.alder) brikker.append(el("span", "brikke", t.alder));
-    for (const s of (t.sjanger || []).slice(0, 2)) brikker.append(el("span", "brikke", s));
+    const appell = cfg.merkelapp === "1" ? (t.appell || []) : [];
+    for (const s of (t.sjanger || []).slice(0, appell.length ? 1 : 2)) brikker.append(el("span", "brikke", s));
+    for (const a of appell) brikker.append(el("span", "brikke appell", a));
     if (brikker.childElementCount) info.append(brikker);
     const omtale = heil ? (t.omtaleHeil || t.omtale) : t.omtale;
     if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
@@ -1367,6 +1413,7 @@ function startVisning(cfg) {
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","spraak","alle","titlar","namn"]
+    .concat(["likte", "appell", "merkelapp"].filter(k => cfg[k] && cfg[k] !== "0"))
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
 
@@ -1617,10 +1664,14 @@ const TAK_ALLE = 500;
 async function hentBøker(cfg, framdrift) {
   utelatne = {}; nåddeGrense = false;
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
-  if (cfg.kjelde === "utval") return hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift);
+  if (cfg.kjelde === "utval") return forrigebokBerik(await hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
+  if (cfg.kjelde === "likte") return forrigebokBerik(await hentLikte(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
   if (!avdar.length) return [];
   const antal = Math.min(60, Math.max(5, Number(cfg.antal) || 40));
-  const alle = cfg.alle === "1" && cfg.kjelde === "sok";     // hent heile trefflista
+  // Med appellfaktor hentar vi heile trefflista og filtrerer, sidan berre ein del av bøkene er skildra
+  const appell = !!cfg.appell;
+  const visAlle = cfg.alle === "1" && cfg.kjelde === "sok";
+  const alle = (visAlle || appell) && cfg.kjelde === "sok";     // hent heile trefflista
   const lister = [];
   for (const avd of avdar) {
     const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? antal : Math.ceil(antal / avdar.length);
@@ -1628,8 +1679,175 @@ async function hentBøker(cfg, framdrift) {
     const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
     lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld) : await hentSøk(cfg, avd, mål, meld));
   }
-  if (cfg.kjelde === "sok" && cfg.rekkje === "reservert") return lister.flat().sort((a, b) => b.kø - a.kø).slice(0, alle ? TAK_ALLE : antal);
-  return cfg.kjelde === "nyaste" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
+  const reservert = cfg.kjelde === "sok" && cfg.rekkje === "reservert";
+  let ut = reservert ? lister.flat().sort((a, b) => b.kø - a.kø)
+    : cfg.kjelde === "nyaste" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
+  ut = await forrigebokBerik(ut, cfg);
+  if (reservert) ut = ut.slice(0, visAlle ? TAK_ALLE : antal);
+  else if (appell && !visAlle) ut = ut.slice(0, antal);
+  return ut;
+}
+
+// ---- Forrige bok (Biblioteksentralen) ----------------------------------
+// Appellfaktorar («spennande», «lettlesen» …) og liknande bøker. Fritt for
+// bibliotek (CC BY-NC 4.0). Bøkene blir kopla til Bibliofil på ISBN.
+const FORRIGEBOK = "https://forrigebok.no/api/v2023-01-12";
+const FORRIGEBOK_ID = "Tysnes folkebibliotek infoskjerm (biblioteket@tysnes.kommune.no)";
+async function forrigebok(sti, ms = 20000) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const svar = await fetch(FORRIGEBOK + sti, { headers: { "client-identifier": FORRIGEBOK_ID }, signal: ctl.signal });
+    if (!svar.ok) throw new Error("Forrige bok svarte " + svar.status);
+    return await svar.json();
+  } catch (e) {
+    throw new Error(e.name === "AbortError" ? "Forrige bok svarte ikkje i tide" : e.message.startsWith("Forrige") ? e.message : "Fekk ikkje kontakt med Forrige bok");
+  } finally { clearTimeout(t); }
+}
+
+// ISBN-10 og ISBN-13 med eller utan bindestrek, gjort om til ISBN-13. Kontrollsiffer må stemme.
+function isbn13(tekst) {
+  const s = String(tekst || "").replace(/[^\dXx]/g, "").toUpperCase();
+  if (/^97[89]\d{10}$/.test(s)) {
+    let sum = 0; for (let i = 0; i < 12; i++) sum += Number(s[i]) * (i % 2 ? 3 : 1);
+    return (10 - sum % 10) % 10 === Number(s[12]) ? s : null;
+  }
+  if (/^\d{9}[\dX]$/.test(s)) {
+    let sum = 0; for (let i = 0; i < 10; i++) sum += (s[i] === "X" ? 10 : Number(s[i])) * (10 - i);
+    if (sum % 11) return null;
+    const k = "978" + s.slice(0, 9);
+    let s13 = 0; for (let i = 0; i < 12; i++) s13 += Number(k[i]) * (i % 2 ? 3 : 1);
+    return k + (10 - s13 % 10) % 10;
+  }
+  return null;
+}
+// Bibliofil-postane har ikkje ISBN, så vi finn boka i Forrige bok på tittel
+// og forfattar. Svaret (også «ikkje funne») blir lagra i 30 dagar per tittelnummer.
+const FB_LAGER = "forrigebok-tnr", FB_DAGAR = 30;
+const norm = t => String(t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+function etternamn(forfattar) { const o = norm(forfattar).split(" "); return o[o.length - 1] || ""; }
+function sameBok(t, w) {
+  const m = w.simplifiedPresentationMetadata || {};
+  const a = norm(t.tittel), b = norm(m.title);
+  if (!a || !b || !(a === b || a.startsWith(b + " ") || b.startsWith(a + " "))) return false;
+  const e = etternamn(t.forfattar);
+  return !e || norm((m.authors || []).join(" ")).split(" ").includes(e);
+}
+function lesFbLager() { try { return JSON.parse(localStorage.getItem(FB_LAGER) || "{}"); } catch (e) { return {}; } }
+function skrivFbLager(l) { try { localStorage.setItem(FB_LAGER, JSON.stringify(l)); } catch (e) {} }
+// Kort utdrag av eit verk: id, appelltermar (id) og merkelappar
+const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w) });
+async function forrigebokFor(liste, maks = 200) {
+  const lager = lesFbLager(), no = Date.now(), ut = new Map();
+  const manglar = [];
+  for (const t of liste) {
+    const l = lager[t.id];
+    if (l && no - l.tid < FB_DAGAR * 864e5) ut.set(t.id, l.v);
+    else if (manglar.length < maks) manglar.push(t);
+  }
+  let feil = null;
+  async function arbeidar() {
+    while (manglar.length && !feil) {
+      const t = manglar.shift();
+      try {
+        const d = await forrigebok(`/works?language=nn&limit=5&query=${encodeURIComponent(`${t.tittel} ${etternamn(t.forfattar)}`.slice(0, 50))}`);
+        const w = (d.works || []).find(w => sameBok(t, w));
+        const v = w ? verkUtdrag(w) : null;
+        lager[t.id] = { tid: no, v }; ut.set(t.id, v);
+      } catch (e) { feil = e; }
+    }
+  }
+  await Promise.all([arbeidar(), arbeidar(), arbeidar()]);   // tre om gongen
+  skrivFbLager(lager);
+  if (feil && !ut.size) throw feil;
+  return ut;
+}
+
+// Dei tydelegaste appellfaktorane for eit verk, som korte merkelappar
+function appellMerke(w, maks = 3) {
+  return (w.appealTerms || [])
+    .filter(a => a.term && a.term.label && (a.averageWeight ?? 0) >= 0.5)
+    .sort((a, b) => (b.globalWeight ?? b.averageWeight) - (a.globalWeight ?? a.averageWeight))
+    .slice(0, maks).map(a => storForbokstav(a.term.label));
+}
+
+// Legg på merkelappar og filtrerer på appellfaktor
+async function forrigebokBerik(liste, cfg) {
+  const ønskte = new Set((cfg.appell || "").split(",").filter(Boolean));
+  const merkelapp = cfg.merkelapp === "1";
+  if (!liste.length || (!ønskte.size && !merkelapp)) return liste;
+  // Bøker frå «Likte du?» har verket med seg frå før
+  const utan = liste.filter(t => !t.forrigebok);
+  let funne = new Map();
+  try { if (utan.length) funne = await forrigebokFor(utan); }
+  catch (e) {
+    if (ønskte.size) throw e;          // utan Forrige bok kan vi ikkje filtrere: behald den gamle lista
+  }
+  const ut = [];
+  for (const t of liste) {
+    const v = t.forrigebok ? verkUtdrag(t.forrigebok) : funne.get(t.id);
+    delete t.forrigebok;
+    if (ønskte.size && !(v && v.t.some(id => ønskte.has(id)))) {
+      utelat(funne.has(t.id) || v ? "ikkje skildra med appellfaktoren" : "ikkje slått opp i Forrige bok enno"); continue;
+    }
+    if (v && merkelapp) t.appell = v.a;
+    ut.push(t);
+  }
+  return ut;
+}
+
+// Finn katalogpostar på ISBN (dc.identifier). Alle ISBN-ane høyrer til same
+// verk, så eitkvart treff er rett bok.
+async function finnPåIsbn(isbnar) {
+  if (!isbnar.length) return [];
+  const d = await sru({ query: `(${isbnar.map(i => `dc.identifier=${i}`).join(" or ")}) and norzig.materialType=l`, startRecord: 1, maximumRecords: 10 });
+  return (d && d.feed && d.feed.entry) || [];
+}
+
+// Likte du …? Liknande bøker frå Forrige bok som finst i samlinga
+async function hentLikte(cfg, avdar, meld) {
+  if (!cfg.likte) return [];
+  const d = await forrigebok(`/readalikes?language=nn&limit=20&workId=${encodeURIComponent(cfg.likte)}`);
+  const verk = d.readalikes || [];
+  // Som handplukka: berre «står på hylla» og omslag gjeld
+  const kfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", omslag: "0", perforf: "0", plass: "", utan: "" };
+  const ut = [];
+  for (const [n, w] of verk.entries()) {
+    meld(ut.length, verk.length);
+    const isbnar = (w.publications || []).filter(p => !p.type || p.type === "Book").map(p => isbn13(p.isbn)).filter(Boolean).slice(0, 12);
+    const poster = await finnPåIsbn(isbnar);
+    if (!poster.length) { utelat("finst ikkje i samlinga"); continue; }
+    const eks = await hentEksemplar(poster.map(p => String(p.id)));
+    let t = null;
+    for (const p of poster) {
+      if (!førehand(p, kfg)) continue;
+      for (const avd of avdar) { t = vurder(p, avd, eks, kfg); if (t) break; }
+      if (t) break;
+    }
+    if (t) {
+      // Manglar Bibliofil omslag eller omtale, brukar vi dei frå Forrige bok
+      const m = w.simplifiedPresentationMetadata || {};
+      if (!t.omslag && m.coverImage) t.omslag = m.coverImage;
+      if (!t.omtale && m.summary) { t.omtale = kortOmtale(m.summary); t.omtaleHeil = kortOmtale(m.summary, 4000); }
+      t.forrigebok = w; ut.push(t);
+    }
+  }
+  meld(ut.length, verk.length);
+  return ut;
+}
+
+// Ordlista over appellfaktorar, på nynorsk. Blir lagra i ei veke.
+async function forrigebokOrd() {
+  const nøkkel = "forrigebok-ord";
+  try {
+    const lagra = JSON.parse(localStorage.getItem(nøkkel) || "null");
+    if (lagra && Date.now() - lagra.tid < 7 * 864e5) return lagra.ord;
+  } catch (e) {}
+  const d = await forrigebok("/vocabulary?language=nn");
+  const faktor = Object.fromEntries((d.factors || []).map(f => [f.id, f.name]));
+  const ord = (d.terms || []).map(t => ({ id: t.id, namn: t.name, faktor: faktor[t.factorId] || "", syn: t.synonyms || [], def: t.definition || "" }));
+  try { localStorage.setItem(nøkkel, JSON.stringify({ tid: Date.now(), ord })); } catch (e) {}
+  return ord;
 }
 
 // ---- handplukka bøker ------------------------------------------------
@@ -1970,6 +2188,7 @@ function startByggjar(startCfg) {
       else felt.value = v;
     }
     oppdaterSynlege();
+    teiknLikte(); teiknAppell();
     const endra = endraDelar(cfg);
     delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
   }
@@ -1993,12 +2212,15 @@ function startByggjar(startCfg) {
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
     document.getElementById("sokefelt").hidden = kjelde !== "sok";
+    const fast = kjelde === "utval" || kjelde === "likte";     // bøkene er valde på førehand
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
-    document.getElementById("antalfelt").hidden = kjelde === "utval";
-    document.getElementById("del-sok").hidden = kjelde === "utval";
+    document.getElementById("liktefelt").hidden = kjelde !== "likte";
+    document.getElementById("appellfelt").hidden = fast;
+    document.getElementById("antalfelt").hidden = fast;
+    document.getElementById("del-sok").hidden = fast;
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
-      if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = kjelde === "utval";
+      if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
     teiknUtval();
     const alle = skjema.elements.alle;
     document.getElementById("allerad").hidden = kjelde !== "sok";
@@ -2154,6 +2376,98 @@ function startByggjar(startCfg) {
   $("utvalsok").addEventListener("input", visTøm);
   $("utvaltom-felt").addEventListener("click", () => { $("utvalsok").value = ""; visTøm(); $("utvalsok").focus(); });
   $("utvalsok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkUtval(); } });
+
+  // ---- Likte du …? ---------------------------------------------------
+  function verkRad(w, knappar) {
+    const m = w.simplifiedPresentationMetadata || {};
+    const li = document.createElement("li");
+    const omslag = m.coverImage || ((w.publications || []).find(p => p.coverImage) || {}).coverImage;
+    const bilete = omslag ? Object.assign(document.createElement("img"), { src: omslag, alt: "", loading: "lazy" })
+      : Object.assign(document.createElement("div"), { className: "utval-utan" });
+    const tekst = document.createElement("div"); tekst.className = "utval-tekst";
+    const t = document.createElement("b"); t.textContent = m.title || "(utan tittel)";
+    const u = document.createElement("span");
+    u.textContent = [(m.authors || []).join(", "), m.originalYear].filter(Boolean).join(" · ");
+    tekst.append(t, u);
+    li.append(bilete, tekst, ...knappar);
+    return li;
+  }
+  function teiknLikte(w) {
+    const id = $("likte").value;
+    $("liktevald").hidden = !id;
+    if (!id) return $("liktevaldliste").replaceChildren();
+    const vis = w || { id, simplifiedPresentationMetadata: { title: $("liktenamn").value || "Verk " + id } };
+    $("liktevaldliste").replaceChildren(verkRad(vis, [knapp("✕", "Fjern", () => {
+      $("likte").value = ""; $("liktenamn").value = ""; teiknLikte(); oppdater(false);
+    })]));
+  }
+  async function søkLikte() {
+    const status = $("liktestatus"), treffliste = $("liktetreff");
+    const q = $("liktesok").value.trim();
+    if (!q) return;
+    status.textContent = "Søkjer i Forrige bok …";
+    treffliste.replaceChildren();
+    try {
+      const isbn = isbn13(q);
+      const d = await forrigebok(isbn ? `/works?language=nn&isbn=${isbn}` : `/works?language=nn&limit=15&query=${encodeURIComponent(q.slice(0, 50))}`);
+      const verk = d.works || [];
+      status.textContent = verk.length ? "Vel boka karusellen skal ta utgangspunkt i." : "Ingen treff i Forrige bok. Ikkje alle bøker er skildra der.";
+      treffliste.replaceChildren(...verk.map(w => {
+        const vel = knapp("Vel", "Bruk denne boka", () => {
+          const m = w.simplifiedPresentationMetadata || {};
+          const tittelFør = skjema.elements.tittel.value.trim();
+          $("likte").value = w.id;
+          $("liktenamn").value = m.title || "";
+          if (!tittelFør || tittelFør === STANDARD.tittel || tittelFør.startsWith("Likte du")) skjema.elements.tittel.value = `Likte du ${m.title}?`;
+          treffliste.replaceChildren(); status.textContent = "";
+          teiknLikte(w); oppdater(true);
+        });
+        vel.classList.remove("sekundær");
+        return verkRad(w, [vel]);
+      }));
+    } catch (e) {
+      status.textContent = e.message + ". Prøv igjen.";
+    }
+  }
+  $("likteknapp").addEventListener("click", søkLikte);
+  $("liktesok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkLikte(); } });
+
+  // ---- Appellfaktorar ------------------------------------------------
+  var appellOrd = null;   // var: kan bli brukt før denne linja har køyrt
+  var appellLasting = null;
+  async function lastAppellOrd() {
+    if (appellOrd) return appellOrd;
+    if (appellLasting) return appellLasting;
+    appellLasting = forrigebokOrd();
+    try {
+      appellOrd = await appellLasting;
+      $("appelltermar").replaceChildren(...appellOrd.map(o => new Option(o.faktor ? `${o.namn} (${o.faktor.toLowerCase()})` : o.namn, o.namn)));
+    } catch (e) { appellLasting = null; $("appellhjelp").textContent = e.message + ". Prøv igjen seinare."; }
+    return appellOrd;
+  }
+  function valdeAppell() { return $("appell").value.split(",").filter(Boolean); }
+  async function teiknAppell() {
+    const idar = valdeAppell();
+    if (idar.length) await lastAppellOrd();
+    $("appellvalde").replaceChildren(...idar.map(id => {
+      const o = (appellOrd || []).find(o => o.id === id);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "appellbrikke"; b.title = (o && o.def) || "Fjern";
+      b.append(o ? o.namn : id, Object.assign(document.createElement("span"), { textContent: "✕" }));
+      b.addEventListener("click", () => { $("appell").value = valdeAppell().filter(x => x !== id).join(","); teiknAppell(); oppdater(false); });
+      return b;
+    }));
+  }
+  $("appellsok").addEventListener("focus", lastAppellOrd);
+  $("appellsok").addEventListener("change", async () => {
+    const ord = await lastAppellOrd();
+    const v = $("appellsok").value.trim().toLowerCase();
+    const o = (ord || []).find(o => o.namn.toLowerCase() === v) || (ord || []).find(o => o.syn.some(s => s.toLowerCase() === v));
+    if (!o) return;
+    if (!valdeAppell().includes(o.id)) $("appell").value = [...valdeAppell(), o.id].join(",");
+    $("appellsok").value = "";
+    teiknAppell(); oppdater(false);
+  });
 
   // «Tøm skjema» brukar den blanke malen
   document.getElementById("tom").addEventListener("click", () => {
