@@ -95,6 +95,7 @@ async function hentOppsett() {
 
 // ---- Tidsstyring -----------------------------------------------------------
 // Kvar side kan ha «periode», «dagar» og «tid». Sider utan desse blir alltid viste.
+// «heil»: true lèt ein karusell vise alle bøkene éin gong; «sekund» er då øvre grense.
 //   "periode": "12-01/12-24"            kvart år (kan gå over nyttår: "11-15/01-15")
 //   "periode": "2026-10-01/2026-10-31"  berre den eine gongen
 //   "dagar":   "man-fre", "lør,søn", "tys"
@@ -183,14 +184,20 @@ function bytOppsett(sider, json) {
 
 // Nyheiter-sida (index.html) kan ta pause når ho ikkje blir vist, så ho
 // hugsar kvar ho slapp. Andre sider bryr seg ikkje om desse beskjedane.
-function send(ramme, beskjed) {
-  try { ramme.contentWindow.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {}
+function send(ramme, beskjed, ekstra) {
+  try { ramme.contentWindow.postMessage({ nyheiter: beskjed, ...ekstra }, "*"); } catch (e) {}
 }
+// «heil»: karusellen skal vise alle bøkene éin gong og seie frå når han er ferdig
+const visBeskjed = r => send(r, "vis", { heil: !!(SIDER[rammer.indexOf(r)] || {}).heil });
 window.addEventListener("message", e => {
   if (!e.data || !e.data.nyheiter) return;
   const r = [...document.querySelectorAll("iframe")].find(r => r.contentWindow === e.source);
   if (!r) return;
-  if (e.data.nyheiter === "klar") send(r, r === aktivRamme ? "vis" : "skjul");
+  if (e.data.nyheiter === "klar") { if (r === aktivRamme) visBeskjed(r); else send(r, "skjul"); }
+  // Karusellen har vist alle bøkene sine: gå vidare (berre for sider med «heil»)
+  if (e.data.nyheiter === "runde" && r === aktivRamme && nesteNo && (SIDER[rammer.indexOf(r)] || {}).heil) {
+    clearTimeout(nesteTid); const f = nesteNo; nesteNo = null; f();
+  }
   // Karusellar seier frå om dei har bøker å vise. Ein tom karusell (ingen
   // treff, eller ingen kontakt med Bibliofil og inga lagra liste) blir hoppa
   // over, så skjermen ikkje viser ei melding i fleire minutt.
@@ -265,7 +272,7 @@ async function vis(n) {
   const førre = aktivRamme;
   aktivRamme = r;
   r.classList.add("synleg");
-  send(r, "vis");
+  visBeskjed(r);
 
   if (førre && førre !== r) {
     førre.classList.remove("synleg");
