@@ -35,6 +35,9 @@
   .skjerm .kva { color: var(--dempa); font-size: 13px; margin-bottom: 12px; }
   ol.sider { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
   .side { border: 1px solid var(--strek); border-radius: 10px; padding: 10px 12px; background: var(--seinare-bg); }
+  .filter { margin: 0 0 14px; }
+  .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
+  .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
   .side.no { background: var(--no-bg); border-color: color-mix(in srgb, var(--ok) 40%, var(--strek)); }
   .side .topp { display: flex; align-items: center; gap: 8px; }
   .side .namn { font-weight: 650; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -83,7 +86,9 @@
 <body>
 <main>
   <h1>Infoskjermar</h1>
-  <p class="ingress">Kva skjermane viser no og seinare. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan 10–15 minutt.</p>
+  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan 10–15 minutt.</p>
+
+  <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
 
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
 
@@ -224,17 +229,22 @@ function teikn() {
     const sider = oppsett[sk.nøkkel] || (oppsett[sk.nøkkel] = []);
     const no = new Set(aktuelle(sider));
     const liste = el("ol", { class: "sider" });
+    // Med filteret på blir sider som ikkje er i bruk no, gøymde (men ikkje den som er open for endring)
+    const visAlle = $("visalle").checked;
+    const synlege = sider.map((s, i) => i).filter(i => visAlle || no.has(sider[i]) || (open && open.skjerm === sk.nøkkel && open.i === i));
     sider.forEach((s, i) => {
+      if (!synlege.includes(i)) return;
       const erOpen = open && open.skjerm === sk.nøkkel && open.i === i;
       const vist = no.has(s);
+      const pos = synlege.indexOf(i);
       const li = el("li", { class: "side" + (vist ? " no" : "") },
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
           el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
         el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
         el("div", { class: "knappar" },
-          el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(sk.nøkkel, i, -1), disabled: i === 0 }, "↑"),
-          el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(sk.nøkkel, i, 1), disabled: i === sider.length - 1 }, "↓"),
+          el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(sk.nøkkel, i, -1, synlege), disabled: pos === 0 }, "↑"),
+          el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(sk.nøkkel, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
           el("button", { type: "button", onclick: () => { open = erOpen ? null : { skjerm: sk.nøkkel, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
           adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
           el("button", { type: "button", onclick: () => fjern(sk.nøkkel, i) }, "Fjern")),
@@ -245,6 +255,8 @@ function teikn() {
     boks.append(el("section", { class: "skjerm" },
       el("h2", {}, sk.namn), el("div", { class: "kva" }, sk.kva),
       liste,
+      sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi dei ikkje er i bruk no. `,
+        el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
       nyOpen ? el("div", { class: "side" }, skjema({ namn: "", url: "", sekund: 180 }, sk.nøkkel, -1))
         : el("button", { type: "button", class: "leggtil", onclick: () => { open = { skjerm: sk.nøkkel, i: -1 }; teikn(); } }, "+ Legg til side")));
   }
@@ -325,10 +337,14 @@ function brukSkjema(f, gammal, skjerm, i) {
   teikn();
 }
 
-function flytt(skjerm, i, retning) {
-  const l = oppsett[skjerm], j = i + retning;
-  if (j < 0 || j >= l.length) return;
-  [l[i], l[j]] = [l[j], l[i]];
+// Med filteret på byter sida plass med den næraste synlege sida
+function flytt(skjerm, i, retning, synlege) {
+  const l = oppsett[skjerm];
+  const k = synlege.indexOf(i), j = synlege[k + retning];
+  if (j === undefined) return;
+  // Flytt sida forbi naboen (dei gøymde sidene mellom blir ståande i same rekkjefølgje)
+  const [side] = l.splice(i, 1);
+  l.splice(j, 0, side);   // opp: inn før naboen. Ned: naboen har flytta seg eitt steg opp, så ho hamnar etter han
   open = null; teikn();
 }
 function fjern(skjerm, i) {
@@ -436,6 +452,12 @@ $("forevislukk").addEventListener("click", () => $("forevis").close());
 $("forevis").addEventListener("close", () => { $("forevisvindauge").src = "about:blank"; });
 $("forevis").addEventListener("click", e => { if (e.target === $("forevis")) $("forevis").close(); });
 addEventListener("resize", () => { if ($("forevis").open) tilpassForevising(); });
+
+// ---- Filter: vis berre sidene som er i bruk no (hugsa i nettlesaren) ----
+const FILTER_LAGER = "infoskjerm-oversikt-visalle";
+function lagreFilter() { try { localStorage.setItem(FILTER_LAGER, $("visalle").checked ? "1" : "0"); } catch (e) {} }
+try { $("visalle").checked = localStorage.getItem(FILTER_LAGER) === "1"; } catch (e) {}
+$("visalle").addEventListener("change", () => { lagreFilter(); if (oppsett) teikn(); });
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);
