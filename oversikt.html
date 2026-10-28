@@ -139,6 +139,7 @@ const SKJERMAR = [
   { nøkkel: "skjerm2", namn: "Skjerm 2", kva: "tysnes-infoskjerm-2" },
 ];
 const NØKKEL_LAGER = "infoskjerm-oversikt-nokkel";
+const FORFATTAR = { name: "Tysnesfolkebibliotek", email: "Tysnesfolkebibliotek@users.noreply.github.com" };
 
 let oppsett = null, original = "", sha = null, open = null;
 let nyFørehand = null;   // utfylt skjema for ny side, når vi kjem frå byggjaren   // open = { skjerm, i } for skjemaet som er ope
@@ -461,7 +462,9 @@ async function lagreNo(nøkkel, innhald) {
   const svar = await fetch(API, {
     method: "PUT",
     headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
-    body: JSON.stringify({ message: "Endra oppsettet via oversiktssida", content: b64(innhald), sha }),
+    // Forfattar blir sett til noreply-adressa, så e-posten på kontoen ikkje hamnar i historikken
+    body: JSON.stringify({ message: "Endra oppsettet via oversiktssida", content: b64(innhald), sha,
+      author: FORFATTAR, committer: FORFATTAR }),
   });
   if (svar.status === 409 || svar.status === 422) {
     // Er det som ligg på GitHub alt det same som vi prøver å lagre, er alt i orden
