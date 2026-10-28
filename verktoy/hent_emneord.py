@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 
 SERVER = "https://strdbib.bib.no/cgi-bin/sru"
 AVDELINGAR = ["tyfv", "tyfb"]          # vaksen, born og unge
-BUNK = 100                              # titlar per førespurnad (Bibliofil sitt maksimum)
+BUNK = 500                              # titlar per førespurnad (Bibliofil sitt maksimum, sjå SRU explain)
 PAUSE = 0.5                             # sekund mellom førespurnadene, for å skåne Bibliofil
 MIN_TITLAR = 2                          # emneord på berre éin tittel blir ikkje med
 MAKS_EMNE = 5000
