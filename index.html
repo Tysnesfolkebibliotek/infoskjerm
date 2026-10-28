@@ -1316,19 +1316,7 @@ function startVisning(cfg) {
     visBakteppe(t.omslag);
     startFramdrift();
     i++;
-    tidtakar = setTimeout(() => {
-      lagreSist(String(t.id));
-      vistSidanVis++;
-      // «Heile karusellen»: når alle bøkene er viste éin gong, seier vi frå til
-      // rotasjonen og ventar. Svarar ho ikkje (gammal rotasjon), held vi fram.
-      if (heilRunde && !rundeMeldt && vistSidanVis >= titlar.length) {
-        rundeMeldt = true; gjeldande = null;
-        meldRunde();
-        tidtakar = setTimeout(() => { tidtakar = null; neste(); }, 4000);
-        return;
-      }
-      neste();
-    }, SEK * 1000);
+    tidtakar = setTimeout(() => { lagreSist(String(t.id)); neste(); }, SEK * 1000);
   }
 
   // ---- rulletekst ------------------------------------------------------
@@ -1367,13 +1355,7 @@ function startVisning(cfg) {
     const steg = no => {
       const dt = Math.min(100, no - rullSist); rullSist = no;
       const høgd = rullMål ? rullMål.høgd : 0;
-      const steg_ = FART * innerHeight / 100 * dt / 1000;
-      rullY -= steg_;
-      // «Heile karusellen» i rulletekst: éin heil runde gjennom lista
-      if (heilRunde && !rundeMeldt && rullMål && rullMål.høgd) {
-        rullaSidanVis += steg_;
-        if (rullaSidanVis >= rullMål.høgd) { rundeMeldt = true; meldRunde(); }
-      }
+      rullY -= FART * innerHeight / 100 * dt / 1000;
       if (høgd && -rullY >= høgd) rullY += høgd;          // hopp tilbake éin kopi: ser ut som ei endelaus løkke
       rullSpor.style.transform = `translate3d(0, ${rullY.toFixed(1)}px, 0)`;
       // Bakgrunn og avdeling følgjer boka som er nærast midten av skjermen
@@ -1397,12 +1379,6 @@ function startVisning(cfg) {
     rullAnim = requestAnimationFrame(steg);
   }
   function stoppRull() { if (rullAnim) cancelAnimationFrame(rullAnim); rullAnim = null; }
-
-  // ---- «Heile karusellen» ---------------------------------------------
-  // Rotasjonen ber om dette med { nyheiter: "vis", heil: true }. Då tel vi
-  // bøkene som blir viste, og melder «runde» når alle er viste éin gong.
-  let heilRunde = false, rundeMeldt = false, vistSidanVis = 0, rullaSidanVis = 0;
-  function meldRunde() { try { window.parent.postMessage({ nyheiter: "runde" }, "*"); } catch (e) {} }
 
   function pause() { stoppRull(); clearTimeout(tidtakar); tidtakar = null; if (gjeldande) i = gjeldandeIdx; gjeldande = null; ventarPåBilete = false; }
   function fortset() { if (!tidtakar && køyrer && titlar.length) neste(); }
@@ -1477,10 +1453,7 @@ function startVisning(cfg) {
   // (Same beskjedar som Nyheiter-sida brukar i dag.)
   if (iRotasjon) {
     window.addEventListener("message", e => {
-      if (e.data && e.data.nyheiter === "vis") {
-        heilRunde = !!e.data.heil; rundeMeldt = false; vistSidanVis = 0; rullaSidanVis = 0;
-        køyrer = true; fortset();
-      }
+      if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); }
       if (e.data && e.data.nyheiter === "skjul") { køyrer = false; pause(); }
     });
     window.parent.postMessage({ nyheiter: "klar" }, "*");

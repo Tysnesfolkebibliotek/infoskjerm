@@ -311,7 +311,7 @@ function teikn() {
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
           el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
-        el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.heil ? `heile karusellen (maks ${s.sekund} sek)` : `${s.sekund} sek`} · ${tidsTekst(s)}`),
+        el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
         el("div", { class: "knappar" },
           el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
@@ -330,7 +330,7 @@ function teikn() {
           el("div", { class: "topp" },
             el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
             el("span", { class: "merke ikkje" }, "Avpublisert")),
-          el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.heil ? `heile karusellen (maks ${s.sekund} sek)` : `${s.sekund} sek`} · ${tidsTekst(s)}`),
+          el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
           el("div", { class: "knappar" },
             el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser"),
             ...felleKnappar(s, AV(lk), i, erOpen),
@@ -457,17 +457,10 @@ function skjema(s, lk, i) {
     el("div", {}, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
-      el("div", {}, el("label", { for: "f-sek", id: "f-sek-etikett" }, s.heil ? "Maks sekund på skjermen" : "Sekund på skjermen"),
+      el("div", {}, el("label", { for: "f-sek" }, "Sekund på skjermen"),
         el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: s.sekund || 180 })),
       el("div", {}, el("label", {}, " "),
         el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
-    el("div", {},
-      el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-heil", checked: !!s.heil,
-        onchange: e => { const sek = e.target.closest(".skjema").querySelector("#f-sek");
-          e.target.closest(".skjema").querySelector("#f-sek-etikett").textContent = e.target.checked ? "Maks sekund på skjermen" : "Sekund på skjermen";
-          if (e.target.checked && Number(sek.value) < 600) sek.value = 600; } }),
-        "Vis heile karusellen: alle bøkene éin gong før skjermen går vidare"),
-      el("p", { class: "hjelp" }, "Berre for karusellar. Sekunda over blir då ei øvre grense, så store karusellar ikkje tek over skjermen. Krev den nye rotasjon.html på skjermane.")),
     el("div", {}, el("label", {}, "Periode (tomt = heile året)"),
       el("div", { class: "rad" },
         el("input", { type: "date", id: "f-fra", value: tilDato(periode[0], iÅr), "aria-label": "Frå dato" }),
@@ -497,7 +490,6 @@ function brukSkjema(f, gammal, lk, i) {
   else return feil("Lenkja må byrje med https://");
   ny.sekund = sek;
   if (f.querySelector("#f-frisk").checked) ny.frisk = true;
-  if (f.querySelector("#f-heil").checked) ny.heil = true;
   // Periode
   const frå = v("f-fra"), til = v("f-til"), kvartÅr = f.querySelector("#f-kvartar").checked;
   if (frå || til) {
@@ -558,7 +550,7 @@ function tilJson(o) {
     if (Array.isArray(o[k])) {
       linjer.push(`  ${JSON.stringify(k)}: [`);
       o[k].forEach((s, si) => {
-        const rekkje = ["namn", "url", "lokal", "sekund", "heil", "frisk", "periode", "dagar", "tid"];
+        const rekkje = ["namn", "url", "lokal", "sekund", "frisk", "periode", "dagar", "tid"];
         const ordna = {};
         for (const n of rekkje) if (s[n] !== undefined) ordna[n] = s[n];
         for (const n of Object.keys(s)) if (!(n in ordna)) ordna[n] = s[n];

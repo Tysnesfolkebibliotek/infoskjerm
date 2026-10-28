@@ -48,8 +48,6 @@ Kvar side i `oppsett.json` er éi linje:
 - **`lokal`**: i staden for `url`, ei fil på skjermen i `~/nytt-paa-hylla/`.
 - **`sekund`**: kor lenge sida blir vist. Minst 5.
 - **`frisk`**: `true` lastar sida på nytt kvar gong ho blir vist (kanalsider).
-- **`heil`**: `true` på ein karusell viser alle bøkene éin gong før skjermen går
-  vidare. `sekund` er då ei øvre grense. Krev rotasjon.html frå 28.10.2026 eller nyare.
 - **`periode`**: `12-01/12-24` kvart år, kan gå over nyttår (`11-15/01-15`).
   Med årstal (`2026-10-01/2026-10-31`) berre den eine gongen.
 - **`dagar`**: `man-fre`, `lør,søn`, `tys` osv.
