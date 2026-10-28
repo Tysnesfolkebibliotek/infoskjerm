@@ -442,23 +442,36 @@ function oppdaterStatus(tekst, klasse) {
   const st = $("status");
   st.className = "status" + (klasse ? " " + klasse : "");
   st.textContent = tekst || (endra() ? "Du har endringar som ikkje er lagra." : "Ingen endringar.");
-  $("lagre").disabled = !endra();
-  $("angre").disabled = !endra();
+  $("lagre").disabled = !endra() || lagrar;
+  $("angre").disabled = !endra() || lagrar;
 }
+let lagrar = false;   // hindrar at eit dobbeltklikk på Lagre sender to lagringar
 
 async function lagre() {
   const nøkkel = lesNøkkel();
   if (!nøkkel) { $("nokkelboks").open = true; $("nokkel").focus(); return oppdaterStatus("Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor.", "feil"); }
   const innhald = tilJson(oppsett);
   try { JSON.parse(innhald); } catch (e) { return oppdaterStatus("Oppsettet er ugyldig og blir ikkje lagra: " + e.message, "feil"); }
-  $("lagre").disabled = true;
+  if (lagrar) return;
+  lagrar = true;
   oppdaterStatus("Lagrar …");
+  try { await lagreNo(nøkkel, innhald); } finally { lagrar = false; $("lagre").disabled = !endra(); $("angre").disabled = !endra(); }
+}
+async function lagreNo(nøkkel, innhald) {
   const svar = await fetch(API, {
     method: "PUT",
     headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
     body: JSON.stringify({ message: "Endra oppsettet via oversiktssida", content: b64(innhald), sha }),
   });
   if (svar.status === 409 || svar.status === 422) {
+    // Er det som ligg på GitHub alt det same som vi prøver å lagre, er alt i orden
+    try {
+      const no = await (await fetch(API + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel }, cache: "no-store" })).json();
+      if (tilJson(JSON.parse(frå64(no.content))) === innhald) {
+        sha = no.sha; original = innhald;
+        return oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan 10–15 minutt.", "ok");
+      }
+    } catch (e) {}
     return oppdaterStatus("Nokon har endra oppsettet sidan du opna sida. Last sida på nytt og gjer endringa igjen.", "feil");
   }
   if (svar.status === 401 || svar.status === 403) {
