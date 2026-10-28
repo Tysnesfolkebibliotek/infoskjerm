@@ -1,92 +1,97 @@
 # Infoskjerm — Tysnes folkebibliotek
 
-Karusellar og rotasjon for infoskjermane på Tysnes folkebibliotek.
+Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 
 ## Filene
 
 | Fil | Kva ho gjer |
 |---|---|
-| `index.html` | Karusellbyggjaren. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
-| `oppsett.json` | Kva kvar skjerm viser, og kor lenge |
-| `oversikt.html` | Oversikt over og redigering av `oppsett.json`. Ikkje lenkja til, og skjult for søkjemotorar. Lagring krev ein GitHub-nøkkel |
+| `index.html` | Karusellbyggjaren, og sjølve karusellen når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
+| `oversikt.html` | Oversikt over og redigering av kva skjermane viser. Ikkje lenkja til frå byggjaren for andre, og skjult for søkjemotorar. Lagring krev ein GitHub-nøkkel |
+| `oppsett.json` | Kva kvar skjerm viser, kor lenge og når. Blir endra frå oversiktssida |
 | `skjerm/rotasjon.html` | Fila som køyrer på kvar skjerm. Les `oppsett.json` og vekslar mellom sidene |
+| `skjerm/skjermbilete.py` | Tek eit bilete av det skjermen viser, over SSH |
+| `skjerm/hent_nytt.py`, `skjerm/hent_sakprosa.py` | Lagar dei gamle lokale karusellane, som no berre er reserve |
 
 ## Byte innhald på ein skjerm
 
-Enklast: opne <https://tysnesfolkebibliotek.github.io/infoskjerm/oversikt.html>,
-endre, og klikk **Lagre**. Første gongen må du lime inn ein nøkkel (sjå
-forklaringa på sida). Alternativt kan du redigere `oppsett.json` direkte:
+1. Lag karusellen i byggjaren.
+2. Under «Til skjermane» nedst: klikk **Legg på skjerm 1** eller **Legg på skjerm 2**.
+   (Delen er berre synleg i nettlesarar der nøkkelen er lagra på oversiktssida.)
+3. Oversiktssida opnar seg med karusellen fylt ut. Legg til periode, dagar eller
+   klokkeslett om du vil, klikk **Legg til** og så **Lagre**.
 
-1. Lag karusellen i byggjaren, og kopier lenkja som viser han på skjerm
-   (den med `#vis=1`).
-2. Opne `oppsett.json` her på GitHub, og klikk blyanten («Edit this file»).
-3. Lim inn lenkja som `"url"` for den sida du vil byte, eller legg til ei ny linje.
-4. Klikk **Commit changes**.
+For å endre ein karusell som alt er på skjermen: klikk **Endre i byggjaren** på
+oversiktssida, gjer endringa, og klikk **Oppdater … på skjerm N**.
 
-Skjermane hentar `oppsett.json` ved starten av kvar runde. GitHub Pages kan
-bruke opptil 10 minutt på å publisere endringa, så rekn med 10–15 minutt før
-du ser henne på skjermen.
+Skjermen hentar `oppsett.json` ved starten av kvar runde og tek ho i bruk i
+runden etter. Med publiseringa på GitHub kan det ta opptil om lag ein halvtime
+før endringa syner, ofte mindre.
+
+### Nøkkel for å lagre
+
+Oversiktssida lagrar med ein *fine-grained personal access token* frå GitHub:
+berre repoet `infoskjerm`, løyvet **Contents: Read and write**. Han blir lagra
+i nettlesaren. Kvar maskin kan ha sin eigen nøkkel. Når nøkkelen går ut, kan du
+framleis sjå oversikta, men må lage ein ny for å lagre.
 
 ### Oppsettet
 
+Kvar side i `oppsett.json` er éi linje:
+
 ```json
-"skjerm2": [
-  { "namn": "Nyheiter (lokal)", "lokal": "index.html", "sekund": 180 },
-  { "namn": "Kanalside 1", "url": "https://www.tysnesbibliotek.no/nn/kanal/1", "sekund": 180, "frisk": true }
-]
+{ "namn": "Julebøker", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…", "sekund": 180, "periode": "11-01/12-31" }
 ```
 
-- **`skjerm2`** er oppsettet for tysnes-infoskjerm-2, **`skjerm1`** for
-  tysnes-infoskjerm. Kva skjerm som brukar kva, står i `kiosk.desktop` på
-  skjermen (`rotasjon.html?oppsett=skjerm1`).
-- **`url`**: ei nettadresse, til dømes ei lenkje frå karusellbyggjaren eller ei
-  kanalside på tysnesbibliotek.no.
-- **`lokal`**: ei fil som ligg på skjermen, i `~/nytt-paa-hylla/`. Dei lokale
-  karusellane (Nyheiter og Frå hylla) blir framleis oppdaterte av
-  Python-skripta på skjermen.
+- **`namn`**: berre for deg.
+- **`url`**: ei lenkje frå karusellbyggjaren eller ei kanalside på tysnesbibliotek.no.
+- **`lokal`**: i staden for `url`, ei fil på skjermen i `~/nytt-paa-hylla/`.
 - **`sekund`**: kor lenge sida blir vist. Minst 5.
-- **`frisk`**: `true` lastar sida på nytt kvar gong ho blir vist.
-- **`namn`**: berre for deg, skjermen bryr seg ikkje om det.
-
-### Tidsstyring
-
-Kvar linje kan få tre valfrie felt som avgjer når ho skal visast:
-
-```json
-{ "namn": "Julebøker", "url": "…", "sekund": 120, "periode": "12-01/12-24" },
-{ "namn": "Barnebøker", "url": "…", "sekund": 120, "dagar": "man-fre", "tid": "13:00-17:00" },
-{ "namn": "Boktober", "url": "…", "sekund": 120, "periode": "2026-10-01/2026-10-31" }
-```
-
-- **`periode`**: `12-01/12-24` gjeld kvart år, og kan gå over nyttår (`11-15/01-15`).
-  Med årstal (`2026-10-01/2026-10-31`) gjeld det berre den eine gongen.
+- **`frisk`**: `true` lastar sida på nytt kvar gong ho blir vist (kanalsider).
+- **`periode`**: `12-01/12-24` kvart år, kan gå over nyttår (`11-15/01-15`).
+  Med årstal (`2026-10-01/2026-10-31`) berre den eine gongen.
 - **`dagar`**: `man-fre`, `lør,søn`, `tys` osv.
 - **`tid`**: `13:00-17:00`.
-- Linjer utan desse felta blir alltid viste. Gjeld ingen linjer akkurat no,
-  viser skjermen dei utan tidsstyring.
 
-Skjermen sjekkar ved starten av kvar runde kva som gjeld.
+Sider utan tidsstyring blir alltid viste. Gjeld ingen sider akkurat no, viser
+skjermen dei utan tidsstyring.
 
-Pass på kommaa: det skal vere komma mellom linjene, men ikkje etter den siste
-i kvar liste. Er fila ugyldig, held skjermane fram med det førre oppsettet.
+## Karusellane
+
+Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøker
+og **Likte du?** (liknande bøker frå Forrige bok). Søk og Nyaste kan òg
+avgrensast med **appellfaktorar** frå Forrige bok, og bøkene kan få
+**merkelappar** med appellfaktorar.
+
+Data frå Forrige bok (Biblioteksentralen) er lisensierte under CC BY-NC 4.0.
+Karusellar som brukar dei, viser kjelda nedst.
+
+Karusellane lagrar boklista i nettlesaren og hentar ny med det intervallet som
+står i «Hent nytt» (standard 6 timar). Lister som ikkje er brukte på 30 dagar,
+blir sletta automatisk.
 
 ## Når noko går gale
 
 - **GitHub eller nettet er nede:** skjermen brukar det sist henta oppsettet.
-  Nettsider som ikkje svarar, blir hoppa over, så dei lokale karusellane står att.
+  Nettsider som ikkje svarar, blir hoppa over.
+- **Ein karusell har ingen bøker** (ingen treff, eller ingen kontakt og inga
+  lagra liste): rotasjonen hoppar over han.
 - **Skjermen har aldri fått henta oppsettet:** han brukar reserven som står
-  øvst i `skjerm/rotasjon.html`, som er det same som skjermane viste før.
-- **Gå tilbake til ein tidlegare versjon:** opne `oppsett.json`, klikk
-  **History**, og kopier innhaldet frå ein versjon som fungerte.
+  øvst i `skjerm/rotasjon.html`.
+- **Gå tilbake til ein tidlegare versjon:** opne `oppsett.json` på GitHub,
+  klikk **History**, og kopier innhaldet frå ein versjon som fungerte.
 
 ## Oppdatere rotasjon.html på ein skjerm
 
 ```bash
-ssh tysnes-folkebibliotek@tysnes-infoskjerm-2
+ssh skjerm2
 cd ~/nytt-paa-hylla
 cp rotasjon.html rotasjon.html.gammal
 curl -fsSL -o rotasjon.html https://tysnesfolkebibliotek.github.io/infoskjerm/skjerm/rotasjon.html
 ```
+
+Den nye fila blir teken i bruk ved neste omstart (kl. 15 eller 07), eller
+straks med `sudo reboot`.
 
 ## Skjermbilete over SSH
 
@@ -95,5 +100,11 @@ Kiosken er starta med `--remote-debugging-port=9222` og ei eiga profilmappe, så
 Frå Fedora:
 
 ```bash
-ssh tysnes-folkebibliotek@tysnes-infoskjerm-2 "python3 ~/nytt-paa-hylla/skjermbilete.py" > skjerm2.png
+skjermbilete 2
+```
+
+(bash-funksjon i `~/.bashrc`), eller utan funksjonen:
+
+```bash
+ssh skjerm2 "python3 ~/nytt-paa-hylla/skjermbilete.py" > skjerm2.png
 ```

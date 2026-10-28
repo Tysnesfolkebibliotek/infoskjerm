@@ -260,7 +260,8 @@
   #visning footer { display: flex; align-items: center; justify-content: space-between; gap: 3vw; margin-top: 3vh; flex: none; }
   .framdrift { flex: 1; height: .5vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
   .framdrift > div { height: 100%; width: 0; background: var(--aksent); }
-  .botnmerke { display: flex; align-items: center; gap: 1.6vw; flex: none; }
+  .botnmerke { display: flex; flex-direction: column; align-items: flex-start; gap: .4vh; flex: none; }
+  .kjeldetekst { font-size: 1.6vw; color: var(--dempa); opacity: .8; }
   /* Biblioteknamnet nede til venstre og nedteljingshjulet til høgre, i alle tema */
   .botnnamn { font-size: 2.8vw; color: var(--tekst); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
   .botnnamn b { font-weight: 700; }
@@ -388,6 +389,7 @@
       <div class="framdrift"><div id="framdrift"></div></div>
       <div class="botnmerke">
         <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
+        <span class="kjeldetekst" id="kjeldetekst" hidden>Liknande bøker og merkelappar: Forrige bok, Biblioteksentralen</span>
       </div>
       <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="hjul-spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
     </footer>
@@ -1123,9 +1125,18 @@ function startVisning(cfg) {
   if (["kryss", "glid", "zoom", "vend", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell3:" + datanøkkel(cfg);   // auk talet når lagra lister må hentast på nytt (3: mest reservert med 1500 kandidatar)
+  ryddLager(nøkkel);
+  // Namngjeving som lisensen til Forrige bok krev (CC BY-NC)
+  const brukarForrigebok = cfg.kjelde === "likte" || cfg.merkelapp === "1" || (!!cfg.appell && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"));
+  document.getElementById("kjeldetekst").hidden = !brukarForrigebok;
+  if (brukarForrigebok) {
+    const kva = [cfg.kjelde === "likte" ? "Liknande bøker" : "", cfg.merkelapp === "1" || cfg.appell ? "appellfaktorar" : ""].filter(Boolean).join(" og ");
+    document.getElementById("kjeldetekst").textContent = `${storForbokstav(kva)}: Forrige bok, Biblioteksentralen`;
+  }
 
   let titlar = [];
   let i = 0, førre = null, tidtakar = null, gjeldande = null, køyrer = false;
+  const iRotasjon = window.parent !== window && !new URLSearchParams(location.hash.slice(1)).has("forhand");
 
   // ---- hugse kvar vi slapp -------------------------------------------
   const lesSist = () => { try { return localStorage.getItem(nøkkel + ":sist"); } catch (e) { return null; } };
@@ -1176,7 +1187,7 @@ function startVisning(cfg) {
     for (const s of (t.sjanger || []).slice(0, appell.length ? 1 : 2)) brikker.append(el("span", "brikke", s));
     for (const a of appell) brikker.append(el("span", "brikke appell", a));
     if (brikker.childElementCount) info.append(brikker);
-    const omtale = heil ? (t.omtaleHeil || t.omtale) : t.omtale;
+    const omtale = heil ? (t.omtaleHeil || t.omtale) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
     if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
     bok.append(ramme, info);
     return bok;
@@ -1388,10 +1399,20 @@ function startVisning(cfg) {
     try { return JSON.parse(localStorage.getItem(nøkkel) || "null"); } catch (e) { return null; }
   }
   function skrivLager(liste) {
-    try { localStorage.setItem(nøkkel, JSON.stringify({ tid: Date.now(), titlar: liste })); } catch (e) {}
+    const verdi = JSON.stringify({ tid: Date.now(), titlar: liste });
+    try { localStorage.setItem(nøkkel, verdi); }
+    catch (e) {
+      // Fullt: slett alle andre lagra lister og prøv éin gong til
+      ryddLager(nøkkel, true);
+      try { localStorage.setItem(nøkkel, verdi); } catch (e2) {}
+    }
   }
 
+  let hentar = false, prøvIgjen = null;
   async function oppdater() {
+    if (hentar) return;
+    hentar = true;
+    clearTimeout(prøvIgjen); prøvIgjen = null;
     const t0 = Date.now();
     try {
       const nye = await hentBøker(cfg, (funne, mål) => {
@@ -1404,8 +1425,15 @@ function startVisning(cfg) {
     } catch (e) {
       if (!titlar.length) visMelding("Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
       meldTilByggjar({ status: "feil", melding: e.message });
-      setTimeout(oppdater, 5 * 60 * 1000);
-    }
+      prøvIgjen = setTimeout(oppdater, 5 * 60 * 1000);
+    } finally { hentar = false; meldTilRotasjon(); }
+  }
+
+  // ---- 4: seie frå til rotasjonen om karusellen har bøker å vise ----------
+  // Har han ingen (ingen treff, eller ingen kontakt og inga lagra liste),
+  // kan rotasjonen hoppe over han i staden for å vise ei melding.
+  function meldTilRotasjon() {
+    if (iRotasjon) try { window.parent.postMessage({ nyheiter: titlar.length ? "har" : "tom" }, "*"); } catch (e) {}
   }
 
   function meldTilByggjar(m) {
@@ -1423,7 +1451,6 @@ function startVisning(cfg) {
 
   // Inne i rotasjonssida ventar vi på beskjed; åleine startar vi sjølv.
   // (Same beskjedar som Nyheiter-sida brukar i dag.)
-  const iRotasjon = window.parent !== window && !new URLSearchParams(location.hash.slice(1)).has("forhand");
   if (iRotasjon) {
     window.addEventListener("message", e => {
       if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); }
@@ -1433,6 +1460,32 @@ function startVisning(cfg) {
   } else {
     køyrer = true; fortset();
   }
+}
+
+// ---- Opprydding i nettlesaren --------------------------------------------
+// Kvar karusell lagrar boklista si. Når innstillingane blir endra, får lista
+// ny nøkkel, og den gamle blir liggjande. Vi slettar lister som ikkje er
+// oppdaterte på LAGER_DAGAR dagar, og lister frå gamle versjonar.
+// «alt» slettar alle lister unnateke den vi brukar no (når lagringa er full).
+const LAGER_DAGAR = 30;
+function ryddLager(behald, alt = false) {
+  try {
+    const no = Date.now();
+    // Hent alle nøklane først: rekkjefølgja kan endre seg når vi slettar
+    const nøklar = [];
+    for (let n = 0; n < localStorage.length; n++) nøklar.push(localStorage.key(n));
+    for (const k of nøklar) {
+      if (!k || k === behald || k === behald + ":sist") continue;
+      if (/^karusell\d*:/.test(k)) {
+        if (alt || !k.startsWith("karusell3:")) { localStorage.removeItem(k); continue; }
+        if (k.endsWith(":sist")) { if (localStorage.getItem(k.slice(0, -5)) === null) localStorage.removeItem(k); continue; }
+        let tid = 0;
+        try { tid = JSON.parse(localStorage.getItem(k)).tid || 0; } catch (e) {}
+        if (no - tid > LAGER_DAGAR * 864e5) localStorage.removeItem(k);
+      } else if (/^forslag\d*:/.test(k) && !k.startsWith("forslag6:")) localStorage.removeItem(k);
+      else if (k === "forrigebok-tnr") localStorage.removeItem(k);    // gammal versjon av oppslaga
+    }
+  } catch (e) {}
 }
 
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
@@ -1460,7 +1513,7 @@ function jsonp(url, namn, ms) {
     const s = document.createElement("script");
     let ferdig = false;
     const slutt = (fn, v) => { if (ferdig) return; ferdig = true; clearTimeout(t); s.remove(); try { delete window[namn]; } catch (e) { window[namn] = undefined; } fn(v); };
-    const t = setTimeout(() => slutt(feil, new Error("Bibliofil svarte ikkje i tide")), ms);
+    const t = setTimeout(() => slutt(feil, Object.assign(new Error("Bibliofil svarte ikkje i tide"), { tidsavbrot: true })), ms);
     window[namn] = data => slutt(ok, data);
     s.onerror = () => slutt(feil, new Error("Fekk ikkje kontakt med Bibliofil"));
     s.onload = () => setTimeout(() => slutt(feil, new Error("Uventa svar frå Bibliofil")), 0);
@@ -1476,10 +1529,17 @@ function sruUrl(param) {
     .map(([k, v]) => k + "=" + encodeURIComponent(String(v)).replace(/%3A/gi, ":")).join("&");
 }
 
+// SRU svarar alltid til funksjonen «callback». Kjem eit svar etter at vi har
+// gitt opp, kunne det ha blitt teke for svaret på neste søk. Etter eit
+// tidsavbrot ventar vi difor litt med ein funksjon som kastar seine svar.
 let sruKø = Promise.resolve();
 function sru(param, ms = 60000) {
   const jobb = sruKø.then(() => jsonp(sruUrl(param), "callback", ms));
-  sruKø = jobb.catch(() => {});
+  sruKø = jobb.catch(e => {
+    if (!e || !e.tidsavbrot) return;
+    window.callback = () => {};
+    return new Promise(ok => setTimeout(ok, 30000));
+  });
   return jobb;
 }
 
@@ -1634,9 +1694,8 @@ function førehand(post, cfg) {
     if (har.length ? !språk.some(s => har.includes(s)) : cfg._språkLokalt !== false) return utelat("anna språk");
   }
   if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
-  if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");
-  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");          // for Nyaste, der søket ikkje filtrerer
-  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");                     // for Nyaste, der søket ikkje filtrerer     // tryggingsnett mot feilkatalogiserte romanar
+  if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");   // tryggingsnett mot feilkatalogiserte romanar
+  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");              // for Nyaste, der søket ikkje filtrerer
   return true;
 }
 
@@ -1669,8 +1728,8 @@ function vurder(post, avd, eks, cfg) {
     forfattarNøkkel: (forfattarFrå(d) || "").trim().toLowerCase() || "utan-" + post.id,
     omslag: d.bs_krydderbildeurl || "",
     hylle: lagHylle(d, e), alder, sjanger,
-    omtale: kortOmtale(d.bsdc_description || ""),
-    omtaleHeil: kortOmtale(d.bsdc_description || "", 4000),   // til rulleteksten
+    // Berre den lange omtalen blir lagra. Den korte blir laga ved visning.
+    omtaleHeil: kortOmtale(d.bsdc_description || "", 4000),
     etikett: cfg.namn || AVD_NAMN[avd] || avd,
   };
 }
@@ -1718,8 +1777,11 @@ async function hentBøker(cfg, framdrift) {
 }
 
 // ---- Forrige bok (Biblioteksentralen) ----------------------------------
-// Appellfaktorar («spennande», «lettlesen» …) og liknande bøker. Fritt for
-// bibliotek (CC BY-NC 4.0). Bøkene blir kopla til Bibliofil på ISBN.
+// Appellfaktorar («Lett», «Godt driv» …) og liknande bøker. Fritt for
+// bibliotek (CC BY-NC 4.0), men kjelda må nemnast: sjå «kjeldetekst» nedst
+// på karusellen. «Likte du?» koplar bøkene til Bibliofil på ISBN.
+// Appellfaktorar og merkelappar koplar på tittel og forfattar, sidan
+// Bibliofil-postane ikkje har ISBN.
 const FORRIGEBOK = "https://forrigebok.no/api/v2023-01-12";
 const FORRIGEBOK_ID = "Tysnes folkebibliotek infoskjerm (biblioteket@tysnes.kommune.no)";
 async function forrigebok(sti, ms = 20000) {
@@ -1763,7 +1825,11 @@ function sameBok(t, w) {
   return !e || norm((m.authors || []).join(" ")).split(" ").includes(e);
 }
 function lesFbLager() { try { return JSON.parse(localStorage.getItem(FB_LAGER) || "{}"); } catch (e) { return {}; } }
-function skrivFbLager(l) { try { localStorage.setItem(FB_LAGER, JSON.stringify(l)); } catch (e) {} }
+function skrivFbLager(l) {
+  const no = Date.now();
+  for (const k of Object.keys(l)) if (!l[k] || no - l[k].tid > FB_DAGAR * 864e5) delete l[k];   // utgåtte oppslag
+  try { localStorage.setItem(FB_LAGER, JSON.stringify(l)); } catch (e) {}
+}
 // Kort utdrag av eit verk: id, appelltermar (id) og merkelappar
 const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w),
   l: appellMerke(w, 12, true) });
@@ -1809,7 +1875,7 @@ async function forrigebokBerik(liste, cfg) {
   const filtrer = cfg.kjelde === "sok" || cfg.kjelde === "nyaste";
   const ønskte = new Set(filtrer ? (cfg.appell || "").split(",").filter(Boolean) : []);
   const merkelapp = cfg.merkelapp === "1";
-  if (!liste.length || (!ønskte.size && !merkelapp)) return liste;
+  if (!liste.length || (!ønskte.size && !merkelapp)) { liste.forEach(t => delete t.forrigebok); return liste; }
   // Bøker frå «Likte du?» har verket med seg frå før
   const utan = liste.filter(t => !t.forrigebok);
   let funne = new Map();
@@ -1851,6 +1917,28 @@ async function finnPåIsbn(isbnar) {
   return [];
 }
 
+// Kva tittelnummer eit verk har i samlinga, lagra per verk: funne i 30 dagar,
+// «ikkje i samlinga» i 7 dagar (nye bøker kan kome inn). Sparer mange søk.
+const LIKTE_LAGER = "likte-tnr";
+async function posterForVerk(verkId, isbnar) {
+  let lager = {};
+  try { lager = JSON.parse(localStorage.getItem(LIKTE_LAGER) || "{}"); } catch (e) {}
+  const no = Date.now(), l = lager[verkId];
+  let poster = null;
+  if (l && no - l.tid < (l.idar.length ? 30 : 7) * 864e5) {
+    if (!l.idar.length) return [];
+    poster = (await Promise.all(l.idar.map(hentPost))).filter(Boolean);
+    if (!poster.length) poster = null;            // tittelnummera finst ikkje lenger: søk på nytt
+  }
+  if (!poster) {
+    poster = await finnPåIsbn(isbnar);
+    lager[verkId] = { tid: no, idar: poster.map(p => String(p.id)).slice(0, 5) };
+    for (const k of Object.keys(lager)) if (no - lager[k].tid > 30 * 864e5) delete lager[k];
+    try { localStorage.setItem(LIKTE_LAGER, JSON.stringify(lager)); } catch (e) {}
+  }
+  return poster;
+}
+
 // Likte du …? Liknande bøker frå Forrige bok som finst i samlinga
 async function hentLikte(cfg, avdar, meld) {
   if (!cfg.likte) return [];
@@ -1863,7 +1951,7 @@ async function hentLikte(cfg, avdar, meld) {
     meld(ut.length, verk.length);
     // Utgåvetypen kan heite «bok», «Bok», «Book», «lydbok», «E-bok» … Vi tek alt som ikkje er lyd, e-bok, film eller spel.
     const isbnar = (w.publications || []).filter(p => !/lyd|audio|e-?bo|film|movie|spel|spill|game/i.test(p.type || "")).map(p => isbn13(p.isbn)).filter(Boolean).slice(0, 12);
-    const poster = await finnPåIsbn(isbnar);
+    const poster = await posterForVerk(w.id, isbnar);
     if (!poster.length) { utelat("finst ikkje i samlinga"); continue; }
     const eks = await hentEksemplar(poster.map(p => String(p.id)));
     let t = null;
@@ -1876,7 +1964,7 @@ async function hentLikte(cfg, avdar, meld) {
       // Manglar Bibliofil omslag eller omtale, brukar vi dei frå Forrige bok
       const m = w.simplifiedPresentationMetadata || {};
       if (!t.omslag && m.coverImage) t.omslag = m.coverImage;
-      if (!t.omtale && m.summary) { t.omtale = kortOmtale(m.summary); t.omtaleHeil = kortOmtale(m.summary, 4000); }
+      if (!t.omtaleHeil && m.summary) t.omtaleHeil = kortOmtale(m.summary, 4000);
       t.forrigebok = w; ut.push(t);
     }
   }

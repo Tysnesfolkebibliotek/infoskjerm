@@ -20,8 +20,9 @@
 //
 // Kva sider kvar skjerm viser, står i oppsett.json på GitHub:
 //   https://github.com/Tysnesfolkebibliotek/infoskjerm/blob/main/oppsett.json
-// Skjermen hentar fila på nytt ved starten av kvar runde. Endrar du ho,
-// blir endringa teken i bruk innan om lag 10–15 minutt.
+// Skjermen hentar fila på nytt ved starten av kvar runde og tek ho i bruk
+// i runden etter. Endrar du ho, blir endringa teken i bruk innan om lag ein
+// halvtime (GitHub-publisering pluss opptil to rundar), ofte raskare.
 //
 // Kvar skjerm vel oppsett med adressa i kiosk.desktop:
 //   rotasjon.html?oppsett=skjerm1   → tysnes-infoskjerm
@@ -186,10 +187,20 @@ function send(ramme, beskjed) {
   try { ramme.contentWindow.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {}
 }
 window.addEventListener("message", e => {
-  if (!e.data || e.data.nyheiter !== "klar") return;
+  if (!e.data || !e.data.nyheiter) return;
   const r = [...document.querySelectorAll("iframe")].find(r => r.contentWindow === e.source);
-  if (r) send(r, r === aktivRamme ? "vis" : "skjul");
+  if (!r) return;
+  if (e.data.nyheiter === "klar") send(r, r === aktivRamme ? "vis" : "skjul");
+  // Karusellar seier frå om dei har bøker å vise. Ein tom karusell (ingen
+  // treff, eller ingen kontakt med Bibliofil og inga lagra liste) blir hoppa
+  // over, så skjermen ikkje viser ei melding i fleire minutt.
+  if (e.data.nyheiter === "tom" || e.data.nyheiter === "har") {
+    r.dataset.tom = e.data.nyheiter === "tom" ? "1" : "";
+    if (e.data.nyheiter === "tom" && r === aktivRamme && andreHar(r) && nesteNo) { clearTimeout(nesteTid); const f = nesteNo; nesteNo = null; f(); }
+  }
 });
+// Finst det ei anna side som ikkje er meld tom?
+const andreHar = r => rammer.some(x => x !== r && x.dataset.tom !== "1");
 
 // Lastar sida og ventar til ho er ferdig, men ikkje lenger enn MAKS_LASTETID_MS.
 function lastInn(r, url) {
@@ -205,6 +216,7 @@ function lastInn(r, url) {
 // ---- Rotasjonen -----------------------------------------------------------
 
 let hoppaOver = 0;
+let nesteTid = null, nesteNo = null;   // tidtakaren til neste side, så ein tom karusell kan avbryte han
 
 async function vis(n) {
   // Ny runde: finn ut kva sider som gjeld no (oppsett og klokke), og spør
@@ -221,6 +233,10 @@ async function vis(n) {
 
   const side = SIDER[n], r = rammer[n];
   const neste = () => vis((n + 1) % SIDER.length);
+
+  // Karusell som har meldt at han ikkje har bøker: hopp over, så lenge
+  // det finst andre sider å vise
+  if (r.dataset.tom === "1" && andreHar(r)) return neste();
 
   // Nettsider blir sjekka før dei blir viste. Svarar dei ikkje, hoppar vi
   // over dei, og den førre sida blir ståande.
@@ -240,6 +256,8 @@ async function vis(n) {
     if (side.frisk || !r.dataset.lasta) {
       await lastInn(r, side.url);
       r.dataset.lasta = "1";
+      // Karusellen kan ha meldt «tom» medan han lasta
+      if (r.dataset.tom === "1" && andreHar(r)) return neste();
     }
   }
   hoppaOver = 0;
@@ -263,7 +281,8 @@ async function vis(n) {
       }
     }
   }
-  setTimeout(neste, Number(side.sekund) * 1000);
+  nesteNo = neste;
+  nesteTid = setTimeout(() => { nesteNo = null; neste(); }, Number(side.sekund) * 1000);
 }
 
 // Ved oppstart: prøv å hente oppsett.json først. Går ikkje det, bruk det sist

@@ -88,7 +88,7 @@
 <body>
 <main>
   <div class="toppline"><h1>Infoskjermar</h1><a class="knapp" href="index.html">+ Lag ny karusell</a></div>
-  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan 10–15 minutt.</p>
+  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan om lag ein halvtime, ofte raskare.</p>
 
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
 
@@ -427,8 +427,12 @@ const lesNøkkel = () => { try { return localStorage.getItem(NØKKEL_LAGER) || "
 
 async function hent() {
   const nøkkel = lesNøkkel();
-  const svar = await fetch(API + "?t=" + Date.now(), {
-    headers: { Accept: "application/vnd.github+json", ...(nøkkel ? { Authorization: "Bearer " + nøkkel } : {}) }, cache: "no-store" });
+  const les = medNøkkel => fetch(API + "?t=" + Date.now(), {
+    headers: { Accept: "application/vnd.github+json", ...(medNøkkel ? { Authorization: "Bearer " + nøkkel } : {}) }, cache: "no-store" });
+  let svar = await les(!!nøkkel);
+  // Ein utgått eller sletta nøkkel gir 401 sjølv om fila er offentleg: les utan, og sei frå
+  let nøkkelAvvist = false;
+  if (svar.status === 401 && nøkkel) { nøkkelAvvist = true; svar = await les(false); }
   if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
   const d = await svar.json();
   sha = d.sha;
@@ -436,6 +440,10 @@ async function hent() {
   original = tilJson(oppsett);
   open = null;
   teikn();
+  if (nøkkelAvvist) {
+    $("nokkelboks").open = true;
+    oppdaterStatus("Nøkkelen din er utgått eller sletta. Du kan sjå oversikta, men må lage ein ny nøkkel for å lagre (sjå nedanfor).", "feil");
+  }
 }
 
 function endra() { return oppsett && tilJson(oppsett) !== original; }
@@ -472,19 +480,22 @@ async function lagreNo(nøkkel, innhald) {
       const no = await (await fetch(API + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel }, cache: "no-store" })).json();
       if (tilJson(JSON.parse(frå64(no.content))) === innhald) {
         sha = no.sha; original = innhald;
-        return oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan 10–15 minutt.", "ok");
+        return oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan om lag ein halvtime, ofte raskare.", "ok");
       }
     } catch (e) {}
     return oppdaterStatus("Nokon har endra oppsettet sidan du opna sida. Last sida på nytt og gjer endringa igjen.", "feil");
   }
   if (svar.status === 401 || svar.status === 403) {
-    return oppdaterStatus("Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.", "feil");
+    $("nokkelboks").open = true;
+    return oppdaterStatus(svar.status === 401
+      ? "Nøkkelen er utgått eller sletta. Lag ein ny (sjå nedanfor), lim han inn, og klikk Lagre igjen. Endringane dine er ikkje tapte."
+      : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.", "feil");
   }
   if (!svar.ok) return oppdaterStatus(`Lagringa feila (GitHub svarte ${svar.status}).`, "feil");
   const d = await svar.json();
   sha = d.content.sha;
   original = innhald;
-  oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan 10–15 minutt.", "ok");
+  oppdaterStatus("Lagra. Skjermane tek i bruk endringa innan om lag ein halvtime, ofte raskare.", "ok");
 }
 
 // ---- Førehandsvising som på skjermen: ståande 1080 × 1920 ----------------
