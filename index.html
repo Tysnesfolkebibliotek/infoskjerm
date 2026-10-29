@@ -105,7 +105,6 @@
   /* Forbodne bøker: djup lilla og gult frå kampanjelogoen, som står øvst */
   :root[data-tema="forbodne"] { --bakgrunn: #1d1430; --tekst: #fbf6e4; --dempa: #cfc6dd; --aksent: #faee9c; --aksent-tekst: #3d2670; --skugge: 29,20,48; --reserve-a: #4f338a; --reserve-b: #26193f; }
   .forbodne-logo { display: block; width: 50vw; height: auto; margin-bottom: 1.6vh; filter: drop-shadow(0 0 .3vw rgba(250,238,156,.45)); }
-  @keyframes sladd { 0%, 70% { transform: scaleX(1); } 85%, 100% { transform: scaleX(.15); } }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
   :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
   :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
@@ -1240,29 +1239,6 @@ function lagPynt(tema) {
       logo.className = "forbodne-logo"; logo.src = "forbodne.png"; logo.alt = "Forbodne bøker";
       header.prepend(logo);
     }
-    // Kantete gule flak som i logoen, svakt i hjørna
-    pynt.append(svg("0 0 100 100", "right:-6vw; top:22vh; width:30vw; opacity:.09;",
-      `<polygon fill="#faee9c" points="20,8 62,0 96,30 80,74 34,88 4,52"/>`));
-    pynt.append(svg("0 0 100 100", "left:-8vw; bottom:10vh; width:34vw; opacity:.07;",
-      `<polygon fill="#faee9c" points="10,20 58,4 92,40 70,92 22,80"/>`));
-    // Sladda tekstliner: gule strekar som av og til blir dregne vekk, som om sensuren blir oppheva
-    const sladdblokk = (stil) => {
-      let g = "";
-      for (let r = 0; r < 7; r++) {
-        let x = 0;
-        while (x < 90) {
-          const b = tilf(8, 26), y = r * 9;
-          const sladda = Math.random() < 0.45;
-          g += sladda
-            ? `<rect x="${x.toFixed(1)}" y="${y}" width="${b.toFixed(1)}" height="5.5" fill="#faee9c" style="transform-box:fill-box; transform-origin:left; animation: sladd ${tilf(10, 18).toFixed(1)}s ease-in-out ${-tilf(0, 18).toFixed(1)}s infinite alternate"/>`
-            : `<rect x="${x.toFixed(1)}" y="${y + 2}" width="${b.toFixed(1)}" height="1.4" fill="#fbf6e4" opacity=".5"/>`;
-          x += b + tilf(2, 4);
-        }
-      }
-      pynt.append(svg("0 0 100 62", stil, g));
-    };
-    sladdblokk("right:4vw; top:34vh; width:24vw; opacity:.14;");
-    sladdblokk("left:4vw; bottom:12vh; width:26vw; opacity:.12;");
   }
 
   if (tema === "natt") {
