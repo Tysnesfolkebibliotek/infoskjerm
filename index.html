@@ -92,7 +92,7 @@
   #visning { position: fixed; inset: 0; }
   #visning main { position: relative; height: 100%; display: flex; flex-direction: column; padding: 5vh 7vw 4vh; }
   #visning header { display: flex; flex-direction: column; gap: 1.2vh; }
-  .overskrift { font-weight: 700; font-size: 6.2vw; letter-spacing: .01em; }
+  .overskrift { font-weight: 700; font-size: 6.2vw; letter-spacing: .01em; font-family: var(--skrift-overskrift, var(--skrift)); }
   /* «Likte du?»: omslaget til boka det heile tek utgangspunkt i, lite og til høgre for overskrifta */
   #visning header.med-kjelde { position: relative; padding-right: 19vw; min-height: 13vh; }
   .kjeldeomslag { position: absolute; right: 0; top: 0; height: 13vh; max-width: 16vw; object-fit: cover;
@@ -154,7 +154,7 @@
     font-size: 4vw; line-height: 1.2; border-left: 1.2vw solid var(--aksent);
   }
   .info { width: 100%; margin-top: 4vh; text-align: center; flex: none; }
-  .tittel { font-weight: 700; font-size: 5.6vw; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tittel { font-family: var(--skrift-tittel, var(--skrift)); font-weight: 700; font-size: 5.6vw; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .undertittel { font-style: italic; font-size: 3vw; color: var(--dempa); margin-top: .8vh; }
   .forfattar { font-size: 3.4vw; margin-top: 1.6vh; opacity: .92; }
   .brikker { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4vw; margin-top: 2.6vh; }
@@ -257,9 +257,11 @@
   .temaalternativ { width: 100%; display: flex; align-items: center; gap: 9px; font: inherit; font-size: 14px; text-align: left; cursor: pointer;
                     background: none; border: 0; color: var(--b-tekst); padding: 6px 12px 6px 30px; font-weight: 400; }
   .temaalternativ > span:nth-child(2) { white-space: nowrap; flex: none; }
-  .temaalternativ .temadato { min-width: 0; }
+  .temaalternativ .temadato { min-width: 0; flex: 1; }
   .temaalternativ:hover { background: var(--b-bg); }
-  #skriftmeny { left: auto; right: 0; }   /* skriftvalet står i høgre kolonne: opne mot venstre */
+  #skriftmeny { left: auto; right: 0; }
+  .skriftgruppe { border-top: 1px solid var(--b-strek); margin-top: 4px; padding: 10px 12px 4px; font-size: 12px; font-weight: 700;
+                  text-transform: uppercase; letter-spacing: .08em; color: var(--b-dempa); }   /* skriftvalet står i høgre kolonne: opne mot venstre */
   .temameny.flat .temaalternativ { padding-left: 12px; }
   .temameny.flat .temaalternativ > span:first-child, #skriftknapp .temanamn { font-size: 16px; }
   .temaalternativ[aria-checked="true"] { background: color-mix(in srgb, var(--b-aksent) 16%, transparent); }
@@ -760,27 +762,56 @@ function lagHash(cfg, vis) {
 
 // ---- Skrifter. «standard» brukar skrifta på maskina; dei andre kjem frå
 // Google Fonts. Manglar nettet, fell sida tilbake til standardskrifta.
-const SKRIFTER = {
-  //            Namn hos Google Fonts     Kva som skal lastast ned                                Namn i byggjaren    Skildring
-  atkinson:     ["Atkinson Hyperlegible", "Atkinson+Hyperlegible:wght@400;700",                   "Atkinson",          "lettlesen"],
-  nunito:       ["Nunito",                "Nunito:wght@400;600;700;800",                          "Nunito",            "rund"],
-  quicksand:    ["Quicksand",             "Quicksand:wght@400;600;700",                           "Quicksand",         "mjuk og rund"],
-  montserrat:   ["Montserrat",            "Montserrat:wght@400;600;700",                          "Montserrat",        "kraftig"],
-  oswald:       ["Oswald",                "Oswald:wght@400;500;600;700",                          "Oswald",            "smal, plakat"],
-  sourcesans:   ["Source Sans 3",         "Source+Sans+3:wght@400;600;700",                       "Source Sans",       "nøytral"],
-  lora:         ["Lora",                  "Lora:ital,wght@0,400;0,600;0,700;1,400",               "Lora",              "med serifar"],
-  merriweather: ["Merriweather",          "Merriweather:ital,wght@0,400;0,700;1,400",             "Merriweather",      "klassisk"],
-  playfair:     ["Playfair Display",      "Playfair+Display:ital,wght@0,400;0,600;0,700;1,400",   "Playfair Display",  "elegant"],
-  robotoslab:   ["Roboto Slab",           "Roboto+Slab:wght@400;600;700",                         "Roboto Slab",       "skrivemaskin"],
+// Kvar skrift: [namn hos Google Fonts, kva som skal lastast ned]
+const FONTAR = {
+  atkinson:     ["Atkinson Hyperlegible", "Atkinson+Hyperlegible:wght@400;700"],
+  nunito:       ["Nunito",                "Nunito:wght@400;600;700;800"],
+  quicksand:    ["Quicksand",             "Quicksand:wght@400;600;700"],
+  montserrat:   ["Montserrat",            "Montserrat:wght@400;600;700"],
+  oswald:       ["Oswald",                "Oswald:wght@400;500;600;700"],
+  sourcesans:   ["Source Sans 3",         "Source+Sans+3:wght@400;600;700"],
+  lora:         ["Lora",                  "Lora:ital,wght@0,400;0,600;0,700;1,400"],
+  merriweather: ["Merriweather",          "Merriweather:ital,wght@0,400;0,700;1,400"],
+  playfair:     ["Playfair Display",      "Playfair+Display:ital,wght@0,400;0,600;0,700;1,400"],
+  robotoslab:   ["Roboto Slab",           "Roboto+Slab:wght@400;600;700"],
+  dancing:      ["Dancing Script",        "Dancing+Script:wght@600;700"],
+  pixelify:     ["Pixelify Sans",         "Pixelify+Sans:wght@500;700"],
 };
+// Vala i byggjaren. «tekst» er brødteksten. «overskrift» og «titlar» er valfrie:
+// utan dei brukar overskrifta og boktitlane same skrift som teksten.
+const SKRIFTER = {
+  atkinson:     { namn: "Atkinson",         skildring: "lettlesen",    tekst: "atkinson" },
+  nunito:       { namn: "Nunito",           skildring: "rund",         tekst: "nunito" },
+  quicksand:    { namn: "Quicksand",        skildring: "mjuk og rund", tekst: "quicksand" },
+  montserrat:   { namn: "Montserrat",       skildring: "kraftig",      tekst: "montserrat" },
+  oswald:       { namn: "Oswald",           skildring: "smal, plakat", tekst: "oswald" },
+  sourcesans:   { namn: "Source Sans",      skildring: "nøytral",      tekst: "sourcesans" },
+  lora:         { namn: "Lora",             skildring: "med serifar",  tekst: "lora" },
+  merriweather: { namn: "Merriweather",     skildring: "klassisk",     tekst: "merriweather" },
+  playfair:     { namn: "Playfair Display", skildring: "elegant",      tekst: "playfair" },
+  robotoslab:   { namn: "Roboto Slab",      skildring: "skrivemaskin", tekst: "robotoslab" },
+  // Skriftpar: ei skrift til overskrifter og ei til teksten
+  "par-elegant":    { par: true, namn: "Elegant",    skildring: "Playfair + Source Sans", overskrift: "playfair",     titlar: "playfair",     tekst: "sourcesans" },
+  "par-plakat":     { par: true, namn: "Plakat",     skildring: "Oswald + Lora",                  overskrift: "oswald",       titlar: "oswald",       tekst: "lora" },
+  "par-klassisk":   { par: true, namn: "Klassisk",   skildring: "Merriweather + Atkinson",        overskrift: "merriweather", titlar: "merriweather", tekst: "atkinson" },
+  "par-handskrift": { par: true, namn: "Handskrift", skildring: "Dancing Script + Lora",          overskrift: "dancing",      titlar: "lora",         tekst: "lora" },
+  "par-spel":       { par: true, namn: "Spel",       skildring: "Pixelify Sans + Nunito",         overskrift: "pixelify",     titlar: "pixelify",     tekst: "nunito" },
+};
+const fontstabel = id => `"${FONTAR[id][0]}", "Ubuntu", "DejaVu Sans", system-ui, sans-serif`;
 function brukSkrift(namn) {
   const s = SKRIFTER[namn];
   if (!s) return;
-  const lenkje = document.createElement("link");
-  lenkje.rel = "stylesheet";
-  lenkje.href = `https://fonts.googleapis.com/css2?family=${s[1]}&display=swap`;
-  document.head.append(lenkje);
-  document.documentElement.style.setProperty("--skrift", `"${s[0]}", "Ubuntu", "DejaVu Sans", system-ui, sans-serif`);
+  const bruk = new Set([s.tekst, s.overskrift, s.titlar].filter(Boolean));
+  for (const id of bruk) {
+    const lenkje = document.createElement("link");
+    lenkje.rel = "stylesheet";
+    lenkje.href = `https://fonts.googleapis.com/css2?family=${FONTAR[id][1]}&display=swap`;
+    document.head.append(lenkje);
+  }
+  const rot = document.documentElement.style;
+  rot.setProperty("--skrift", fontstabel(s.tekst));
+  if (s.overskrift) rot.setProperty("--skrift-overskrift", fontstabel(s.overskrift));
+  if (s.titlar) rot.setProperty("--skrift-tittel", fontstabel(s.titlar));
 }
 
 // =====================================================================
@@ -2250,38 +2281,52 @@ function startByggjar(startCfg) {
   const skriftSelect = document.getElementById("skrift");
   const skriftknapp = document.getElementById("skriftknapp");
   const skriftmeny = document.getElementById("skriftmeny");
-  const SKRIFTVAL = [["standard", "Standard", "skrifta på skjermen", null],
-    ...Object.entries(SKRIFTER).map(([id, [familie, , namn, skildring]]) => [id, namn, skildring, familie])];
+  // [id, namn, skildring, skrift til namnet, skrift til skildringa]
+  const SKRIFTVAL = [["standard", "Standard", "skrifta på skjermen", null, null],
+    ...Object.entries(SKRIFTER).map(([id, x]) => [id, x.namn, x.skildring, x.overskrift || x.tekst, x.par ? x.tekst : null])];
   for (const [id, namn] of SKRIFTVAL) skriftSelect.append(new Option(namn, id));
-  const skriftstil = familie => familie ? `"${familie}", var(--skrift)` : "var(--skrift)";
-  // Byggjaren lastar berre bokstavane i namna, så førehandsvisinga blir lita å laste ned
+  const skriftstil = id => id ? `"${FONTAR[id][0]}", var(--skrift)` : "var(--skrift)";
+  // Byggjaren lastar berre bokstavane som står i lista, så førehandsvisinga blir lita å laste ned
   let skrifterLasta = false;
   function lastSkriftprøver() {
     if (skrifterLasta) return;
     skrifterLasta = true;
-    for (const [familie, , namn] of Object.values(SKRIFTER)) {
+    const tekst = {};
+    for (const [, namn, skildring, fNamn, fSkildring] of SKRIFTVAL) {
+      if (fNamn) tekst[fNamn] = (tekst[fNamn] || "") + namn;
+      if (fSkildring) tekst[fSkildring] = (tekst[fSkildring] || "") + skildring;
+    }
+    for (const [id, bokstavar] of Object.entries(tekst)) {
       const l = document.createElement("link");
       l.rel = "stylesheet";
-      l.href = `https://fonts.googleapis.com/css2?family=${familie.replace(/ /g, "+")}&text=${encodeURIComponent(namn)}&display=swap`;
+      l.href = `https://fonts.googleapis.com/css2?family=${FONTAR[id][0].replace(/ /g, "+")}&text=${encodeURIComponent([...new Set(bokstavar)].join(""))}&display=swap`;
       document.head.append(l);
     }
   }
   function teiknSkriftknapp() {
-    const [, namn, , familie] = SKRIFTVAL.find(x => x[0] === skriftSelect.value) || SKRIFTVAL[0];
+    const [, namn, , fNamn] = SKRIFTVAL.find(x => x[0] === skriftSelect.value) || SKRIFTVAL[0];
     const n = skriftknapp.querySelector(".temanamn");
-    n.textContent = namn; n.style.fontFamily = skriftstil(familie);
-    if (familie) lastSkriftprøver();
+    n.textContent = namn; n.style.fontFamily = skriftstil(fNamn);
+    if (fNamn) lastSkriftprøver();
   }
   function teiknSkriftmeny() {
     skriftmeny.replaceChildren();
-    for (const [id, namn, skildring, familie] of SKRIFTVAL) {
+    let førePar = true;
+    for (const [id, namn, skildring, fNamn, fSkildring] of SKRIFTVAL) {
+      if (førePar && SKRIFTER[id] && SKRIFTER[id].par) {
+        førePar = false;
+        const h = document.createElement("div");
+        h.className = "skriftgruppe"; h.textContent = "Skriftpar";
+        skriftmeny.append(h);
+      }
       const valt = id === skriftSelect.value;
       const b = document.createElement("button");
       b.type = "button"; b.className = "temaalternativ";
       b.setAttribute("role", "menuitemradio"); b.setAttribute("aria-checked", valt);
       b.innerHTML = `<span></span><span class="temadato"></span>${valt ? '<span class="ikon hake" aria-hidden="true"></span>' : ""}`;
-      b.children[0].textContent = namn; b.children[0].style.fontFamily = skriftstil(familie);
+      b.children[0].textContent = namn; b.children[0].style.fontFamily = skriftstil(fNamn);
       b.children[1].textContent = skildring;
+      if (fSkildring) { b.children[1].style.fontFamily = skriftstil(fSkildring); b.children[1].style.fontSize = "13.5px"; }
       b.addEventListener("click", () => {
         skriftSelect.value = id;
         skriftSelect.dispatchEvent(new Event("change", { bubbles: true }));
