@@ -542,10 +542,10 @@ function erAktuell(tema, dato = new Date()) {
 // Aksentfargen blir òg brukt som tekstfarge (linja under overskrifta). Mange
 // aksentfargar er laga for flater, og blir for svake som tekst – særleg raudt
 // på mørk bakgrunn. Har fargen for låg kontrast mot bakgrunnen, blir han
-// blanda gradvis mot tekstfargen til kontrasten er god nok. Kravet er 5:1,
-// litt over WCAG-kravet for vanleg tekst (4,5:1), sidan teksten er lita og
-// blir lesen på avstand. Fargen på flatene blir ikkje endra.
-function lesbarAksent(aksent, bakgrunn, tekst, krav = 5) {
+// blanda gradvis mot tekstfargen til kontrasten er god nok. Kravet er 6:1,
+// godt over WCAG-kravet for vanleg tekst (4,5:1): teksten er lita, blir lesen
+// på avstand, og omslaget bak kan trekkje kontrasten ned. Flatene blir ikkje endra.
+function lesbarAksent(aksent, bakgrunn, tekst, krav = 6) {
   const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const lum = h => {
     const [r, g, b] = rgb(h).map(c => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
