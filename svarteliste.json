@@ -1,0 +1,6 @@
+{
+  "_forklaring": "Bøker som aldri skal visast på infoskjermane, til dømes på grunn av omslaget. Karusellane hoppar over tittelnummera («id»). Blir endra frå oversiktssida.",
+  "bøker": [
+    {"id":"36092","tittel":"Kurt quo vadis?","forfattar":"Erlend Loe","år":"1998","omslag":"https://krydder.bib.no/0189/636120.bilde.1697718018.x.jpg","dato":"2026-10-29"}
+  ]
+}
