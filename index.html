@@ -105,6 +105,9 @@
   /* Forbodne bøker: djup lilla og gult frå kampanjelogoen, som står øvst */
   :root[data-tema="forbodne"] { --bakgrunn: #1d1430; --tekst: #fbf6e4; --dempa: #cfc6dd; --aksent: #faee9c; --aksent-tekst: #3d2670; --skugge: 29,20,48; --reserve-a: #4f338a; --reserve-b: #26193f; }
   .forbodne-logo { display: block; width: 50vw; height: auto; margin-bottom: 1.6vh; filter: drop-shadow(0 0 .3vw rgba(250,238,156,.45)); }
+  /* Kvinnedagen (8. mars): djup plomme og rosa frå kvinnesymbolet, som står øvst til høgre */
+  :root[data-tema="kvinnedagen"] { --bakgrunn: #220e1d; --tekst: #fff3f7; --dempa: #dcc0cc; --aksent: #e04a7d; --aksent-tekst: #ffffff; --skugge: 34,14,29; --reserve-a: #8f2850; --reserve-b: #331528; }
+  :root[data-tema="kvinnedagen"] #visning header { padding-right: 20vw; }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
   :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
   :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
@@ -715,6 +718,7 @@
               <option value="sommarles">Sommarles</option>
               <option value="berekraft">Berekraftsveka (Veke 17)</option>
               <option value="forbodne">Forbodne bøker</option>
+              <option value="kvinnedagen">Kvinnedagen (8. mars)</option>
               <option value="spel">Spel (pikselstil, t.d. Bibliobattles)</option>
             </optgroup>
           </select>
@@ -1241,6 +1245,14 @@ function lagPynt(tema) {
     }
   }
 
+  if (tema === "kvinnedagen") {
+    // Kvinnesymbolet med knytt neve øvst til høgre, plassert som flagga i dei andre temaa
+    const logo = document.createElement("img");
+    logo.src = "kvinnedagen.png"; logo.alt = "";
+    logo.style.cssText = "position:absolute; right:6vw; top:4vh; width:14vw; height:auto;";
+    pynt.append(logo);
+  }
+
   if (tema === "natt") {
     // Stjernehimmel som blinkar, og ein smal månesigd
     for (let i = 0; i < 70; i++) {
@@ -1256,7 +1268,7 @@ function lagPynt(tema) {
 }
 
 const TEMA = ["fjord", "skog", "lys", "natt", "kontrast", "libry", "vinter", "var", "sommar", "haust",
-  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles", "spel", "berekraft", "forbodne"];
+  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles", "spel", "berekraft", "forbodne", "kvinnedagen"];
 
 function startVisning(cfg) {
   document.body.className = "vis";
