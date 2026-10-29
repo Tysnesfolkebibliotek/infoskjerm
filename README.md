@@ -11,6 +11,7 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | `oppsett.json` | Kva kvar skjerm viser, kor lenge og når. Blir endra frå oversiktssida |
 | `emneord.json` | Emneord og sjangrar til forslaga i byggjaren. Blir laga med knappen på oversiktssida |
 | `forrigebok.json` | Appellfaktorar frå Forrige bok for bøkene i samlinga, per tittelnummer. Blir laga med same knappen |
+| `svarteliste.json` | Bøker som aldri skal visast på skjermane. Blir endra på oversiktssida |
 | `skjerm/rotasjon.html` | Fila som køyrer på kvar skjerm. Les `oppsett.json` og vekslar mellom sidene |
 | `skjerm/skjermbilete.py` | Tek eit bilete av det skjermen viser, over SSH |
 | `skjerm/hent_nytt.py`, `skjerm/hent_sakprosa.py` | Lagar dei gamle lokale karusellane, som no berre er reserve |
@@ -86,6 +87,20 @@ Karusellar som brukar dei, viser kjelda nedst.
 Karusellane lagrar boklista i nettlesaren og hentar ny med det intervallet som
 står i «Hent nytt» (standard 6 timar). Lister som ikkje er brukte på 30 dagar,
 blir sletta automatisk.
+
+## Svartelista bøker
+
+Bøker som ikkje skal visast på skjermane, til dømes fordi omslaget kan verke
+støytande, kan svartelistast i boksen **Svartelista bøker** på oversiktssida:
+søk på tittel (eller forfattar eller tittelnummer), skriv eventuelt ein grunn,
+og klikk **Svartelist**. **Frigi** tek boka av lista igjen. Kvar endring blir
+lagra med ein gong i `svarteliste.json` (krev nøkkelen).
+
+Lista gjeld tittelnummer, så same tittel i ei anna utgåve (med anna omslag)
+må svartelistast for seg. Karusellane hoppar over bøkene både når dei hentar
+nye bøker og i lister dei alt har lagra, og hentar svartelista på nytt kvart
+tiande minutt. Ei bok forsvinn difor frå skjermen utan at karusellen må hente
+alt på nytt, men publiseringa på GitHub kan ta nokre minutt.
 
 ## Når noko går gale
 

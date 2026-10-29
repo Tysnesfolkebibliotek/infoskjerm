@@ -1384,9 +1384,12 @@ function startVisning(cfg) {
   function fortset() { if (!tidtakar && køyrer && titlar.length) neste(); }
 
   // Byt til ny liste utan å hoppe tilbake til første bok
+  let heileLista = [];   // lista slik ho vart henta, før svartelista bøker er tekne bort
   function brukListe(nye) {
     const varTom = !titlar.length;
-    titlar = nye;
+    heileLista = nye;
+    titlar = nye.filter(t => !svartelista(t.id));
+    if (!titlar.length) { pause(); visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava."); return; }
     if (RULL) { const gjekk = !!rullAnim; stoppRull(); rullSpor = null; if (gjekk || (varTom && køyrer)) startRull(); return; }
     titlar.forEach(t => forlast(t.omslag));
     const sist = titlar.findIndex(t => String(t.id) === lesSist());
@@ -1449,11 +1452,19 @@ function startVisning(cfg) {
   if (forGammal) oppdater();
   setInterval(oppdater, OPPDATER_MIN * 60000);
 
+  // Svartelista: hent ho på nytt kvart tiande minutt og når karusellen skal
+  // visast att, og ta bort bøker som har kome på lista sidan sist.
+  async function sjekkSvarteliste(maksAlder) {
+    if (await lastSvarteliste(maksAlder) && heileLista.length) { brukListe(heileLista); meldTilRotasjon(); }
+  }
+  if (!forGammal) sjekkSvarteliste(0);
+  setInterval(() => sjekkSvarteliste(0), 10 * 60 * 1000);
+
   // Inne i rotasjonssida ventar vi på beskjed; åleine startar vi sjølv.
   // (Same beskjedar som Nyheiter-sida brukar i dag.)
   if (iRotasjon) {
     window.addEventListener("message", e => {
-      if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); }
+      if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); sjekkSvarteliste(5 * 60 * 1000); }
       if (e.data && e.data.nyheiter === "skjul") { køyrer = false; pause(); }
     });
     window.parent.postMessage({ nyheiter: "klar" }, "*");
@@ -1671,7 +1682,42 @@ let utelatne = {};
 let nåddeGrense = false;   // stoppa fordi «Tal bøker» var nådd, før alle treff var sjekka
 const utelat = grunn => { utelatne[grunn] = (utelatne[grunn] || 0) + 1; return false; };
 
+// ---- Svartelista (svarteliste.json) ----------------------------------------
+// Bøker som aldri skal visast på skjermane, til dømes på grunn av omslaget.
+// Lista blir endra på oversiktssida. Karusellane hoppar over bøkene både når
+// dei hentar nye bøker og i lister dei alt har lagra, og hentar lista på nytt
+// jamleg, så ei bok forsvinn frå skjermen utan at karusellen må hente alt.
+// Siste kjende liste blir hugsa i nettlesaren i tilfelle GitHub er nede.
+const SVART_LAGER = "infoskjerm-svarteliste";
+let svarte = new Set(), svartHenta = 0, svartLasting = null;
+try { svarte = new Set(JSON.parse(localStorage.getItem(SVART_LAGER) || "[]").map(String)); } catch (e) {}
+const svartelista = id => svarte.has(String(id));
+// Gir true om lista vart endra. «maksAlder» (ms): ikkje hent om lista er ferskare
+function lastSvarteliste(maksAlder = 0) {
+  if (svartHenta && Date.now() - svartHenta < maksAlder) return Promise.resolve(false);
+  if (!svartLasting) svartLasting = (async () => {
+    try {
+      const svar = await fetch(new URL("svarteliste.json", location.href).href + "?t=" + Date.now(),
+        { cache: "no-store", signal: AbortSignal.timeout(10000) });
+      let nye;
+      if (svar.status === 404) nye = new Set();                // fila finst ikkje enno
+      else if (!svar.ok) throw new Error("HTTP " + svar.status);
+      else nye = new Set(((await svar.json()).bøker || []).map(b => String(b.id)));
+      svartHenta = Date.now();
+      const endra = nye.size !== svarte.size || [...nye].some(id => !svarte.has(id));
+      svarte = nye;
+      try { localStorage.setItem(SVART_LAGER, JSON.stringify([...nye])); } catch (e) {}
+      return endra;
+    } catch (e) {
+      console.warn("Fekk ikkje henta svartelista:", e.message);   // brukar den vi har
+      return false;
+    } finally { svartLasting = null; }
+  })();
+  return svartLasting;
+}
+
 function førehand(post, cfg) {
+  if (svartelista(post.id)) return utelat("svartelista");
   const d = post.sru_recordData || {};
   // Utgjevingsår: «2026», «[2025]» og «c2019» gir alle eit årstal
   const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
@@ -1701,6 +1747,7 @@ function førehand(post, cfg) {
 
 // Full vurdering med eksemplarinfo. Gir ei rydda bok, eller null.
 function vurder(post, avd, eks, cfg) {
+  if (svartelista(post.id)) return utelat("svartelista") || null;
   const d = post.sru_recordData || {};
   const e = finnEksemplar(eks, post.id, avd);
   // Boka må ha eit fysisk eksemplar i avdelinga. Det sorterer ut e-bøker, men
@@ -1750,6 +1797,7 @@ function flett(lister) {
 const TAK_ALLE = 500;
 async function hentBøker(cfg, framdrift) {
   utelatne = {}; nåddeGrense = false;
+  await lastSvarteliste(60 * 1000);
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
   if (cfg.kjelde === "utval") return forrigebokBerik(await hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
   if (cfg.kjelde === "likte") return forrigebokBerik(await hentLikte(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);

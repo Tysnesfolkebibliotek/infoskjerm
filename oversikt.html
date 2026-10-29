@@ -97,6 +97,19 @@
   .forevis .linje span { display: flex; gap: 8px; flex-shrink: 0; }
   .forevis .ramme { overflow: hidden; border-radius: 10px; background: #000; box-shadow: 0 0 0 6px #222, 0 10px 40px rgba(0,0,0,.6); }
   .forevis iframe { width: 1080px; height: 1920px; border: 0; transform-origin: 0 0; display: block; background: #000; }
+  /* Svartelista */
+  details.svart summary .merke { margin-left: 6px; font-weight: 400; }
+  .svartsok { display: flex; gap: 8px; margin: 10px 0 6px; flex-wrap: wrap; }
+  .svartsok input { flex: 1 1 220px; margin: 0 !important; }
+  details.nokkel h3 { font-size: 14px; margin: 18px 0 6px; }
+  ul.bokliste { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  ul.bokliste li { display: flex; gap: 10px; align-items: center; border: 1px solid var(--strek); border-radius: 10px; padding: 6px 10px; background: var(--seinare-bg); }
+  ul.bokliste img, ul.bokliste .utan { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; flex-shrink: 0; background: var(--strek); }
+  ul.bokliste .tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  ul.bokliste .tekst b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ul.bokliste .tekst span { font-size: 12.5px; color: var(--dempa); }
+  ul.bokliste .tekst .grunn { font-style: italic; }
+  ul.bokliste button { flex-shrink: 0; }
   code { font-size: 12.5px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
 </style>
 </head>
@@ -108,6 +121,22 @@
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
 
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
+
+  <details class="nokkel svart" id="svartboks">
+    <summary>Svartelista bøker <span class="merke ikkje" id="svarttal" hidden></span></summary>
+    <p class="hjelp">Bøker på denne lista blir aldri viste på skjermane, til dømes fordi omslaget kan verke støytande. Kvar endring blir lagra med ein gong og når skjermane innan om lag ein halvtime, ofte raskare. Krev nøkkelen nedanfor.</p>
+    <div class="svartsok">
+      <input type="search" id="svartsok" placeholder="Søk på tittel (eller forfattar, tittelnummer)" autocomplete="off">
+      <button type="button" id="svartknapp">Søk</button>
+    </div>
+    <div class="svartsok">
+      <input type="text" id="svartgrunn" placeholder="Grunn (valfritt), til dømes «støytande omslag»" autocomplete="off">
+    </div>
+    <p class="hjelp" id="svartstatus"></p>
+    <ul class="bokliste" id="svarttreff"></ul>
+    <h3>På lista</h3>
+    <ul class="bokliste" id="svartliste"><li>Hentar lista …</li></ul>
+  </details>
 
   <details class="nokkel" id="emneboks">
     <summary>Emneordlista og Forrige bok-indeksen</summary>
@@ -950,6 +979,142 @@ function telEmne(post, avd, tabellar) {
 }
 $("emneknapp").addEventListener("click", oppdaterEmneord);
 $("emneboks").addEventListener("toggle", () => { if ($("emneboks").open) { visEmneinfo(); visFbInfo(); } }, { once: true });
+
+// ---- Svartelista (svarteliste.json) ----------------------------------------
+// Bøker som aldri skal visast på skjermane. Karusellane les fila og hoppar
+// over tittelnummera på lista. Kvar endring blir lagra med ein gong: vi les
+// fila frå GitHub, endrar ho og lagrar, så to maskiner ikkje skriv over
+// kvarandre.
+const SVART_API = `https://api.github.com/repos/${REPO}/contents/svarteliste.json`;
+const SVART_AVD = ["tyfv", "tyfb"];
+const SVART_FORKLARING = "Bøker som aldri skal visast på infoskjermane, til dømes på grunn av omslaget. Karusellane hoppar over tittelnummera («id»). Blir endra frå oversiktssida.";
+let svarteBøker = [];      // [{ id, tittel, forfattar, år, omslag, grunn, dato }]
+let svartLagrar = false;
+
+const idagTekst = () => { const n = new Date(); return new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+// Les lista frå GitHub. Gir { bøker, sha } (sha er null om fila ikkje finst enno)
+async function lesSvarteliste(nøkkel) {
+  const svar = await fetch(SVART_API + "?t=" + Date.now(), { cache: "no-store",
+    headers: { Accept: "application/vnd.github+json", ...(nøkkel ? { Authorization: "Bearer " + nøkkel } : {}) } });
+  if (svar.status === 404) return { bøker: [], sha: null };
+  if (svar.status === 401 && nøkkel) return lesSvarteliste("");   // utgått nøkkel: les utan
+  if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
+  const d = await svar.json();
+  return { bøker: JSON.parse(frå64(d.content)).bøker || [], sha: d.sha };
+}
+
+function svartJson(bøker) {
+  // Éi bok per linje, så historikken på GitHub viser tydeleg kva som er endra
+  const linjer = bøker.map(b => "    " + JSON.stringify(b));
+  return `{\n  "_forklaring": ${JSON.stringify(SVART_FORKLARING)},\n  "bøker": [${linjer.length ? "\n" + linjer.join(",\n") + "\n  " : ""}]\n}\n`;
+}
+
+// Gjer ei endring på den ferskaste utgåva av lista og lagrar. «endring» får
+// lista og gir den nye lista. Prøver éin gong til om nokon lagra samstundes.
+async function endreSvarteliste(endring, melding) {
+  const nøkkel = lesNøkkel(), st = $("svartstatus");
+  if (!nøkkel) { $("nokkelboks").open = true; st.textContent = "Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor."; return false; }
+  if (svartLagrar) return false;
+  svartLagrar = true;
+  document.querySelectorAll("#svartboks ul button").forEach(b => b.disabled = true);
+  st.textContent = "Lagrar …";
+  try {
+    for (let forsøk = 0; forsøk < 2; forsøk++) {
+      const { bøker, sha } = await lesSvarteliste(nøkkel);
+      const nye = endring(bøker.map(b => ({ ...b })));
+      const svar = await fetch(SVART_API, { method: "PUT",
+        headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: melding, content: b64(svartJson(nye)), ...(sha ? { sha } : {}), author: FORFATTAR, committer: FORFATTAR }) });
+      if ((svar.status === 409 || svar.status === 422) && forsøk === 0) continue;
+      if (svar.status === 401 || svar.status === 403) {
+        $("nokkelboks").open = true;
+        throw new Error(svar.status === 401 ? "Nøkkelen er utgått eller sletta. Lag ein ny (sjå nedanfor)." : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.");
+      }
+      if (!svar.ok) throw new Error(`Lagringa feila (GitHub svarte ${svar.status}).`);
+      svarteBøker = nye;
+      st.textContent = "Lagra. Skjermane tek i bruk endringa innan om lag ein halvtime, ofte raskare.";
+      return true;
+    }
+    throw new Error("Nokon andre lagra lista samstundes. Prøv igjen.");
+  } catch (e) {
+    st.textContent = e.message;
+    return false;
+  } finally {
+    svartLagrar = false;
+    teiknSvarteliste(); teiknSvartTreff();
+  }
+}
+
+function bokRad(b, ...knappar) {
+  const bilete = b.omslag ? el("img", { src: b.omslag, alt: "", loading: "lazy", onerror: e => e.target.replaceWith(el("div", { class: "utan" })) })
+    : el("div", { class: "utan" });
+  const tekst = el("div", { class: "tekst" },
+    el("b", { title: b.tittel }, b.tittel || "Tittelnr. " + b.id),
+    el("span", {}, [b.forfattar, b.år, "tittelnr. " + b.id].filter(Boolean).join(" · ")));
+  if (b.grunn || b.dato) tekst.append(el("span", { class: b.grunn ? "grunn" : "" },
+    [b.grunn, b.dato ? "lagt til " + b.dato.split("-").reverse().join(".") : ""].filter(Boolean).join(" – ")));
+  return el("li", {}, bilete, tekst, ...knappar);
+}
+
+function teiknSvarteliste() {
+  const tal = $("svarttal");
+  tal.hidden = !svarteBøker.length;
+  tal.textContent = svarteBøker.length;
+  const sorterte = [...svarteBøker].sort((a, b) => (a.tittel || "").localeCompare(b.tittel || "", "nn"));
+  $("svartliste").replaceChildren(...(sorterte.length ? sorterte.map(b => bokRad(b,
+    el("button", { type: "button", disabled: svartLagrar, title: "Ta boka av lista, så ho kan visast på skjermane igjen",
+      onclick: () => endreSvarteliste(l => l.filter(x => String(x.id) !== String(b.id)), `Frigav «${b.tittel}» frå svartelista`) }, "Frigi")))
+    : [el("li", {}, el("span", { class: "hjelp" }, "Ingen bøker er svartelista."))]));
+}
+
+// Søkjetreffa ligg her, så knappane kan teiknast på nytt etter lagring
+let svartTreff = [];
+function teiknSvartTreff() {
+  $("svarttreff").replaceChildren(...svartTreff.map(b => {
+    const på = svarteBøker.some(x => String(x.id) === b.id);
+    return bokRad(b, el("button", { type: "button", class: på ? "" : "fare", disabled: på || svartLagrar,
+      title: på ? "Boka er alt på lista" : "Legg boka på svartelista",
+      onclick: () => {
+        const grunn = $("svartgrunn").value.trim();
+        endreSvarteliste(l => l.some(x => String(x.id) === b.id) ? l : [...l, { ...b, ...(grunn ? { grunn } : {}), dato: idagTekst() }],
+          `Svartelista «${b.tittel}»`);
+      } }, på ? "Svartelista" : "Svartelist"));
+  }));
+}
+
+async function søkSvart() {
+  const st = $("svartstatus"), tekst = $("svartsok").value.trim();
+  if (!tekst) return;
+  if ($("emneknapp").disabled) { st.textContent = "Vent til oppdateringa av emneordlista er ferdig."; return; }
+  st.textContent = "Søkjer …";
+  svartTreff = []; teiknSvartTreff();
+  let query;
+  if (/^\d+$/.test(tekst)) query = `bibliofil.ccl="tnr=${tekst}"`;
+  else {
+    const ord = tekst.replace(/["\\]/g, " ").split(/\s+/).filter(o => o.length > 1);
+    if (!ord.length) { st.textContent = "Skriv minst to bokstavar."; return; }
+    const cql = ord.map((o, i) => i === ord.length - 1 && o.length > 2 ? `${o}*` : `"${o}"`).join(" and ");
+    query = `${cql} and bibliofil.ccl="avd=${SVART_AVD.join("|")}" and norzig.materialType=l`;
+  }
+  try {
+    const d = await sruJsonp({ query, startRecord: 1, maximumRecords: 50 }, 30000);
+    const poster = (d && d.feed && d.feed.entry) || [];
+    svartTreff = poster.map(p => {
+      const r = p.sru_recordData || {};
+      return { id: String(p.id), tittel: ryddTittel(r.bsdc_title || "")[0] || "", forfattar: snuNamn(forfattarFrå(r)),
+        år: ((r.bsdc_date || "").match(/\d{4}/) || [""])[0], omslag: r.bs_krydderbildeurl || "" };
+    });
+    st.textContent = svartTreff.length ? `${svartTreff.length} treff${svartTreff.length === 50 ? " (dei 50 første – skriv fleire ord for å snevre inn)" : ""}. Same tittel kan ha fleire utgåver med kvar sitt omslag.` : "Ingen treff.";
+    teiknSvartTreff();
+  } catch (e) { st.textContent = e.message + ". Prøv igjen."; }
+}
+
+$("svartknapp").addEventListener("click", søkSvart);
+$("svartsok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkSvart(); } });
+lesSvarteliste(lesNøkkel())
+  .then(l => { svarteBøker = l.bøker; teiknSvarteliste(); })
+  .catch(e => $("svartliste").replaceChildren(el("li", {}, "Fekk ikkje henta svartelista: " + e.message)));
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);
