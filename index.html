@@ -233,6 +233,24 @@
   .rull-spor .omslag-ramme { flex: none; height: 40vh; }
   .rull-spor .omslag, .rull-spor .reserve { height: 100%; width: auto; max-width: 80vw; flex: none; object-fit: contain; }
   .rull-spor .omtale { display: block; -webkit-line-clamp: unset; overflow: visible; max-width: 78vw; }
+  /* ---- Vifte: forrige og neste bok ligg dempa og skråstilte bak den som blir vist ---- */
+  /* Kvar bok har ein plass: pos-v (forrige), pos-m (midten), pos-h (neste), og        */
+  /* pos-utv / pos-innh / pos-uth utanfor. Berre omslaget flyttar seg; teksten tonar. */
+  :root[data-visning="vifte"] { --vifte-lys: .38; }
+  :root[data-visning="vifte"] .bok.bok { opacity: 1; transform: none; transition: none; z-index: 1; }
+  :root[data-visning="vifte"] .bok .omslag-ramme { transform-origin: 50% 60%; will-change: transform, opacity;
+    transition: transform 1.4s cubic-bezier(.4, 0, .2, 1), opacity 1.4s ease, filter 1.4s ease; }
+  :root[data-visning="vifte"] .bok .info { opacity: 0; transition: opacity .7s ease; }
+  :root[data-visning="vifte"] .bok.pos-m { z-index: 3; }
+  /* Boka som kjem fram i midten blir tett med ein gong, så dei andre ikkje skin gjennom */
+  :root[data-visning="vifte"] .bok.pos-m .omslag-ramme { transition: transform 1.4s cubic-bezier(.4, 0, .2, 1), opacity .4s ease, filter .9s ease; }
+  :root[data-visning="vifte"] .bok.pos-m .info { opacity: 1; transition-delay: .6s; }
+  :root[data-visning="vifte"] .bok.pos-v, :root[data-visning="vifte"] .bok.pos-h { z-index: 2; }
+  :root[data-visning="vifte"] .pos-v .omslag-ramme { transform: translate(-24vw, 1.5vh) rotate(-7deg) scale(.78); opacity: var(--vifte-lys); filter: saturate(.25); }
+  :root[data-visning="vifte"] .pos-h .omslag-ramme { transform: translate(24vw, 1.5vh) rotate(7deg) scale(.78); opacity: var(--vifte-lys); filter: saturate(.25); }
+  :root[data-visning="vifte"] .pos-utv .omslag-ramme { transform: translate(-44vw, 3vh) rotate(-12deg) scale(.62); opacity: 0; filter: saturate(.25); }
+  :root[data-visning="vifte"] :is(.pos-innh, .pos-uth) .omslag-ramme { transform: translate(44vw, 3vh) rotate(12deg) scale(.62); opacity: 0; filter: saturate(.25); }
+  :root[data-visning="vifte"] .bok:not(.pos-m) .omslag { box-shadow: 0 2vh 4vh rgba(0,0,0,.5); }
   /* ---- Overgangar mellom bøkene («overgang=» i lenkja). «.ut» er boka som går. ---- */
   :root[data-overgang="kryss"] .bok:not(.synleg) { transform: none; }
   :root[data-overgang="glid"] .bok:not(.synleg) { transform: translateX(14vw); }
@@ -282,7 +300,7 @@
   .melding .liten { font-size: 2.4vw; opacity: .8; }
   .snurr { width: 7vw; height: 7vw; border-radius: 50%; border: .7vw solid var(--spor); border-top-color: var(--aksent); animation: snurr 1s linear infinite; }
   @keyframes snurr { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe { transition-duration: .01s; } .bakteppe.synleg { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe, .bok .omslag-ramme, .bok .info { transition-duration: .01s !important; } .bakteppe.synleg { animation: none !important; } }
 
   /* ================================================================== */
   /* BYGGJAR                                                            */
@@ -723,6 +741,7 @@
           <label for="visingsmate">Visingsmåte</label>
           <select id="visingsmate" name="visning">
             <option value="">Éi bok om gongen</option>
+            <option value="vifte">Vifte (forrige og neste bok bak)</option>
             <option value="rull">Rulletekst</option>
           </select>
         </div>
@@ -743,7 +762,7 @@
       </div>
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
       <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett», «Godt driv»)</label>
-      <p class="hjelp">Rulletekst viser alle bøkene etter kvarandre med heile omtalen.</p>
+      <p class="hjelp">Vifte viser forrige og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen.</p>
     </details>
 
     <div class="b-lenkje">
@@ -1347,17 +1366,89 @@ function startVisning(cfg) {
     gjeldandeIdx = funnen;
     const t = titlar[funnen];
     gjeldande = t;
-    const bok = lagBok(t);
-    scene.append(bok);
-    requestAnimationFrame(() => requestAnimationFrame(() => bok.classList.add("synleg")));
-    if (førre) { const g = førre; g.classList.remove("synleg"); g.classList.add("ut"); setTimeout(() => g.remove(), 1200); }
-    else scene.querySelectorAll(".melding").forEach(m => m.remove());
-    førre = bok;
+    if (VIFTE) visVifte(funnen);
+    else {
+      const bok = lagBok(t);
+      scene.append(bok);
+      requestAnimationFrame(() => requestAnimationFrame(() => bok.classList.add("synleg")));
+      if (førre) { const g = førre; g.classList.remove("synleg"); g.classList.add("ut"); setTimeout(() => g.remove(), 1200); }
+      else scene.querySelectorAll(".melding").forEach(m => m.remove());
+      førre = bok;
+    }
     avdelingFelt.textContent = t.etikett || "";
     visBakteppe(t.omslag);
     startFramdrift();
     i++;
     tidtakar = setTimeout(() => { lagreSist(String(t.id)); neste(); }, SEK * 1000);
+  }
+
+  // ---- vifte -----------------------------------------------------------
+  // Boka i midten blir vist som vanleg. Forrige bok ligg dempa til venstre og
+  // neste bok til høgre. Ved bytte glir heile vifta eitt hakk mot venstre.
+  const VIFTE = cfg.visning === "vifte";
+  if (VIFTE) document.documentElement.dataset.visning = "vifte";
+  const PLASSAR = ["pos-v", "pos-m", "pos-h", "pos-utv", "pos-innh", "pos-uth"];
+  const plasser = (bok, plass) => { bok.classList.remove(...PLASSAR); bok.classList.add(plass); };
+  const viftebok = (t, plass) => { const b = lagBok(t); b.dataset.id = String(t.id); plasser(b, plass); scene.append(b); return b; };
+  const gåUt = (bok, plass) => { plasser(bok, plass); setTimeout(() => bok.remove(), 1500); };
+  // Neste eller forrige bok frå idx som er klar (-1 om det ikkje finst nokon annan)
+  function klarFrå(idx, steg) {
+    for (let n = 1; n < titlar.length; n++) {
+      const k = ((idx + steg * n) % titlar.length + titlar.length) % titlar.length;
+      if (klar(titlar[k])) return k;
+    }
+    return -1;
+  }
+  // Legg til nabobøker som mangla då vifta vart bygd, med ei rolig inntoning
+  function fyllVifte(funnen, m) {
+    if (!m.isConnected || !m.classList.contains("pos-m") || !titlar[funnen] || String(titlar[funnen].id) !== m.dataset.id) return;
+    let v = scene.querySelector(".bok.pos-v");
+    if (!v) {
+      const f = klarFrå(funnen, -1);
+      if (f >= 0) { v = viftebok(titlar[f], "pos-utv"); v.offsetWidth; plasser(v, "pos-v"); }
+    }
+    if (!scene.querySelector(".bok.pos-h")) {
+      const n = klarFrå(funnen, 1);
+      if (n >= 0 && (!v || String(titlar[n].id) !== v.dataset.id)) { const h = viftebok(titlar[n], "pos-innh"); h.offsetWidth; plasser(h, "pos-h"); }
+    }
+  }
+  function visVifte(funnen) {
+    const t = titlar[funnen], id = String(t.id);
+    scene.querySelectorAll(".melding").forEach(m => m.remove());
+    let v = scene.querySelector(".bok.pos-v"), m = scene.querySelector(".bok.pos-m"), h = scene.querySelector(".bok.pos-h");
+    if (!m) {
+      // Første bok (eller etter ei melding): byggjer vifta utan rørsle
+      scene.querySelectorAll(".bok").forEach(b => b.remove());
+      m = viftebok(t, "pos-m");
+      const f = klarFrå(funnen, -1);
+      if (f >= 0) v = viftebok(titlar[f], "pos-v");
+      const n = klarFrå(funnen, 1);
+      if (n >= 0 && n !== f) viftebok(titlar[n], "pos-h");
+      førre = m;
+      // Omslaga til nabobøkene er kanskje ikkje lasta enno: prøv att om litt
+      if (f < 0 || n < 0) setTimeout(() => fyllVifte(funnen, m), 1500);
+      return;
+    }
+    if (m.dataset.id !== id) {
+      // Vifta glir eitt hakk: forrige går ut, midten blir forrige, neste kjem fram
+      if (v) gåUt(v, "pos-utv");
+      plasser(m, "pos-v"); v = m;
+      if (h && h.dataset.id === id) { plasser(h, "pos-m"); m = h; }
+      else {
+        // Lista er endra, så boka til høgre er ikkje den neste: hent ny inn frå høgre
+        if (h) gåUt(h, "pos-uth");
+        m = viftebok(t, "pos-innh"); m.offsetWidth; plasser(m, "pos-m");
+      }
+      h = null;
+    }
+    // Ny bok til høgre (ikkje når ho alt ligg til venstre, til dømes med to bøker)
+    if (!h) {
+      const n = klarFrå(funnen, 1);
+      if (n >= 0 && n !== funnen && (!v || String(titlar[n].id) !== v.dataset.id)) {
+        const ny = viftebok(titlar[n], "pos-innh"); ny.offsetWidth; plasser(ny, "pos-h");
+      }
+    }
+    førre = m;
   }
 
   // ---- rulletekst ------------------------------------------------------
@@ -2442,7 +2533,7 @@ function startByggjar(startCfg) {
     skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
     // Val som ikkje har nokon effekt med den valde visingsmåten, blir grå
     const rull = skjema.elements.visning.value === "rull";
-    skjema.elements.overgang.disabled = rull;
+    skjema.elements.overgang.disabled = rull || skjema.elements.visning.value === "vifte";   // vifta har si eiga rørsle
     skjema.elements.sek.disabled = rull;
     skjema.elements.fart.disabled = !rull;
   }

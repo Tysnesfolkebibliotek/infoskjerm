@@ -271,7 +271,7 @@ function typeTekst(s) {
   if (/github\.io\/infoskjerm/.test(s.url || "")) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
     const tema = p.get("tema") ? ` · tema ${p.get("tema")}` : "";
-    const visning = p.get("visning") === "rull" ? " · rulletekst" : "";
+    const visning = { rull: " · rulletekst", vifte: " · vifte" }[p.get("visning")] || "";
     return `Karusell${tema}${visning}`;
   }
   return "Nettside";
