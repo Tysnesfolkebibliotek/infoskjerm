@@ -94,6 +94,14 @@
   :root[data-tema="spel"] .overskrift { font-family: "Pixelify Sans", var(--skrift); letter-spacing: .02em; }
   :root[data-tema="spel"] .brikke, :root[data-tema="spel"] .omslag { border-radius: 0; }
   :root[data-tema="spel"] .framdrift, :root[data-tema="spel"] #framdrift { border-radius: 0; }
+  /* Berekraftsveka (Veke 17): lyst, med fargane frå FNs berekraftsmål og logoen øvst */
+  :root[data-tema="berekraft"] {
+    --bakgrunn: #f7f8f5; --tekst: #3c3c3b; --dempa: #5f6366; --aksent: #00689d; --aksent-tekst: #ffffff;
+    --brikke: rgba(60,60,59,.08); --skugge: 247,248,245; --spor: rgba(60,60,59,.14);
+    --reserve-a: #26bde2; --reserve-b: #19486a; --bakteppe-lys: 1.15;
+  }
+  .veke17 { display: block; width: 52vw; height: auto; margin-bottom: 1.6vh; }
+  @keyframes skli { from { transform: translate(-1.2px, -1.2px); } to { transform: translate(1.2px, 1.2px); } }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
   :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
   :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
@@ -702,6 +710,7 @@
             </optgroup>
             <optgroup label="Bibliotek">
               <option value="sommarles">Sommarles</option>
+              <option value="berekraft">Berekraftsveka (Veke 17)</option>
               <option value="spel">Spel (pikselstil, t.d. Bibliobattles)</option>
             </optgroup>
           </select>
@@ -1192,6 +1201,32 @@ function lagPynt(tema) {
     }, [3.2, 5], [0.25, 0.45]);
   }
 
+  if (tema === "berekraft") {
+    // Logoen til Veke 17 øvst i overskriftsfeltet
+    const header = document.querySelector("#visning header");
+    if (header && !header.querySelector(".veke17")) {
+      const logo = document.createElement("img");
+      logo.className = "veke17"; logo.src = "veke17.png"; logo.alt = "Veke 17 – Berekraftsveka";
+      header.prepend(logo);
+    }
+    // Skrå, avrunda strekar i fargane til dei 17 berekraftsmåla, som i logoen.
+    // Dei glir sakte fram og tilbake langs sin eigen retning.
+    const MÅL = ["#e5243b", "#dda63a", "#4c9f38", "#c5192d", "#ff3a21", "#26bde2", "#fcc30b", "#a21942", "#fd6925",
+                 "#dd1367", "#fd9d24", "#bf8b2e", "#3f7e44", "#0a97d9", "#56c02b", "#00689d", "#19486a"];
+    const strekar = (tal, start) => {
+      let g = "";
+      for (let i = 0; i < tal; i++) {
+        const farge = MÅL[(start + i) % MÅL.length];
+        const x = tilf(0, 80), y = tilf(0, 80), l = tilf(10, 34);
+        g += `<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x + l).toFixed(1)}" y2="${(y + l).toFixed(1)}" stroke="${farge}" stroke-width="4.4" stroke-linecap="round"` +
+          ` style="animation: skli ${tilf(5, 9).toFixed(1)}s ease-in-out ${-tilf(0, 9).toFixed(1)}s infinite alternate"/>`;
+      }
+      return g;
+    };
+    pynt.append(svg("0 0 120 120", "right:-6vw; top:18vh; width:34vw; opacity:.22;", strekar(9, 0)));
+    pynt.append(svg("0 0 120 120", "left:-3vw; bottom:8vh; width:34vw; opacity:.2;", strekar(9, 8)));
+  }
+
   if (tema === "natt") {
     // Stjernehimmel som blinkar, og ein smal månesigd
     for (let i = 0; i < 70; i++) {
@@ -1207,7 +1242,7 @@ function lagPynt(tema) {
 }
 
 const TEMA = ["fjord", "skog", "lys", "natt", "kontrast", "libry", "vinter", "var", "sommar", "haust",
-  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles", "spel"];
+  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles", "spel", "berekraft"];
 
 function startVisning(cfg) {
   document.body.className = "vis";
