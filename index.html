@@ -38,6 +38,7 @@
     --b-aksent: #b8741a;
     --b-aksent-tekst: #ffffff;
     --b-fokus: #e8a33d;
+    --b-pil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%236f675d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
   /* Tema og sesongpynt ligg i tema.js */
 
@@ -45,11 +46,13 @@
     :root:not([data-theme="light"]) {
       --b-bg: #171513; --b-flate: #211e1b; --b-tekst: #f1ebe2; --b-dempa: #a99f92;
       --b-strek: #36312b; --b-aksent: #e8a33d; --b-aksent-tekst: #1b140c;
+      --b-pil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23a99f92' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
   }
   :root[data-theme="dark"] {
     --b-bg: #171513; --b-flate: #211e1b; --b-tekst: #f1ebe2; --b-dempa: #a99f92;
     --b-strek: #36312b; --b-aksent: #e8a33d; --b-aksent-tekst: #1b140c;
+      --b-pil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23a99f92' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -201,6 +204,9 @@
     width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
     border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst);
   }
+  /* Eiga pil på nedtrekkslistene, så ho ser lik ut i alle nettlesarar */
+  select, .temaknapp { appearance: none; -webkit-appearance: none; background-image: var(--b-pil); background-repeat: no-repeat;
+                       background-position: right 10px center; background-size: 12px 12px; padding-right: 30px; }
   input:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
   .felt:has(:disabled) > label { opacity: .5; }
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--b-fokus); outline-offset: 1px; }
@@ -231,18 +237,22 @@
   /* Temavalet: ei eiga nedtrekksliste med grupper som kan faldast saman */
   .temaval { position: relative; }
   .temaknapp { width: 100%; display: flex; align-items: center; gap: 8px; font: inherit; text-align: left; cursor: pointer;
-               padding: 8px 10px; border-radius: 8px; border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst); }
+               padding: 8px 30px 8px 10px; border-radius: 8px; border: 1px solid var(--b-strek); background-color: var(--b-bg); color: var(--b-tekst); }
   .temaknapp[aria-expanded="true"] { border-color: var(--b-aksent); }
   .temanamn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .temapil { color: var(--b-dempa); font-size: 12px; }
-  .temaprikk { width: 15px; height: 15px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+  .temaprikk { width: 15px; height: 15px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--b-tekst) 30%, transparent); }
   .temameny { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: max(100%, 290px); max-height: min(60vh, 520px); overflow-y: auto;
               background: var(--b-flate); border: 1px solid var(--b-strek); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.18); padding: 4px 0; }
   .temagruppe + .temagruppe { border-top: 1px solid var(--b-strek); }
   .temagruppe > .gruppehovud { width: 100%; display: flex; align-items: center; gap: 8px; font: inherit; font-weight: 600; font-size: 14px; text-align: left;
                          background: none; border: 0; color: var(--b-tekst); padding: 8px 12px; cursor: pointer; }
   .temagruppe > .gruppehovud:hover { background: var(--b-bg); }
-  .temagruppe .fald { width: 10px; color: var(--b-dempa); font-size: 11px; }
+  .ikon { display: inline-block; flex: none; width: 12px; height: 12px; background: currentColor;
+          -webkit-mask: var(--ikon) center / contain no-repeat; mask: var(--ikon) center / contain no-repeat; }
+  .ikon.pil { --ikon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  .ikon.hake { --ikon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.4 4.8 9 10 3.2' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  .temagruppe .fald { color: var(--b-dempa); transition: transform .15s; }
+  .temagruppe .gruppehovud[aria-expanded="false"] .fald { transform: rotate(-90deg); }
   .temagruppe .tal { margin-left: auto; font-weight: 400; font-size: 12px; color: var(--b-dempa); background: var(--b-bg); border-radius: 99px; padding: 1px 8px; }
   .temaalternativ { width: 100%; display: flex; align-items: center; gap: 9px; font: inherit; font-size: 14px; text-align: left; cursor: pointer;
                     background: none; border: 0; color: var(--b-tekst); padding: 6px 12px 6px 30px; font-weight: 400; }
@@ -251,7 +261,7 @@
   .temaalternativ:hover { background: var(--b-bg); }
   .temaalternativ[aria-checked="true"] { background: color-mix(in srgb, var(--b-aksent) 16%, transparent); }
   .temaalternativ .temadato { color: var(--b-dempa); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .temaalternativ .hake { margin-left: auto; color: var(--b-aksent); font-weight: 700; }
+  .temaalternativ .hake { margin-left: auto; color: var(--b-aksent); }
   .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
   .segment label { flex: 1; text-align: center; padding: 8px 4px; white-space: nowrap; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
   .segment label:last-child { border-right: 0; }
@@ -267,8 +277,10 @@
     color: var(--b-dempa); cursor: pointer; user-select: none;
   }
   .del > summary::-webkit-details-marker { display: none; }
-  .del > summary::before { content: "▸"; font-size: 13px; transition: transform .15s ease; }
-  .del[open] > summary::before { transform: rotate(90deg); }
+  .del > summary::before { content: ""; width: 12px; height: 12px; flex: none; background: currentColor; transform: rotate(-90deg); transition: transform .15s ease;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+  .del[open] > summary::before { transform: none; }
   .del > summary:hover { color: var(--b-tekst); }
   .del[open] { padding-bottom: 6px; }
   .merke { background: var(--b-aksent); color: var(--b-aksent-tekst); border-radius: 99px; padding: 1px 8px;
@@ -581,7 +593,7 @@
           <select id="tema" name="tema" hidden></select>
           <div class="temaval" id="temaval">
             <button type="button" class="temaknapp" id="temaknapp" aria-haspopup="true" aria-expanded="false">
-              <span class="temaprikk"></span><span class="temanamn"></span><span class="temapil" aria-hidden="true">▾</span>
+              <span class="temaprikk"></span><span class="temanamn"></span>
             </button>
             <div class="temameny" id="temameny" hidden></div>
           </div>
@@ -2174,7 +2186,7 @@ function startByggjar(startCfg) {
       const hovud = document.createElement("button");
       hovud.type = "button"; hovud.className = "gruppehovud";
       hovud.setAttribute("aria-expanded", open);
-      hovud.innerHTML = `<span class="fald">${open ? "▼" : "▶"}</span><span></span><span class="tal">${liste.length}</span>`;
+      hovud.innerHTML = `<span class="ikon pil fald" aria-hidden="true"></span><span></span><span class="tal">${liste.length}</span>`;
       hovud.children[1].textContent = namn;
       hovud.addEventListener("click", () => { open ? opneGrupper.delete(namn) : opneGrupper.add(namn); teiknTemameny(); });
       gr.append(hovud);
@@ -2183,7 +2195,7 @@ function startByggjar(startCfg) {
         const b = document.createElement("button");
         b.type = "button"; b.className = "temaalternativ";
         b.setAttribute("role", "menuitemradio"); b.setAttribute("aria-checked", valt);
-        b.innerHTML = `<span class="temaprikk" style="${temaprikk(t)}"></span><span></span><span class="temadato"></span>${valt ? '<span class="hake">✓</span>' : ""}`;
+        b.innerHTML = `<span class="temaprikk" style="${temaprikk(t)}"></span><span></span><span class="temadato"></span>${valt ? '<span class="ikon hake" aria-hidden="true"></span>' : ""}`;
         b.children[1].textContent = t.namn;
         b.children[2].textContent = t.dato || "";
         b.addEventListener("click", () => {
