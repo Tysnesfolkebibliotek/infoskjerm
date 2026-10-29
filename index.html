@@ -121,6 +121,10 @@
   .boble { position: absolute; bottom: -6vh; border-radius: 50%; animation: stig linear infinite; }
   /* Vandrar sakte frå høgre mot venstre (reinsdyr) */
   .vandrar { position: absolute; left: 0; animation: vandre linear infinite; }
+  /* Påskeliljer og handflagg: vaiar fram og tilbake rundt foten */
+  .vaiar { transform-origin: 50% 100%; animation: vai ease-in-out infinite alternate; }
+  .vaiar svg { position: static; width: 100%; height: auto; display: block; }
+  @keyframes vai { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
   .vandrar svg { position: static; width: 100%; height: auto; display: block; }
   @keyframes vandre { from { transform: translateX(110vw); } to { transform: translateX(-30vw); } }
   @keyframes stig { from { transform: translate(0, 0); } 50% { transform: translate(2vw, -55vh); } to { transform: translate(-1vw, -112vh); } }
@@ -130,7 +134,7 @@
   /* Bølgjer som glir sakte (Sommar) og sol som roterer (Sommarles) */
   @keyframes glidSide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   @keyframes snu { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .dalar, .boble, .stjerne, #pynt * { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .dalar, .boble, .stjerne, .vaiar, #pynt * { animation: none !important; } }
   @media (prefers-reduced-motion: reduce) { .snø, .flaggermus, .flaggermus svg { animation: none; } }
   :root[data-tema="haust"] {
     --bakgrunn: #1d0f0b; --tekst: #fbefe6; --dempa: #cfae9d; --aksent: #e9773d;
@@ -989,19 +993,35 @@ function lagPynt(tema) {
   }
 
   if (tema === "paaske") {
-    // Påskeegg nedst og påskeris i hjørnet øvst til venstre
-    const egg = (x, y, r, farge, stripe) => `<g transform="translate(${x},${y}) rotate(${tilf(-15, 15)})">` +
-      `<ellipse rx="${r * 0.78}" ry="${r}" fill="${farge}"/><path d="M${-r * 0.75},${-r * 0.1} Q0,${-r * 0.35} ${r * 0.75},${-r * 0.1}" stroke="${stripe}" stroke-width="${r * 0.12}" fill="none"/></g>`;
-    pynt.append(svg("0 0 120 40", "left:2vw; bottom:0; width:26vw; opacity:.2;",
-      egg(18, 26, 12, "#f7d8e6", "#f3d23c") + egg(44, 28, 10, "#d8ecc4", "#f7a8c4") + egg(66, 27, 11, "#fff2b3", "#9fd4f0")));
-    pynt.append(svg("0 0 120 40", "right:2vw; bottom:0; width:20vw; opacity:.18;",
-      egg(40, 27, 11, "#cfe8f7", "#f3d23c") + egg(66, 28, 10, "#f7d8e6", "#a7d977")));
-    let ris = "";
-    [[0, 0, 70, 46], [0, 6, 62, 70], [4, 0, 88, 30]].forEach(([x1, y1, x2, y2]) => { ris += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#c9b48a" stroke-width="1"/>`; });
-    [[40, 26, "#f3d23c"], [58, 38, "#f7a8c4"], [36, 41, "#a7d977"], [62, 21, "#9fd4f0"], [74, 34, "#f3d23c"]].forEach(([x, y, f]) => {
-      ris += `<ellipse cx="${x}" cy="${y + 4}" rx="2.6" ry="6" fill="${f}" transform="rotate(${tilf(-30, 30)} ${x} ${y})"/>`;
-    });
-    pynt.append(svg("0 0 100 80", "right:0; top:0; width:26vw; opacity:.3; transform:scaleX(-1);", ris));
+    // Påskefjell med sol øvst til høgre, og påskeliljer som vaiar nedst
+    pynt.append(svg("0 0 100 100", "right:4vw; top:5vh; width:22vw; opacity:.6;",
+      `<defs><radialGradient id="paaskesol"><stop offset="36%" stop-color="#ffd84a"/><stop offset="55%" stop-color="#ffd84a" stop-opacity=".35"/><stop offset="100%" stop-color="#ffd84a" stop-opacity="0"/></radialGradient></defs>` +
+      `<circle cx="62" cy="40" r="40" fill="url(#paaskesol)"/>`));
+    pynt.append(svg("0 0 200 60", "right:0; top:15vh; width:40vw; opacity:.22;",
+      `<path fill="#8f8a5c" d="M0,60 L38,22 L52,32 L82,4 L112,30 L128,18 L168,52 L200,40 L200,60 Z"/>` +
+      `<path fill="#ffffff" d="M82,4 L72,14 L78,13 L84,17 L90,12 L96,15 Z M38,22 L32,28 L37,27 L42,30 Z M128,18 L122,24 L128,23 L133,25 Z"/>`));
+    // Ei påskelilje sett forfrå: stilk, blad, seks kronblad og trompet
+    const lilje = (kron, trompet) => {
+      let blad = "";
+      for (let v = 0; v < 360; v += 60) blad += `<ellipse cx="20" cy="12" rx="5.2" ry="9" fill="${kron}" transform="rotate(${v} 20 21)"/>`;
+      return `<path d="M20,30 C20,48 21,62 20,80" stroke="#7fb24a" stroke-width="2.2" fill="none"/>` +
+        `<path fill="#6c9e3c" d="M19,80 C12,64 10,52 13,40 C16,52 18,64 21,80 Z"/><path fill="#7fb24a" d="M21,80 C28,66 31,56 29,46 C25,58 22,68 19,80 Z"/>` +
+        blad + `<circle cx="20" cy="21" r="6.4" fill="${trompet}"/><circle cx="20" cy="21" r="4.2" fill="none" stroke="#e07f12" stroke-width="1.1"/>`;
+    };
+    const liljerad = (stil, tal) => {
+      const rad = document.createElement("div");
+      rad.style.cssText = "position:absolute; bottom:-1vh; display:flex; align-items:flex-end; " + stil;
+      for (let i = 0; i < tal; i++) {
+        const l = document.createElement("div"), b = tilf(5.5, 8.5);
+        l.className = "vaiar";
+        l.style.cssText = `width:${b}vw; margin:0 -.8vw; opacity:${tilf(0.4, 0.55)}; animation-duration:${tilf(4, 7)}s; animation-delay:${-tilf(0, 7)}s;`;
+        l.append(svg("0 0 40 80", "position:static; width:100%; height:auto; display:block;", lilje(vel(["#ffe14d", "#fff3a8", "#ffd23a"]), vel(["#f6a91f", "#ffc53a"]))));
+        rad.append(l);
+      }
+      pynt.append(rad);
+    };
+    liljerad("left:1vw;", 4);
+    liljerad("right:1vw;", 3);
   }
 
   if (tema === "mai17") {
@@ -1013,6 +1033,27 @@ function lagPynt(tema) {
       v += `<polygon points="${x - 2.4},${y} ${x + 2.4},${y} ${x},${y + 6}" fill="${fargar[i % 3]}"/>`;
     }
     pynt.append(svg("0 0 100 16", "left:0; top:0; width:100vw; opacity:.32;", v));
+    // Det norske flagget i offisielle fargar og proporsjonar (22:16): 6-1-2-1-12 i breidda, 6-1-2-1-6 i høgda
+    const RAUD = "#ba0c2f", BLÅ = "#00205b";
+    const flagg = `<rect width="22" height="16" fill="${RAUD}"/><rect x="6" width="4" height="16" fill="#fff"/><rect y="6" width="22" height="4" fill="#fff"/>` +
+      `<rect x="7" width="2" height="16" fill="${BLÅ}"/><rect y="7" width="22" height="2" fill="${BLÅ}"/>`;
+    pynt.append(svg("0 0 22 16", "right:6vw; top:14vh; width:17vw; border-radius:.3vw; box-shadow:0 .6vh 1.6vh rgba(0,0,0,.45);", flagg));
+    // Små handflagg på pinne nedst, som vaiar som i eit barnetog
+    const handflagg = `<rect x="1" y="0" width="1.4" height="40" rx=".7" fill="#e8d9b5"/><g transform="translate(2.4,1)">${flagg}</g>`;
+    const flaggrad = (stil, tal) => {
+      const rad = document.createElement("div");
+      rad.style.cssText = "position:absolute; bottom:-2vh; display:flex; align-items:flex-end; gap:1.4vw; " + stil;
+      for (let i = 0; i < tal; i++) {
+        const f = document.createElement("div");
+        f.className = "vaiar";
+        f.style.cssText = `width:${tilf(5, 7)}vw; margin-bottom:${tilf(-3, 2)}vh; opacity:${tilf(0.55, 0.75)}; animation-duration:${tilf(1.6, 2.6)}s; animation-delay:${-tilf(0, 3)}s;`;
+        f.append(svg("0 0 25 41", "position:static; width:100%; height:auto; display:block;", handflagg));
+        rad.append(f);
+      }
+      pynt.append(rad);
+    };
+    flaggrad("left:2vw;", 3);
+    flaggrad("right:3vw;", 3);
   }
 
   if (tema === "samisk") {
