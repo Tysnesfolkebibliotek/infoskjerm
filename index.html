@@ -96,8 +96,10 @@
   .overskrift { font-weight: var(--vekt-overskrift, 700); font-size: calc(6.2vw * var(--skala-overskrift, 1)); letter-spacing: .01em; font-family: var(--skrift-overskrift, var(--skrift)); }
   :root[data-versalar] .overskrift { text-transform: uppercase; letter-spacing: .05em; }
   /* «Likte du?»: omslaget til boka det heile tek utgangspunkt i, lite og til høgre for overskrifta */
-  #visning header.med-kjelde { position: relative; padding-right: 19vw; min-height: 13vh; }
-  .kjeldeomslag { position: absolute; right: 0; top: 0; height: 13vh; max-width: 16vw; object-fit: cover;
+  /* Plass til symbol øvst til høgre i nokre tema (flagg, logo): sjå --symbol-plass i tema.js */
+  #visning header { padding-right: var(--symbol-plass, 0); }
+  #visning header.med-kjelde { position: relative; padding-right: calc(19vw + var(--symbol-plass, 0px)); min-height: 13vh; }
+  .kjeldeomslag { position: absolute; right: var(--symbol-plass, 0); top: 0; height: 13vh; max-width: 16vw; object-fit: cover;
                   border-radius: .5vw; box-shadow: 0 1vh 3vh rgba(0,0,0,.45); transform: rotate(3deg); }
   .avdeling { font-size: 3vw; color: var(--aksent-tekstfarge, var(--aksent)); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; min-height: 1.2em; }
 

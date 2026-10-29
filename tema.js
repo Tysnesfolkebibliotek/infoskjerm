@@ -12,7 +12,8 @@
 //            "MM-DD/MM-DD" (kan gå over nyttår), "påske" eller "veke17".
 //   skrift   Skrift eller skriftpar temaet brukar når «Standard» er valt. Valfritt.
 //   fargar   CSS-variablane for temaet (bakgrunn, tekst, aksent …).
-//   css      Ekstra CSS for temaet. Valfritt.
+//   css      Ekstra CSS for temaet. Valfritt. Har temaet eit symbol øvst til høgre
+//            (flagg, logo), set --symbol-plass så overskrifta ikkje går inn i det.
 //   pynt     Funksjon som teiknar pynten bak bøkene. Valfritt.
 //
 // Nytt tema: kopier eit liknande tema, gje det ein ny id og endre resten.
@@ -144,6 +145,8 @@ const TEMA_LISTE = [
     dato: "6. februar",
     aktuell: "01-20/02-06",
     fargar: { bakgrunn: "#0f162b", tekst: "#ffffff", dempa: "#b8bfd6", aksent: "#e0332a", "aksent-tekst": "#ffffff", skugge: "15,22,43", "reserve-a": "#1f4f8f", "reserve-b": "#14203d" },
+    css: `
+      :root[data-tema="samisk"] { --symbol-plass: 20vw; }`,
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Det samiske flagget, teikna etter offisielle fargar og proporsjonar (4:3).
       // Raud, grøn, gul og blå felt, og ringen: blå venstre halvdel, raud høgre.
@@ -178,7 +181,7 @@ const TEMA_LISTE = [
     aktuell: "02-20/03-08",
     fargar: { bakgrunn: "#220e1d", tekst: "#fff3f7", dempa: "#dcc0cc", aksent: "#e04a7d", "aksent-tekst": "#ffffff", skugge: "34,14,29", "reserve-a": "#8f2850", "reserve-b": "#331528" },
     css: `
-      :root[data-tema="kvinnedagen"] #visning header { padding-right: 20vw; }`,
+      :root[data-tema="kvinnedagen"] { --symbol-plass: 17vw; }`,
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Kvinnesymbolet med knytt neve øvst til høgre, plassert som flagga i dei andre temaa
       const logo = document.createElement("img");
@@ -227,6 +230,8 @@ const TEMA_LISTE = [
     id: "mai17", namn: "17. mai", gruppe: "Høgtider og merkedagar",
     aktuell: "05-01/05-17",
     fargar: { bakgrunn: "#0e1a33", tekst: "#ffffff", dempa: "#b8c3dc", aksent: "#d9263b", "aksent-tekst": "#ffffff", skugge: "14,26,51", "reserve-a": "#7d1b28", "reserve-b": "#14264a" },
+    css: `
+      :root[data-tema="mai17"] { --symbol-plass: 20vw; }`,
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Vimpelrekkje i raudt, kvitt og blått langs toppen
       let v = `<path d="M0,2 Q50,12 100,2" stroke="#ffffff" stroke-width=".3" fill="none"/>`;
@@ -264,6 +269,8 @@ const TEMA_LISTE = [
     dato: "juni",
     aktuell: "06-01/06-30",
     fargar: { bakgrunn: "#15121c", tekst: "#ffffff", dempa: "#c4bdd2", aksent: "#ffffff", "aksent-tekst": "#15121c", skugge: "21,18,28", "reserve-a": "#5a3d7a", "reserve-b": "#1f1a29" },
+    css: `
+      :root[data-tema="pride"] { --symbol-plass: 18vw; }`,
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Eit regnbogehjarte med dei åtte fargane i det opphavlege prideflagget
       const fargar = ["#ff7ac2", "#e40303", "#ff8c00", "#ffed00", "#008026", "#14c7c7", "#3b1f9e", "#8a1fa0"];
