@@ -538,12 +538,38 @@ function erAktuell(tema, dato = new Date()) {
   return f <= t ? md >= f && md <= t : md >= f || md <= t;   // perioden kan gå over nyttår
 }
 
+// ---- Lesbar aksentfarge til tekst ------------------------------------
+// Aksentfargen blir òg brukt som tekstfarge (linja under overskrifta). Mange
+// aksentfargar er laga for flater, og blir for svake som tekst – særleg raudt
+// på mørk bakgrunn. Har fargen for låg kontrast mot bakgrunnen, blir han
+// blanda gradvis mot tekstfargen til kontrasten er god nok. Kravet er 5:1,
+// litt over WCAG-kravet for vanleg tekst (4,5:1), sidan teksten er lita og
+// blir lesen på avstand. Fargen på flatene blir ikkje endra.
+function lesbarAksent(aksent, bakgrunn, tekst, krav = 5) {
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lum = h => {
+    const [r, g, b] = rgb(h).map(c => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const kontrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const bland = (a, b, t) => "#" + rgb(a).map((c, i) => Math.round(c + (rgb(b)[i] - c) * t).toString(16).padStart(2, "0")).join("");
+  const hex = h => /^#[0-9a-f]{6}$/i.test(h);
+  if (![aksent, bakgrunn, tekst].every(hex) || kontrast(aksent, bakgrunn) >= krav) return aksent;
+  for (let t = 0.05; t <= 1; t += 0.05) {
+    const f = bland(aksent, tekst, t);
+    if (kontrast(f, bakgrunn) >= krav) return f;
+  }
+  return tekst;
+}
+
 // ---- Legg CSS-en for alle tema inn på sida ----------------------------
 (function () {
   const eitTema = t => {
     let css = "";
-    if (t.fargar) css += `:root[data-tema="${t.id}"] { ` +
-      Object.entries(t.fargar).map(([k, v]) => `--${k}: ${v};`).join(" ") + " }\n";
+    const f = t.fargar;
+    if (f) css += `:root[data-tema="${t.id}"] { ` +
+      Object.entries(f).map(([k, v]) => `--${k}: ${v};`).join(" ") +
+      (f.aksent && f.bakgrunn && f.tekst ? ` --aksent-tekstfarge: ${lesbarAksent(f.aksent, f.bakgrunn, f.tekst)};` : "") + " }\n";
     if (t.css) css += t.css + "\n";
     return css;
   };
