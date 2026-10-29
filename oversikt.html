@@ -1095,7 +1095,8 @@ async function søkSvart() {
     const ord = tekst.replace(/["\\]/g, " ").split(/\s+/).filter(o => o.length > 1);
     if (!ord.length) { st.textContent = "Skriv minst to bokstavar."; return; }
     const cql = ord.map((o, i) => i === ord.length - 1 && o.length > 2 ? `${o}*` : `"${o}"`).join(" and ");
-    query = `${cql} and bibliofil.ccl="avd=${SVART_AVD.join("|")}" and norzig.materialType=l`;
+    // Kvar avdeling som eige filter: Bibliofil godtek ikkje lenger «tyfv|tyfb»
+    query = `${cql} and (${SVART_AVD.map(a => `bibliofil.ccl="avd=${a}"`).join(" or ")}) and norzig.materialType=l`;
   }
   try {
     const d = await sruJsonp({ query, startRecord: 1, maximumRecords: 50 }, 30000);

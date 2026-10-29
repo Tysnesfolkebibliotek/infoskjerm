@@ -1956,11 +1956,19 @@ async function hentUtval(cfg, avdar, meld) {
 }
 
 // Fritekstsøk etter tittel eller forfattar, for å finne bøker å leggje til
+// Avdelingsfilter for SRU: (bibliofil.ccl="avd=tyfv" or bibliofil.ccl="avd=tyfb")
+function avdFilter(avdar) {
+  const del = avdar.map(a => `bibliofil.ccl="avd=${a}"`);
+  return del.length > 1 ? `(${del.join(" or ")})` : del[0];
+}
+
 async function søkTitlar(tekst, avdar) {
   const ord = (tekst || "").replace(/["\\]/g, " ").split(/\s+/).filter(o => o.length > 1);
   if (!ord.length) return [];
   const cql = ord.map((o, i) => i === ord.length - 1 && o.length > 2 ? `${o}*` : `"${o}"`).join(" and ");
-  const query = `${cql} and bibliofil.ccl="avd=${avdar.join("|")}" and norzig.materialType=l`;
+  // Bibliofil godtek ikkje lenger «tyfv|tyfb» i avd-filteret (gir 0 treff),
+  // så kvar avdeling blir eit eige filter med «or» imellom.
+  const query = `${cql} and ${avdFilter(avdar)} and norzig.materialType=l`;
   const d = await sru({ query, startRecord: 1, maximumRecords: 25 });
   return (d && d.feed && d.feed.entry) || [];
 }
