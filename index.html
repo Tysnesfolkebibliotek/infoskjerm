@@ -92,7 +92,8 @@
   #visning { position: fixed; inset: 0; }
   #visning main { position: relative; height: 100%; display: flex; flex-direction: column; padding: 5vh 7vw 4vh; }
   #visning header { display: flex; flex-direction: column; gap: 1.2vh; }
-  .overskrift { font-weight: 700; font-size: 6.2vw; letter-spacing: .01em; font-family: var(--skrift-overskrift, var(--skrift)); }
+  .overskrift { font-weight: 700; font-size: calc(6.2vw * var(--skala-overskrift, 1)); letter-spacing: .01em; font-family: var(--skrift-overskrift, var(--skrift)); }
+  :root[data-versalar] .overskrift { text-transform: uppercase; letter-spacing: .05em; }
   /* «Likte du?»: omslaget til boka det heile tek utgangspunkt i, lite og til høgre for overskrifta */
   #visning header.med-kjelde { position: relative; padding-right: 19vw; min-height: 13vh; }
   .kjeldeomslag { position: absolute; right: 0; top: 0; height: 13vh; max-width: 16vw; object-fit: cover;
@@ -154,7 +155,7 @@
     font-size: 4vw; line-height: 1.2; border-left: 1.2vw solid var(--aksent);
   }
   .info { width: 100%; margin-top: 4vh; text-align: center; flex: none; }
-  .tittel { font-family: var(--skrift-tittel, var(--skrift)); font-weight: 700; font-size: 5.6vw; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tittel { font-family: var(--skrift-tittel, var(--skrift)); font-weight: 700; font-size: calc(5.6vw * var(--skala-tittel, 1)); line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .undertittel { font-style: italic; font-size: 3vw; color: var(--dempa); margin-top: .8vh; }
   .forfattar { font-size: 3.4vw; margin-top: 1.6vh; opacity: .92; }
   .brikker { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4vw; margin-top: 2.6vh; }
@@ -761,23 +762,25 @@ function lagHash(cfg, vis) {
 
 // ---- Skrifter. «standard» brukar skrifta på maskina; dei andre kjem frå
 // Google Fonts. Manglar nettet, fell sida tilbake til standardskrifta.
-// Kvar skrift: [namn hos Google Fonts, kva som skal lastast ned]
+// Kvar skrift: [namn hos Google Fonts, kva som skal lastast ned, storleik i overskrift og boktittel]
+// Storleiken jamnar ut at skrifter er ulikt breie: 1 = som standardskrifta.
 const FONTAR = {
   atkinson:     ["Atkinson Hyperlegible", "Atkinson+Hyperlegible:wght@400;700"],
   nunito:       ["Nunito",                "Nunito:wght@400;600;700;800"],
   quicksand:    ["Quicksand",             "Quicksand:wght@400;600;700"],
   montserrat:   ["Montserrat",            "Montserrat:wght@400;600;700"],
-  oswald:       ["Oswald",                "Oswald:wght@400;500;600;700"],
+  oswald:       ["Oswald",                "Oswald:wght@400;500;600;700",                        1.1],   // smal
   sourcesans:   ["Source Sans 3",         "Source+Sans+3:wght@400;600;700"],
   lora:         ["Lora",                  "Lora:ital,wght@0,400;0,600;0,700;1,400"],
-  merriweather: ["Merriweather",          "Merriweather:ital,wght@0,400;0,700;1,400"],
+  merriweather: ["Merriweather",          "Merriweather:ital,wght@0,400;0,700;1,400",           0.9],   // brei
   playfair:     ["Playfair Display",      "Playfair+Display:ital,wght@0,400;0,600;0,700;1,400"],
   robotoslab:   ["Roboto Slab",           "Roboto+Slab:wght@400;600;700"],
-  dancing:      ["Dancing Script",        "Dancing+Script:wght@600;700"],
-  pixelify:     ["Pixelify Sans",         "Pixelify+Sans:wght@500;700"],
+  dancing:      ["Dancing Script",        "Dancing+Script:wght@600;700",                        1.35],  // handskrift ser lita ut
+  pixelify:     ["Pixelify Sans",         "Pixelify+Sans:wght@500;700",                         0.9],   // brei
 };
 // Vala i byggjaren. «tekst» er brødteksten. «overskrift» og «titlar» er valfrie:
 // utan dei brukar overskrifta og boktitlane same skrift som teksten.
+// «versalar»: overskrifta med store bokstavar og litt luft mellom dei.
 const SKRIFTER = {
   atkinson:     { namn: "Atkinson",         skildring: "lettlesen",    tekst: "atkinson" },
   nunito:       { namn: "Nunito",           skildring: "rund",         tekst: "nunito" },
@@ -791,10 +794,10 @@ const SKRIFTER = {
   robotoslab:   { namn: "Roboto Slab",      skildring: "skrivemaskin", tekst: "robotoslab" },
   // Skriftpar: ei skrift til overskrifter og ei til teksten
   "par-elegant":    { par: true, namn: "Elegant",    skildring: "Playfair + Source Sans", overskrift: "playfair",     titlar: "playfair",     tekst: "sourcesans" },
-  "par-plakat":     { par: true, namn: "Plakat",     skildring: "Oswald + Lora",                  overskrift: "oswald",       titlar: "oswald",       tekst: "lora" },
+  "par-plakat":     { par: true, namn: "Plakat",     skildring: "Oswald + Source Sans",           overskrift: "oswald",       titlar: "oswald",       tekst: "sourcesans", versalar: true },
   "par-klassisk":   { par: true, namn: "Klassisk",   skildring: "Merriweather + Atkinson",        overskrift: "merriweather", titlar: "merriweather", tekst: "atkinson" },
-  "par-handskrift": { par: true, namn: "Handskrift", skildring: "Dancing Script + Lora",          overskrift: "dancing",      titlar: "lora",         tekst: "lora" },
-  "par-spel":       { par: true, namn: "Spel",       skildring: "Pixelify Sans + Nunito",         overskrift: "pixelify",     titlar: "pixelify",     tekst: "nunito" },
+  "par-handskrift": { par: true, namn: "Handskrift", skildring: "Dancing Script + Source Sans",   overskrift: "dancing",      titlar: "sourcesans",   tekst: "sourcesans" },
+  "par-spel":       { par: true, namn: "Spel",       skildring: "Pixelify Sans + Nunito",         overskrift: "pixelify",     titlar: "nunito",       tekst: "nunito" },
 };
 const fontstabel = id => `"${FONTAR[id][0]}", "Ubuntu", "DejaVu Sans", system-ui, sans-serif`;
 function brukSkrift(namn) {
@@ -809,8 +812,12 @@ function brukSkrift(namn) {
   }
   const rot = document.documentElement.style;
   rot.setProperty("--skrift", fontstabel(s.tekst));
-  if (s.overskrift) rot.setProperty("--skrift-overskrift", fontstabel(s.overskrift));
-  if (s.titlar) rot.setProperty("--skrift-tittel", fontstabel(s.titlar));
+  const overskrift = s.overskrift || s.tekst, titlar = s.titlar || s.tekst;
+  rot.setProperty("--skrift-overskrift", fontstabel(overskrift));
+  rot.setProperty("--skrift-tittel", fontstabel(titlar));
+  rot.setProperty("--skala-overskrift", FONTAR[overskrift][2] || 1);
+  rot.setProperty("--skala-tittel", FONTAR[titlar][2] || 1);
+  if (s.versalar) document.documentElement.dataset.versalar = "";
 }
 
 // =====================================================================

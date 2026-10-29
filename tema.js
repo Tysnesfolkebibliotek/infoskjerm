@@ -10,7 +10,7 @@
 //   dato     Liten tekst ved sida av namnet, t.d. «8. mars». Valfritt.
 //   aktuell  Når temaet skal stå under «Aktuelt no» i byggjaren. Valfritt.
 //            "MM-DD/MM-DD" (kan gå over nyttår), "påske" eller "veke17".
-//   skrift   Skrift temaet brukar når «Standard» er valt. Valfritt.
+//   skrift   Skrift eller skriftpar temaet brukar når «Standard» er valt. Valfritt.
 //   fargar   CSS-variablane for temaet (bakgrunn, tekst, aksent …).
 //   css      Ekstra CSS for temaet. Valfritt.
 //   pynt     Funksjon som teiknar pynten bak bøkene. Valfritt.
@@ -400,17 +400,12 @@ const TEMA_LISTE = [
   {
     id: "spel", namn: "Spel", gruppe: "Bibliotek",
     dato: "pikselstil, t.d. Bibliobattles",
+    skrift: "par-spel",
     fargar: { bakgrunn: "#121628", tekst: "#ffffff", dempa: "#b6bdd8", aksent: "#6fd14f", "aksent-tekst": "#0d1a08", skugge: "18,22,40", "reserve-a": "#2b4a8a", "reserve-b": "#18203d" },
     css: `
-      :root[data-tema="spel"] .overskrift { font-family: "Pixelify Sans", var(--skrift); letter-spacing: .02em; }
       :root[data-tema="spel"] .brikke, :root[data-tema="spel"] .omslag { border-radius: 0; }
       :root[data-tema="spel"] .framdrift, :root[data-tema="spel"] #framdrift { border-radius: 0; }`,
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
-      // Pikselskrift til overskrifta
-      const lenkje = document.createElement("link");
-      lenkje.rel = "stylesheet";
-      lenkje.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap";
-      document.head.append(lenkje);
       // Teiknar pikselkunst: kvar rad er ein tekst, kvart teikn ein piksel (punktum = tomt)
       const pikslar = (rader, fargar, x0 = 0, y0 = 0) => {
         let r = "";
