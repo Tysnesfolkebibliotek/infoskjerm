@@ -158,7 +158,9 @@
     font-size: 4vw; line-height: 1.2; border-left: 1.2vw solid var(--aksent);
   }
   .info { width: 100%; margin-top: 4vh; text-align: center; flex: none; }
-  .tittel { font-family: var(--skrift-tittel, var(--skrift)); font-weight: var(--vekt-tittel, 700); font-size: calc(5.6vw * var(--skala-tittel, 1)); line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Linjeavstanden må gje plass til halen på g, j, p og y: titlane blir klipte etter to linjer,
+     og med tettare avstand blir halen skoren av i skrifter med lange understenger (t.d. Noto Sans, Oswald). */
+  .tittel { font-family: var(--skrift-tittel, var(--skrift)); font-weight: var(--vekt-tittel, 700); font-size: calc(5.6vw * var(--skala-tittel, 1)); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .undertittel { font-style: italic; font-size: 3vw; color: var(--dempa); margin-top: .8vh; }
   .forfattar { font-size: 3.4vw; margin-top: 1.6vh; opacity: .92; }
   .brikker { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4vw; margin-top: 2.6vh; }
