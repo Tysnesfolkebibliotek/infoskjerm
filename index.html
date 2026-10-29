@@ -89,6 +89,11 @@
   }
   :root[data-tema="paaske"] { --bakgrunn: #1b1f0f; --tekst: #fbf7e6; --dempa: #d0c99f; --aksent: #f3d23c; --aksent-tekst: #1b1f0f; --skugge: 27,31,15; --reserve-a: #5d5b1d; --reserve-b: #262a12; }
   :root[data-tema="mai17"]  { --bakgrunn: #0e1a33; --tekst: #ffffff; --dempa: #b8c3dc; --aksent: #d9263b; --aksent-tekst: #ffffff; --skugge: 14,26,51; --reserve-a: #7d1b28; --reserve-b: #14264a; }
+  /* Spel: pikselstil for gaming og byggjekonkurransar. Kantete brikker og pikselskrift i overskrifta */
+  :root[data-tema="spel"]   { --bakgrunn: #121628; --tekst: #ffffff; --dempa: #b6bdd8; --aksent: #6fd14f; --aksent-tekst: #0d1a08; --skugge: 18,22,40; --reserve-a: #2b4a8a; --reserve-b: #18203d; }
+  :root[data-tema="spel"] .overskrift { font-family: "Pixelify Sans", var(--skrift); letter-spacing: .02em; }
+  :root[data-tema="spel"] .brikke, :root[data-tema="spel"] .omslag { border-radius: 0; }
+  :root[data-tema="spel"] .framdrift, :root[data-tema="spel"] #framdrift { border-radius: 0; }
   :root[data-tema="samisk"] { --bakgrunn: #0f162b; --tekst: #ffffff; --dempa: #b8bfd6; --aksent: #e0332a; --aksent-tekst: #ffffff; --skugge: 15,22,43; --reserve-a: #1f4f8f; --reserve-b: #14203d; }
   :root[data-tema="pride"]  { --bakgrunn: #15121c; --tekst: #ffffff; --dempa: #c4bdd2; --aksent: #ffffff; --aksent-tekst: #15121c; --skugge: 21,18,28; --reserve-a: #5a3d7a; --reserve-b: #1f1a29; }
   :root[data-tema="natt"]   { --bakgrunn: #070b1f; --tekst: #eef1ff; --dempa: #a9b1d6; --aksent: #9db4ff; --aksent-tekst: #070b1f; --skugge: 7,11,31; --reserve-a: #22306b; --reserve-b: #0c1230; }
@@ -697,6 +702,7 @@
             </optgroup>
             <optgroup label="Bibliotek">
               <option value="sommarles">Sommarles</option>
+              <option value="spel">Spel (pikselstil, t.d. Bibliobattles)</option>
             </optgroup>
           </select>
         </div>
@@ -1133,6 +1139,59 @@ function lagPynt(tema) {
     }
   }
 
+  if (tema === "spel") {
+    // Pikselskrift til overskrifta
+    const lenkje = document.createElement("link");
+    lenkje.rel = "stylesheet";
+    lenkje.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap";
+    document.head.append(lenkje);
+    // Teiknar pikselkunst: kvar rad er ein tekst, kvart teikn ein piksel (punktum = tomt)
+    const pikslar = (rader, fargar, x0 = 0, y0 = 0) => {
+      let r = "";
+      rader.forEach((rad, y) => [...rad].forEach((t, x) => {
+        if (fargar[t]) r += `<rect x="${x0 + x}" y="${y0 + y}" width="1.02" height="1.02" fill="${fargar[t]}"/>`;
+      }));
+      return r;
+    };
+    // Blokkterreng nedst: gras øvst, jord under, stein djupast. Kvar blokk er 8×8 pikslar
+    const GRAS = ["ggGggGgg", "gGggggGg", "dgdGdgdg", "dddddDdd", "dDdddddd", "ddddDddd", "dddDdddd", "Dddddddd"];
+    const JORD = ["dddDdddd", "dDdddddD", "ddddddDd", "Dddddddd", "dddDdddd", "ddddddDd", "dDdddddd", "ddddDddd"];
+    const STEIN = ["sssSssss", "sSssssSs", "ssssSsss", "sssssssS", "sSssSsss", "ssssssss", "sssSsssS", "Ssssssss"];
+    const blokkfargar = { g: "#6fbf3f", G: "#4f9a2c", d: "#8a5a32", D: "#6b4224", s: "#8a8f99", S: "#6c717b" };
+    const kolonnar = 24;
+    let høgd = 2, terreng = "";
+    for (let k = 0; k < kolonnar; k++) {
+      høgd = Math.max(1, Math.min(2, høgd + vel([-1, 0, 0, 1])));
+      for (let h = 0; h < høgd; h++) {
+        const mønster = h === høgd - 1 ? GRAS : (k % 3 === 0 ? STEIN : JORD);
+        terreng += pikslar(mønster, blokkfargar, k * 8, (2 - h - 1) * 8);
+      }
+    }
+    const t = svg(`0 0 ${kolonnar * 8} 16`, "left:0; bottom:0; width:100vw; opacity:.45; shape-rendering:crispEdges;", terreng);
+    pynt.append(t);
+    // Kantete skyer som driv sakte over toppen
+    const SKY = ["...wwww.....", ".wwwwwwww...", "wwwwwwwwwwww", ".wwwwwwwwww."];
+    for (let i = 0; i < 3; i++) {
+      const el = document.createElement("div");
+      el.className = "vandrar";
+      el.style.cssText = `top:${3 + i * 7 + tilf(0, 3)}vh; width:${tilf(14, 22)}vw; opacity:${tilf(0.1, 0.18)};` +
+        `animation-duration:${tilf(90, 140)}s; animation-delay:${-tilf(0, 140)}s;`;
+      el.append(svg("0 0 12 4", "shape-rendering:crispEdges;", pikslar(SKY, { w: "#ffffff" })));
+      pynt.append(el);
+    }
+    // Små pikselting som stig: hjarte, krystallar, myntar og stjerner
+    const TING = [
+      [[".rr.rr.", "rRrrrrr", "rrrrrrr", ".rrrrr.", "..rrr..", "...r..."], { r: "#ff4d5e", R: "#ffb3bb" }],
+      [["..cc..", ".cCcc.", "cCcccc", "cccccc", ".cccc.", "..cc.."], { c: "#4fe0d6", C: "#d8fffb" }],
+      [[".yyy.", "yYyyy", "yYyOy", "yyyOy", ".yyy."], { y: "#ffcf3d", Y: "#fff2a8", O: "#d99a10" }],
+      [["...y...", "..yyy..", "yyyyyyy", ".yyyyy.", ".yy.yy.", "y.....y"], { y: "#ffe46b" }],
+    ];
+    stigande(12, "0 0 7 7", i => {
+      const [rader, f] = TING[i % TING.length];
+      return `<g style="shape-rendering:crispEdges">${pikslar(rader, f)}</g>`;
+    }, [3.2, 5], [0.25, 0.45]);
+  }
+
   if (tema === "natt") {
     // Stjernehimmel som blinkar, og ein smal månesigd
     for (let i = 0; i < 70; i++) {
@@ -1148,7 +1207,7 @@ function lagPynt(tema) {
 }
 
 const TEMA = ["fjord", "skog", "lys", "natt", "kontrast", "libry", "vinter", "var", "sommar", "haust",
-  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles"];
+  "samisk", "paaske", "mai17", "pride", "halloween", "jul", "sommarles", "spel"];
 
 function startVisning(cfg) {
   document.body.className = "vis";
