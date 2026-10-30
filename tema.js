@@ -448,20 +448,48 @@ const TEMA_LISTE = [
         pynt.append(el);
       }
       // Små pikselting som stig: hjarte, krystallar, myntar og stjerner
+      // Pikselikon med mørkt omriss, glans og skugge. «k» er omrisset i alle ikona.
+      const K = "#1c1a28";
       const TING = [
-        [[".rr.rr.", "rRrrrrr", "rrrrrrr", ".rrrrr.", "..rrr..", "...r..."], { r: "#ff4d5e", R: "#ffb3bb" }],
-        [["..cc..", ".cCcc.", "cCcccc", "cccccc", ".cccc.", "..cc.."], { c: "#4fe0d6", C: "#d8fffb" }],
-        [[".yyy.", "yYyyy", "yYyOy", "yyyOy", ".yyy."], { y: "#ffcf3d", Y: "#fff2a8", O: "#d99a10" }],
-        // Hakke: jernhovud med bøygde spissar og treskaft, litt på skrå
-        [["..hhhhh..", ".hHHHHHh.", "hH..w..Hh", "h...w...h", "....w....", "....w....", "....w....", "....w....", "....W...."],
-          { h: "#8e98a4", H: "#dce3ea", w: "#b07a40", W: "#7a5228" }, "rotate(-25 4.5 4.5)"],
+        // Hjarte
+        [["..kkk..kkk..", ".kRRRkkRRRk.", "kRWWRRRRRRrk", "kRWRRRRRRRrk", "kRRRRRRRRRrk", "kRRRRRRRRrrk",
+          ".kRRRRRRrrk.", "..kRRRRrrk..", "...kRRrrk...", "....kRrk....", ".....kk....."],
+          { k: K, R: "#e8343f", r: "#a81d2a", W: "#ffffff" }],
+        // Diamant
+        [["..kkkkkkkk..", ".kCWCCcCCck.", "kCWCCcCCcCck", "kkkkkkkkkkkk", ".kcCCcCCcCk.", "..kcCcCCck..",
+          "...kcCCck...", "....kcCk....", ".....kk....."],
+          { k: K, C: "#5fd7f0", c: "#2a9fc8", W: "#e8fbff" }],
+        // Mynt
+        [["...kkkk...", ".kkYYYYkk.", ".kYWYYYOk.", "kYWYyyYYOk", "kYWYyYYYOk", "kYYYyYYYOk", "kYYYyYYYOk",
+          ".kYYYYYOk.", ".kkOOOOkk.", "...kkkk..."],
+          { k: K, Y: "#ffcf3d", W: "#fff2a8", O: "#d99a10", y: "#e0a820" }],
+        // Sverd
+        [["..........kk", ".........kWk", "........kWsk", ".......kWsk.", "......kWsk..", ".kk..kWsk...",
+          ".kGkkWsk....", "..kGWsk.....", "..kbGGk.....", ".kbk.kGk....", "kOk...kk....", ".k.........."],
+          { k: K, W: "#eef3f8", s: "#9aa6b2", G: "#d4a43c", b: "#7a4a28", O: "#ffcf3d" }],
+        // Trylledrikk
+        [["...kkkk...", "...kcck...", "...kkkk...", "...kGGk...", "...kGGk...", "..kGPPGk..", ".kGPPPPGk.",
+          "kPWPPPPPpk", "kPWPPPPPpk", "kPPPPPPppk", ".kPPPPppk.", "..kkkkkk.."],
+          { k: K, c: "#a0703c", G: "#cfe8f0", P: "#a35ce0", p: "#6d33a8", W: "#f0dcff" }],
+        // Skattekiste
+        [[".kkkkkkkkkk.", "kBbbbbbbbbBk", "kbBBBBBBBBbk", "kkkkkGGkkkkk", "kBbbkGGkbbBk", "kbBBBkkBBBbk",
+          "kbBBBBBBBBbk", "kbBBBBBBBBbk", "kBbbbbbbbbBk", "kkkkkkkkkkkk"],
+          { k: K, B: "#b8803f", b: "#8a5a2b", G: "#ffcf3d" }],
+        // Pokal
+        [["..kkkkkkkk..", ".kkYWYYYOkk.", "kYkYWYYYOkYk", "kYkYWYYYOkYk", ".kkYYYYYOkk.", "...kYYYOk...",
+          "....kYOk....", "....kYOk....", "...kYYYOk...", "..kkkkkkkk..", "..kOOOOOOk..", "..kkkkkkkk.."],
+          { k: K, Y: "#ffcf3d", W: "#fff2a8", O: "#d99a10" }],
+        // Hakke
+        [["..kkkkkkkk..", ".kHHHHHHHHk.", "kHWhkbbkhhHk", "kHk.kbbk.kHk", "kk..kbBk..kk", "....kbBk....",
+          "....kbBk....", "....kbBk....", "....kbBk....", "....kdBk....", "....kddk....", "....kkkk...."],
+          { k: K, H: "#dce3ea", h: "#8e98a4", W: "#ffffff", b: "#c08a4c", B: "#8a5a2b", d: "#6b4422" }],
       ];
-      // Alle figurane blir sentrerte i eit 9×9-rutenett
-      stigande(12, "0 0 9 9", i => {
-        const [rader, f, snu = ""] = TING[i % TING.length];
-        const x0 = (9 - rader[0].length) / 2, y0 = (9 - rader.length) / 2;
-        return `<g style="shape-rendering:crispEdges" transform="${snu}">${pikslar(rader, f, x0, y0)}</g>`;
-      }, [4, 6], [0.25, 0.45]);
+      // Alle ikona blir sentrerte i eit 13×13-rutenett
+      stigande(14, "0 0 13 13", i => {
+        const [rader, f] = TING[i % TING.length];
+        const x0 = Math.floor((13 - rader[0].length) / 2), y0 = Math.floor((13 - rader.length) / 2);
+        return `<g style="shape-rendering:crispEdges">${pikslar(rader, f, x0, y0)}</g>`;
+      }, [6.5, 9], [0.3, 0.5]);
     },
   }
 ];
