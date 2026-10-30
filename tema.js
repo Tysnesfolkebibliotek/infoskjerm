@@ -355,13 +355,13 @@ const TEMA_LISTE = [
     id: "sommarles", namn: "Sommarles", gruppe: "Bibliotek",
     dato: "1. juni–31. august", aktuell: "05-15/08-31",
     css: `
-      :root[data-tema="sommarles"] { --symbol-plass: 24vw; }`,
+      :root[data-tema="sommarles"] { --symbol-plass: 18vw; }`,
     fargar: { bakgrunn: "#fff4dc", tekst: "#23314a", dempa: "#5b6475", aksent: "#ff7a45", "aksent-tekst": "#ffffff", brikke: "rgba(35,49,74,.08)", skugge: "255,244,220", spor: "rgba(35,49,74,.12)", "reserve-a": "#ffd27a", "reserve-b": "#ffb35c", "bakteppe-lys": "1.15" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Sommarles-logoen øvst til høgre, og fargerike bobler som stig
       const logo = document.createElement("img");
       logo.src = "sommarles.svg"; logo.alt = "Sommarles";
-      logo.style.cssText = "position:absolute; right:5vw; top:3.5vh; width:24vw; height:auto;";
+      logo.style.cssText = "position:absolute; right:5vw; top:3vh; width:18vw; height:auto;";
       pynt.append(logo);
       // Illustrasjonen frå Sommarles stor og dempa nedst, for stemning. Han ligg bak boka og teksten.
       const figurar = document.createElement("img");
