@@ -202,7 +202,7 @@ const TEMA_LISTE = [
       // fotografiet er gjord gjennomsiktig og kantane tona ut (sjå ibsen.png). Hovudet står
       // øvst til høgre ved sida av overskrifta; frakken tonar ut bak boka.
       const bilete = document.createElement("img");
-      bilete.src = "ibsen.png"; bilete.alt = "";
+      bilete.src = "ibsen.png?v=2"; bilete.alt = "";   // auk v når biletet blir bytt, så nettlesarane hentar det nye
       bilete.style.cssText = "position:absolute; right:-16vw; top:-1vh; width:66vw; height:auto; opacity:.5;";
       pynt.append(bilete);
     },
