@@ -640,7 +640,9 @@ const TEMA_LISTE = [
   {
     id: "krim", namn: "Krim", gruppe: "Sjangrar",
     skrift: "par-krim",
-    fargar: { bakgrunn: "#0e0e10", tekst: "#f2efe9", dempa: "#aaa69f", aksent: "#f2c230", "aksent-tekst": "#111111", skugge: "14,14,16", "reserve-a": "#3a3328", "reserve-b": "#17161a" },
+    css: `
+      :root[data-tema="krim"] { --symbol-plass: 20vw; }`,
+    fargar: { bakgrunn: "#0e0e10", tekst: "#f2efe9", dempa: "#aaa69f", aksent: "#d8232a", "aksent-tekst": "#ffffff", skugge: "14,14,16", "reserve-a": "#3a3328", "reserve-b": "#17161a" },
     pynt({ pynt, svg, tilf }) {
       // Lysstriper som frå ein persienne, sterkast øvst til venstre
       const striper = document.createElement("div");
@@ -657,6 +659,12 @@ const TEMA_LISTE = [
         rillar += `<ellipse cx="50" cy="${55 - i * 0.6}" rx="${rx}" ry="${ry}" stroke-dasharray="${del.toFixed(1)} ${gap.toFixed(1)}" stroke-dashoffset="${tilf(0, omkrins).toFixed(1)}"/>`;
       }
       pynt.append(svg("0 0 100 110", "right:-4vw; top:42vh; width:26vw; opacity:.09; transform:rotate(14deg); fill:none; stroke:#f2efe9; stroke-width:1.6; stroke-linecap:round;", rillar));
+      // Raudt og kvitt sperreband (utan tekst) over hjørnet øvst til høgre
+      const band = document.createElement("div");
+      band.style.cssText = "position:absolute; top:8vh; right:-24vw; width:80vw; height:3.4vh; transform:rotate(36deg);" +
+        "background:repeating-linear-gradient(-45deg, #d8232a 0 2.4vh, #f4f1ec 2.4vh 4.8vh);" +
+        "box-shadow:0 .6vh 1.6vh rgba(0,0,0,.5); opacity:.85;";
+      pynt.append(band);
     },
   }
 ];
