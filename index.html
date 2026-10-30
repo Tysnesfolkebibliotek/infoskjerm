@@ -365,6 +365,7 @@
         <option value="natur">Natur og friluftsliv</option>
         <option value="klima">Klima og miljø</option>
         <option value="handarbeid">Sy og strikk</option>
+        <option value="kulturfond">Ny norsk litteratur (Kulturfondet)</option>
         <option value="fantasy">Fantasy (born)</option>
         <option value="fotball">Fotball (born)</option>
         <option value="teikne">Teikneseriar (born)</option>
@@ -502,7 +503,7 @@
 
     <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
     <input type="hidden" id="ccl" name="ccl">
-    <details class="del" id="del-sok" data-felt="emnemodus,dewey,serie,rekkje,oppdater">
+    <details class="del" id="del-sok" data-felt="emnemodus,dewey,serie,kulturfond,rekkje,oppdater">
       <summary>Fleire søkjeval <span class="merke" hidden>endra</span></summary>
       <div class="felt">
         <span class="etikett">Fleire emneord</span>
@@ -522,6 +523,10 @@
         </div>
       </div>
       <p class="hjelp">Ei bok kjem med viss ho passar emneordet, deweynummeret <em>eller</em> serien. Dewey fangar fagbøker utan emneord.</p>
+      <div class="felt" id="kulturfondfelt">
+        <label class="val"><input type="checkbox" name="kulturfond" value="1"> Berre bøker frå Kulturfondet</label>
+        <p class="hjelp">Bøker som biblioteket har fått gjennom innkjøpsordningane til Norsk kulturfond (pre=kulturfond i Bibliofil).</p>
+      </div>
       <div class="felt">
         <span class="etikett">Rekkjefølgje</span>
         <div class="segment" role="radiogroup">
@@ -540,7 +545,7 @@
     </details>
 
 
-    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,alder,spraak,plass,utan">
+    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,aarsiste,alder,spraak,plass,utan">
       <summary>Krav til bøkene <span class="merke" hidden>endra</span></summary>
       <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
       <label class="val" id="hyllarad"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
@@ -554,6 +559,11 @@
           <label for="aartil">til og med år</label>
           <input type="number" id="aartil" name="aartil" min="1800" max="2100" placeholder="i dag">
         </div>
+      </div>
+      <div class="felt">
+        <label for="aarsiste">… eller berre dei siste åra</label>
+        <input type="number" id="aarsiste" name="aarsiste" min="1" max="50" placeholder="til dømes 2">
+        <p class="hjelp">1 = i år, 2 = i fjor og i år, osb. Følgjer med over nyttår, så karusellen held seg fersk. Går framfor «frå/til år».</p>
       </div>
       <div class="felt">
         <span class="etikett">Aldersgruppe</span>
@@ -707,7 +717,7 @@ const AVD_NAMN = { tyfv: "For vaksne", tyfb: "For born og unge" };
 const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
-  aarfra: "", aartil: "", alder: "", spraak: "", alle: "0", titlar: "",
+  aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "12", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
 };
@@ -744,6 +754,10 @@ const MALAR = {
   biografi: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "Biografiar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Biografiar", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
   natur: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "natur, friluftsliv", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Natur og friluftsliv", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
   klima: { kjelde: "sok", avd: "tyfv,tyfb", lf: "0", sjanger: "", plass: "", emne: "klima, miljø", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Klima og miljø", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
+  // Kulturfondet: bøker frå innkjøpsordningane, utgjevne i fjor og i år
+  kulturfond: { kjelde: "sok", avd: "tyfv", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+                omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", aarsiste: "2", alder: "", spraak: "", alle: "0",
+                kulturfond: "1", tittel: "Ny norsk litteratur", namn: "Frå Kulturfondet", sek: "12", oppdater: "360", omtale: "1" },
   handarbeid: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "strikking, søm, hekling, handarbeid, håndarbeid", emnemodus: "eitt", dewey: "746.4, 646.2", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Sy og strikk", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
 };
 
@@ -1389,7 +1403,7 @@ function ryddLager(behald, alt = false) {
 
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
-  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","alder","spraak","alle","titlar","namn"]
+  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
     .concat(["likte", "appell", "merkelapp"].filter(k => cfg[k] && cfg[k] !== "0"))
     .concat(cfg.appell && cfg.appellmodus === "eitt" ? ["appellmodus"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
@@ -1604,12 +1618,22 @@ function lastSvarteliste(maksAlder = 0) {
   return svartLasting;
 }
 
+// Årsspennet karusellen skal ha: { fra, til } (0 = ope), eller null.
+// «Dei siste N åra» går framfor faste årstal og blir rekna frå i år.
+function årsspenn(cfg) {
+  const siste = Math.floor(Number(cfg.aarsiste) || 0);
+  if (siste > 0) return { fra: new Date().getFullYear() - siste + 1, til: 0, relativ: siste };
+  const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
+  return fra || til ? { fra, til } : null;
+}
+
 function førehand(post, cfg) {
   if (svartelista(post.id)) return utelat("svartelista");
   const d = post.sru_recordData || {};
   // Utgjevingsår: «2026», «[2025]» og «c2019» gir alle eit årstal
-  const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
-  if (fra || til) {
+  const spenn = årsspenn(cfg);
+  if (spenn) {
+    const { fra, til } = spenn;
     const år = Number(((d.bsdc_date || "").match(/\d{4}/) || [])[0] || 0);
     if (!år || (fra && år < fra) || (til && år > til)) return utelat("utanfor utgjevingsåra");
   }
@@ -2095,11 +2119,16 @@ function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
   // Utgjevingsår i sjølve søket (Bibliofil-CCL): «år=2026», «år=2024:2026»
   // (spenn) og «år=2024:» (frå og med). Utan dette blir åra berre sjekka
   // etterpå, på eit tilfeldig utval av heile samlinga, og då blir det sjeldan treff.
-  const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
-  if (medAvgrensing && (fra || til)) {
-    const år = fra && fra === til ? fra : `${fra || 1000}:${til || ""}`;
+  // «Dei siste N åra» blir relativt (år=-1:-0), så det følgjer med over nyttår.
+  const spenn = årsspenn(cfg);
+  if (medAvgrensing && spenn) {
+    const { fra, til, relativ } = spenn;
+    const år = relativ ? (relativ === 1 ? "-0" : `-${relativ - 1}:-0`) : fra && fra === til ? fra : `${fra || 1000}:${til || ""}`;
     d.push(`bibliofil.ccl="år=${år}"`);
   }
+  // Kulturfondet: ei ferdig liste i Bibliofil. Kan ikkje sjekkast etterpå,
+  // så ho står alltid i søket.
+  if (cfg.kulturfond === "1") d.push(`bibliofil.ccl="pre=kulturfond"`);
 
   // Emneord: «alle saman» i eitt søk, «minst eitt av» som eitt søk per ord
   // Eit emne kan ha fleire former («Hestar|Hester»), som tyder «eller».
@@ -2197,7 +2226,7 @@ async function hentSøk(cfg, avd, mål, meld) {
   // Plassering og år i søket: prøv med først, og utan til slutt
   // (då blir dei berre sjekka etterpå, slik det var før).
   const medOgUtan = forsøk.map(f => [...f, true]);
-  if (cfg.plass || cfg.aarfra || cfg.aartil) medOgUtan.push(...forsøk.map(f => [...f, false]));
+  if (cfg.plass || årsspenn(cfg)) medOgUtan.push(...forsøk.map(f => [...f, false]));
   let søk = [], bunkar = [];
   for (const [medAlder, medSpråk, medAvgrensing] of medOgUtan) {
     søk = byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing);
@@ -2470,6 +2499,7 @@ function startByggjar(startCfg) {
     document.getElementById("lffelt").hidden = fast;
     document.getElementById("antalfelt").hidden = fast;
     document.getElementById("del-sok").hidden = fast;
+    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyaste har si eiga liste frå Bibliofil
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
       if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
