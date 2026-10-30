@@ -555,12 +555,19 @@ const TEMA_LISTE = [
           `animation-duration:${tilf(2, 6)}s; animation-delay:${-tilf(0, 6)}s;`;
         pynt.append(st);
       }
-      // Ein planet med ring, delvis utanfor skjermen til høgre
-      pynt.append(svg("0 0 100 100", "right:-9vw; top:28vh; width:30vw; opacity:.55;",
-        `<defs><radialGradient id="planet" cx="35%" cy="35%"><stop offset="0%" stop-color="#3fa7c9"/><stop offset="100%" stop-color="#0b2a3d"/></radialGradient></defs>` +
-        `<g transform="rotate(-18 50 50)"><ellipse cx="50" cy="50" rx="44" ry="11" fill="none" stroke="#33e1ff" stroke-width="5" opacity=".35"/><ellipse cx="50" cy="50" rx="44" ry="11" fill="none" stroke="#bff6ff" stroke-width="1.2" opacity=".4"/></g>` +
-        `<circle cx="50" cy="50" r="24" fill="url(#planet)"/>` +
-        `<g transform="rotate(-18 50 50)"><path d="M6,50 A44,11 0 0,0 94,50" fill="none" stroke="#33e1ff" stroke-width="5" opacity=".7"/><path d="M6,50 A44,11 0 0,0 94,50" fill="none" stroke="#bff6ff" stroke-width="1.2" opacity=".8"/></g>`));
+      // Ein planet med ring, delvis utanfor skjermen til høgre. Ringen er ei flat skive sett
+      // på skrå: brei ut på sidene og smal framme og bak. Den bakre halvdelen ligg bak
+      // planeten, den fremre framfor.
+      const ellipse = (rx, ry) => `M${50 - rx},50 A${rx},${ry} 0 1,0 ${50 + rx},50 A${rx},${ry} 0 1,0 ${50 - rx},50 Z`;
+      const band = (ytre, indre, farge, op) =>
+        `<path fill-rule="evenodd" fill="${farge}" opacity="${op}" d="${ellipse(ytre, ytre * 0.24)} ${ellipse(indre, indre * 0.24)}"/>`;
+      const ring = band(47, 40, "#7fe9ff", 0.8) + band(38.5, 30, "#33e1ff", 0.9) + band(30, 27, "#1d7f99", 0.7);
+      pynt.append(svg("0 0 100 100", "right:-9vw; top:28vh; width:32vw; opacity:.6;",
+        `<defs><radialGradient id="planet" cx="35%" cy="35%"><stop offset="0%" stop-color="#3fa7c9"/><stop offset="100%" stop-color="#0b2a3d"/></radialGradient>` +
+        `<clipPath id="framfor"><rect x="0" y="50" width="100" height="50"/></clipPath></defs>` +
+        `<g transform="rotate(-18 50 50)">${ring}</g>` +
+        `<circle cx="50" cy="50" r="22" fill="url(#planet)"/>` +
+        `<g transform="rotate(-18 50 50)"><g clip-path="url(#framfor)">${ring}</g></g>`));
       // Rutenett i perspektiv nedst
       let nett = "";
       for (let x = -150; x <= 250; x += 12.5) nett += `<line x1="${50 + (x - 50) * 0.12}" y1="0" x2="${x}" y2="30"/>`;
