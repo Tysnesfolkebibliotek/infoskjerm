@@ -309,6 +309,7 @@ const TEMA_LISTE = [
   },
   {
     id: "halloween", namn: "Halloween", gruppe: "Høgtider og merkedagar",
+    skrift: "par-skummel",
     dato: "31. oktober",
     aktuell: "10-10/10-31",
     fargar: { bakgrunn: "#140c1b", tekst: "#f7efe4", dempa: "#b9a5c6", aksent: "#f07c1b", "aksent-tekst": "#140c1b", skugge: "20,12,27", "reserve-a": "#4a2366", "reserve-b": "#1d1028" },
