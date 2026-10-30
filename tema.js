@@ -354,14 +354,15 @@ const TEMA_LISTE = [
   {
     id: "sommarles", namn: "Sommarles", gruppe: "Bibliotek",
     dato: "1. juni–31. august", aktuell: "05-15/08-31",
+    css: `
+      :root[data-tema="sommarles"] { --symbol-plass: 24vw; }`,
     fargar: { bakgrunn: "#fff4dc", tekst: "#23314a", dempa: "#5b6475", aksent: "#ff7a45", "aksent-tekst": "#ffffff", brikke: "rgba(35,49,74,.08)", skugge: "255,244,220", spor: "rgba(35,49,74,.12)", "reserve-a": "#ffd27a", "reserve-b": "#ffb35c", "bakteppe-lys": "1.15" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
-      // Sol som snur seg sakte, og fargerike bobler som stig
-      let stråler = "";
-      for (let v = 0; v < 360; v += 30) stråler += `<line x1="50" y1="8" x2="50" y2="20" transform="rotate(${v} 50 50)"/>`;
-      const sol = svg("0 0 100 100", "right:3vw; top:5vh; width:20vw; opacity:.55; animation: snu 80s linear infinite;",
-        `<g stroke="#ffb72b" stroke-width="4" stroke-linecap="round">${stråler}</g><circle cx="50" cy="50" r="22" fill="#ffc83d"/>`);
-      pynt.append(sol);
+      // Sommarles-logoen øvst til høgre, og fargerike bobler som stig
+      const logo = document.createElement("img");
+      logo.src = "sommarles.svg"; logo.alt = "Sommarles";
+      logo.style.cssText = "position:absolute; right:5vw; top:3.5vh; width:24vw; height:auto;";
+      pynt.append(logo);
       for (let i = 0; i < 12; i++) {
         const b = document.createElement("div"), d = tilf(1, 3.2);
         b.className = "boble";
