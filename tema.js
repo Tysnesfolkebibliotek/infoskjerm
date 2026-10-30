@@ -484,12 +484,24 @@ const TEMA_LISTE = [
           "....kbBk....", "....kbBk....", "....kbBk....", "....kdBk....", "....kddk....", "....kkkk...."],
           { k: K, H: "#dce3ea", h: "#8e98a4", W: "#ffffff", b: "#c08a4c", B: "#8a5a2b", d: "#6b4422" }],
       ];
-      // Alle ikona blir sentrerte i eit 13×13-rutenett
-      stigande(14, "0 0 13 13", i => {
-        const [rader, f] = TING[i % TING.length];
+      // Ikona stig i sju faste spor med same fart, så avstanden mellom dei aldri endrar seg.
+      // Kvart spor har to ikon med ein halv runde mellom, og spora er forskyvde i høgda
+      // (minst 3/14 runde mellom nabospor). Då kjem ingen ikon oppå eller rett ved sida av
+      // kvarandre, og dei dannar heller ikkje rette rader.
+      const SPOR = 7, RUNDE = 40, ikon = [];
+      for (let spor = 0; spor < SPOR; spor++) for (let n = 0; n < 2; n++) ikon.push([spor, n]);
+      ikon.forEach(([spor, n], i) => {
+        const [rader, f] = TING[(spor * 5 + n * 3) % TING.length];
         const x0 = Math.floor((13 - rader[0].length) / 2), y0 = Math.floor((13 - rader.length) / 2);
-        return `<g style="shape-rendering:crispEdges">${pikslar(rader, f, x0, y0)}</g>`;
-      }, [6.5, 9], [0.3, 0.5]);
+        const fase = n * 0.5 + ((spor * 3) % SPOR) / (2 * SPOR) + tilf(-0.015, 0.015);
+        const d = document.createElement("div"), breidd = tilf(6.5, 8);
+        d.className = "boble";
+        d.style.cssText = `left:${(spor + 0.5) * (100 / SPOR) - breidd / 2 + tilf(-1, 1)}vw; width:${breidd}vw; height:auto; border-radius:0;` +
+          `opacity:${tilf(0.3, 0.5)}; animation-duration:${RUNDE}s; animation-delay:${-fase * RUNDE}s;`;
+        d.append(svg("0 0 13 13", "position:static; width:100%; height:auto; display:block;",
+          `<g style="shape-rendering:crispEdges">${pikslar(rader, f, x0, y0)}</g>`));
+        pynt.append(d);
+      });
     },
   }
 ];
