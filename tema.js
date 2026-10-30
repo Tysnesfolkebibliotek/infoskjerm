@@ -24,21 +24,26 @@ const TEMAGRUPPER = ["Faste", "Årstider", "Høgtider og merkedagar", "Sjangrar"
 const TEMA_LISTE = [
   {
     id: "kveld", namn: "Kveld", gruppe: "Faste",
+    skrift: "par-elegant",
   },
   {
     id: "fjord", namn: "Fjord", gruppe: "Faste",
+    skrift: "par-klassisk",
     fargar: { bakgrunn: "#0a1822", tekst: "#eef6fb", dempa: "#9db5c4", aksent: "#2fb2ee", "aksent-tekst": "#04141d", skugge: "10,24,34", "reserve-a": "#17384c", "reserve-b": "#0b1c27" },
   },
   {
     id: "skog", namn: "Skog", gruppe: "Faste",
+    skrift: "par-venleg",
     fargar: { bakgrunn: "#0e1712", tekst: "#f0f3ec", dempa: "#a9b8a6", aksent: "#9cc96b", "aksent-tekst": "#122008", skugge: "14,23,18", "reserve-a": "#233a2a", "reserve-b": "#111c15" },
   },
   {
     id: "lys", namn: "Lys", gruppe: "Faste",
+    skrift: "par-litteraer",
     fargar: { bakgrunn: "#f4efe6", tekst: "#1f1b16", dempa: "#62584c", aksent: "#b8741a", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "244,239,230", spor: "rgba(0,0,0,.10)", "reserve-a": "#e4d8c4", "reserve-b": "#d3c3a9", "bakteppe-lys": "1.15" },
   },
   {
     id: "natt", namn: "Natt", gruppe: "Faste",
+    skrift: "par-historisk",
     fargar: { bakgrunn: "#070b1f", tekst: "#eef1ff", dempa: "#a9b1d6", aksent: "#9db4ff", "aksent-tekst": "#070b1f", skugge: "7,11,31", "reserve-a": "#22306b", "reserve-b": "#0c1230" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Stjernehimmel som blinkar, og ein smal månesigd
