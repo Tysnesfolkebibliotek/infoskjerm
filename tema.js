@@ -366,8 +366,8 @@ const TEMA_LISTE = [
       // Illustrasjonen frå Sommarles stor og dempa nedst, for stemning. Han ligg bak boka og teksten.
       const figurar = document.createElement("img");
       figurar.src = "sommarles-figurar.webp"; figurar.alt = "";
-      // Svakare i midten, der teksten står, og sterkare ute på sidene, der andleta er
-      const maske = "linear-gradient(to right, #000 0%, #000 18%, rgba(0,0,0,.25) 38%, rgba(0,0,0,.25) 62%, #000 82%, #000 100%)";
+      // Tydeleg øvst, der andleta er, og tonar ut nedover, der boktittelen og omtalen står
+      const maske = "linear-gradient(to bottom, #000 0%, #000 24%, rgba(0,0,0,.2) 50%, transparent 78%)";
       figurar.style.cssText = "position:absolute; left:50%; bottom:-6vh; width:105vw; height:auto; transform:translateX(-50%); opacity:.24;" +
         `-webkit-mask-image:${maske}; mask-image:${maske};`;
       pynt.append(figurar);
