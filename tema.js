@@ -452,12 +452,16 @@ const TEMA_LISTE = [
         [[".rr.rr.", "rRrrrrr", "rrrrrrr", ".rrrrr.", "..rrr..", "...r..."], { r: "#ff4d5e", R: "#ffb3bb" }],
         [["..cc..", ".cCcc.", "cCcccc", "cccccc", ".cccc.", "..cc.."], { c: "#4fe0d6", C: "#d8fffb" }],
         [[".yyy.", "yYyyy", "yYyOy", "yyyOy", ".yyy."], { y: "#ffcf3d", Y: "#fff2a8", O: "#d99a10" }],
-        [["...y...", "..yyy..", "yyyyyyy", ".yyyyy.", ".yy.yy.", "y.....y"], { y: "#ffe46b" }],
+        // Hakke: jernhovud med bøygde spissar og treskaft, litt på skrå
+        [["..hhhhh..", ".hHHHHHh.", "hH..w..Hh", "h...w...h", "....w....", "....w....", "....w....", "....w....", "....W...."],
+          { h: "#8e98a4", H: "#dce3ea", w: "#b07a40", W: "#7a5228" }, "rotate(-25 4.5 4.5)"],
       ];
-      stigande(12, "0 0 7 7", i => {
-        const [rader, f] = TING[i % TING.length];
-        return `<g style="shape-rendering:crispEdges">${pikslar(rader, f)}</g>`;
-      }, [3.2, 5], [0.25, 0.45]);
+      // Alle figurane blir sentrerte i eit 9×9-rutenett
+      stigande(12, "0 0 9 9", i => {
+        const [rader, f, snu = ""] = TING[i % TING.length];
+        const x0 = (9 - rader[0].length) / 2, y0 = (9 - rader.length) / 2;
+        return `<g style="shape-rendering:crispEdges" transform="${snu}">${pikslar(rader, f, x0, y0)}</g>`;
+      }, [4, 6], [0.25, 0.45]);
     },
   }
 ];
