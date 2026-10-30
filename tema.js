@@ -636,6 +636,37 @@ const TEMA_LISTE = [
           "fill:none; stroke:#34281f; stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round;", REISKAP[namn]));
       }
     },
+  },
+  {
+    id: "krim", namn: "Krim", gruppe: "Sjangrar",
+    skrift: "par-krim",
+    css: `
+      :root[data-tema="krim"] { --symbol-plass: 20vw; }`,
+    fargar: { bakgrunn: "#0e0e10", tekst: "#f2efe9", dempa: "#aaa69f", aksent: "#f2c230", "aksent-tekst": "#111111", skugge: "14,14,16", "reserve-a": "#3a3328", "reserve-b": "#17161a" },
+    pynt({ pynt, svg, tilf }) {
+      // Lysstriper som frå ein persienne, sterkast øvst til venstre
+      const striper = document.createElement("div");
+      striper.style.cssText = "position:absolute; inset:0;" +
+        "background:repeating-linear-gradient(-32deg, rgba(255,244,214,.07) 0 2.6vh, transparent 2.6vh 6.5vh);" +
+        "-webkit-mask-image:radial-gradient(ellipse 90% 70% at 15% 20%, #000, transparent 75%);" +
+        "mask-image:radial-gradient(ellipse 90% 70% at 15% 20%, #000, transparent 75%);";
+      pynt.append(striper);
+      // Eit svakt fingeravtrykk til høgre
+      let rillar = "";
+      for (let i = 1; i <= 13; i++) {
+        const rx = i * 3.1, ry = i * 4, omkrins = Math.PI * (rx + ry);
+        const del = omkrins * tilf(0.12, 0.3), gap = omkrins * tilf(0.02, 0.06);
+        rillar += `<ellipse cx="50" cy="${55 - i * 0.6}" rx="${rx}" ry="${ry}" stroke-dasharray="${del.toFixed(1)} ${gap.toFixed(1)}" stroke-dashoffset="${tilf(0, omkrins).toFixed(1)}"/>`;
+      }
+      pynt.append(svg("0 0 100 110", "right:-4vw; top:42vh; width:26vw; opacity:.09; transform:rotate(14deg); fill:none; stroke:#f2efe9; stroke-width:1.6; stroke-linecap:round;", rillar));
+      // Gult sperreband over hjørnet øvst til høgre
+      const band = document.createElement("div");
+      band.textContent = "SPERRA OMRÅDE • ".repeat(6);
+      band.style.cssText = "position:absolute; top:7vh; right:-24vw; width:80vw; padding:.6vh 0; transform:rotate(36deg);" +
+        "background:#f2c230; color:#111; font:800 2.2vw/1 var(--skrift); letter-spacing:.12em; white-space:nowrap; overflow:hidden;" +
+        "box-shadow:0 .6vh 1.6vh rgba(0,0,0,.5); opacity:.9;";
+      pynt.append(band);
+    },
   }
 ];
 
