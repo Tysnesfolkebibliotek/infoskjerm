@@ -602,6 +602,40 @@ const TEMA_LISTE = [
       g.setAttribute("preserveAspectRatio", "none");
       pynt.append(g);
     },
+  },
+  {
+    id: "hobby", namn: "Hobby", gruppe: "Sjangrar",
+    dato: "søm, snekring, hage, perler",
+    skrift: "par-venleg",
+    fargar: { bakgrunn: "#f4ecdf", tekst: "#34281f", dempa: "#6b5d50", aksent: "#b5532f", "aksent-tekst": "#ffffff", brikke: "rgba(52,40,31,.08)", skugge: "244,236,223", spor: "rgba(52,40,31,.12)", "reserve-a": "#d9b48a", "reserve-b": "#b98a5e", "bakteppe-lys": "1.15" },
+    pynt({ pynt, svg }) {
+      // Ei «sydd» stiplelinje rundt heile skjermen
+      const ramme = svg("0 0 100 100", "left:2.2vw; top:1.4vh; width:calc(100vw - 4.4vw); height:calc(100vh - 2.8vh); overflow:visible;",
+        `<rect x="0" y="0" width="100" height="100" rx="1.2" fill="none" stroke="#b5532f" stroke-width="2.2" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`);
+      ramme.setAttribute("preserveAspectRatio", "none");
+      ramme.style.opacity = ".45";
+      pynt.append(ramme);
+      // Strekteikningar av hobbyreiskap i margane, på faste plassar så dei ikkje kolliderer
+      const REISKAP = {
+        snelle: `<path d="M6 3h12M6 21h12"/><path d="M8 3v18M16 3v18"/><path d="M8 7l8 2M8 10l8 2M8 13l8 2M8 16l8 2"/><path d="M16 14c3 1 4 4 3 7"/>`,
+        saks: `<circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M8.2 16L19 3M15.8 16L5 3"/><circle cx="12" cy="10.5" r=".6"/>`,
+        hammar: `<path d="M5 4h9l3 2-3 2H5z"/><path d="M9 8v13"/><path d="M14 4v4"/>`,
+        sag: `<path d="M4 9l13-1v6L4 15z"/><path d="M4 15l1.2 2 1.2-2 1.2 2 1.2-2 1.2 2 1.2-2 1.2 2 1.2-2 1.2 2 1.2-2"/><path d="M17 7h4v8h-4"/><path d="M18.5 9.5h1.2v3h-1.2z"/>`,
+        potte: `<path d="M6 13h12l-1.6 8H7.6z"/><path d="M5 13h14"/><path d="M12 13V7"/><path d="M12 9c-3.5 0-5.5-2-5.5-5.5 3.5 0 5.5 2 5.5 5.5zM12 10c3.5 0 5.5-2 5.5-5.5-3.5 0-5.5 2-5.5 5.5z"/>`,
+        perler: `<path d="M3 5c1 9 5 14 9 14s8-5 9-14" stroke-dasharray=".1 3.2" stroke-width="2.6"/><circle cx="12" cy="19" r="1.6"/>`,
+        garn: `<circle cx="10" cy="14" r="7"/><path d="M4.5 11c4 0 8.5 2.5 10.5 8M5.5 8.5c4.5.5 9 4 10.5 9.5M8.5 7.3c3.5 1.5 6.5 5.5 7.3 11"/><path d="M13 3l8 9M17 2l5 6"/>`,
+      };
+      const PLASS = [   // [reiskap, side, avstand frå toppen (vh), storleik (vw), vinkel]
+        ["snelle", "left", 20, 10, -10], ["sag", "right", 23, 12, 12],
+        ["garn", "left", 41, 11, 6], ["saks", "right", 44, 10, -14],
+        ["potte", "left", 62, 11, -4], ["perler", "right", 64, 11, 8],
+        ["hammar", "left", 82, 10, 18],
+      ];
+      for (const [namn, side, topp, b, v] of PLASS) {
+        pynt.append(svg("0 0 24 24", `${side}:3.5vw; top:${topp}vh; width:${b}vw; opacity:.22; transform:rotate(${v}deg);` +
+          "fill:none; stroke:#34281f; stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round;", REISKAP[namn]));
+      }
+    },
   }
 ];
 
