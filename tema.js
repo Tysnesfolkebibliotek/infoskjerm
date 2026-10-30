@@ -191,6 +191,23 @@ const TEMA_LISTE = [
     },
   },
   {
+    id: "ibsen", namn: "Ibsen", gruppe: "Høgtider og merkedagar",
+    dato: "Ibsenåret 2028",
+    skrift: "par-elegant",
+    css: `
+      :root[data-tema="ibsen"] { --symbol-plass: 30vw; }`,
+    fargar: { bakgrunn: "#17130f", tekst: "#f3ece0", dempa: "#c8b9a0", aksent: "#c9a45c", "aksent-tekst": "#17130f", skugge: "23,19,15", "reserve-a": "#5a4630", "reserve-b": "#241c14" },
+    pynt({ pynt }) {
+      // Portrett av Henrik Ibsen (fotografi frå om lag 1900, fritt å bruke). Bakgrunnen i
+      // fotografiet er gjord gjennomsiktig og kantane tona ut (sjå ibsen.png). Hovudet står
+      // øvst til høgre ved sida av overskrifta; frakken tonar ut bak boka.
+      const bilete = document.createElement("img");
+      bilete.src = "ibsen.png"; bilete.alt = "";
+      bilete.style.cssText = "position:absolute; right:-16vw; top:-1vh; width:66vw; height:auto; opacity:.5;";
+      pynt.append(bilete);
+    },
+  },
+  {
     id: "paaske", namn: "Påske", gruppe: "Høgtider og merkedagar",
     aktuell: "påske",
     fargar: { bakgrunn: "#1b1f0f", tekst: "#fbf7e6", dempa: "#d0c99f", aksent: "#f3d23c", "aksent-tekst": "#1b1f0f", skugge: "27,31,15", "reserve-a": "#5d5b1d", "reserve-b": "#262a12" },
