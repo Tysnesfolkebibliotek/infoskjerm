@@ -2092,13 +2092,13 @@ function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
   // Fleire former, til dømes «Romanar, Roman», gir eitt søk per form.
   const sjangrar = (cfg.sjanger || "").split(",").map(reinOrd).filter(Boolean);
   if (rein(cfg.ccl)) d.push(`bibliofil.ccl="${rein(cfg.ccl)}"`);
-  // Utgjevingsår i sjølve søket: Bibliofil forstår «år=2024:2026» (spenn)
-  // og «år=2026». Utan dette blir åra berre sjekka etterpå, på eit
-  // tilfeldig utval av heile samlinga, og då blir det sjeldan treff.
+  // Utgjevingsår i sjølve søket (Bibliofil-CCL): «år=2026», «år=2024:2026»
+  // (spenn) og «år=2024:» (frå og med). Utan dette blir åra berre sjekka
+  // etterpå, på eit tilfeldig utval av heile samlinga, og då blir det sjeldan treff.
   const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
   if (medAvgrensing && (fra || til)) {
-    const a = fra || 1000, b = til || new Date().getFullYear() + 1;
-    d.push(`bibliofil.ccl="år=${a === b ? a : a + ":" + b}"`);
+    const år = fra && fra === til ? fra : `${fra || 1000}:${til || ""}`;
+    d.push(`bibliofil.ccl="år=${år}"`);
   }
 
   // Emneord: «alle saman» i eitt søk, «minst eitt av» som eitt søk per ord
