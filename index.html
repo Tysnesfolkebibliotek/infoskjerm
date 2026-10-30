@@ -2131,11 +2131,12 @@ function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
   const språk = medSpråk ? (cfg.spraak || "").split(",").map(rein).filter(Boolean) : [];
   const språkVariantar = språk.length ? språk.map(s => [`dc.language=${s}`]) : [[]];
 
-  // Plassering: eitt søk per ord (bibliofil.ccl="plass=manga"). Feltet tyder
-  // «inneheld», men Bibliofil søkjer på heile plasseringa, så gir det ingen
-  // treff, prøver hentSøk utan, og plasseringa blir sjekka etterpå som før.
-  const plass = medAvgrensing ? (cfg.plass || "").split(",").map(rein).filter(Boolean) : [];
-  const plassVariantar = plass.length ? plass.map(pl => [`bibliofil.ccl="plass=${pl}"`]) : [[]];
+  // Plassering: eitt søk per ord, trunkert (bibliofil.ccl="plass=manga*"),
+  // så det treff alle plasseringar som byrjar på ordet. Bibliofil har ikkje
+  // venstretrunkering, så gir det ingen treff, prøver hentSøk utan, og
+  // «inneheld» blir sjekka etterpå som før.
+  const plass = medAvgrensing ? (cfg.plass || "").split(",").map(rein).map(pl => pl.replace(/\*+$/, "")).filter(Boolean) : [];
+  const plassVariantar = plass.length ? plass.map(pl => [`bibliofil.ccl="plass=${pl}*"`]) : [[]];
 
   const ut = [];
   for (const e of treffVariantar) for (const a of alderVariantar) for (const s of språkVariantar) for (const pl of plassVariantar)
