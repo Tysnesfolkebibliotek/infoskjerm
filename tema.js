@@ -484,20 +484,19 @@ const TEMA_LISTE = [
           "....kbBk....", "....kbBk....", "....kbBk....", "....kdBk....", "....kddk....", "....kkkk...."],
           { k: K, H: "#dce3ea", h: "#8e98a4", W: "#ffffff", b: "#c08a4c", B: "#8a5a2b", d: "#6b4422" }],
       ];
-      // Ikona stig i sju faste spor med same fart, så avstanden mellom dei aldri endrar seg.
-      // Kvart spor har to ikon med ein halv runde mellom, og spora er forskyvde i høgda
-      // (minst 3/14 runde mellom nabospor). Då kjem ingen ikon oppå eller rett ved sida av
-      // kvarandre, og dei dannar heller ikkje rette rader.
-      const SPOR = 7, RUNDE = 40, ikon = [];
-      for (let spor = 0; spor < SPOR; spor++) for (let n = 0; n < 2; n++) ikon.push([spor, n]);
-      ikon.forEach(([spor, n], i) => {
-        const [rader, f] = TING[(spor * 5 + n * 3) % TING.length];
+      // Fire ikon, eitt av kvart slag, i kvart sitt spor. Alle stig like fort, og dei er
+      // forskyvde ein kvart runde frå kvarandre, så dei aldri kjem oppå eller ved sida av
+      // kvarandre. Rekkjefølgja på fasane gjer at nabospor alltid er minst ein kvart runde frå kvarandre.
+      const VALDE = [7, 1, 6, 0];          // hakke, diamant, pokal, hjarte (plass i TING)
+      const FASE = [0, 0.5, 0.25, 0.75];
+      const SPOR = VALDE.length, RUNDE = 40;
+      VALDE.forEach((nr, spor) => {
+        const [rader, f] = TING[nr];
         const x0 = Math.floor((13 - rader[0].length) / 2), y0 = Math.floor((13 - rader.length) / 2);
-        const fase = n * 0.5 + ((spor * 3) % SPOR) / (2 * SPOR) + tilf(-0.015, 0.015);
-        const d = document.createElement("div"), breidd = tilf(6.5, 8);
+        const d = document.createElement("div"), breidd = 8;
         d.className = "boble";
-        d.style.cssText = `left:${(spor + 0.5) * (100 / SPOR) - breidd / 2 + tilf(-1, 1)}vw; width:${breidd}vw; height:auto; border-radius:0;` +
-          `opacity:${tilf(0.3, 0.5)}; animation-duration:${RUNDE}s; animation-delay:${-fase * RUNDE}s;`;
+        d.style.cssText = `left:${(spor + 0.5) * (100 / SPOR) - breidd / 2 + tilf(-2, 2)}vw; width:${breidd}vw; height:auto; border-radius:0;` +
+          `opacity:.45; animation-duration:${RUNDE}s; animation-delay:${-FASE[spor] * RUNDE}s;`;
         d.append(svg("0 0 13 13", "position:static; width:100%; height:auto; display:block;",
           `<g style="shape-rendering:crispEdges">${pikslar(rader, f, x0, y0)}</g>`));
         pynt.append(d);
