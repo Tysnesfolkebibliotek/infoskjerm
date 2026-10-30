@@ -121,7 +121,7 @@ const TEMA_LISTE = [
   {
     id: "sommar", namn: "Sommar", gruppe: "Årstider",
     aktuell: "06-01/08-31",
-    fargar: { bakgrunn: "#fff0d4", tekst: "#1d3a4f", dempa: "#56687a", aksent: "#ff6b4a", "aksent-tekst": "#ffffff", brikke: "rgba(29,58,79,.08)", skugge: "255,240,212", spor: "rgba(29,58,79,.14)", "reserve-a": "#ffd08a", "reserve-b": "#ffb06b", "bakteppe-lys": "1.15" },
+    fargar: { bakgrunn: "#fff0d4", tekst: "#1d3a4f", dempa: "#56687a", aksent: "#c4401f", "aksent-tekst": "#ffffff", brikke: "rgba(29,58,79,.08)", skugge: "255,240,212", spor: "rgba(29,58,79,.14)", "reserve-a": "#ffd08a", "reserve-b": "#ffb06b", "bakteppe-lys": "1.15" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Sol med glød, og tre lag med bølgjer som glir sakte nedst
       pynt.append(svg("0 0 100 100", "right:3vw; top:5vh; width:22vw; opacity:.75;",
@@ -362,7 +362,7 @@ const TEMA_LISTE = [
     dato: "1. juni–31. august", aktuell: "05-15/08-31",
     css: `
       :root[data-tema="sommarles"] { --symbol-plass: 18vw; }`,
-    fargar: { bakgrunn: "#fff4dc", tekst: "#23314a", dempa: "#5b6475", aksent: "#ff7a45", "aksent-tekst": "#ffffff", brikke: "rgba(35,49,74,.08)", skugge: "255,244,220", spor: "rgba(35,49,74,.12)", "reserve-a": "#ffd27a", "reserve-b": "#ffb35c", "bakteppe-lys": "1.15" },
+    fargar: { bakgrunn: "#fff4dc", tekst: "#23314a", dempa: "#5b6475", aksent: "#c2410c", "aksent-tekst": "#ffffff", brikke: "rgba(35,49,74,.08)", skugge: "255,244,220", spor: "rgba(35,49,74,.12)", "reserve-a": "#ffd27a", "reserve-b": "#ffb35c", "bakteppe-lys": "1.15" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Sommarles-logoen øvst til høgre, og fargerike bobler som stig
       const logo = document.createElement("img");

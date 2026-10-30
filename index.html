@@ -81,7 +81,7 @@
   :root[data-bakgrunn="svak"] .bakteppe { inset: -3%; filter: blur(14px) saturate(1.05) brightness(calc(var(--bakteppe-lys) * .85)); }
   /* Sakte zoom: omslaget glir og veks langsamt medan boka står */
   :root[data-bakgrunn="zoom"] .bakteppe { filter: blur(28px) saturate(1.2) brightness(var(--bakteppe-lys)); }
-  :root[data-bakgrunn="zoom"] .bakteppe.synleg { animation: glid var(--sek, 12s) linear both; }
+  :root[data-bakgrunn="zoom"] .bakteppe.synleg { animation: glid var(--sek, 20s) linear both; }
   @keyframes glid { from { transform: scale(1.05) translate(0, 0); } to { transform: scale(1.3) translate(-3%, -2%); } }
   /* Fargane frå omslaget: ein rolig fargeovergang i staden for biletet */
   :root[data-bakgrunn="farge"] .bakteppe.farga { inset: 0; filter: none; }
@@ -718,7 +718,7 @@ const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
-  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "12", oppdater: "360", omtale: "1",
+  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
 };
 
@@ -727,38 +727,38 @@ const MALAR = {
   // som regel utlånte, så «står på hylla» er av.
   reservert: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "reservert",
                omslag: "1", hylla: "0", perforf: "0", utan: "", antal: "20", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
-               tittel: "Mest reservert akkurat no", namn: "", sek: "12", oppdater: "240", omtale: "1" },
+               tittel: "Mest reservert akkurat no", namn: "", sek: "20", oppdater: "240", omtale: "1" },
   // Julebøker: søk direkte på plasseringa «jul» med CCL (plass=jul).
   jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "plass=jul",
          rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
-         tittel: "Julebøker", namn: "", sek: "12", oppdater: "360", omtale: "1" },
+         tittel: "Julebøker", namn: "", sek: "20", oppdater: "360", omtale: "1" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
-  biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "12", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker, Bildebøker, Biletbok, Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
-  born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "12", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
-  ungdom_nn:   { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "12", oppdater: "360", omtale: "1", avd: "tyfb,tyfv", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "u,mu,vu", tittel: "Ungdomsbøker på nynorsk" },
+  biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker, Bildebøker, Biletbok, Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
+  born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
+  ungdom_nn:   { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb,tyfv", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "u,mu,vu", tittel: "Ungdomsbøker på nynorsk" },
   // Blankt skjema: begge avdelingane, ingen avgrensingar og ingen krav
   blank: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
            omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
-           tittel: "", namn: "", sek: "12", oppdater: "360", omtale: "1" },
+           tittel: "", namn: "", sek: "20", oppdater: "360", omtale: "1" },
   nyheiter: { kjelde: "nyaste", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
               omslag: "1", hylla: "0", perforf: "0", utan: "", antal: "20", aarfra: "", aartil: "", alder: "", alle: "0",
-              tittel: "Nyheiter", tema: "kveld", namn: "", sek: "12", oppdater: "720", omtale: "1" },
+              tittel: "Nyheiter", tema: "kveld", namn: "", sek: "20", oppdater: "720", omtale: "1" },
   sakprosa: { ...STANDARD },
   fantasy:  { kjelde: "sok", avd: "tyfb", lf: "1", sjanger: "Fantasy", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
               omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "30", aarfra: "", aartil: "", alder: "", alle: "0",
-              tittel: "Fantasy", tema: "kveld", namn: "For born og unge", sek: "12", oppdater: "360", omtale: "1" },
-  krim: { kjelde: "sok", avd: "tyfv", lf: "1", sjanger: "Krim, Kriminal", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Krim", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
-  fotball: { kjelde: "sok", avd: "tyfb", lf: "", sjanger: "", plass: "", emne: "fotball", emnemodus: "eitt", dewey: "796.334", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Fotball", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
-  lokal: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "tysnes, sunnhordland", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "0", hylla: "1", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Lokalhistorie", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
-  teikne: { kjelde: "sok", avd: "tyfb", lf: "", sjanger: "Teikneseriar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Teikneseriar", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
-  biografi: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "Biografiar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Biografiar", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
-  natur: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "natur, friluftsliv", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Natur og friluftsliv", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
-  klima: { kjelde: "sok", avd: "tyfv,tyfb", lf: "0", sjanger: "", plass: "", emne: "klima, miljø", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Klima og miljø", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
+              tittel: "Fantasy", tema: "kveld", namn: "For born og unge", sek: "20", oppdater: "360", omtale: "1" },
+  krim: { kjelde: "sok", avd: "tyfv", lf: "1", sjanger: "Krim, Kriminal", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Krim", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  fotball: { kjelde: "sok", avd: "tyfb", lf: "", sjanger: "", plass: "", emne: "fotball", emnemodus: "eitt", dewey: "796.334", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Fotball", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  lokal: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "tysnes, sunnhordland", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "0", hylla: "1", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Lokalhistorie", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  teikne: { kjelde: "sok", avd: "tyfb", lf: "", sjanger: "Teikneseriar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Teikneseriar", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  biografi: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "Biografiar", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Biografiar", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  natur: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "natur, friluftsliv", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "0", tittel: "Natur og friluftsliv", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  klima: { kjelde: "sok", avd: "tyfv,tyfb", lf: "0", sjanger: "", plass: "", emne: "klima, miljø", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Klima og miljø", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
   // Kulturfondet: bøker frå innkjøpsordningane, utgjevne i fjor og i år
   kulturfond: { kjelde: "sok", avd: "tyfv", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
                 omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", aarsiste: "2", alder: "", spraak: "", alle: "0",
-                kulturfond: "1", tittel: "Ny norsk litteratur", namn: "Frå Kulturfondet", sek: "12", oppdater: "360", omtale: "1" },
-  handarbeid: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "strikking, søm, hekling, handarbeid, håndarbeid", emnemodus: "eitt", dewey: "746.4, 646.2", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Sy og strikk", tema: "kveld", namn: "", sek: "12", oppdater: "360", omtale: "1" },
+                kulturfond: "1", tittel: "Ny norsk litteratur", namn: "Frå Kulturfondet", sek: "20", oppdater: "360", omtale: "1" },
+  handarbeid: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "strikking, søm, hekling, handarbeid, håndarbeid", emnemodus: "eitt", dewey: "746.4, 646.2", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Sy og strikk", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
 };
 
 const NØKLAR = Object.keys(STANDARD);
@@ -950,7 +950,7 @@ function startVisning(cfg) {
   const bakteppe = [document.getElementById("bakteppe-a"), document.getElementById("bakteppe-b")];
   let aktivtBakteppe = 0;
 
-  const SEK = Math.max(4, Number(cfg.sek) || 12);
+  const SEK = Math.max(4, Number(cfg.sek) || 20);
   document.documentElement.style.setProperty("--sek", SEK + "s");
   const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "";
   if (BAKGRUNN) document.documentElement.dataset.bakgrunn = BAKGRUNN;
