@@ -2083,7 +2083,7 @@ function ordSøk(tekst) {
 // Gir ei liste med søk. Vanlegvis eitt, men med «minst eitt av» og fleire
 // emneord blir det eitt søk per emneord, som blir slått saman etterpå.
 // Då treng vi ikkje «or» og parentesar, som serveren kanskje ikkje støttar.
-function byggSøk(cfg, avd, medAlder, medSpråk) {
+function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
   const rein = s => (s || "").replace(/["\\]/g, "").trim();
   const d = [`bibliofil.ccl="avd=${avd}"`, "norzig.materialType=l"];
   if (cfg.lf) d.push(`bibliofil.ccl="lf=${rein(cfg.lf)}"`);
@@ -2092,6 +2092,14 @@ function byggSøk(cfg, avd, medAlder, medSpråk) {
   // Fleire former, til dømes «Romanar, Roman», gir eitt søk per form.
   const sjangrar = (cfg.sjanger || "").split(",").map(reinOrd).filter(Boolean);
   if (rein(cfg.ccl)) d.push(`bibliofil.ccl="${rein(cfg.ccl)}"`);
+  // Utgjevingsår i sjølve søket: Bibliofil forstår «år=2024:2026» (spenn)
+  // og «år=2026». Utan dette blir åra berre sjekka etterpå, på eit
+  // tilfeldig utval av heile samlinga, og då blir det sjeldan treff.
+  const fra = Number(cfg.aarfra) || 0, til = Number(cfg.aartil) || 0;
+  if (medAvgrensing && (fra || til)) {
+    const a = fra || 1000, b = til || new Date().getFullYear() + 1;
+    d.push(`bibliofil.ccl="år=${a === b ? a : a + ":" + b}"`);
+  }
 
   // Emneord: «alle saman» i eitt søk, «minst eitt av» som eitt søk per ord
   // Eit emne kan ha fleire former («Hestar|Hester»), som tyder «eller».
@@ -2123,9 +2131,15 @@ function byggSøk(cfg, avd, medAlder, medSpråk) {
   const språk = medSpråk ? (cfg.spraak || "").split(",").map(rein).filter(Boolean) : [];
   const språkVariantar = språk.length ? språk.map(s => [`dc.language=${s}`]) : [[]];
 
+  // Plassering: eitt søk per ord (bibliofil.ccl="plass=manga"). Feltet tyder
+  // «inneheld», men Bibliofil søkjer på heile plasseringa, så gir det ingen
+  // treff, prøver hentSøk utan, og plasseringa blir sjekka etterpå som før.
+  const plass = medAvgrensing ? (cfg.plass || "").split(",").map(rein).filter(Boolean) : [];
+  const plassVariantar = plass.length ? plass.map(pl => [`bibliofil.ccl="plass=${pl}"`]) : [[]];
+
   const ut = [];
-  for (const e of treffVariantar) for (const a of alderVariantar) for (const s of språkVariantar)
-    ut.push([...d, ...e, ...a, ...s].join(" and "));
+  for (const e of treffVariantar) for (const a of alderVariantar) for (const s of språkVariantar) for (const pl of plassVariantar)
+    ut.push([...d, ...e, ...a, ...s, ...pl].join(" and "));
   return ut;
 }
 
@@ -2179,9 +2193,13 @@ async function hentSøk(cfg, avd, mål, meld) {
   if (cfg.alder) forsøk.push([false, true]);
   if (cfg.spraak) forsøk.push([true, false]);
   if (cfg.alder && cfg.spraak) forsøk.push([false, false]);
+  // Plassering og år i søket: prøv med først, og utan til slutt
+  // (då blir dei berre sjekka etterpå, slik det var før).
+  const medOgUtan = forsøk.map(f => [...f, true]);
+  if (cfg.plass || cfg.aarfra || cfg.aartil) medOgUtan.push(...forsøk.map(f => [...f, false]));
   let søk = [], bunkar = [];
-  for (const [medAlder, medSpråk] of forsøk) {
-    søk = byggSøk(cfg, avd, medAlder, medSpråk);
+  for (const [medAlder, medSpråk, medAvgrensing] of medOgUtan) {
+    søk = byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing);
     bunkar = await finnBunkar(søk);
     cfg._språkLokalt = !medSpråk;
     if (bunkar.length) break;
