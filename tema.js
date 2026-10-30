@@ -640,8 +640,6 @@ const TEMA_LISTE = [
   {
     id: "krim", namn: "Krim", gruppe: "Sjangrar",
     skrift: "par-krim",
-    css: `
-      :root[data-tema="krim"] { --symbol-plass: 20vw; }`,
     fargar: { bakgrunn: "#0e0e10", tekst: "#f2efe9", dempa: "#aaa69f", aksent: "#f2c230", "aksent-tekst": "#111111", skugge: "14,14,16", "reserve-a": "#3a3328", "reserve-b": "#17161a" },
     pynt({ pynt, svg, tilf }) {
       // Lysstriper som frå ein persienne, sterkast øvst til venstre
@@ -659,13 +657,6 @@ const TEMA_LISTE = [
         rillar += `<ellipse cx="50" cy="${55 - i * 0.6}" rx="${rx}" ry="${ry}" stroke-dasharray="${del.toFixed(1)} ${gap.toFixed(1)}" stroke-dashoffset="${tilf(0, omkrins).toFixed(1)}"/>`;
       }
       pynt.append(svg("0 0 100 110", "right:-4vw; top:42vh; width:26vw; opacity:.09; transform:rotate(14deg); fill:none; stroke:#f2efe9; stroke-width:1.6; stroke-linecap:round;", rillar));
-      // Gult sperreband over hjørnet øvst til høgre
-      const band = document.createElement("div");
-      band.textContent = "SPERRA OMRÅDE • ".repeat(6);
-      band.style.cssText = "position:absolute; top:7vh; right:-24vw; width:80vw; padding:.6vh 0; transform:rotate(36deg);" +
-        "background:#f2c230; color:#111; font:800 2.2vw/1 var(--skrift); letter-spacing:.12em; white-space:nowrap; overflow:hidden;" +
-        "box-shadow:0 .6vh 1.6vh rgba(0,0,0,.5); opacity:.9;";
-      pynt.append(band);
     },
   }
 ];
