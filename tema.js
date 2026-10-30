@@ -610,6 +610,37 @@ const TEMA_LISTE = [
     },
   },
   {
+    id: "biletbok", namn: "Biletbøker", gruppe: "Sjangrar",
+    skrift: "par-leiken",
+    css: `
+      @keyframes duppe { from { transform: translateY(-.9vh) rotate(var(--v, 0deg)); } to { transform: translateY(.9vh) rotate(var(--v, 0deg)); } }`,
+    fargar: { bakgrunn: "#fff6e6", tekst: "#2f3a56", dempa: "#5d6680", aksent: "#ff6b6b", "aksent-tekst": "#ffffff", brikke: "rgba(47,58,86,.08)", skugge: "255,246,230", spor: "rgba(47,58,86,.12)", "reserve-a": "#8fd3f4", "reserve-b": "#ffb36b", "bakteppe-lys": "1.15" },
+    pynt({ pynt, svg, tilf }) {
+      // Små, fargerike former teikna med tjukk, avrunda strek, som duppar sakte
+      const FORMER = {
+        stjerne: f => `<path fill="${f}" d="M12 2.5l2.8 6 6.6.7-4.9 4.5 1.4 6.5L12 16.9l-5.9 3.3 1.4-6.5-4.9-4.5 6.6-.7z"/>`,
+        sky: f => `<path fill="${f}" d="M6.5 18a4 4 0 0 1-.6-8 5.5 5.5 0 0 1 10.6-1.2A4.6 4.6 0 0 1 17.5 18z"/>`,
+        trekant: f => `<path fill="${f}" d="M12 3.5l9 16h-18z"/>`,
+        sirkel: f => `<circle fill="${f}" cx="12" cy="12" r="8"/>`,
+        hjarte: f => `<path fill="${f}" d="M12 20s-8-5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/>`,
+        bolgje: f => `<path fill="none" stroke="${f}" stroke-width="3" stroke-linecap="round" d="M2 12c2.5-5 5-5 7.5 0s5 5 7.5 0 3.5-3 5-2"/>`,
+        sol: f => `<circle fill="${f}" cx="12" cy="12" r="5"/><g stroke="${f}" stroke-width="2.4" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g>`,
+      };
+      const PLASS = [   // [form, farge, side, avstand frå toppen (vh), storleik (vw), vinkel]
+        ["sol", "#ffc23d", "right", 15, 12, 0],      ["sky", "#8fd3f4", "left", 19, 11, 0],
+        ["stjerne", "#ff6b6b", "right", 34, 9, 12],  ["trekant", "#7ccf8a", "left", 37, 8, -14],
+        ["hjarte", "#ff8fb1", "right", 52, 8, -10],  ["bolgje", "#b48cf2", "left", 55, 10, 0],
+        ["sirkel", "#ffb36b", "right", 70, 7, 0],    ["stjerne", "#8fd3f4", "left", 73, 8, -8],
+        ["sky", "#ffd8a8", "right", 86, 10, 0],
+      ];
+      for (const [form, farge, side, topp, b, v] of PLASS) {
+        const s = svg("0 0 24 24", `${side}:3vw; top:${topp}vh; width:${b}vw; opacity:.75; --v:${v}deg;` +
+          `animation: duppe ${tilf(3, 5).toFixed(1)}s ease-in-out ${(-tilf(0, 5)).toFixed(1)}s infinite alternate;`, FORMER[form](farge));
+        pynt.append(s);
+      }
+    },
+  },
+  {
     id: "hobby", namn: "Hobby", gruppe: "Sjangrar",
     dato: "søm, snekring, hage, perler",
     skrift: "par-venleg",
