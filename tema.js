@@ -363,6 +363,11 @@ const TEMA_LISTE = [
       logo.src = "sommarles.svg"; logo.alt = "Sommarles";
       logo.style.cssText = "position:absolute; right:5vw; top:3.5vh; width:24vw; height:auto;";
       pynt.append(logo);
+      // Illustrasjonen frå Sommarles stor og dempa nedst, for stemning. Han ligg bak boka og teksten.
+      const figurar = document.createElement("img");
+      figurar.src = "sommarles-figurar.webp"; figurar.alt = "";
+      figurar.style.cssText = "position:absolute; left:50%; bottom:-6vh; width:105vw; height:auto; transform:translateX(-50%); opacity:.22;";
+      pynt.append(figurar);
       for (let i = 0; i < 12; i++) {
         const b = document.createElement("div"), d = tilf(1, 3.2);
         b.className = "boble";
