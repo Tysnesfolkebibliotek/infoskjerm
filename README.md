@@ -40,6 +40,11 @@ framleis sjå oversikta, men må lage ein ny for å lagre.
 
 ### Oppsettet
 
+Namnet og skildringa på kvar skjerm på oversikta kan endrast med «Endre namn».
+Dei blir lagra under `_skjermnamn` i `oppsett.json`, som berre oversikta les.
+Nøklane `skjerm1`/`skjerm2` og maskinnamna (`tysnes-infoskjerm`,
+`tysnes-infoskjerm-2`) blir aldri endra av dette.
+
 Kvar side i `oppsett.json` er éi linje:
 
 ```json

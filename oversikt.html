@@ -33,6 +33,13 @@
   .skjerm { background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 16px; }
   .skjerm h2 { font-size: 18px; margin: 0; }
   .skjerm .kva { color: var(--dempa); font-size: 13px; margin-bottom: 12px; }
+  .skjerm .hovud { display: flex; align-items: baseline; gap: 8px; }
+  .skjerm .hovud h2 { flex: 1; min-width: 0; }
+  .skjerm .hovud button { font-size: 12px; padding: 2px 8px; }
+  .namnskjema { margin-bottom: 12px; display: grid; gap: 8px; }
+  .namnskjema label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
+  .namnskjema input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--bg); color: var(--tekst); }
+  .namnskjema .knappar { display: flex; gap: 6px; flex-wrap: wrap; }
   ol.sider { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
   .side { border: 1px solid var(--strek); border-radius: 10px; padding: 10px 12px; background: var(--seinare-bg); }
   .filter { margin: 0 0 14px; }
@@ -187,10 +194,21 @@
 const REPO = "Tysnesfolkebibliotek/infoskjerm";
 const FIL = "oppsett.json";
 const API = `https://api.github.com/repos/${REPO}/contents/${FIL}`;
+// «nøkkel» og «maskin» er tekniske og blir aldri endra herifrå. «namn» og «kva»
+// er berre standardtekstar: eigne visingsnamn ligg i oppsett.json under
+// «_skjermnamn», som berre denne sida les (skjermane les berre skjerm1/skjerm2).
 const SKJERMAR = [
-  { nøkkel: "skjerm1", namn: "Skjerm 1", kva: "tysnes-infoskjerm, sakprosaavdelinga" },
-  { nøkkel: "skjerm2", namn: "Skjerm 2", kva: "tysnes-infoskjerm-2" },
+  { nøkkel: "skjerm1", maskin: "tysnes-infoskjerm", namn: "Skjerm 1", kva: "tysnes-infoskjerm, sakprosaavdelinga" },
+  { nøkkel: "skjerm2", maskin: "tysnes-infoskjerm-2", namn: "Skjerm 2", kva: "tysnes-infoskjerm-2" },
 ];
+const NAMN_NØKKEL = "_skjermnamn";
+// Visingsnamn og skildring for ein skjerm (eigne om dei finst, elles standard)
+function skjermInfo(lk) {
+  const sk = SKJERMAR.find(x => x.nøkkel === skjermFor(lk));
+  const eigne = (oppsett && oppsett[NAMN_NØKKEL] && oppsett[NAMN_NØKKEL][sk.nøkkel]) || {};
+  return { ...sk, namn: (eigne.namn || "").trim() || sk.namn, kva: eigne.kva !== undefined ? eigne.kva : sk.kva };
+}
+let namnOpen = null;   // nøkkelen til skjermen der namneskjemaet er ope
 const NØKKEL_LAGER = "infoskjerm-oversikt-nokkel";
 const FORFATTAR = { name: "Tysnesfolkebibliotek", email: "Tysnesfolkebibliotek@users.noreply.github.com" };
 
@@ -376,7 +394,7 @@ function teikn() {
     if (!avgruppe) avgruppe = slippMål(el("div", { class: "avslipp" }, "Dra ei side hit for å avpublisere henne"), AV(lk));
     slippMål(liste, lk);
     boks.append(el("section", { class: "skjerm" },
-      el("h2", {}, sk.namn), el("div", { class: "kva" }, sk.kva),
+      ...skjermHovud(lk),
       liste,
       sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi dei ikkje er i bruk no. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
@@ -387,6 +405,49 @@ function teikn() {
   oppdaterStatus();
 }
 const avOpne = new Set();
+
+// ---- Visingsnamn for skjermane (berre for oversikta) ----------------------
+function skjermHovud(lk) {
+  const info = skjermInfo(lk);
+  if (namnOpen !== lk) return [
+    el("div", { class: "hovud" }, el("h2", {}, info.namn),
+      el("button", { type: "button", title: "Endre namnet og skildringa som blir viste her på oversikta", onclick: () => { namnOpen = lk; teikn(); setTimeout(() => $("n-namn").select(), 0); } }, "Endre namn")),
+    info.kva ? el("div", { class: "kva" }, info.kva) : el("div", { class: "kva" })];
+  const bruk = () => {
+    const namn = $("n-namn").value.trim(), kva = $("n-kva").value.trim();
+    const alle = { ...(oppsett[NAMN_NØKKEL] || {}) };
+    const ny = {};
+    if (namn && namn !== info.nøkkel && namn !== SKJERMAR.find(x => x.nøkkel === lk).namn) ny.namn = namn;
+    if (kva !== SKJERMAR.find(x => x.nøkkel === lk).kva) ny.kva = kva;
+    if (Object.keys(ny).length) alle[lk] = ny; else delete alle[lk];
+    settNamn(alle);
+    namnOpen = null; teikn();
+  };
+  const tast = e => { if (e.key === "Enter") { e.preventDefault(); bruk(); } if (e.key === "Escape") { namnOpen = null; teikn(); } };
+  const std = SKJERMAR.find(x => x.nøkkel === lk);
+  return [el("div", { class: "namnskjema" },
+    el("div", {}, el("label", { for: "n-namn" }, "Visingsnamn"),
+      el("input", { type: "text", id: "n-namn", value: info.namn, placeholder: std.namn, onkeydown: tast })),
+    el("div", {}, el("label", { for: "n-kva" }, "Skildring"),
+      el("input", { type: "text", id: "n-kva", value: info.kva, placeholder: "Til dømes kvar skjermen står", onkeydown: tast })),
+    el("p", { class: "hjelp" }, `Berre for denne oversikta. Skjermen heiter framleis «${std.maskin}» på nettverket og «${std.nøkkel}» i oppsettet, så SSH, Tailscale og det skjermen viser blir ikkje påverka.`),
+    el("div", { class: "knappar" },
+      el("button", { type: "button", class: "publiser", onclick: bruk }, "Bruk"),
+      el("button", { type: "button", onclick: () => { namnOpen = null; teikn(); } }, "Avbryt"),
+      el("button", { type: "button", title: "Tilbake til standardnamnet", onclick: () => { $("n-namn").value = std.namn; $("n-kva").value = std.kva; } }, "Standard")))];
+}
+// Legg «_skjermnamn» rett etter «_forklaring» i fila, og fjern nøkkelen når han er tom
+function settNamn(alle) {
+  const tom = !Object.keys(alle).length;
+  const ut = {};
+  for (const k of Object.keys(oppsett)) {
+    if (k === NAMN_NØKKEL) continue;
+    ut[k] = oppsett[k];
+    if (k === "_forklaring" && !tom) ut[NAMN_NØKKEL] = alle;
+  }
+  if (!tom && !(NAMN_NØKKEL in ut)) ut[NAMN_NØKKEL] = alle;
+  oppsett = ut;
+}
 
 // ---- Flytting: med knapp eller ved å dra ----------------------------------
 // fra = { lk, i }. til = { lk, før } der «før» er indeksen sida skal inn framfor
@@ -403,7 +464,7 @@ function flyttSide(fra, til) {
   mål.splice(Math.max(0, Math.min(før, mål.length)), 0, side);
   for (const k of [fra.lk, til.lk]) if (k !== skjermFor(k) && !oppsett[k].length) delete oppsett[k];
   open = null; teikn();
-  const namn = lk => (lk === skjermFor(lk) ? "" : "avpubliserte på ") + SKJERMAR.find(x => x.nøkkel === skjermFor(lk)).namn.toLowerCase();
+  const namn = lk => (lk === skjermFor(lk) ? "" : "avpubliserte på ") + skjermInfo(lk).namn;
   if (fra.lk !== til.lk) oppdaterStatus(`«${side.namn}» er flytta til ${namn(til.lk)}. Klikk Lagre.`);
 }
 let drege = null;   // { lk, i } for sida som blir dregen
@@ -483,7 +544,7 @@ function skjema(s, lk, i) {
       el("div", {}, el("label", { for: "f-namn" }, "Namn (berre for deg)"),
         el("input", { type: "text", id: "f-namn", value: s.namn || "", placeholder: "Til dømes Vinterbøker" })),
       el("div", {}, el("label", { for: "f-skjerm" }, "Skjerm"),
-        el("select", { id: "f-skjerm" }, ...SKJERMAR.map(x => { const o = new Option(x.namn, x.nøkkel); o.selected = x.nøkkel === skjermFor(lk); return o; })))),
+        el("select", { id: "f-skjerm" }, ...SKJERMAR.map(x => { const o = new Option(skjermInfo(x.nøkkel).namn, x.nøkkel); o.selected = x.nøkkel === skjermFor(lk); return o; })))),
     el("div", {}, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
@@ -564,7 +625,7 @@ function flytt(lk, i, retning, synlege) {
 function slett(lk, i) {
   const l = oppsett[lk], s = l[i];
   if (lk === skjermFor(lk) && l.length <= 1) return oppdaterStatus("Minst éi side må vere publisert på kvar skjerm.", "feil");
-  const skjerm = SKJERMAR.find(x => x.nøkkel === skjermFor(lk)).namn;
+  const skjerm = skjermInfo(lk).namn;
   if (!confirm(`Slette «${s.namn}» frå ${skjerm} for godt?\n\nVil du berre ta henne av skjermen og ta vare på henne, vel Avbryt og bruk Avpubliser.`)) return;
   l.splice(i, 1);
   if (!l.length && lk !== skjermFor(lk)) delete oppsett[lk];
@@ -1119,7 +1180,7 @@ lesSvarteliste(lesNøkkel())
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);
-$("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; teikn(); });
+$("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; namnOpen = null; teikn(); });
 $("nokkellagre").addEventListener("click", () => {
   try { localStorage.setItem(NØKKEL_LAGER, $("nokkel").value.trim()); $("nokkel").value = ""; oppdaterStatus("Nøkkelen er lagra i denne nettlesaren.", "ok"); }
   catch (e) { oppdaterStatus("Klarte ikkje lagre nøkkelen i nettlesaren.", "feil"); }
@@ -1131,7 +1192,7 @@ $("nokkelfjern").addEventListener("click", () => {
 window.addEventListener("beforeunload", e => { if (endra()) { e.preventDefault(); e.returnValue = ""; } });
 
 // Status «Vist no» blir rekna på nytt kvart minutt
-setInterval(() => { if (oppsett && !open) teikn(); }, 60000);
+setInterval(() => { if (oppsett && !open && !namnOpen) teikn(); }, 60000);
 
 hent().then(fråByggjaren).catch(e => {
   $("skjermar").replaceChildren(el("p", {}, "Fekk ikkje henta oppsettet frå GitHub: " + e.message + ". Prøv å laste sida på nytt."));
