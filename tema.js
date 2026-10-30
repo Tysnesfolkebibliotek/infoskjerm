@@ -558,9 +558,9 @@ const TEMA_LISTE = [
       // Ein planet med ring, delvis utanfor skjermen til høgre
       pynt.append(svg("0 0 100 100", "right:-9vw; top:28vh; width:30vw; opacity:.55;",
         `<defs><radialGradient id="planet" cx="35%" cy="35%"><stop offset="0%" stop-color="#3fa7c9"/><stop offset="100%" stop-color="#0b2a3d"/></radialGradient></defs>` +
-        `<g transform="rotate(-18 50 50)"><ellipse cx="50" cy="50" rx="46" ry="10" fill="none" stroke="#33e1ff" stroke-width="2" opacity=".5"/></g>` +
+        `<g transform="rotate(-18 50 50)"><ellipse cx="50" cy="50" rx="44" ry="11" fill="none" stroke="#33e1ff" stroke-width="5" opacity=".35"/><ellipse cx="50" cy="50" rx="44" ry="11" fill="none" stroke="#bff6ff" stroke-width="1.2" opacity=".4"/></g>` +
         `<circle cx="50" cy="50" r="24" fill="url(#planet)"/>` +
-        `<g transform="rotate(-18 50 50)"><path d="M4,50 A46,10 0 0,0 96,50" fill="none" stroke="#33e1ff" stroke-width="2" opacity=".8"/></g>`));
+        `<g transform="rotate(-18 50 50)"><path d="M6,50 A44,11 0 0,0 94,50" fill="none" stroke="#33e1ff" stroke-width="5" opacity=".7"/><path d="M6,50 A44,11 0 0,0 94,50" fill="none" stroke="#bff6ff" stroke-width="1.2" opacity=".8"/></g>`));
       // Rutenett i perspektiv nedst
       let nett = "";
       for (let x = -150; x <= 250; x += 12.5) nett += `<line x1="${50 + (x - 50) * 0.12}" y1="0" x2="${x}" y2="30"/>`;
