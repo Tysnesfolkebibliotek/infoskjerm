@@ -793,6 +793,9 @@ const FONTAR = {
   ultra:        ["Ultra",                 "Ultra",                                              0.8,  400],  // svært brei og feit
   bubblegum:    ["Bubblegum Sans",        "Bubblegum+Sans",                                     1.05, 400],  // smal
   grandhotel:   ["Grand Hotel",           "Grand+Hotel",                                        1.3,  400],  // handskrift ser lita ut
+  bangers:      ["Bangers",               "Bangers",                                            1.1,  400],  // smal teikneserieskrift
+  orbitron:     ["Orbitron",              "Orbitron:wght@500;700",                              0.75],       // svært brei
+  exo2:         ["Exo 2",                 "Exo+2:wght@400;600;700"],
 };
 // Vala i byggjaren. «tekst» er brødteksten. «overskrift» og «titlar» er valfrie:
 // utan dei brukar overskrifta og boktitlane same skrift som teksten.
@@ -819,6 +822,8 @@ const SKRIFTER = {
   "par-leiken":     { par: true, namn: "Leiken",     skildring: "Bubblegum + Open Sans",        overskrift: "bubblegum",    titlar: "bubblegum",    tekst: "opensans" },
   "par-handskrift": { par: true, namn: "Handskrift", skildring: "Dancing + Source Sans",        overskrift: "dancing",     titlar: "sourcesans",   tekst: "sourcesans" },
   "par-retro":      { par: true, namn: "Retro",      skildring: "Grand Hotel + Lato",           overskrift: "grandhotel",   titlar: "lato",         tekst: "lato" },
+  "par-teikneserie": { par: true, namn: "Teikneserie", skildring: "Bangers + Nunito",         overskrift: "bangers",      titlar: "bangers",      tekst: "nunito" },
+  "par-framtid":    { par: true, namn: "Framtid",    skildring: "Orbitron + Exo 2",             overskrift: "orbitron",     titlar: "exo2",         tekst: "exo2" },
   "par-spel":       { par: true, namn: "Spel",       skildring: "Pixelify Sans + Nunito",       overskrift: "pixelify",     titlar: "nunito",       tekst: "nunito" },
 };
 const fontstabel = id => `"${FONTAR[id][0]}", "Ubuntu", "DejaVu Sans", system-ui, sans-serif`;

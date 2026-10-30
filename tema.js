@@ -19,7 +19,7 @@
 // Nytt tema: kopier eit liknande tema, gje det ein ny id og endre resten.
 // «kveld» har ingen fargar her: det brukar standardfargane i index.html.
 
-const TEMAGRUPPER = ["Faste", "Årstider", "Høgtider og merkedagar", "Bibliotek"];
+const TEMAGRUPPER = ["Faste", "Årstider", "Høgtider og merkedagar", "Sjangrar", "Bibliotek"];
 
 const TEMA_LISTE = [
   {
@@ -501,6 +501,73 @@ const TEMA_LISTE = [
           `<g style="shape-rendering:crispEdges">${pikslar(rader, f, x0, y0)}</g>`));
         pynt.append(d);
       });
+    },
+  },
+  {
+    id: "manga", namn: "Manga", gruppe: "Sjangrar",
+    skrift: "par-teikneserie",
+    fargar: { bakgrunn: "#111111", tekst: "#ffffff", dempa: "#c4c4c4", aksent: "#e8203a", "aksent-tekst": "#ffffff", skugge: "17,17,17", "reserve-a": "#3a3a3a", "reserve-b": "#1a1a1a" },
+    pynt({ pynt, svg, tilf }) {
+      // Fartsstrekar inn mot midten frå alle kantar, som i ein teikneserierute
+      let strekar = "";
+      for (let i = 0; i < 70; i++) {
+        const v = (i / 70) * Math.PI * 2 + tilf(-0.03, 0.03), cx = 50, cy = 89;
+        const ytre = 130, indre = tilf(62, 88), b = tilf(0.4, 1.4);
+        const x1 = cx + Math.cos(v) * ytre, y1 = cy + Math.sin(v) * ytre;
+        const x2 = cx + Math.cos(v) * indre, y2 = cy + Math.sin(v) * indre;
+        const nx = -Math.sin(v) * b, ny = Math.cos(v) * b;   // gjer streken spiss innover
+        strekar += `<polygon points="${(x1 + nx).toFixed(1)},${(y1 + ny).toFixed(1)} ${(x1 - nx).toFixed(1)},${(y1 - ny).toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}"/>`;
+      }
+      pynt.append(svg("0 0 100 178", "left:0; top:0; width:100vw; height:100vh; fill:#ffffff; opacity:.07;", strekar));
+      // Rastermønster (prikkar som blir mindre) nede til venstre
+      let prikkar = "";
+      for (let y = 0; y < 14; y++) for (let x = 0; x < 14; x++) {
+        const r = 1.1 * (1 - Math.hypot(x, 13 - y) / 16);
+        if (r > 0.12) prikkar += `<circle cx="${x * 3 + 1.5 + (y % 2) * 1.5}" cy="${y * 3 + 1.5}" r="${r.toFixed(2)}"/>`;
+      }
+      pynt.append(svg("0 0 44 42", "left:0; bottom:0; width:34vw; fill:#e8203a; opacity:.35;", prikkar));
+    },
+  },
+  {
+    id: "fantasy", namn: "Fantasy", gruppe: "Sjangrar",
+    skrift: "par-historisk",
+    fargar: { bakgrunn: "#150f24", tekst: "#f6f0ff", dempa: "#c3b6dc", aksent: "#e6b85c", "aksent-tekst": "#1a1206", skugge: "21,15,36", "reserve-a": "#4a2f7a", "reserve-b": "#1e1533" },
+    pynt({ pynt, svg, stigande }) {
+      // Ei borg på ein ås langt borte, nedst på skjermen
+      const tårn = (x, b, h) => `<rect x="${x}" y="${60 - h}" width="${b}" height="${h}"/><polygon points="${x - 1},${60 - h} ${x + b / 2},${60 - h - b * 1.4} ${x + b + 1},${60 - h}"/>`;
+      pynt.append(svg("0 0 200 60", "left:0; bottom:0; width:100vw; fill:#3a2a63; opacity:.55;",
+        `<path d="M0,60 L0,46 C30,40 60,44 90,38 C120,32 150,40 200,36 L200,60 Z"/>` +
+        `<rect x="104" y="30" width="40" height="12"/>` + tårn(100, 8, 34) + tårn(118, 10, 42) + tårn(140, 8, 30) + tårn(130, 5, 22)));
+      // Gyllent trylledrys som stig sakte
+      stigande(16, "0 0 10 10", `<path fill="#ffe7a8" d="M5,0 L6,4 L10,5 L6,6 L5,10 L4,6 L0,5 L4,4 Z"/>`, [0.8, 1.8], [0.25, 0.6]);
+    },
+  },
+  {
+    id: "scifi", namn: "Sci-fi", gruppe: "Sjangrar",
+    skrift: "par-framtid",
+    fargar: { bakgrunn: "#05101a", tekst: "#e9f7ff", dempa: "#9fb9c9", aksent: "#33e1ff", "aksent-tekst": "#04121a", skugge: "5,16,26", "reserve-a": "#0f3550", "reserve-b": "#071a28" },
+    pynt({ pynt, svg, tilf }) {
+      // Stjernehimmel som blinkar
+      for (let i = 0; i < 55; i++) {
+        const st = document.createElement("div"), d = tilf(0.12, 0.35);
+        st.className = "stjerne";
+        st.style.cssText = `left:${tilf(0, 100)}vw; top:${tilf(0, 85)}vh; width:${d}vw; height:${d}vw;` +
+          `animation-duration:${tilf(2, 6)}s; animation-delay:${-tilf(0, 6)}s;`;
+        pynt.append(st);
+      }
+      // Ein planet med ring, delvis utanfor skjermen til høgre
+      pynt.append(svg("0 0 100 100", "right:-9vw; top:28vh; width:30vw; opacity:.55;",
+        `<defs><radialGradient id="planet" cx="35%" cy="35%"><stop offset="0%" stop-color="#3fa7c9"/><stop offset="100%" stop-color="#0b2a3d"/></radialGradient></defs>` +
+        `<g transform="rotate(-18 50 50)"><ellipse cx="50" cy="50" rx="46" ry="10" fill="none" stroke="#33e1ff" stroke-width="2" opacity=".5"/></g>` +
+        `<circle cx="50" cy="50" r="24" fill="url(#planet)"/>` +
+        `<g transform="rotate(-18 50 50)"><path d="M4,50 A46,10 0 0,0 96,50" fill="none" stroke="#33e1ff" stroke-width="2" opacity=".8"/></g>`));
+      // Rutenett i perspektiv nedst
+      let nett = "";
+      for (let x = -150; x <= 250; x += 12.5) nett += `<line x1="${50 + (x - 50) * 0.12}" y1="0" x2="${x}" y2="30"/>`;
+      for (let t = 1; t <= 6; t++) { const y = 30 * (t / 6) ** 2; nett += `<line x1="0" y1="${y.toFixed(2)}" x2="100" y2="${y.toFixed(2)}"/>`; }
+      const g = svg("0 0 100 30", "left:0; bottom:0; width:100vw; height:14vh; stroke:#33e1ff; stroke-width:.25; opacity:.22;", nett);
+      g.setAttribute("preserveAspectRatio", "none");
+      pynt.append(g);
     },
   }
 ];
