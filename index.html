@@ -377,10 +377,6 @@
   .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
   .segment label { flex: 1; text-align: center; padding: 8px 4px; white-space: nowrap; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
   .segment label:last-child { border-right: 0; }
-  /* Kjelde: fem val i to rader (3 + 2), med strekar mellom som gap på strekfarga bakgrunn */
-  .segment.kjeldeval { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--b-strek); }
-  .segment.kjeldeval label { grid-column: span 2; border-right: 0; background: var(--b-flate); }
-  .segment.kjeldeval label:nth-child(n+4) { grid-column: span 3; }
   .segment input { position: absolute; opacity: 0; pointer-events: none; }
   .segment label:has(input:checked) { background: var(--b-aksent); color: var(--b-aksent-tekst); font-weight: 600; }
   .segment label:has(input:focus-visible) { outline: 2px solid var(--b-fokus); outline-offset: -2px; }
@@ -466,24 +462,32 @@
       <div class="malrad">
       <select id="mal">
         <option value="">Vel mal …</option>
-        <option value="nyheiter">Nyheiter</option>
-        <option value="sakprosa">Frå hylla (sakprosa)</option>
-        <option value="krim">Krim</option>
-        <option value="biografi">Biografiar</option>
-        <option value="lokal">Lokalhistorie</option>
-        <option value="natur">Natur og friluftsliv</option>
-        <option value="klima">Klima og miljø</option>
-        <option value="handarbeid">Sy og strikk</option>
-        <option value="kulturfond">Ny norsk litteratur (Kulturfondet)</option>
-        <option value="fantasy">Fantasy (born)</option>
-        <option value="fotball">Fotball (born)</option>
-        <option value="teikne">Teikneseriar (born)</option>
-        <option value="biletbok_nn">Biletbøker på nynorsk</option>
-        <option value="born_nn">Barnebøker på nynorsk</option>
-        <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
-        <option value="jul">Julebøker</option>
-        <option value="julekalender">Julekalender</option>
-        <option value="reservert">Mest reservert akkurat no</option>
+        <optgroup label="Aktuelt">
+          <option value="nyheiter">Nyheiter</option>
+          <option value="reservert">Mest reservert akkurat no</option>
+          <option value="kulturfond">Ny norsk litteratur (Kulturfondet)</option>
+        </optgroup>
+        <optgroup label="For vaksne">
+          <option value="sakprosa">Frå hylla (sakprosa)</option>
+          <option value="krim">Krim</option>
+          <option value="biografi">Biografiar</option>
+          <option value="lokal">Lokalhistorie</option>
+          <option value="natur">Natur og friluftsliv</option>
+          <option value="klima">Klima og miljø</option>
+          <option value="handarbeid">Sy og strikk</option>
+        </optgroup>
+        <optgroup label="For born og unge">
+          <option value="fantasy">Fantasy</option>
+          <option value="fotball">Fotball</option>
+          <option value="teikne">Teikneseriar</option>
+          <option value="biletbok_nn">Biletbøker på nynorsk</option>
+          <option value="born_nn">Barnebøker på nynorsk</option>
+          <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
+        </optgroup>
+        <optgroup label="Jul">
+          <option value="jul">Julebøker</option>
+          <option value="julekalender">Julekalender</option>
+        </optgroup>
       </select>
         <button type="button" class="knapp sekundær" id="tom">Tøm skjema</button>
       </div>
@@ -504,12 +508,11 @@
       <legend>Kva bøker</legend>
       <div class="felt">
         <span class="etikett">Kjelde</span>
-        <div class="segment kjeldeval" role="radiogroup">
+        <div class="segment" role="radiogroup">
           <label><input type="radio" name="kjelde" value="nyaste"> Nyheiter</label>
           <label><input type="radio" name="kjelde" value="sok"> Søk</label>
           <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
           <label><input type="radio" name="kjelde" value="likte"> Neste bok</label>
-          <label><input type="radio" name="kjelde" value="kalender"> Julekalender</label>
         </div>
       </div>
       <div class="felt">
@@ -731,6 +734,7 @@
             <option value="">Éi bok om gongen</option>
             <option value="vifte">Vifte (forrige og neste bok bak)</option>
             <option value="rull">Rulletekst</option>
+            <option value="kalender">Julekalender (berre handplukka)</option>
           </select>
         </div>
         <div class="felt">
@@ -790,7 +794,7 @@
       </div>
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
       <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett», «Godt driv»)</label>
-      <p class="hjelp">Vifte viser forrige og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen.</p>
+      <p class="hjelp">Vifte viser forrige og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p>
     </details>
 
     <details class="del" id="del-avansert" data-felt="oppdater">
@@ -862,9 +866,9 @@ const MALAR = {
          rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
          tittel: "Julebøker", namn: "", sek: "20", oppdater: "360", omtale: "1" },
   // Julekalender: 24 handplukka bøker, éi ny luke kvar dag i desember
-  julekalender: { kjelde: "kalender", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+  julekalender: { kjelde: "utval", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
                   omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "24", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
-                  tittel: "Julekalenderen", namn: "", sek: "20", oppdater: "360", omtale: "1", visning: "", tema: "jul" },
+                  tittel: "Julekalenderen", namn: "", sek: "20", oppdater: "360", omtale: "1", visning: "kalender", tema: "jul" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
   biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker, Bildebøker, Biletbok, Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
   born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
@@ -900,8 +904,13 @@ function lesAdresse() {
   const p = new URLSearchParams(location.hash.slice(1));
   const cfg = { ...STANDARD };
   for (const k of NØKLAR) if (p.has(k)) cfg[k] = p.get(k);
+  // Julekalenderen var ei eiga kjelde ei kort stund. No er han Handplukka med visingsmåten «kalender».
+  if (cfg.kjelde === "kalender") { cfg.kjelde = "utval"; cfg.visning = "kalender"; }
   return { cfg, vis: p.get("vis") === "1" };
 }
+
+// Julekalender: handplukka bøker med visingsmåten «kalender»
+const erKalenderCfg = cfg => cfg.kjelde === "utval" && cfg.visning === "kalender";
 
 function lagHash(cfg, vis) {
   const p = new URLSearchParams();
@@ -1110,7 +1119,7 @@ function startVisning(cfg) {
   }
 
   // Julekalender: eiga visning med pakkar i staden for éi bok om gongen
-  const KALENDER = cfg.kjelde === "kalender";
+  const KALENDER = erKalenderCfg(cfg);
   if (KALENDER) document.documentElement.dataset.visning = "kalender";
 
   let titlar = [];
@@ -1800,6 +1809,7 @@ function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","sjangermodus","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
     .concat(["likte", "appell", "merkelapp", "aldermodus"].filter(k => cfg[k] && cfg[k] !== "0"))
     .concat(cfg.appell ? ["appellmodus"] : [])
+    .concat(erKalenderCfg(cfg) ? ["visning"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
 
@@ -2136,8 +2146,8 @@ async function hentBøker(cfg, framdrift) {
   if (cfg.kjelde === "nyaste" && cfg.appell) cfg = { ...cfg, appell: "" };
   await lastSvarteliste(60 * 1000);
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
+  if (erKalenderCfg(cfg)) return forrigebokBerik(await hentKalender(cfg, framdrift), cfg);
   if (cfg.kjelde === "utval") return forrigebokBerik(await hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
-  if (cfg.kjelde === "kalender") return forrigebokBerik(await hentKalender(cfg, framdrift), cfg);
   if (cfg.kjelde === "likte") return forrigebokBerik(await hentLikte(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
   if (!avdar.length) return [];
   const antal = Math.min(60, Math.max(5, Number(cfg.antal) || 40));
@@ -2953,9 +2963,13 @@ function startByggjar(startCfg) {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
     document.getElementById("sokefelt").hidden = kjelde !== "sok" && kjelde !== "nyaste";
     document.getElementById("emnefelt").hidden = kjelde !== "sok";     // Nyheiter: berre sjanger
-    const kalender = kjelde === "kalender";
-    const fast = kjelde === "utval" || kjelde === "likte" || kalender;     // bøkene er valde på førehand
-    document.getElementById("utvalfelt").hidden = kjelde !== "utval" && !kalender;
+    // Julekalender er berre mogleg med handplukka bøker
+    const kalOpt = skjema.elements.visning.querySelector('option[value="kalender"]');
+    kalOpt.disabled = kjelde !== "utval";
+    if (kjelde !== "utval" && skjema.elements.visning.value === "kalender") skjema.elements.visning.value = "";
+    const kalender = kjelde === "utval" && skjema.elements.visning.value === "kalender";
+    const fast = kjelde === "utval" || kjelde === "likte";     // bøkene er valde på førehand
+    document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     document.getElementById("kalenderfelt").hidden = !kalender;
     document.getElementById("utvaletikett").textContent = kalender ? "Luker" : "Valde bøker";
     document.getElementById("del-krav").hidden = kalender;     // ingen filter gjeld for kalenderen
@@ -2977,7 +2991,6 @@ function startByggjar(startCfg) {
     skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
     // Val som ikkje har nokon effekt med den valde visingsmåten, blir grå
     const rull = skjema.elements.visning.value === "rull" && !kalender;
-    skjema.elements.visning.disabled = kalender;     // kalenderen har si eiga visning
     skjema.elements.overgang.disabled = rull || kalender || skjema.elements.visning.value === "vifte";   // vifta har si eiga rørsle
     skjema.elements.sek.disabled = rull;
     skjema.elements.teljar.disabled = rull;     // rulleteksten har inga nedteljing
@@ -2987,7 +3000,7 @@ function startByggjar(startCfg) {
   // Testdatoen for julekalenderen blir berre lagd til førehandsvisinga og «Opne»
   function testdato(cfg) {
     const d = document.getElementById("testdato").value;
-    return cfg.kjelde === "kalender" && d ? "&dato=" + d : "";
+    return erKalenderCfg(cfg) && d ? "&dato=" + d : "";
   }
 
   function skaler() {
@@ -3063,7 +3076,7 @@ function startByggjar(startCfg) {
   // blir fylt ut ved oppstart), så dei slår opp elementa sjølve.
   function $(id) { return document.getElementById(id); }
   function valde() { return $("titlar").value.split(",").map(s => s.trim()).filter(Boolean); }
-  function erKalender() { return (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value === "kalender"; }
+  function erKalender() { return erKalenderCfg(lesSkjema()); }
   function setjValde(idar) {
     $("titlar").value = idar.join(",");
     teiknUtval();

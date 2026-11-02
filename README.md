@@ -70,15 +70,16 @@ skjermen dei utan tidsstyring.
 
 ## Karusellane
 
-Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøker,
-**Neste bok** (liknande bøker frå Forrige bok) og **Julekalender**. Søk og Nyaste kan òg
+Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøker
+og **Neste bok** (liknande bøker frå Forrige bok). Søk og Nyaste kan òg
 avgrensast med **appellfaktorar** frå Forrige bok, og bøkene kan få
 **merkelappar** med appellfaktorar.
 
 ### Julekalender
 
-Kjelda **Julekalender** (eller malen «Julekalender») viser 24 pakkar. Bøkene
-blir valde som Handplukka: den første boka i lista er luke 1, den andre luke 2,
+Vel malen **Julekalender** (under «Jul»). Det er Handplukka bøker med
+visingsmåten «Julekalender», som berre kan veljast saman med Handplukka.
+Kalenderen viser 24 pakkar: den første boka i lista er luke 1, den andre luke 2,
 og så vidare. Utlånte bøker er med, og får merkelappen «Utlånt – kan reserverast».
 
 - Før 1. desember står alle pakkane attlatne, og ein og ein pakke ristar litt.
