@@ -210,7 +210,8 @@
   .b-skjema .ingress { color: var(--b-dempa); margin: 4px 0 18px; font-size: 14px; }
 
 
-  fieldset { border: 0; border-top: 1px solid var(--b-strek); padding: 18px 0 4px; margin-top: 14px; }
+  /* min-width: 0: ein fieldset blir elles minst like brei som innhaldet, og lange boktitlar i søketreffa dytta skjemaet ut over kanten */
+  fieldset { min-width: 0; border: 0; border-top: 1px solid var(--b-strek); padding: 18px 0 4px; margin-top: 14px; }
   legend { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--b-dempa); padding-right: 8px; }
   .felt { margin-top: 12px; }
   .felt > label, .felt > .etikett { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
