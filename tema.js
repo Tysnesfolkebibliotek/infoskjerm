@@ -379,10 +379,7 @@ const TEMA_LISTE = [
     aktuell: "11-25/12-24",
     skrift: "par-elegant",
     fargar: { bakgrunn: "#2a1541", tekst: "#f7f0fb", dempa: "#c9b5d9", aksent: "#f2c45a", "aksent-tekst": "#2a1541", brikke: "rgba(247,240,251,.10)", skugge: "42,21,65", spor: "rgba(247,240,251,.14)", "reserve-a": "#53307a", "reserve-b": "#2a1541" },
-    css: `
-      :root[data-tema="advent"] { --symbol-plass: 15vw; }
-      @keyframes adventlys { from { opacity: .55; } to { opacity: .85; } }`,
-    pynt({ pynt, svg, tilf }) {
+    pynt({ pynt, tilf }) {
       // Små gylne stjerner som blinkar svakt
       for (let i = 0; i < 45; i++) {
         const st = document.createElement("div"), d = tilf(0.15, 0.4);
@@ -391,15 +388,6 @@ const TEMA_LISTE = [
           `animation-duration:${tilf(2.5, 6)}s; animation-delay:${-tilf(0, 6)}s;`;
         pynt.append(st);
       }
-      // Adventsstjerne øvst til høgre, med ein svak glød som pulserer
-      let takkar = "";
-      for (let k = 0; k < 16; k++) {
-        const v = k * Math.PI / 8 - Math.PI / 2, r = k % 2 ? 19 : 46;
-        takkar += `${k ? "L" : "M"}${(50 + Math.cos(v) * r).toFixed(1)} ${(50 + Math.sin(v) * r).toFixed(1)} `;
-      }
-      pynt.append(svg("0 0 100 100", "right:5vw; top:2.5vh; width:11vw; overflow:visible; animation: adventlys 3.5s ease-in-out infinite alternate;",
-        `<defs><radialGradient id="adventglod"><stop offset="0" stop-color="#ffe7a3" stop-opacity=".55"/><stop offset="1" stop-color="#ffe7a3" stop-opacity="0"/></radialGradient></defs>` +
-        `<circle cx="50" cy="50" r="62" fill="url(#adventglod)"/><path d="${takkar}Z" fill="#f6d27a"/><circle cx="50" cy="50" r="7" fill="#fff4cf"/>`));
     },
   },
   {
