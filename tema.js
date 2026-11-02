@@ -379,7 +379,17 @@ const TEMA_LISTE = [
     aktuell: "11-25/12-24",
     skrift: "par-elegant",
     fargar: { bakgrunn: "#2a1541", tekst: "#f7f0fb", dempa: "#c9b5d9", aksent: "#f2c45a", "aksent-tekst": "#2a1541", brikke: "rgba(247,240,251,.10)", skugge: "42,21,65", spor: "rgba(247,240,251,.14)", "reserve-a": "#53307a", "reserve-b": "#2a1541" },
-    pynt({ pynt, tilf }) {
+    pynt({ pynt, svg, tilf }) {
+      // Nedst: eit svakt lysare skjær og to lag slake bølgjer i lilla som glir sakte sidelengs
+      const skjær = document.createElement("div");
+      skjær.style.cssText = "position:absolute; left:0; right:0; bottom:0; height:22vh; background:linear-gradient(to top, rgba(120,80,170,.22), transparent);";
+      pynt.append(skjær);
+      const bølgje = (y, h) => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 100) d += ` C${x + 30},${y - h} ${x + 70},${y - h} ${x + 100},${y}`; return d + " L400,60 L0,60 Z"; };
+      [[30, 14, "#7a52a8", .16, 120, "11vh"], [40, 10, "#9a73c4", .12, 80, "7vh"]].forEach(([y, h, farge, o, sek, høgd]) => {
+        const lag = svg("0 0 400 60", `left:0; bottom:0; width:200vw; opacity:${o}; animation: glidSide ${sek}s linear infinite;`, `<path fill="${farge}" d="${bølgje(y, h)}"/>`);
+        lag.setAttribute("preserveAspectRatio", "none"); lag.style.height = høgd;
+        pynt.append(lag);
+      });
       // Små gylne stjerner som blinkar svakt
       for (let i = 0; i < 45; i++) {
         const st = document.createElement("div"), d = tilf(0.15, 0.4);
