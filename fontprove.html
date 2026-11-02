@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skriftprøve – Faltu Riltu</title>
+<!-- Mellombels side for å velje overskriftsskrift til Faltu Riltu-temaet. Kan slettast etterpå. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Big+Shoulders+Display:wght@900&family=Bowlby+One&family=Bungee&family=Chango&family=Dela+Gothic+One&family=Montserrat:wght@900&family=Paytone+One&family=Rubik+Mono+One&family=Titan+One&family=Unbounded:wght@900&family=Nunito:wght@700&display=swap">
+<style>
+  body { margin: 0; background: #000; color: #fff; font-family: Nunito, system-ui, sans-serif; padding: 32px; }
+  h1 { font-size: 18px; font-weight: 700; color: #d6d1c8; margin: 0 0 6px; }
+  p.hjelp { color: #9a958c; margin: 0 0 28px; font-size: 15px; }
+  .topp { display: flex; align-items: center; gap: 32px; margin-bottom: 36px; }
+  .topp img { width: 160px; }
+  .rutenett { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 20px; }
+  .prove { border: 1px solid #2a2a2a; border-radius: 10px; padding: 20px 22px; }
+  .namn { font-size: 14px; color: #9a958c; margin-bottom: 10px; }
+  .namn b { color: #fff; font-size: 16px; }
+  .ord { font-size: 46px; line-height: 1.1; }
+  .ord.stor { font-size: 64px; line-height: .95; }
+  .ord + .ord { margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="topp">
+  <img src="falturiltu-logo.png" alt="Faltu Riltu">
+  <div>
+    <h1>Skriftprøve til overskrifta i Faltu Riltu-temaet</h1>
+    <p class="hjelp">Samanlikn med logoen. Kvar boks viser ordmerket, ei kort og ei lang overskrift, i fargane frå 2019-plakaten.</p>
+  </div>
+</div>
+<div class="rutenett" id="rutenett"></div>
+<script>
+  const SKRIFTER = [
+    ["Montserrat Black", "'Montserrat'", 900, "geometrisk, svært feit"],
+    ["Unbounded Black", "'Unbounded'", 900, "geometrisk og brei"],
+    ["Archivo Black", "'Archivo Black'", 400, "feit grotesk"],
+    ["Rubik Mono One", "'Rubik Mono One'", 400, "kantete, svært brei"],
+    ["Dela Gothic One", "'Dela Gothic One'", 400, "tung og kompakt"],
+    ["Bungee", "'Bungee'", 400, "skiltskrift"],
+    ["Bowlby One", "'Bowlby One'", 400, "svært feit, plakat"],
+    ["Paytone One", "'Paytone One'", 400, "feit og runda"],
+    ["Titan One", "'Titan One'", 400, "feit og leiken"],
+    ["Chango", "'Chango'", 400, "ekstremt feit"],
+    ["Anton", "'Anton'", 400, "smal og høg"],
+    ["Big Shoulders Display Black", "'Big Shoulders Display'", 900, "smal og kantete"],
+  ];
+  const FARGAR = ["#ea4239", "#4a9e2c", "#fab50f", "#0081a1"];
+  const farg = tekst => { let n = 0; return [...tekst].map(t => /\s/.test(t) ? t : `<span style="color:${FARGAR[n++ % 4]}">${t}</span>`).join(""); };
+  document.getElementById("rutenett").innerHTML = SKRIFTER.map(([namn, familie, vekt, om]) => `
+    <div class="prove" style="font-family:${familie}, sans-serif; font-weight:${vekt}">
+      <div class="namn" style="font-family:Nunito"><b>${namn}</b> · ${om}</div>
+      <div class="ord stor">${farg("FALTU")}<br>${farg("RILTU")}</div>
+      <div class="ord">${farg("Frå hylla")}</div>
+      <div class="ord">${farg("Bøker av festivalforfattarar")}</div>
+    </div>`).join("");
+</script>
+</body>
+</html>
