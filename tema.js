@@ -442,7 +442,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "falturiltu", namn: "Faltu Riltu", gruppe: "Bibliotek",
+    id: "falturiltu", namn: "Falturiltu", gruppe: "Bibliotek",
     dato: "litteraturfestival, november",
     skrift: "par-feit",
     // Lys bakgrunn med fargane frå 2019-plakaten. Logoen (ordmerket og kråka) står
@@ -457,7 +457,7 @@ const TEMA_LISTE = [
     fargar: { bakgrunn: "#fdfcf9", tekst: "#111111", dempa: "#57534d", aksent: "#ea4239", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.06)", skugge: "253,252,249", spor: "rgba(0,0,0,.12)", "reserve-a": "#fcd36b", "reserve-b": "#fab50f", "bakteppe-lys": "1.15" },
     pynt({ pynt }) {
       const logo = document.createElement("img");
-      logo.src = "falturiltu-logo.png"; logo.className = "falturiltu-logo"; logo.alt = "Faltu Riltu";
+      logo.src = "falturiltu-logo.png"; logo.className = "falturiltu-logo"; logo.alt = "Falturiltu";
       pynt.append(logo);
       // Overskrifta blir sett like etter pynten. Då får kvar bokstav sin farge.
       setTimeout(() => {
