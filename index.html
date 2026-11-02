@@ -542,17 +542,7 @@
         <p class="hjelp" id="allehjelp" hidden></p>
       </div>
 
-    </fieldset>
-
-    <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
-    <input type="hidden" id="ccl" name="ccl">
-    <details class="del" id="del-sok" data-felt="kulturfond,rekkje,oppdater">
-      <summary>Fleire søkjeval <span class="merke" hidden>endra</span></summary>
-      <div class="felt" id="kulturfondfelt">
-        <label class="val"><input type="checkbox" name="kulturfond" value="1"> Berre bøker frå Kulturfondet</label>
-        <p class="hjelp">Bøker som biblioteket har fått gjennom innkjøpsordningane til Norsk kulturfond (pre=kulturfond i Bibliofil).</p>
-      </div>
-      <div class="felt">
+      <div class="felt" id="rekkjefelt">
         <span class="etikett">Rekkjefølgje</span>
         <div class="segment" role="radiogroup">
           <label><input type="radio" name="rekkje" value="tilfeldig"> Tilfeldig</label>
@@ -560,21 +550,22 @@
           <label><input type="radio" name="rekkje" value="reservert"> Mest reservert</label>
         </div>
       </div>
-      <div class="rad">
-        <div class="felt">
-          <label for="oppdater">Hent nytt (min)</label>
-          <input type="number" id="oppdater" name="oppdater" min="15" max="1440">
-        </div>
-      </div>
-      <p class="hjelp">Kor ofte skjermen hentar boklista på nytt frå Bibliofil. Sjeldnare er skånsamt for biblioteksystemet.</p>
-    </details>
+
+    </fieldset>
+
+    <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
+    <input type="hidden" id="ccl" name="ccl">
 
 
-    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,aarfra,aartil,aarsiste,alder,spraak,plass,utan">
+    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,kulturfond,aarfra,aartil,aarsiste,alder,spraak,plass,utan">
       <summary>Filter <span class="merke" hidden>endra</span></summary>
       <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
       <label class="val" id="hyllarad"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
       <label class="val"><input type="checkbox" name="perforf" value="1"> Maks éi bok per forfattar</label>
+      <div class="felt" id="kulturfondfelt">
+        <label class="val"><input type="checkbox" name="kulturfond" value="1"> Berre bøker frå Kulturfondet</label>
+        <p class="hjelp">Bøker som biblioteket har fått gjennom innkjøpsordningane til Norsk kulturfond (pre=kulturfond i Bibliofil).</p>
+      </div>
       <div class="felt">
         <label for="aarval">Utgjeve</label>
         <select id="aarval">
@@ -717,6 +708,22 @@
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
       <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett», «Godt driv»)</label>
       <p class="hjelp">Vifte viser forrige og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen.</p>
+    </details>
+
+    <details class="del" id="del-avansert" data-felt="oppdater">
+      <summary>Avanserte innstillingar <span class="merke" hidden>endra</span></summary>
+      <div class="felt">
+        <label for="oppdaterval">Hent oppdatert boklista</label>
+        <select id="oppdaterval">
+          <option value="60">Kvar time</option>
+          <option value="180">Kvar 3. time</option>
+          <option value="360">Kvar 6. time (standard)</option>
+          <option value="720">Kvar 12. time</option>
+          <option value="1440">Ein gong i døgnet</option>
+        </select>
+        <input type="hidden" id="oppdater" name="oppdater">
+        <p class="hjelp">Kor ofte skjermen spør Bibliofil om bøkene på nytt, til dømes for å fjerne bøker som er lånte ut. Sjeldnare er skånsamt for biblioteksystemet.</p>
+      </div>
     </details>
 
     <div class="b-lenkje">
@@ -2596,7 +2603,7 @@ function startByggjar(startCfg) {
     }
     oppdaterSynlege();
     teiknTemaknapp(); teiknSkriftknapp();
-    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk();
+    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk(); teiknOppdater();
     const endra = endraDelar(cfg);
     delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
   }
@@ -2627,11 +2634,11 @@ function startByggjar(startCfg) {
     document.getElementById("appellfelt").hidden = fast || kjelde === "nyaste";
     document.getElementById("lffelt").hidden = fast;
     document.getElementById("antalfelt").hidden = fast;
-    document.getElementById("del-sok").hidden = fast;
-    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyheiter har si eiga liste frå Bibliofil
+    document.getElementById("rekkjefelt").hidden = kjelde !== "sok";
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
       if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
+    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyheiter har si eiga liste frå Bibliofil
     // Frå/til år syner berre med «Eige spenn» i årsmenyen
     document.getElementById("aarspenn").hidden = fast || document.getElementById("aarval").value !== "eige";
     teiknUtval();
@@ -3123,6 +3130,18 @@ function startByggjar(startCfg) {
     if (v === "eige") $("aarfra").focus();
     oppdater(false);
   });
+
+  // ---- Hent oppdatert boklista: meny som skriv minutt til det skjulte feltet
+  function teiknOppdater() {
+    const v = $("oppdater").value || STANDARD.oppdater, val = $("oppdaterval");
+    if (![...val.options].some(o => o.value === v)) {
+      const t = Number(v), o = new Option(t % 60 ? `Kvar ${t}. minutt` : `Kvar ${t / 60}. time`, v);
+      const etter = [...val.options].find(o => Number(o.value) > t);
+      val.insertBefore(o, etter || null);
+    }
+    val.value = v;
+  }
+  $("oppdaterval").addEventListener("change", () => { $("oppdater").value = $("oppdaterval").value; oppdater(false); });
 
   // ---- Aldersgruppe: berre dei som passar avdelinga ---------------------
   // b = Born og unge, v = Vaksen. Ei gruppe som er kryssa av, blir alltid vist.
