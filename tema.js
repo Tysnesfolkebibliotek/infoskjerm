@@ -380,7 +380,8 @@ const TEMA_LISTE = [
     skrift: "par-elegant",
     fargar: { bakgrunn: "#2a1541", tekst: "#f7f0fb", dempa: "#c9b5d9", aksent: "#f2c45a", "aksent-tekst": "#2a1541", brikke: "rgba(247,240,251,.10)", skugge: "42,21,65", spor: "rgba(247,240,251,.14)", "reserve-a": "#53307a", "reserve-b": "#2a1541" },
     css: `
-      @keyframes vindaugelys { 0%, 40% { opacity: .85; } 45%, 75% { opacity: 0; } 80%, 100% { opacity: .85; } }`,
+      :root[data-tema="advent"] .vindauge { opacity: var(--lys); transition: opacity .35s ease; }
+      :root[data-tema="advent"] .vindauge.av { opacity: 0; }`,
     pynt({ pynt, svg, tilf }) {
       // Nedst: eit svakt lysare skjær bak ei rekkje hus med lys i vindauga.
       // Nokre lys blir sløkte og tende att, sakte, som om nokon går mellom romma.
@@ -388,10 +389,9 @@ const TEMA_LISTE = [
       skjær.style.cssText = "position:absolute; left:0; right:0; bottom:0; height:26vh; background:linear-gradient(to top, rgba(120,80,170,.26), transparent);";
       pynt.append(skjær);
       let hus = "", lys = "", x = -4;
+      // Alle vindauge blir teikna, men om lag 3 av 10 startar sløkte (klassen «av»)
       const vindauge = (vx, vy, b, h) => {
-        if (Math.random() < .3) return;   // ikkje alle vindauge har lys
-        const blink = Math.random() < .25 ? ` style="animation: vindaugelys ${tilf(25, 70).toFixed(0)}s ease-in-out ${-tilf(0, 70).toFixed(0)}s infinite;"` : "";
-        lys += `<rect x="${vx.toFixed(1)}" y="${vy.toFixed(1)}" width="${b}" height="${h}" fill="#ffd27a" opacity="${tilf(.55, .9).toFixed(2)}"${blink}/>`;
+        lys += `<rect class="vindauge${Math.random() < .3 ? " av" : ""}" x="${vx.toFixed(1)}" y="${vy.toFixed(1)}" width="${b}" height="${h}" fill="#ffd27a" style="--lys:${tilf(.55, .9).toFixed(2)}"/>`;
       };
       while (x < 470) {
         const kyrkje = x > 300 && x < 330 && !hus.includes("spir");
@@ -417,6 +417,18 @@ const TEMA_LISTE = [
       const by = svg("0 0 470 100", "left:0; bottom:0; width:100vw; height:13vh;", `<defs>${glød}</defs><g fill="#1a0c2b">${hus}</g><g filter="url(#vindaugeglod)">${lys}</g>`);
       by.setAttribute("preserveAspectRatio", "xMidYMax slice");
       pynt.append(by);
+      // Av og til blir eitt lys skrudd av eller på, med 6–20 sekund mellom kvar gong.
+      // Er mange lys tende, blir det oftare skrudd av, og omvendt, så balansen held seg.
+      const vindauga = [...by.querySelectorAll(".vindauge")];
+      const skru = () => {
+        const av = vindauga.filter(v => v.classList.contains("av"));
+        const slokk = Math.random() < (vindauga.length - av.length) / vindauga.length + .05 - .3;
+        const kandidatar = slokk ? vindauga.filter(v => !v.classList.contains("av")) : av;
+        const v = kandidatar[Math.floor(Math.random() * kandidatar.length)];
+        if (v) v.classList.toggle("av");
+        setTimeout(skru, tilf(6, 20) * 1000);
+      };
+      if (vindauga.length) setTimeout(skru, tilf(4, 12) * 1000);
       // Små gylne stjerner som blinkar svakt
       for (let i = 0; i < 45; i++) {
         const st = document.createElement("div"), d = tilf(0.15, 0.4);
