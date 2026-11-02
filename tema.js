@@ -379,17 +379,41 @@ const TEMA_LISTE = [
     aktuell: "11-25/12-24",
     skrift: "par-elegant",
     fargar: { bakgrunn: "#2a1541", tekst: "#f7f0fb", dempa: "#c9b5d9", aksent: "#f2c45a", "aksent-tekst": "#2a1541", brikke: "rgba(247,240,251,.10)", skugge: "42,21,65", spor: "rgba(247,240,251,.14)", "reserve-a": "#53307a", "reserve-b": "#2a1541" },
+    css: `
+      @keyframes vindaugelys { 0%, 40% { opacity: .85; } 45%, 75% { opacity: 0; } 80%, 100% { opacity: .85; } }`,
     pynt({ pynt, svg, tilf }) {
-      // Nedst: eit svakt lysare skjær og to lag slake bølgjer i lilla som glir sakte sidelengs
+      // Nedst: eit svakt lysare skjær bak ei rekkje hus med lys i vindauga.
+      // Nokre lys blir sløkte og tende att, sakte, som om nokon går mellom romma.
       const skjær = document.createElement("div");
-      skjær.style.cssText = "position:absolute; left:0; right:0; bottom:0; height:22vh; background:linear-gradient(to top, rgba(120,80,170,.22), transparent);";
+      skjær.style.cssText = "position:absolute; left:0; right:0; bottom:0; height:26vh; background:linear-gradient(to top, rgba(120,80,170,.26), transparent);";
       pynt.append(skjær);
-      const bølgje = (y, h) => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 100) d += ` C${x + 30},${y - h} ${x + 70},${y - h} ${x + 100},${y}`; return d + " L400,60 L0,60 Z"; };
-      [[30, 14, "#7a52a8", .16, 120, "11vh"], [40, 10, "#9a73c4", .12, 80, "7vh"]].forEach(([y, h, farge, o, sek, høgd]) => {
-        const lag = svg("0 0 400 60", `left:0; bottom:0; width:200vw; opacity:${o}; animation: glidSide ${sek}s linear infinite;`, `<path fill="${farge}" d="${bølgje(y, h)}"/>`);
-        lag.setAttribute("preserveAspectRatio", "none"); lag.style.height = høgd;
-        pynt.append(lag);
-      });
+      let hus = "", lys = "", x = -4;
+      const vindauge = (vx, vy, b, h) => {
+        if (Math.random() < .3) return;   // ikkje alle vindauge har lys
+        const blink = Math.random() < .25 ? ` style="animation: vindaugelys ${tilf(25, 70).toFixed(0)}s ease-in-out ${-tilf(0, 70).toFixed(0)}s infinite;"` : "";
+        lys += `<rect x="${vx.toFixed(1)}" y="${vy.toFixed(1)}" width="${b}" height="${h}" fill="#ffd27a" opacity="${tilf(.55, .9).toFixed(2)}"${blink}/>`;
+      };
+      while (x < 470) {
+        const kyrkje = x > 300 && x < 330 && !hus.includes("spir");
+        if (kyrkje) {
+          // Ei lita kyrkje med spir
+          hus += `<path class="spir" d="M${x},100 V62 H${x + 22} V100 Z M${x + 22},100 V70 H${x + 50} V100 Z M${x + 2},62 L${x + 11},26 L${x + 20},62 Z"/>` +
+                 `<path d="M${x + 20},70 L${x + 36},58 L${x + 52},70 Z"/>`;
+          vindauge(x + 8, 70, 6, 10); vindauge(x + 28, 78, 4, 9); vindauge(x + 40, 78, 4, 9);
+          x += 54; continue;
+        }
+        const b = tilf(22, 40), h = tilf(14, 34), tak = tilf(8, 14);
+        const topp = 100 - h;
+        hus += `<path d="M${x.toFixed(1)},100 V${topp.toFixed(1)} L${(x + b / 2).toFixed(1)},${(topp - tak).toFixed(1)} L${(x + b).toFixed(1)},${topp.toFixed(1)} V100 Z"/>`;
+        // Vindauge i ein eller to etasjar
+        const etasjar = h > 26 ? 2 : 1, kolonnar = b > 32 ? 3 : 2;
+        for (let e = 0; e < etasjar; e++) for (let k = 0; k < kolonnar; k++)
+          vindauge(x + (k + .5) * b / kolonnar - 2.5, topp + 5 + e * 12, 5, 6);
+        x += b + tilf(-3, 6);
+      }
+      const by = svg("0 0 470 100", "left:0; bottom:0; width:100vw; height:13vh;", `<g fill="#1a0c2b">${hus}</g>${lys}`);
+      by.setAttribute("preserveAspectRatio", "xMidYMax slice");
+      pynt.append(by);
       // Små gylne stjerner som blinkar svakt
       for (let i = 0; i < 45; i++) {
         const st = document.createElement("div"), d = tilf(0.15, 0.4);
