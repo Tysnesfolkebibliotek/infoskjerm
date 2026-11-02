@@ -114,7 +114,7 @@
   :root[data-visning="rull"] .scene { overflow: hidden; margin-top: 1vh;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4%, #000 93%, transparent 100%);
             mask-image: linear-gradient(to bottom, transparent 0, #000 4%, #000 93%, transparent 100%); }
-  :root[data-visning="rull"] .hjul { visibility: hidden; }
+  :root[data-visning="rull"] :is(.teljar, .framdrift) { visibility: hidden; }
   .rull-spor { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
   :root .rull-spor .bok.bok { position: relative; inset: auto; opacity: 1; transform: none; transition: none; padding: 6vh 0; }
   .rull-spor .omslag-ramme { flex: none; height: 40vh; }
@@ -168,19 +168,28 @@
   .brikke.hylle { background: var(--aksent); color: var(--aksent-tekst); font-weight: 700; }
   .brikke.appell { background: transparent; box-shadow: inset 0 0 0 .3vw var(--brikke); font-style: italic; }
   .omtale { font-size: 2.8vw; line-height: 1.5; color: var(--dempa); margin: 2.8vh auto 0; max-width: 82vw; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-  #visning footer { display: flex; align-items: center; justify-content: space-between; gap: 3vw; margin-top: 3vh; flex: none; }
-  .framdrift { flex: 1; height: .5vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
-  .framdrift > div { height: 100%; width: 0; background: var(--aksent); }
+  #visning footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2vh 3vw; margin-top: 3vh; flex: none; }
   .botnmerke { display: flex; flex-direction: column; align-items: flex-start; gap: .4vh; flex: none; }
   .kjeldetekst { font-size: 1.6vw; color: var(--dempa); opacity: .8; }
   /* Biblioteknamnet nede til venstre og nedteljingshjulet til høgre, i alle tema */
   .botnnamn { font-size: 2.8vw; color: var(--tekst); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
   .botnnamn b { font-weight: 700; }
-  .framdrift { display: none !important; }
+  /* Nedteljinga («teljar=» i lenkja): hjul (standard), hjul med sekund, sekund, linje eller ingen.
+     Fargar og skrift kjem frå temaet. Linja blir animert med transform, så grafikkbrikka gjer jobben. */
+  .teljar { position: relative; flex: none; display: flex; align-items: center; justify-content: center; min-width: 4.6vh; height: 4.6vh; }
   .hjul { display: block; width: 4.6vh; height: 4.6vh; flex: none; transform: rotate(-90deg); }
   .hjul circle { fill: none; stroke-width: 3.5; }
   .hjul .hjul-spor { stroke: var(--spor); }
   #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 0px; }
+  .teljar-tal { display: none; font-family: var(--skrift-tittel, var(--skrift)); font-weight: var(--vekt-tittel, 700);
+                color: var(--aksent-tekstfarge, var(--aksent)); font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+  :root[data-teljar="hjulsek"] .teljar-tal { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; font-size: 1.8vh; color: var(--tekst); }
+  :root[data-teljar="sek"] .hjul { display: none; }
+  :root[data-teljar="sek"] .teljar-tal { display: block; font-size: 4.4vh; }
+  :root[data-teljar="linje"] .teljar, :root[data-teljar="ingen"] .teljar { display: none; }
+  .framdrift { display: none; order: -1; flex: 1 0 100%; height: .6vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
+  .framdrift > div { height: 100%; background: var(--aksent); border-radius: 99px; transform-origin: 0 50%; will-change: transform; }
+  :root[data-teljar="linje"] .framdrift { display: block; }
   .melding {
     position: absolute; inset: 0; display: flex; flex-direction: column; gap: 3vh;
     align-items: center; justify-content: center; text-align: center;
@@ -341,7 +350,10 @@
         <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
         <span class="kjeldetekst" id="kjeldetekst" hidden>Liknande bøker og merkelappar: Forrige bok, Biblioteksentralen</span>
       </div>
-      <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="hjul-spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
+      <div class="teljar" aria-hidden="true">
+        <svg class="hjul" viewBox="0 0 36 36"><circle class="hjul-spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
+        <span class="teljar-tal" id="teljartal"></span>
+      </div>
     </footer>
   </main>
 </div>
@@ -604,7 +616,7 @@
     </details>
 
 
-    <details class="del" id="del-vis" data-felt="tema,skrift,bakgrunn,overgang,visning,fart,sek,omtale,merkelapp">
+    <details class="del" id="del-vis" data-felt="tema,skrift,bakgrunn,overgang,visning,fart,sek,teljar,omtale,merkelapp">
       <summary>Utsjånad og visning <span class="merke" hidden>endra</span></summary>
       <div class="rad">
         <div class="felt">
@@ -676,6 +688,16 @@
           <label for="sek">Sekund per bok</label>
           <input type="number" id="sek" name="sek" min="4" max="60">
         </div>
+        <div class="felt">
+          <label for="teljar">Nedteljing</label>
+          <select id="teljar" name="teljar">
+            <option value="">Hjul (standard)</option>
+            <option value="hjulsek">Hjul med sekund</option>
+            <option value="sek">Sekund</option>
+            <option value="linje">Linje over botnen</option>
+            <option value="ingen">Ingen</option>
+          </select>
+        </div>
       </div>
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
       <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett», «Godt driv»)</label>
@@ -718,7 +740,7 @@ const STANDARD = {
   kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
-  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
+  tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
 };
 
@@ -946,7 +968,10 @@ function startVisning(cfg) {
   const avdelingFelt = document.getElementById("avdeling");
   const framdrift = document.getElementById("framdrift");
   const hjul = document.getElementById("hjul");
+  const teljartal = document.getElementById("teljartal");
   let hjulAnim = null;
+  const TELJAR = ["hjulsek", "sek", "linje", "ingen"].includes(cfg.teljar) ? cfg.teljar : "";
+  if (TELJAR) document.documentElement.dataset.teljar = TELJAR;
   const bakteppe = [document.getElementById("bakteppe-a"), document.getElementById("bakteppe-b")];
   let aktivtBakteppe = 0;
 
@@ -1067,18 +1092,32 @@ function startVisning(cfg) {
     aktivtBakteppe = 1 - aktivtBakteppe;
   }
 
+  // Nedteljinga byrjar full og tømmer seg, slik som hjulet på kanalsidene på
+  // tysnesbibliotek.no. Berre det valde symbolet blir animert.
   function startFramdrift() {
-    framdrift.style.transition = "none";
-    framdrift.style.width = "0";
-    framdrift.offsetWidth;
-    framdrift.style.transition = `width ${SEK}s linear`;
-    framdrift.style.width = "100%";
-    // Hjulet (tema «Libry content») byrjar fullt og tømmer seg mot klokka,
-    // slik som på kanalsidene på tysnesbibliotek.no.
+    const ms = SEK * 1000;
     if (hjulAnim) hjulAnim.cancel();
-    hjulAnim = hjul.animate(
-      [{ strokeDashoffset: "0px" }, { strokeDashoffset: "94.25px" }],
-      { duration: SEK * 1000, easing: "linear", fill: "forwards" });
+    hjulAnim = null;
+    if (TELJAR === "linje")
+      hjulAnim = framdrift.animate([{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }],
+        { duration: ms, easing: "linear", fill: "forwards" });
+    else if (TELJAR === "" || TELJAR === "hjulsek")
+      hjulAnim = hjul.animate([{ strokeDashoffset: "0px" }, { strokeDashoffset: "94.25px" }],
+        { duration: ms, easing: "linear", fill: "forwards" });
+    if (TELJAR === "sek" || TELJAR === "hjulsek") startSekund(ms);
+  }
+
+  // Sekunda: talet blir skrive om éin gong i sekundet, rett etter kvart heile sekund.
+  let sekTidtakar = null;
+  function startSekund(ms) {
+    clearTimeout(sekTidtakar);
+    const slutt = performance.now() + ms;
+    const tikk = () => {
+      const att = slutt - performance.now();
+      teljartal.textContent = Math.max(0, Math.ceil(att / 1000));
+      if (att > 0) sekTidtakar = setTimeout(tikk, (att % 1000) + 20);
+    };
+    tikk();
   }
 
   // ---- forlasting av omslag ------------------------------------------
@@ -2513,6 +2552,7 @@ function startByggjar(startCfg) {
     const rull = skjema.elements.visning.value === "rull";
     skjema.elements.overgang.disabled = rull || skjema.elements.visning.value === "vifte";   // vifta har si eiga rørsle
     skjema.elements.sek.disabled = rull;
+    skjema.elements.teljar.disabled = rull;     // rulleteksten har inga nedteljing
     skjema.elements.fart.disabled = !rull;
   }
 
