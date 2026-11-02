@@ -444,7 +444,7 @@ const TEMA_LISTE = [
   {
     id: "falturiltu", namn: "Faltu Riltu", gruppe: "Bibliotek",
     dato: "litteraturfestival, november",
-    skrift: "par-blokk",
+    skrift: "par-feit",
     // Lys bakgrunn med fargane frå 2019-plakaten. Logoen (ordmerket og kråka) står
     // svart øvst til høgre, og bokstavane i overskrifta får raudt, grønt, gult og blått.
     // Gulfargen i overskrifta er litt mørkare enn på plakaten, så han syner mot det lyse.
