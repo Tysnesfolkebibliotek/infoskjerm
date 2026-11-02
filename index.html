@@ -267,6 +267,11 @@
   .appellbrikke { display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; padding: 3px 4px 3px 10px; border-radius: 99px;
                   background: var(--b-aksent); color: var(--b-aksent-tekst); font-size: 13px; font-weight: 600; border: 0; cursor: pointer; }
   .appellbrikke span { opacity: .8; padding: 0 5px; }
+  .brikkerad { gap: 0 6px; align-items: center; }
+  /* «og»/«eller» mellom brikkene: klikk for å byte */
+  .koplingsord { margin-top: 8px; padding: 2px 10px; border-radius: 99px; border: 1px dashed var(--b-dempa); background: transparent;
+                 color: var(--b-dempa); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .koplingsord:hover { color: var(--b-tekst); border-color: var(--b-tekst); }
   .malrad select { flex: 1; min-width: 0; }
   .malrad .knapp { flex: none; white-space: nowrap; }
   .val, .felt > label.val { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 400; cursor: pointer; }
@@ -453,19 +458,23 @@
       </div>
       <div id="sokefelt">
         <div class="felt">
-          <label for="sjanger">Sjanger</label>
-          <input type="text" id="sjanger" name="sjanger" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
+          <label for="sjangersok">Sjanger</label>
+          <input type="hidden" id="sjanger" name="sjanger">
+          <input type="hidden" id="sjangermodus" name="sjangermodus">
+          <input type="text" id="sjangersok" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
           <datalist id="sjangrar">
             <option value="Fantasy"><option value="Krim"><option value="Spenning"><option value="Humor">
             <option value="Teikneseriar"><option value="Manga"><option value="Biografiar"><option value="Kokebøker">
           </datalist>
+          <div class="vallinje brikkerad" id="sjangervalde"></div>
         </div>
         <div class="felt">
           <label for="emnesok">Emne</label>
           <input type="hidden" id="emne" name="emne">
+          <input type="hidden" id="emnemodus" name="emnemodus">
           <input type="text" id="emnesok" list="emneliste" placeholder="Skriv for forslag, eller eit eige emneord + Enter">
           <datalist id="emneliste"></datalist>
-          <div class="vallinje" id="emnevalde"></div>
+          <div class="vallinje brikkerad" id="emnevalde"></div>
           <p class="hjelp" id="forslagstatus"></p>
         </div>
       </div>
@@ -516,13 +525,10 @@
       <div class="felt" id="appellfelt">
         <label for="appellsok">Appellfaktor</label>
         <input type="hidden" id="appell" name="appell">
+        <input type="hidden" id="appellmodus" name="appellmodus">
         <input type="text" id="appellsok" list="appelltermar" placeholder="Skriv for forslag, til dømes godt driv">
         <datalist id="appelltermar"></datalist>
-        <div class="vallinje" id="appellvalde"></div>
-        <div class="segment" role="radiogroup" id="appellmodusval" style="margin-top:8px" hidden>
-          <label><input type="radio" name="appellmodus" value="alle"> Alle saman</label>
-          <label><input type="radio" name="appellmodus" value="eitt"> Minst éin av dei</label>
-        </div>
+        <div class="vallinje brikkerad" id="appellvalde"></div>
         <p class="hjelp" id="appellhjelp">Frå Forrige bok. Berre bøker som Biblioteksentralen har skildra slik, blir med. Mange eldre bøker og fagbøker er ikkje skildra.</p>
       </div>
 
@@ -537,15 +543,8 @@
 
     <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
     <input type="hidden" id="ccl" name="ccl">
-    <details class="del" id="del-sok" data-felt="emnemodus,dewey,serie,kulturfond,rekkje,oppdater">
+    <details class="del" id="del-sok" data-felt="dewey,serie,kulturfond,rekkje,oppdater">
       <summary>Fleire søkjeval <span class="merke" hidden>endra</span></summary>
-      <div class="felt">
-        <span class="etikett">Fleire emneord</span>
-        <div class="segment" role="radiogroup">
-          <label><input type="radio" name="emnemodus" value="eitt"> Minst eitt av dei</label>
-          <label><input type="radio" name="emnemodus" value="alle"> Alle saman</label>
-        </div>
-      </div>
       <div class="rad">
         <div class="felt">
           <label for="dewey">Dewey byrjar på</label>
@@ -760,7 +759,7 @@ const SERVER = "https://strdbib.bib.no";
 const AVD_NAMN = { tyfv: "For vaksne", tyfb: "For born og unge" };
 
 const STANDARD = {
-  kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+  kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", sjangermodus: "eitt", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
@@ -1498,7 +1497,7 @@ function ryddLager(behald, alt = false) {
 
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
-  return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
+  return ["kjelde","avd","lf","sjanger","sjangermodus","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
     .concat(["likte", "appell", "merkelapp", "aldermodus"].filter(k => cfg[k] && cfg[k] !== "0"))
     .concat(cfg.appell && cfg.appellmodus === "eitt" ? ["appellmodus"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
@@ -2239,8 +2238,10 @@ function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
   if (cfg.lf) d.push(`bibliofil.ccl="lf=${rein(cfg.lf)}"`);
   // Sjanger ligg i same indeks som emneord, men blir søkt utan trunkering,
   // så «krim» ikkje òg treff emneordet «Kriminalitet».
-  // Fleire former, til dømes «Romanar, Roman», gir eitt søk per form.
-  const sjangrar = (cfg.sjanger || "").split(",").map(reinOrd).filter(Boolean);
+  // Kvar sjanger kan ha fleire former («Romanar|Roman»), som tyder «eller».
+  // «Eller» mellom sjangrane: eitt søk per form. «Og»: eitt søk per kombinasjon.
+  // Eldre lenkjer har formene skilde med komma («Romanar, Roman»); med «eller» blir det det same.
+  const sjangerGrupper = (cfg.sjanger || "").split(",").map(g => g.split("|").map(reinOrd).filter(Boolean)).filter(g => g.length);
   if (rein(cfg.ccl)) d.push(`bibliofil.ccl="${rein(cfg.ccl)}"`);
   // Utgjevingsår i sjølve søket (Bibliofil-CCL): «år=2026», «år=2024:2026»
   // (spenn) og «år=2024:» (frå og med). Utan dette blir åra berre sjekka
@@ -2275,8 +2276,10 @@ function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
     ...serie.map(s => [`bib.titleSeries=${s}`]),
   ];
   const treffVariantar0 = kvarAv.length ? kvarAv : [[]];
-  const treffVariantar = !sjangrar.length ? treffVariantar0
-    : sjangrar.flatMap(sj => treffVariantar0.map(v => [`dc.subject="${sj}"`, ...v]));
+  const sjangerVariantar = cfg.sjangermodus === "alle" && sjangerGrupper.length > 1
+    ? kombinasjonar(sjangerGrupper) : sjangerGrupper.flat().map(sj => [sj]);
+  const treffVariantar = !sjangerVariantar.length ? treffVariantar0
+    : sjangerVariantar.flatMap(sjk => treffVariantar0.map(v => [...sjk.map(sj => `dc.subject="${sj}"`), ...v]));
 
   // Aldersgruppe: eitt søk per gruppe, så Bibliofil berre gir bøker som passar
   const alder = medAlder ? (cfg.alder || "").split(",").map(rein).filter(Boolean) : [];
@@ -2595,7 +2598,7 @@ function startByggjar(startCfg) {
     }
     oppdaterSynlege();
     teiknTemaknapp(); teiknSkriftknapp();
-    teiknLikte(); teiknAppell(); teiknEmne();
+    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger();
     const endra = endraDelar(cfg);
     delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
   }
@@ -2686,7 +2689,7 @@ function startByggjar(startCfg) {
       const grunnar = Object.entries(m.utelatne || {}).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${n} ${g}`);
       status.textContent = (m.tal ? `${m.tal} bøker funne` : "Fann ingen bøker som passar") + (m.sek ? ` på ${m.sek} s.` : ".")
         + (grunnar.length ? ` Utelatne: ${grunnar.join(", ")}.` : "")
-        + (!m.tal && m.appellalle ? " Ingen av bøkene hadde alle appellfaktorane. Prøv færre, eller «Minst éin av dei»." : "")
+        + (!m.tal && m.appellalle ? " Ingen av bøkene hadde alle appellfaktorane. Prøv færre, eller klikk på «og» mellom dei for å byte til «eller»." : "")
         + (m.nåddeGrense ? (m.alle ? " Stoppa ved taket på 500 bøker."
             : " Stoppa då «Tal bøker» var nådd, så resten av treffa vart ikkje sjekka. Kryss av for «Alle bøker som passar» for å få med alle.") : "");
     }
@@ -2844,6 +2847,30 @@ function startByggjar(startCfg) {
   $("likteknapp").addEventListener("click", søkLikte);
   $("liktesok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkLikte(); } });
 
+  // ---- Brikker med «og»/«eller» mellom -------------------------------
+  // Brukt av sjanger, emne og appellfaktor. Klikk på ordet mellom brikkene
+  // for å byte. Modusen («alle» = og, «eitt» = eller) ligg i eit skjult felt.
+  function modus(felt) { return $(felt).value || STANDARD[felt]; }
+  function teiknBrikker(boks, delar, modusfelt) {
+    const ord = modus(modusfelt) === "alle" ? "og" : "eller";
+    const ut = [];
+    delar.forEach(({ tekst, tittel, fjern }, i) => {
+      if (i) {
+        const k = document.createElement("button");
+        k.type = "button"; k.className = "koplingsord"; k.textContent = ord;
+        k.title = ord === "og" ? "Bøkene må passe alle. Klikk for «eller»." : "Bøkene må passe minst éin. Klikk for «og».";
+        k.addEventListener("click", () => { $(modusfelt).value = ord === "og" ? "eitt" : "alle"; teiknBrikker(boks, delar, modusfelt); oppdater(false); });
+        ut.push(k);
+      }
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "appellbrikke"; b.title = tittel || "Fjern";
+      b.append(tekst, Object.assign(document.createElement("span"), { textContent: "✕" }));
+      b.addEventListener("click", fjern);
+      ut.push(b);
+    });
+    $(boks).replaceChildren(...ut);
+  }
+
   // ---- Appellfaktorar ------------------------------------------------
   var appellOrd = null;   // var: kan bli brukt før denne linja har køyrt
   var appellLasting = null;
@@ -2860,16 +2887,12 @@ function startByggjar(startCfg) {
   function valdeAppell() { return $("appell").value.split(",").filter(Boolean); }
   async function teiknAppell() {
     const idar = valdeAppell();
-    $("appellmodusval").hidden = idar.length < 2;
     if (idar.length) await lastAppellOrd();
-    $("appellvalde").replaceChildren(...idar.map(id => {
+    teiknBrikker("appellvalde", idar.map(id => {
       const o = (appellOrd || []).find(o => o.id === id);
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "appellbrikke"; b.title = (o && o.def) || "Fjern";
-      b.append(o ? o.namn : id, Object.assign(document.createElement("span"), { textContent: "✕" }));
-      b.addEventListener("click", () => { $("appell").value = valdeAppell().filter(x => x !== id).join(","); teiknAppell(); oppdater(false); });
-      return b;
-    }));
+      return { tekst: o ? o.namn : id, tittel: (o && o.def) || "Fjern",
+        fjern: () => { $("appell").value = valdeAppell().filter(x => x !== id).join(","); teiknAppell(); oppdater(false); } };
+    }), "appellmodus");
   }
   $("appellsok").addEventListener("focus", lastAppellOrd);
   // Vel ein frå lista: blir lagt til med ein gong, som i emnefeltet. «change»
@@ -2961,22 +2984,63 @@ function startByggjar(startCfg) {
     const tal = rad => kol.reduce((s, k) => s + (rad[k] || 0), 0);
     const ordna = rader => rader.map(r => [r, tal(r)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
     $("emneliste").replaceChildren(...ordna(emneord.emne).map(([r, n]) => new Option(`${r[0]} (${n})`, r[0])));
-    $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[r.length - 1])));
+    $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[0])));
     const dato = emneord.laga ? emneord.laga.split("-").reverse().join(".") : "";
     $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre.`;
   }
   const emneDelar = () => $("emne").value.split(",").map(x => x.trim()).filter(Boolean);
   function teiknEmne() {
-    $("emnevalde").replaceChildren(...emneDelar().map(del => {
+    teiknBrikker("emnevalde", emneDelar().map(del => {
       const former = del.split("|");
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "appellbrikke";
-      b.title = former.length > 1 ? `Søkjer på ${former.join(" eller ")}. Klikk for å fjerne.` : "Fjern";
-      b.append(former[0], Object.assign(document.createElement("span"), { textContent: "✕" }));
-      b.addEventListener("click", () => { $("emne").value = emneDelar().filter(x => x !== del).join(", "); teiknEmne(); oppdater(false); });
-      return b;
-    }));
+      return { tekst: former[0], tittel: former.length > 1 ? `Søkjer på ${former.join(" eller ")}. Klikk for å fjerne.` : "Fjern",
+        fjern: () => { $("emne").value = emneDelar().filter(x => x !== del).join(", "); teiknEmne(); oppdater(false); } };
+    }), "emnemodus");
   }
+
+  // Sjanger: same oppførsel som emne. Ein sjanger med fleire former blir lagra
+  // som «Romanar|Roman|Romaner». Eldre lenkjer har formene skilde med komma;
+  // dei blir slått saman til éin brikke når sjangerlista er lasta.
+  const sjangerDelar = () => $("sjanger").value.split(",").map(x => x.trim()).filter(Boolean);
+  const sjangerRad = form => emneord && emneord.sjanger.find(r =>
+    [r[0], ...String(r[r.length - 1]).split(",")].some(f => f.trim().toLowerCase() === form.toLowerCase()));
+  function samleSjangrar() {
+    if (!emneord) return;
+    const grupper = [];
+    for (const del of sjangerDelar()) {
+      const rad = sjangerRad(del.split("|")[0]);
+      const før = rad && grupper.find(g => g.rad === rad);
+      if (før) før.former.push(...del.split("|").filter(f => !før.former.includes(f)));
+      else grupper.push({ rad, former: del.split("|") });
+    }
+    $("sjanger").value = grupper.map(g => g.former.join("|")).join(", ");
+  }
+  function teiknSjanger() {
+    if (!emneord && $("sjanger").value) lastEmneord().then(() => { samleSjangrar(); teiknSjanger(); });
+    teiknBrikker("sjangervalde", sjangerDelar().map(del => {
+      const former = del.split("|");
+      const rad = sjangerRad(former[0]);
+      return { tekst: rad ? rad[0] : former[0], tittel: former.length > 1 ? `Søkjer på ${former.join(" eller ")}. Klikk for å fjerne.` : "Fjern",
+        fjern: () => { $("sjanger").value = sjangerDelar().filter(x => x !== del).join(", "); teiknSjanger(); oppdater(false); } };
+    }), "sjangermodus");
+  }
+  function leggTilSjanger(tekst) {
+    const v = tekst.replace(/[,|]/g, " ").replace(/\s+/g, " ").trim();
+    if (!v) return;
+    const rad = sjangerRad(v);
+    const del = rad ? [...new Set([rad[0], ...String(rad[rad.length - 1]).split(",").map(f => f.trim())])].filter(Boolean).join("|") : v;
+    const har = sjangerDelar();
+    if (!har.some(x => x.toLowerCase().split("|").includes(v.toLowerCase()))) $("sjanger").value = [...har, del].join(", ");
+    $("sjangersok").value = "";
+    teiknSjanger(); oppdater(false);
+  }
+  $("sjangersok").addEventListener("input", e => {
+    if (e.inputType && e.inputType !== "insertReplacementText") return;
+    const v = $("sjangersok").value.trim().toLowerCase();
+    if (emneord && v && emneord.sjanger.some(r => r[0].toLowerCase() === v)) leggTilSjanger($("sjangersok").value);
+  });
+  $("sjangersok").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); $("sjangersok").value.split(",").forEach(leggTilSjanger); }
+  });
   // Legg til eit emne. Står det i lista, kjem alle formene med; elles det som er skrive.
   function leggTilEmne(tekst) {
     const rein = t => t.replace(/[,|]/g, " ").replace(/\s+/g, " ").trim();
@@ -3002,7 +3066,7 @@ function startByggjar(startCfg) {
     if (e.key === "Enter") { e.preventDefault(); $("emnesok").value.split(",").forEach(leggTilEmne); }
   });
   $("emnesok").addEventListener("blur", () => { if ($("emnesok").value.trim()) $("forslagstatus").textContent = "Trykk Enter for å leggje til emneordet du har skrive."; });
-  for (const felt of [$("emnesok"), $("sjanger")]) felt.addEventListener("focus", lastEmneord);
+  for (const felt of [$("emnesok"), $("sjangersok")]) felt.addEventListener("focus", lastEmneord);
   skjema.addEventListener("change", e => { if (e.target.name === "avd") teiknForslag(); });
   fyllInn(startCfg);
   skaler();
