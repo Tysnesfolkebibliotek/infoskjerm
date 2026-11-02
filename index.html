@@ -271,6 +271,7 @@
   /* «og»/«eller» mellom brikkene: klikk for å byte */
   .koplingsord { margin-top: 8px; padding: 2px 10px; border-radius: 99px; border: 1px dashed var(--b-dempa); background: transparent;
                  color: var(--b-dempa); font: inherit; font-size: 12.5px; cursor: pointer; }
+  span.koplingsord { cursor: default; border-style: solid; border-color: transparent; padding: 2px 4px; }
   .koplingsord:hover { color: var(--b-tekst); border-color: var(--b-tekst); }
   .malrad select { flex: 1; min-width: 0; }
   .malrad .knapp { flex: none; white-space: nowrap; }
@@ -583,9 +584,23 @@
       <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
       <label class="val" id="hyllarad"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
       <label class="val"><input type="checkbox" name="perforf" value="1"> Maks éi bok per forfattar</label>
-      <div class="rad">
+      <div class="felt">
+        <label for="aarval">Utgjeve</label>
+        <select id="aarval">
+          <option value="">Alle år</option>
+          <option value="1">I år</option>
+          <option value="2">I fjor og i år</option>
+          <option value="3">Dei siste 3 åra</option>
+          <option value="5">Dei siste 5 åra</option>
+          <option value="10">Dei siste 10 åra</option>
+          <option value="eige">Eige spenn …</option>
+        </select>
+        <input type="hidden" id="aarsiste" name="aarsiste">
+        <p class="hjelp" id="aarhjelp" hidden>Følgjer med over nyttår, så karusellen held seg fersk.</p>
+      </div>
+      <div class="rad" id="aarspenn" hidden>
         <div class="felt">
-          <label for="aarfra">Utgjeve frå år</label>
+          <label for="aarfra">Frå år</label>
           <input type="number" id="aarfra" name="aarfra" min="1800" max="2100" placeholder="2020">
         </div>
         <div class="felt">
@@ -594,37 +609,24 @@
         </div>
       </div>
       <div class="felt">
-        <label for="aarsiste">… eller berre dei siste åra</label>
-        <input type="number" id="aarsiste" name="aarsiste" min="1" max="50" placeholder="til dømes 2">
-        <p class="hjelp">1 = i år, 2 = i fjor og i år, osb. Følgjer med over nyttår, så karusellen held seg fersk. Går framfor «frå/til år».</p>
-      </div>
-      <div class="felt">
         <span class="etikett">Aldersgruppe</span>
         <div class="vallinje kolonnar">
-          <label class="val"><input type="checkbox" name="alder" value="aa"> 0–3 år</label>
-          <label class="val"><input type="checkbox" name="alder" value="a"> 3–6 år</label>
-          <label class="val"><input type="checkbox" name="alder" value="b"> 6–9 år</label>
-          <label class="val"><input type="checkbox" name="alder" value="bu"> 9–11 år</label>
-          <label class="val"><input type="checkbox" name="alder" value="u"> 11–13 år</label>
-          <label class="val"><input type="checkbox" name="alder" value="mu"> 13–16 år</label>
-          <label class="val"><input type="checkbox" name="alder" value="vu"> Unge vaksne</label>
-          <label class="val"><input type="checkbox" name="alder" value="v"> Vaksne</label>
+          <label class="val" data-avd="b"><input type="checkbox" name="alder" value="aa"> 0–3 år</label>
+          <label class="val" data-avd="b"><input type="checkbox" name="alder" value="a"> 3–6 år</label>
+          <label class="val" data-avd="b"><input type="checkbox" name="alder" value="b"> 6–9 år</label>
+          <label class="val" data-avd="b"><input type="checkbox" name="alder" value="bu"> 9–11 år</label>
+          <label class="val" data-avd="b"><input type="checkbox" name="alder" value="u"> 11–13 år</label>
+          <label class="val" data-avd="bv"><input type="checkbox" name="alder" value="mu"> 13–16 år</label>
+          <label class="val" data-avd="bv"><input type="checkbox" name="alder" value="vu"> Unge vaksne</label>
+          <label class="val" data-avd="v"><input type="checkbox" name="alder" value="v"> Vaksne</label>
         </div>
       </div>
       <div class="felt">
-        <span class="etikett">Språk i boka</span>
-        <div class="vallinje kolonnar">
-          <label class="val"><input type="checkbox" name="spraak" value="nob"> Bokmål</label>
-          <label class="val"><input type="checkbox" name="spraak" value="nno"> Nynorsk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="eng"> Engelsk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="swe"> Svensk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="dan"> Dansk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="ger"> Tysk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="ukr"> Ukrainsk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="pol"> Polsk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="ara"> Arabisk</label>
-          <label class="val"><input type="checkbox" name="spraak" value="sme"> Samisk</label>
-        </div>
+        <label for="spraaksok">Språk i boka</label>
+        <input type="hidden" id="spraak" name="spraak">
+        <input type="text" id="spraaksok" list="spraakliste" placeholder="Tomt = alle. Klikk for forslag">
+        <datalist id="spraakliste"></datalist>
+        <div class="vallinje brikkerad" id="spraakvalde"></div>
       </div>
       <div class="felt">
         <label for="plass">Berre plasseringar som inneheld</label>
@@ -2598,7 +2600,7 @@ function startByggjar(startCfg) {
     }
     oppdaterSynlege();
     teiknTemaknapp(); teiknSkriftknapp();
-    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger();
+    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk();
     const endra = endraDelar(cfg);
     delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
   }
@@ -2633,6 +2635,8 @@ function startByggjar(startCfg) {
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
       if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
+    // Frå/til år syner berre med «Eige spenn» i årsmenyen
+    document.getElementById("aarspenn").hidden = fast || document.getElementById("aarval").value !== "eige";
     teiknUtval();
     const alle = skjema.elements.alle;
     document.getElementById("allerad").hidden = kjelde !== "sok";
@@ -2852,10 +2856,11 @@ function startByggjar(startCfg) {
   // for å byte. Modusen («alle» = og, «eitt» = eller) ligg i eit skjult felt.
   function modus(felt) { return $(felt).value || STANDARD[felt]; }
   function teiknBrikker(boks, delar, modusfelt) {
-    const ord = modus(modusfelt) === "alle" ? "og" : "eller";
+    const ord = modusfelt && modus(modusfelt) === "alle" ? "og" : "eller";
     const ut = [];
     delar.forEach(({ tekst, tittel, fjern }, i) => {
-      if (i) {
+      if (i && !modusfelt) ut.push(Object.assign(document.createElement("span"), { className: "koplingsord", textContent: "eller" }));
+      else if (i) {
         const k = document.createElement("button");
         k.type = "button"; k.className = "koplingsord"; k.textContent = ord;
         k.title = ord === "og" ? "Bøkene må passe alle. Klikk for «eller»." : "Bøkene må passe minst éin. Klikk for «og».";
@@ -3067,7 +3072,62 @@ function startByggjar(startCfg) {
   });
   $("emnesok").addEventListener("blur", () => { if ($("emnesok").value.trim()) $("forslagstatus").textContent = "Trykk Enter for å leggje til emneordet du har skrive."; });
   for (const felt of [$("emnesok"), $("sjangersok")]) felt.addEventListener("focus", lastEmneord);
-  skjema.addEventListener("change", e => { if (e.target.name === "avd") teiknForslag(); });
+  skjema.addEventListener("change", e => { if (e.target.name === "avd") { teiknForslag(); teiknAlder(); } });
+
+  // ---- Utgjevingsår: éin meny i staden for tre felt ---------------------
+  // Menyen har ikkje namn; han skriv til dei skjulte/vanlege felta aarsiste,
+  // aarfra og aartil, så lenkjene er som før.
+  function teiknÅr() {
+    const siste = $("aarsiste").value.trim(), eige = $("aarfra").value.trim() || $("aartil").value.trim();
+    const val = $("aarval");
+    if (siste && ![...val.options].some(o => o.value === siste)) {
+      const o = new Option(siste === "1" ? "I år" : `Dei siste ${siste} åra`, siste);
+      val.insertBefore(o, val.querySelector('option[value="eige"]'));
+    }
+    val.value = siste || (eige ? "eige" : "");
+    $("aarspenn").hidden = val.value !== "eige";
+    $("aarhjelp").hidden = !siste;
+  }
+  $("aarval").addEventListener("change", () => {
+    const v = $("aarval").value;
+    $("aarsiste").value = v === "eige" ? "" : v;
+    if (v !== "eige") { $("aarfra").value = ""; $("aartil").value = ""; }
+    $("aarspenn").hidden = v !== "eige";
+    $("aarhjelp").hidden = !v || v === "eige";
+    if (v === "eige") $("aarfra").focus();
+    oppdater(false);
+  });
+
+  // ---- Aldersgruppe: berre dei som passar avdelinga ---------------------
+  // b = Born og unge, v = Vaksen. Ei gruppe som er kryssa av, blir alltid vist.
+  function teiknAlder() {
+    const avdar = Array.from(skjema.elements.avd).filter(c => c.checked).map(c => c.value === "tyfb" ? "b" : "v");
+    for (const l of document.querySelectorAll("label[data-avd]")) {
+      const passar = !avdar.length || avdar.some(a => l.dataset.avd.includes(a));
+      l.hidden = !passar && !l.querySelector("input").checked;
+    }
+  }
+
+  // ---- Språk: brikker, som sjanger og emne -----------------------------
+  const SPRÅK = [["nob", "Bokmål"], ["nno", "Nynorsk"], ["eng", "Engelsk"], ["swe", "Svensk"], ["dan", "Dansk"],
+    ["ger", "Tysk"], ["ukr", "Ukrainsk"], ["pol", "Polsk"], ["ara", "Arabisk"], ["sme", "Samisk"]];
+  $("spraakliste").replaceChildren(...SPRÅK.map(([, namn]) => new Option(namn)));
+  const språkDelar = () => $("spraak").value.split(",").map(x => x.trim()).filter(Boolean);
+  function teiknSpråk() {
+    teiknBrikker("spraakvalde", språkDelar().map(kode => ({
+      tekst: (SPRÅK.find(([k]) => k === kode) || [, kode])[1],
+      fjern: () => { $("spraak").value = språkDelar().filter(x => x !== kode).join(","); teiknSpråk(); oppdater(false); } })), null);
+  }
+  function velSpråk() {
+    const v = $("spraaksok").value.trim().toLowerCase();
+    const s = SPRÅK.find(([k, namn]) => namn.toLowerCase() === v || k === v);
+    if (!s) return;
+    if (!språkDelar().includes(s[0])) $("spraak").value = [...språkDelar(), s[0]].join(",");
+    $("spraaksok").value = "";
+    teiknSpråk(); oppdater(false);
+  }
+  $("spraaksok").addEventListener("input", e => { if (!e.inputType || e.inputType === "insertReplacementText") velSpråk(); });
+  $("spraaksok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); velSpråk(); } });
   fyllInn(startCfg);
   skaler();
   oppdater(true);
