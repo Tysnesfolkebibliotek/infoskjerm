@@ -473,7 +473,9 @@
           <label for="emnesok">Emne</label>
           <input type="hidden" id="emne" name="emne">
           <input type="hidden" id="emnemodus" name="emnemodus">
-          <input type="text" id="emnesok" list="emneliste" placeholder="Skriv for forslag, eller eit eige emneord + Enter">
+          <input type="hidden" id="dewey" name="dewey">
+          <input type="hidden" id="serie" name="serie">
+          <input type="text" id="emnesok" list="emneliste" placeholder="Emneord, deweynummer eller serie">
           <datalist id="emneliste"></datalist>
           <div class="vallinje brikkerad" id="emnevalde"></div>
           <p class="hjelp" id="forslagstatus"></p>
@@ -544,19 +546,8 @@
 
     <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
     <input type="hidden" id="ccl" name="ccl">
-    <details class="del" id="del-sok" data-felt="dewey,serie,kulturfond,rekkje,oppdater">
+    <details class="del" id="del-sok" data-felt="kulturfond,rekkje,oppdater">
       <summary>Fleire søkjeval <span class="merke" hidden>endra</span></summary>
-      <div class="rad">
-        <div class="felt">
-          <label for="dewey">Dewey byrjar på</label>
-          <input type="text" id="dewey" name="dewey" placeholder="796.334">
-        </div>
-        <div class="felt">
-          <label for="serie">Serie</label>
-          <input type="text" id="serie" name="serie" placeholder="Fotballstjerner">
-        </div>
-      </div>
-      <p class="hjelp">Ei bok kjem med viss ho passar emneordet, deweynummeret <em>eller</em> serien. Dewey fangar fagbøker utan emneord.</p>
       <div class="felt" id="kulturfondfelt">
         <label class="val"><input type="checkbox" name="kulturfond" value="1"> Berre bøker frå Kulturfondet</label>
         <p class="hjelp">Bøker som biblioteket har fått gjennom innkjøpsordningane til Norsk kulturfond (pre=kulturfond i Bibliofil).</p>
@@ -2271,24 +2262,17 @@ function byggSøk(cfg, avd, medAlder, medSpråk, medAvgrensing = true) {
   // så ho står alltid i søket.
   if (cfg.kulturfond === "1") d.push(`bibliofil.ccl="pre=kulturfond"`);
 
-  // Emneord: «alle saman» i eitt søk, «minst eitt av» som eitt søk per ord
+  // Emneord, dewey og serie står i same felt i byggjaren, med same «og»/«eller».
   // Eit emne kan ha fleire former («Hestar|Hester»), som tyder «eller».
-  // «Alle saman»: eitt søk per kombinasjon av former. «Minst eitt»: eitt søk per form.
-  const emne = (cfg.emne || "").split(",").map(g => g.split("|").map(ordSøk).filter(Boolean)).filter(g => g.length);
+  // «Eller»: eitt søk per form/verdi, og treffa blir slått saman.
+  // «Og»: eitt søk per kombinasjon av former. 796.334 → bib.classification=796.334*
   const kombinasjonar = grupper => grupper.reduce((acc, g) => acc.flatMap(a => g.map(f => [...a, f])), [[]]);
-  const emneVariantar = !emne.length ? []
-    : (cfg.emnemodus === "alle" || emne.length === 1) ? kombinasjonar(emne).map(k => k.map(e => `dc.subject=${e}`))
-    : emne.flat().map(e => [`dc.subject=${e}`]);
-
-  // Dewey og serie er alternativ til emneorda («eller»): eitt søk per verdi,
-  // og treffa blir slått saman. 796.334 → bib.classification=796.334*
-  const dewey = (cfg.dewey || "").split(",").map(d => d.replace(/[^\d.]/g, "")).filter(d => /^\d/.test(d));
-  const serie = (cfg.serie || "").split(",").map(ordSøk).filter(Boolean);
-  const kvarAv = [
-    ...emneVariantar,
-    ...dewey.map(d => [`bib.classification=${d}*`]),
-    ...serie.map(s => [`bib.titleSeries=${s}`]),
-  ];
+  const innhald = [
+    ...(cfg.emne || "").split(",").map(g => g.split("|").map(ordSøk).filter(Boolean).map(e => `dc.subject=${e}`)),
+    ...(cfg.dewey || "").split(",").map(d => d.replace(/[^\d.]/g, "")).filter(d => /^\d/.test(d)).map(d => [`bib.classification=${d}*`]),
+    ...(cfg.serie || "").split(",").map(ordSøk).filter(Boolean).map(s => [`bib.titleSeries=${s}`]),
+  ].filter(g => g.length);
+  const kvarAv = cfg.emnemodus === "alle" && innhald.length > 1 ? kombinasjonar(innhald) : innhald.flat().map(f => [f]);
   const treffVariantar0 = kvarAv.length ? kvarAv : [[]];
   const sjangerVariantar = cfg.sjangermodus === "alle" && sjangerGrupper.length > 1
     ? kombinasjonar(sjangerGrupper) : sjangerGrupper.flat().map(sj => [sj]);
@@ -3004,15 +2988,20 @@ function startByggjar(startCfg) {
     $("emneliste").replaceChildren(...ordna(emneord.emne).map(([r, n]) => new Option(`${r[0]} (${n})`, r[0])));
     $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[0])));
     const dato = emneord.laga ? emneord.laga.split("-").reverse().join(".") : "";
-    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre.`;
+    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre, eit deweynummer (til dømes 796.334) eller ein serie.`;
   }
   const emneDelar = () => $("emne").value.split(",").map(x => x.trim()).filter(Boolean);
   function teiknEmne() {
-    teiknBrikker("emnevalde", emneDelar().map(del => {
-      const former = del.split("|");
-      return { tekst: former[0], tittel: former.length > 1 ? `Søkjer på ${former.join(" eller ")}. Klikk for å fjerne.` : "Fjern",
-        fjern: () => { $("emne").value = emneDelar().filter(x => x !== del).join(", "); teiknEmne(); oppdater(false); } };
-    }), "emnemodus");
+    const liste = id => $(id).value.split(",").map(x => x.trim()).filter(Boolean);
+    const fjernFrå = (id, v) => () => { $(id).value = liste(id).filter(x => x !== v).join(", "); teiknEmne(); oppdater(false); };
+    teiknBrikker("emnevalde", [
+      ...emneDelar().map(del => {
+        const former = del.split("|");
+        return { tekst: former[0], tittel: former.length > 1 ? `Søkjer på ${former.join(" eller ")}. Klikk for å fjerne.` : "Fjern", fjern: fjernFrå("emne", del) };
+      }),
+      ...liste("dewey").map(d => ({ tekst: `Dewey ${d}`, tittel: `Deweynummer som byrjar på ${d}. Klikk for å fjerne.`, fjern: fjernFrå("dewey", d) })),
+      ...liste("serie").map(v => ({ tekst: `Serie: ${v}`, tittel: "Klikk for å fjerne.", fjern: fjernFrå("serie", v) })),
+    ], "emnemodus");
   }
 
   // Sjanger: same oppførsel som emne. Ein sjanger med fleire former blir lagra
@@ -3064,16 +3053,40 @@ function startByggjar(startCfg) {
     const rein = t => t.replace(/[,|]/g, " ").replace(/\s+/g, " ").trim();
     const v = rein(tekst);
     if (!v) return false;
+    // Tal = deweynummer, «Serie: …» = serie. Dei står i eigne felt i lenkja.
+    const leggTil = (id, verdi) => {
+      const har = $(id).value.split(",").map(x => x.trim()).filter(Boolean);
+      if (!har.some(x => x.toLowerCase() === verdi.toLowerCase())) $(id).value = [...har, verdi].join(", ");
+      $("emnesok").value = ""; ekstraForslag(""); teiknEmne(); oppdater(false);
+      return true;
+    };
+    const tal = v.replace(/^dewey\s+/i, "");
+    if (/^\d[\d.]*$/.test(tal)) return leggTil("dewey", tal.replace(/\.$/, ""));
+    const serie = v.match(/^serie:?\s+(.+)$/i);
+    if (serie) return leggTil("serie", serie[1]);
     const rad = emneord && emneord.emne.find(r => r[0].toLowerCase() === v.toLowerCase());
     const del = rad ? String(rad[rad.length - 1]).split(",").map(rein).filter(Boolean).join("|") : v;
     const har = emneDelar();
     if (!har.some(x => x.toLowerCase().split("|").includes(v.toLowerCase()))) $("emne").value = [...har, del].join(", ");
     $("emnesok").value = "";
-    teiknEmne(); oppdater(false);
+    ekstraForslag(""); teiknEmne(); oppdater(false);
     return true;
+  }
+  // Øvst i forslagslista: det som er skrive, som serie (og som dewey når det er eit tal)
+  var ekstra = [];   // var: blir brukt av teiknForslag, som kan køyre før denne linja
+  function ekstraForslag(tekst) {
+    ekstra.forEach(o => o.remove());
+    const v = tekst.trim();
+    ekstra = !v || /^serie:/i.test(v) ? [] : /^\d[\d.]*$/.test(v)
+      ? [new Option(`Deweynummer som byrjar på ${v}`, `Dewey ${v}`)]
+      : v.length >= 2 ? [new Option(`Bøker i serien «${v}»`, `Serie: ${v}`)] : [];
+    $("emneliste").prepend(...ekstra);
   }
   // Vel ein frå lista: blir lagt til med ein gong. Eige ord: Enter (komma skil fleire).
   $("emnesok").addEventListener("input", e => {
+    if (e.inputType && e.inputType !== "insertReplacementText") { ekstraForslag($("emnesok").value); return; }
+    const vald = $("emnesok").value.trim();
+    if (/^(dewey |serie: )/i.test(vald)) return void leggTilEmne(vald);
     // Når eit forslag blir valt, skriv nettlesaren inn heile ordet på ein gong
     // (inputType «insertReplacementText», eller ingen i somme nettlesarar). Vanleg skriving er «insertText».
     if (e.inputType && e.inputType !== "insertReplacementText") return;
