@@ -1074,7 +1074,7 @@ function startVisning(cfg) {
     if (brikker.childElementCount) info.append(brikker);
     // omtalelengd (brukt av skule.html): lengre omtale enn standard, til liggjande skjermar med meir plass
     const lengd = Number(cfg.omtalelengd) || 0;
-    const omtale = heil ? (t.omtaleHeil || t.omtale) : lengd ? kortOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
+    const omtale = heil ? (t.omtaleHeil || t.omtale) : lengd ? setningsOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
     if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
     bok.append(ramme, info);
     return bok;
@@ -1584,6 +1584,19 @@ function kortOmtale(tekst, maks = 220) {
   const siste = Math.max(kutt.lastIndexOf(". "), kutt.lastIndexOf("! "), kutt.lastIndexOf("? "));
   if (siste > maks * 0.5) return kutt.slice(0, siste + 1);
   return kutt.replace(/\s+\S*$/, "") + " …";
+}
+
+// Omtale som sluttar ved slutten av ei setning (brukt med omtalelengd).
+// Heile setningar så nær «maks» som mogleg. Berre når første setninga åleine
+// er lengre enn maks, blir ho kutta midt i, og då med «…».
+function setningsOmtale(tekst, maks) {
+  if (!tekst) return "";
+  tekst = tekst.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (tekst.length <= maks) return tekst;
+  const slutt = [...tekst.matchAll(/[.!?…](?=\s|$)/g)].map(m => m.index + 1);
+  const innanfor = slutt.filter(i => i <= maks);
+  if (innanfor.length) return tekst.slice(0, innanfor[innanfor.length - 1]);
+  return tekst.slice(0, maks).replace(/\s+\S*$/, "") + " …";
 }
 
 function ryddTittel(t) {
