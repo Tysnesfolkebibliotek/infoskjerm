@@ -445,24 +445,32 @@ const TEMA_LISTE = [
     id: "falturiltu", namn: "Faltu Riltu", gruppe: "Bibliotek",
     dato: "litteraturfestival, november",
     skrift: "par-blokk",
-    // Fargane frå 2019-plakaten: svart, raud, gul, grøn og blå. Ordmerket øvst til høgre
-    // har bokstavane farga som på plakaten, og kråka står stor og dempa i bakgrunnen.
+    // Svart bakgrunn med fargane frå 2019-plakaten. Logoen (ordmerket og kråka) står
+    // kvit øvst til høgre, og bokstavane i overskrifta får raudt, grønt, gult og blått.
     css: `
-      :root[data-tema="falturiltu"] { --symbol-plass: 26vw; }
-      .falturiltu-logo { position: absolute; right: 5vw; top: 3.5vh; width: 22vw; height: auto; }
-      .falturiltu-kraake { position: absolute; left: -10vw; bottom: 9vh; width: 72vw; height: auto; opacity: .13; }
+      :root[data-tema="falturiltu"] { --symbol-plass: 22vw; }
+      .falturiltu-logo { position: absolute; right: 5vw; top: 3vh; width: 18vw; height: auto; }
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+2) { box-shadow: inset 0 0 0 .3vw #ea4239; }
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+3) { box-shadow: inset 0 0 0 .3vw #4a9e2c; }
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n)   { box-shadow: inset 0 0 0 .3vw #0081a1; }`,
     fargar: { bakgrunn: "#000000", tekst: "#ffffff", dempa: "#d6d1c8", aksent: "#fab50f", "aksent-tekst": "#000000", brikke: "rgba(255,255,255,.12)", skugge: "0,0,0", spor: "rgba(255,255,255,.22)", "reserve-a": "#ea4239", "reserve-b": "#8c231d" },
     pynt({ pynt }) {
-      const bilete = (src, klasse, alt) => {
-        const img = document.createElement("img");
-        img.src = src; img.className = klasse; img.alt = alt;
-        pynt.append(img);
-      };
-      bilete("falturiltu-kraake.png", "falturiltu-kraake", "");
-      bilete("falturiltu-logo.png", "falturiltu-logo", "Faltu Riltu");
+      const logo = document.createElement("img");
+      logo.src = "falturiltu-logo.png"; logo.className = "falturiltu-logo"; logo.alt = "Faltu Riltu";
+      pynt.append(logo);
+      // Overskrifta blir sett like etter pynten. Då får kvar bokstav sin farge.
+      setTimeout(() => {
+        const h = document.getElementById("overskrift");
+        if (!h) return;
+        const fargar = ["#ea4239", "#4a9e2c", "#fab50f", "#0081a1"];
+        let n = 0;
+        h.replaceChildren(...[...h.textContent].map(t => {
+          if (/\s/.test(t)) return document.createTextNode(t);
+          const s = document.createElement("span");
+          s.textContent = t; s.style.color = fargar[n++ % fargar.length];
+          return s;
+        }));
+      });
     },
   },
   {
