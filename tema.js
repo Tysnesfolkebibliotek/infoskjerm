@@ -411,7 +411,10 @@ const TEMA_LISTE = [
           vindauge(x + (k + .5) * b / kolonnar - 2.5, topp + 5 + e * 12, 5, 6);
         x += b + tilf(-3, 6);
       }
-      const by = svg("0 0 470 100", "left:0; bottom:0; width:100vw; height:13vh;", `<g fill="#1a0c2b">${hus}</g>${lys}`);
+      // Lysa får ein mjuk glød: ei uskarp kopi under det skarpe vindauget
+      const glød = `<filter id="vindaugeglod" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4" result="b"/>` +
+        `<feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+      const by = svg("0 0 470 100", "left:0; bottom:0; width:100vw; height:13vh;", `<defs>${glød}</defs><g fill="#1a0c2b">${hus}</g><g filter="url(#vindaugeglod)">${lys}</g>`);
       by.setAttribute("preserveAspectRatio", "xMidYMax slice");
       pynt.append(by);
       // Små gylne stjerner som blinkar svakt
