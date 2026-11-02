@@ -786,24 +786,31 @@ const TEMA_LISTE = [
   {
     id: "klima", namn: "Klima og miljø", gruppe: "Sjangrar", overgang: "kryss",
     dato: "natur, klima, berekraft",
-    skrift: "par-venleg",
-    fargar: { bakgrunn: "#eef3ea", tekst: "#1e3327", dempa: "#55675b", aksent: "#2e7d4f", "aksent-tekst": "#ffffff", brikke: "rgba(30,51,39,.08)", skugge: "238,243,234", spor: "rgba(30,51,39,.14)", "reserve-a": "#8cc49b", "reserve-b": "#4f8f69", "bakteppe-lys": "1.15" },
-    pynt({ pynt, svg, dalande }) {
-      // Ei mild sol øvst til høgre
-      pynt.append(svg("0 0 100 100", "right:2vw; top:4vh; width:20vw; opacity:.55;",
-        `<defs><radialGradient id="klimasol"><stop offset="35%" stop-color="#f6d67a"/><stop offset="100%" stop-color="#f6d67a" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#klimasol)"/>`));
-      // Grøne blad som dalar sakte
-      dalande(9, "0 0 12 14", `<path fill="FARGE" d="M6,0 C10,3 10,9 6,14 C2,9 2,3 6,0 Z"/><path d="M6,2 L6,13" stroke="rgba(255,255,255,.35)" stroke-width=".6"/>`,
-        ["#4f8f69", "#7fb27a", "#2e7d4f", "#a3c78a"], [1.8, 3.2], [0.18, 0.32]);
-      // Åsar og sjø nedst, som glir sakte sidelengs
-      const lag = (d, farge, o, sek, h) => {
-        const l = svg("0 0 400 60", `left:0; bottom:0; width:200vw; opacity:${o}; animation: glidSide ${sek}s linear infinite;`, `<path fill="${farge}" d="${d}"/>`);
-        l.setAttribute("preserveAspectRatio", "none"); l.style.height = h; pynt.append(l);
-      };
-      const ås = (y, h) => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 100) d += ` C${x + 30},${y - h} ${x + 70},${y - h} ${x + 100},${y}`; return d + " L400,60 L0,60 Z"; };
-      const bølgje = y => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 40) d += ` Q${x + 20},${y - 4} ${x + 40},${y}`; return d + " L400,60 L0,60 Z"; };
-      lag(ås(34, 22), "#7fb27a", .22, 90, "12vh");
-      lag(bølgje(44), "#4a90a8", .22, 40, "7vh");
+    skrift: "par-plakat",
+    fargar: { bakgrunn: "#123d26", tekst: "#eef6e6", dempa: "#b3cba8", aksent: "#9ad46c", "aksent-tekst": "#0f2a1a", brikke: "rgba(238,246,230,.10)", skugge: "18,61,38", spor: "rgba(238,246,230,.14)", "reserve-a": "#2c6a3f", "reserve-b": "#123d26" },
+    css: `
+      :root[data-tema="klima"] { --symbol-plass: 19vw; }`,
+    pynt({ pynt, svg, tilf }) {
+      // Skog sett ovanfrå: mjuke flekkar i mørkare og lysare grønt over heile skjermen
+      const flekkar = [];
+      for (let i = 0; i < 140; i++) {
+        const lys = Math.random() < .45;
+        flekkar.push(`radial-gradient(circle at ${tilf(0, 100).toFixed(1)}% ${tilf(0, 100).toFixed(1)}%, ` +
+          `${lys ? "rgba(120,190,110,.10)" : "rgba(4,24,12,.28)"} 0, transparent ${tilf(1.8, 4.5).toFixed(1)}vw)`);
+      }
+      const skog = document.createElement("div");
+      skog.style.cssText = `position:absolute; inset:0; background:${flekkar.join(",")};`;
+      pynt.append(skog);
+      // Symbol øvst til høgre: ein lysegrøn klode med to blad på toppen og ein boge rundt
+      pynt.append(svg("0 0 100 100", "right:6vw; top:3vh; width:15vw; overflow:visible;",
+        `<path d="M30 21 A40 40 0 1 0 90 58" fill="none" stroke="#c8eaa8" stroke-width="3.2" stroke-linecap="round"/>` +
+        `<circle cx="56" cy="55" r="31" fill="#8fcf63"/>` +
+        `<g fill="none" stroke="#123d26" stroke-width="1.4" opacity=".35">` +
+          `<ellipse cx="56" cy="55" rx="13" ry="31"/><line x1="56" y1="24" x2="56" y2="86"/>` +
+          `<path d="M27 44 Q56 50 85 44"/><path d="M25 57 Q56 63 87 57"/><path d="M29 70 Q56 75 83 70"/></g>` +
+        `<path d="M56 25 C55 17 57 11 62 7" fill="none" stroke="#8fcf63" stroke-width="2.2" stroke-linecap="round"/>` +
+        `<path d="M61 9 C68 1 80 2 84 6 C78 13 67 14 61 9 Z" fill="#c8eaa8"/>` +
+        `<path d="M57 15 C50 8 41 9 38 13 C43 19 52 19 57 15 Z" fill="#a9dc85"/>`));
     },
   },
   {
