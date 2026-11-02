@@ -763,7 +763,7 @@ const STANDARD = {
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
-  likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
+  likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "eitt", merkelapp: "0",
   omtalelengd: "",  // tal teikn i omtalen; tomt = standard (220). Brukt av skule.html
   aldermodus: "",   // "yngst": den yngste aldersgruppa til boka må vere ei av dei valde (brukt av skule.html)
 };
@@ -1499,7 +1499,7 @@ function ryddLager(behald, alt = false) {
 function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","sjangermodus","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
     .concat(["likte", "appell", "merkelapp", "aldermodus"].filter(k => cfg[k] && cfg[k] !== "0"))
-    .concat(cfg.appell && cfg.appellmodus === "eitt" ? ["appellmodus"] : [])
+    .concat(cfg.appell ? ["appellmodus"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
 
