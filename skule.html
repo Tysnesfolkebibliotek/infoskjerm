@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Nye bøker – skulen</title>
+<!--
+  Liggjande infoskjerm for skulen. Viser éi bok om gongen og vekslar
+  mellom to karusellar: mellomtrinnet og ungdomstrinnet.
+
+  Karusellane er dei vanlege frå index.html, bygde på malen «Nyheiter»
+  med aldersgrupper og berre bøker som står på hylla. Denne sida legg
+  på ei liggjande utforming (omslaget til venstre, teksten til høgre),
+  så index.html sjølv er uendra.
+
+  Valfritt i adressa:
+    ?bytt=3            byt karusell etter 3 bøker (standard: kvar bok)
+    &tema=skog         tema for begge (mtema= og utema= for kvar for seg)
+    &m=<lenkje>        eigne innstillingar for mellomtrinnet (lenkja frå byggjaren)
+    &u=<lenkje>        eigne innstillingar for ungdomstrinnet
+-->
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #14110f; cursor: none; }
+  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity 1s ease; background: #14110f; }
+  iframe.synleg { opacity: 1; }
+</style>
+</head>
+<body>
+<iframe id="mellom" title="Nye bøker for mellomtrinnet"></iframe>
+<iframe id="ungdom" title="Nye bøker for ungdomstrinnet"></iframe>
+<script>
+// ---- Innstillingane til karusellane ------------------------------------
+// Malen «Nyheiter» frå byggjaren, avgrensa til aldersgruppe og bøker som
+// står på hylla. «Nyaste» hentar dei nyaste bøkene og sorterer bort resten
+// etterpå, så vi hentar fleire enn vi treng.
+const NYHEITER = { kjelde: "nyaste", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
+                   omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "100", aarfra: "", aartil: "", alle: "0",
+                   tema: "lys", sek: "15", oppdater: "360", omtale: "1" };
+const STANDARD = {
+  m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
+  u: { ...NYHEITER, avd: "tyfb,tyfv", alder: "mu",   namn: "8.–10. trinn", tittel: "Nytt for ungdomstrinnet" },
+};
+
+const adresse = new URLSearchParams(location.search);
+const BYTT = Math.max(1, Number(adresse.get("bytt")) || 1);   // tal bøker før vi byter karusell
+
+function lenkje(kva) {
+  const eigne = adresse.get(kva);
+  const p = new URLSearchParams(eigne ? eigne.replace(/^.*#/, "") : STANDARD[kva]);
+  // ?tema=skog gjeld begge, ?mtema=… og ?utema=… kvar for seg
+  const tema = adresse.get(kva + "tema") || adresse.get("tema");
+  if (tema) p.set("tema", tema);
+  p.set("vis", "1");
+  return "index.html#" + p.toString();
+}
+
+// ---- Liggjande utforming --------------------------------------------------
+// Karusellen er laga for ståande skjerm og reknar storleikar i vw (breidda).
+// Her legg vi omslaget til venstre og teksten til høgre, og reknar ut frå høgda.
+const LIGGJANDE = `
+  #visning main { padding: 6vh 6vw 4vh !important; }
+  #visning header { gap: .8vh; }
+  .overskrift { font-size: calc(8vh * var(--skala-overskrift, 1)) !important; }
+  .avdeling { font-size: 3.4vh !important; }
+  .scene { margin-top: 4vh !important; }
+  .bok { flex-direction: row !important; align-items: center !important; gap: 5vw; }
+  .omslag-ramme { flex: 0 0 38% !important; width: auto !important; height: 100% !important; max-height: 100% !important; justify-content: flex-end !important; }
+  .omslag { max-height: 100% !important; max-width: 100% !important; border-radius: 1vh !important; }
+  .reserve { padding: 4vh !important; font-size: 4.2vh !important; border-left-width: 1.2vh !important; border-radius: 1vh !important; }
+  .info { flex: 1 1 0 !important; min-width: 0; margin-top: 0 !important; text-align: left !important; }
+  .tittel { font-size: calc(7.5vh * var(--skala-tittel, 1)) !important; }
+  .undertittel { font-size: 3.6vh !important; }
+  .forfattar { font-size: 4.2vh !important; margin-top: 2vh !important; }
+  .brikker { justify-content: flex-start !important; gap: 1.4vh !important; margin-top: 3.4vh !important; }
+  .brikke { font-size: 3vh !important; padding: 1vh 2.6vh !important; }
+  .omtale { font-size: 3.3vh !important; max-width: 60vw !important; margin: 3.4vh 0 0 !important; -webkit-line-clamp: 6 !important; }
+  .botnnamn { font-size: 3.2vh !important; }
+  .kjeldetekst { font-size: 1.8vh !important; }
+  .melding { font-size: 4.4vh !important; padding: 10vh !important; }
+  .melding .liten { font-size: 3vh !important; }
+  .snurr { width: 8vh !important; height: 8vh !important; border-width: .8vh !important; }
+`;
+
+const rammer = [
+  { el: document.getElementById("mellom"), url: lenkje("m"), tom: false },
+  { el: document.getElementById("ungdom"), url: lenkje("u"), tom: false },
+];
+for (const r of rammer) {
+  r.el.addEventListener("load", () => {
+    try {
+      const s = r.el.contentDocument.createElement("style");
+      s.textContent = LIGGJANDE;
+      r.el.contentDocument.head.append(s);
+    } catch (e) {}
+  });
+  r.el.src = r.url;
+}
+
+// ---- Veksling --------------------------------------------------------------
+// Karusellane ventar på beskjed («vis»/«skjul»), same ordning som rotasjonssida.
+// Vi ser etter når den synlege karusellen byrjar på ei ny bok. Når han har vist
+// BYTT bøker, set vi han på pause og viser den andre. Ved pause hugsar karusellen
+// boka han nett byrja på, og viser henne først neste gong.
+let aktiv = -1, viste = 0, sistBok = null;
+const send = (r, kva) => { try { r.el.contentWindow.postMessage({ nyheiter: kva }, "*"); } catch (e) {} };
+
+function vis(n) {
+  if (aktiv >= 0 && aktiv !== n) { send(rammer[aktiv], "skjul"); rammer[aktiv].el.classList.remove("synleg"); }
+  aktiv = n; viste = 0; sistBok = null;
+  rammer[n].el.classList.add("synleg");
+  send(rammer[n], "vis");
+}
+function neste() {
+  // Hopp over ein karusell utan bøker (om ikkje begge er tomme)
+  const n = (aktiv + 1) % rammer.length;
+  vis(rammer[n].tom && !rammer[aktiv].tom ? aktiv : n);
+}
+
+addEventListener("message", e => {
+  const r = rammer.find(x => x.el.contentWindow === e.source);
+  if (!r || !e.data) return;
+  if (e.data.nyheiter === "klar" && aktiv < 0 && r === rammer[0]) vis(0);
+  if (e.data.nyheiter === "tom") { r.tom = true; if (rammer[aktiv] === r) neste(); }
+  if (e.data.nyheiter === "har") r.tom = false;
+});
+
+setInterval(() => {
+  if (aktiv < 0) return;
+  let bok = null;
+  try { bok = rammer[aktiv].el.contentDocument.querySelector(".bok.synleg"); } catch (e) {}
+  if (!bok || bok === sistBok) return;
+  sistBok = bok;
+  viste++;
+  if (viste > BYTT) neste();
+}, 250);
+
+// Last sida på nytt kvar natt, så endringar i karusellen kjem med av seg sjølv.
+(function nattleg() {
+  const no = new Date(), neste = new Date(no);
+  neste.setHours(5, 0, 0, 0);
+  if (neste <= no) neste.setDate(neste.getDate() + 1);
+  setTimeout(() => location.reload(), neste - no);
+})();
+</script>
+</body>
+</html>
