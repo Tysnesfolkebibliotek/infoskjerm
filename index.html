@@ -766,6 +766,7 @@ const STANDARD = {
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
+  omtalelengd: "",  // tal teikn i omtalen; tomt = standard (220). Brukt av skule.html
   aldermodus: "",   // "yngst": den yngste aldersgruppa til boka må vere ei av dei valde (brukt av skule.html)
 };
 
@@ -1071,7 +1072,9 @@ function startVisning(cfg) {
     for (const s of (t.sjanger || []).slice(0, appell.length ? 1 : 2)) brikker.append(el("span", "brikke", s));
     for (const a of appell) brikker.append(el("span", "brikke appell", a));
     if (brikker.childElementCount) info.append(brikker);
-    const omtale = heil ? (t.omtaleHeil || t.omtale) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
+    // omtalelengd (brukt av skule.html): lengre omtale enn standard, til liggjande skjermar med meir plass
+    const lengd = Number(cfg.omtalelengd) || 0;
+    const omtale = heil ? (t.omtaleHeil || t.omtale) : lengd ? kortOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
     if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
     bok.append(ramme, info);
     return bok;

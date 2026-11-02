@@ -42,7 +42,7 @@
 // etterpå, så vi hentar fleire enn vi treng.
 const NYHEITER = { kjelde: "nyaste", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
                    omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "100", aarfra: "", aartil: "", alle: "0",
-                   tema: "lys", bakgrunn: "flat", sek: "15", oppdater: "360", omtale: "1" };
+                   tema: "lys", bakgrunn: "flat", omtalelengd: "380", sek: "18", oppdater: "360", omtale: "1" };
 const STANDARD = {
   m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", aldermodus: "yngst", spraak: "nob,nno", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
   // Ungdom: «Nyaste» åleine gav for få treff. «begge» tek dei nyaste bøkene på
@@ -78,13 +78,13 @@ const LIGGJANDE = `
   .omslag-ramme { flex: 0 0 38% !important; width: auto !important; height: 100% !important; max-height: 100% !important; justify-content: flex-end !important; }
   .omslag { max-height: 100% !important; max-width: 100% !important; border-radius: 1vh !important; }
   .reserve { padding: 4vh !important; font-size: 4.2vh !important; border-left-width: 1.2vh !important; border-radius: 1vh !important; }
-  .info { flex: 1 1 0 !important; min-width: 0; margin-top: 0 !important; text-align: left !important; }
-  .tittel { font-size: calc(7.5vh * var(--skala-tittel, 1)) !important; }
+  .info { flex: 1 1 0 !important; min-width: 0; max-height: 100%; overflow: hidden; margin-top: 0 !important; text-align: left !important; }
+  .tittel { font-size: calc(6.6vh * var(--skala-tittel, 1)) !important; }
   .undertittel { font-size: 3.6vh !important; }
   .forfattar { font-size: 4.2vh !important; margin-top: 2vh !important; }
   .brikker { justify-content: flex-start !important; gap: 1.4vh !important; margin-top: 3.4vh !important; }
-  .brikke { font-size: 3vh !important; padding: 1vh 2.6vh !important; }
-  .omtale { font-size: 3.3vh !important; max-width: 60vw !important; margin: 3.4vh 0 0 !important; -webkit-line-clamp: 6 !important; }
+  .brikke { font-size: 2.7vh !important; padding: .9vh 2.3vh !important; }
+  .omtale { font-size: 3.1vh !important; line-height: 1.5 !important; max-width: 62vw !important; margin: 3vh 0 0 !important; -webkit-line-clamp: 6 !important; }
   .botnnamn { font-size: 3.2vh !important; }
   .kjeldetekst { font-size: 1.8vh !important; }
   .melding { font-size: 4.4vh !important; padding: 10vh !important; }
