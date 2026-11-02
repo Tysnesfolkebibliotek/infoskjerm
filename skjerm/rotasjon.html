@@ -11,9 +11,20 @@
     pointer-events: none;
   }
   iframe.synleg { opacity: 1; }
+  /* Statusprikk øvst til høgre: grøn = på nett, gul = sist henta oppsett, raud = reserve */
+  #status {
+    position: fixed; top: 10px; right: 10px; z-index: 10;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #888; opacity: .55; box-shadow: 0 0 0 2px rgba(0,0,0,.35);
+    transition: background .5s;
+  }
+  #status.nett    { background: #3fbf5f; }
+  #status.minne   { background: #f2b21b; opacity: .9; }
+  #status.reserve { background: #e5483c; opacity: .9; }
 </style>
 </head>
 <body>
+<div id="status"></div>
 <script>
 // =========================================================================
 // rotasjon.html — vekslar mellom sidene ein infoskjerm skal vise.
@@ -58,7 +69,22 @@ const VENT_ETTER_LAST_MS = 1500; // gi sida tid til å teikne bilete og skrift
 const MAKS_LASTETID_MS = 15000;  // gi opp ventinga om sida ikkje svarar
 const SJEKK_NETT_MS = 8000;      // kor lenge vi ventar på svar før ei nettside blir hoppa over
 const MINNE = "infoskjerm-oppsett:" + NAMN;
+const STATUS_KVART_MS = 60000;   // kor ofte statusprikken sjekkar nettet
+const STATUS_GAMAL_MS = 150000;  // utan svar så lenge blir prikken gul
 // --------------------------------------------------------------------------
+
+// ---- Statusprikken -------------------------------------------------------
+// Grøn:  oppsett.json vart henta for under 2,5 minutt sidan (nettet er oppe)
+// Gul:   får ikkje henta oppsett.json, viser det sist henta oppsettet
+// Raud:  ingen av sidene svarar, skjermen viser reservesidene
+let sistHenta = 0;
+function oppdaterStatus() {
+  const prikk = document.getElementById("status");
+  const tilstand = aktivJSON === "reserve" ? "reserve"
+    : (Date.now() - sistHenta < STATUS_GAMAL_MS ? "nett" : "minne");
+  prikk.className = tilstand;
+  prikk.title = { nett: "På nett", minne: "Utan kontakt – viser sist henta oppsett", reserve: "Utan nett – viser reserven" }[tilstand];
+}
 
 // ---- Oppsettet ------------------------------------------------------------
 
@@ -86,10 +112,13 @@ async function hentOppsett() {
     // Godtek både nye («skjerm1») og gamle («sakprosa») namn i oppsett.json
     const sider = alt[NAMN] || alt[NYE_TIL_GAMLE[NAMN]];
     if (!gyldig(sider)) throw new Error("oppsett «" + NAMN + "» manglar eller er ugyldig");
+    sistHenta = Date.now();
     return sider;
   } catch (e) {
     console.warn("Fekk ikkje henta oppsett.json:", e.message);
     return null;
+  } finally {
+    oppdaterStatus();
   }
 }
 
@@ -177,6 +206,7 @@ function bytOppsett(sider, json) {
   SIDER = sider;
   aktivJSON = json;
   rammer = byggRammer(sider);
+  oppdaterStatus();
   // Dei gamle rammene blir fjerna når den nye sida har tona inn.
   setTimeout(() => gamle.forEach(r => r !== aktivRamme && r.remove()), OVERTONING_MS + 500);
 }
@@ -295,6 +325,13 @@ async function vis(n) {
   else bytOppsett(RESERVE[NAMN] || RESERVE.skjerm2, "reserve");
   vis(0);
 })();
+
+// Sjekk nettet kvart minutt, så prikken stemmer sjølv om ein runde varer lenge.
+// Eit ferskt oppsett blir teke vare på og teke i bruk ved neste runde, som før.
+setInterval(async () => {
+  const sider = await hentOppsett();
+  if (sider) { skrivMinne(sider); ALLE = sider; nyHenta = true; }
+}, STATUS_KVART_MS);
 </script>
 </body>
 </html>
