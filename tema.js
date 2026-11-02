@@ -63,8 +63,6 @@ const TEMA_LISTE = [
     id: "kontrast", namn: "Kontrast (lettlesen)", gruppe: "Faste",
     fargar: { bakgrunn: "#000000", tekst: "#ffffff", dempa: "#ececec", aksent: "#ffd400", "aksent-tekst": "#000000", brikke: "#262626", skugge: "0,0,0", spor: "rgba(255,255,255,.25)", "reserve-a": "#262626", "reserve-b": "#111111" },
     css: `
-      :root[data-tema="kontrast"]:not([data-bakgrunn]) .bakteppe,
-      :root[data-tema="kontrast"]:not([data-bakgrunn]) .skugge { display: none; }
       :root[data-tema="kontrast"] .tittel { font-size: 6.6vw; }
       :root[data-tema="kontrast"] .forfattar { font-size: 4vw; opacity: 1; }
       :root[data-tema="kontrast"] .brikke { font-size: 3vw; }

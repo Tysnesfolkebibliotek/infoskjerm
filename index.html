@@ -71,7 +71,7 @@
     opacity: 0; transition: opacity 1.2s ease;
   }
   .bakteppe.synleg { opacity: 1; }
-  /* ---- Bakgrunn (eige val, «bakgrunn=» i lenkja). Utan val gjeld temaet. ---- */
+  /* ---- Bakgrunn (eige val, «bakgrunn=» i lenkja). Utan val: flat farge i alle tema. ---- */
   :root[data-bakgrunn="uskarp"] .bakteppe, :root[data-bakgrunn="svak"] .bakteppe,
   :root[data-bakgrunn="zoom"] .bakteppe, :root[data-bakgrunn="farge"] .bakteppe,
   :root[data-bakgrunn="uskarp"] .skugge, :root[data-bakgrunn="svak"] .skugge,
@@ -667,12 +667,11 @@
       <div class="felt">
         <label for="bakgrunn">Bakgrunn</label>
         <select id="bakgrunn" name="bakgrunn">
-          <option value="">Som temaet</option>
+          <option value="">Flat farge (standard)</option>
           <option value="uskarp">Uskarpt omslag</option>
           <option value="svak">Svakt uskarpt omslag</option>
           <option value="zoom">Omslag med sakte zoom</option>
           <option value="farge">Fargane frå omslaget</option>
-          <option value="flat">Flat farge</option>
         </select>
       </div>
       <div class="felt">
@@ -1005,8 +1004,9 @@ function startVisning(cfg) {
 
   const SEK = Math.max(4, Number(cfg.sek) || 20);
   document.documentElement.style.setProperty("--sek", SEK + "s");
-  const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "";
-  if (BAKGRUNN) document.documentElement.dataset.bakgrunn = BAKGRUNN;
+  // Utan eige val (eller med eit ukjent) blir bakgrunnen flat farge i alle tema.
+  const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "flat";
+  document.documentElement.dataset.bakgrunn = BAKGRUNN;
   if (["kryss", "glid", "zoom", "vend", "bla", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell3:" + datanøkkel(cfg);   // auk talet når lagra lister må hentast på nytt (3: mest reservert med 1500 kandidatar)
@@ -2583,7 +2583,8 @@ function startByggjar(startCfg) {
     for (const k of NØKLAR) {
       const felt = skjema.elements[k];
       if (!felt) continue;
-      const v = cfg[k] ?? "";
+      // «bakgrunn=flat» frå eldre lenkjer er no det same som standard
+      const v = k === "bakgrunn" && cfg[k] === "flat" ? "" : (cfg[k] ?? "");
       if (felt instanceof RadioNodeList || (felt.length && felt[0] && felt[0].type)) {
         const liste = felt.length !== undefined ? Array.from(felt) : [felt];
         if (liste[0].type === "radio") liste.forEach(r => r.checked = r.value === v);
