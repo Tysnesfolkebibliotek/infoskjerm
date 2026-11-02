@@ -766,6 +766,7 @@ const STANDARD = {
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "alle", merkelapp: "0",
+  aldermodus: "",   // "yngst": den yngste aldersgruppa til boka må vere ei av dei valde (brukt av skule.html)
 };
 
 const MALAR = {
@@ -1487,7 +1488,7 @@ function ryddLager(behald, alt = false) {
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
-    .concat(["likte", "appell", "merkelapp"].filter(k => cfg[k] && cfg[k] !== "0"))
+    .concat(["likte", "appell", "merkelapp", "aldermodus"].filter(k => cfg[k] && cfg[k] !== "0"))
     .concat(cfg.appell && cfg.appellmodus === "eitt" ? ["appellmodus"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
 }
@@ -1710,6 +1711,7 @@ function årsspenn(cfg) {
   return fra || til ? { fra, til } : null;
 }
 
+const ALDERSREKKJE = ["aa", "a", "b", "bu", "u", "mu", "vu", "v"];   // yngst først
 function førehand(post, cfg) {
   if (svartelista(post.id)) return utelat("svartelista");
   const d = post.sru_recordData || {};
@@ -1724,7 +1726,12 @@ function førehand(post, cfg) {
   const ønskt = (cfg.alder || "").split(",").filter(Boolean);
   if (ønskt.length) {
     const har = (d.bs_aldersgruppe || "").split(",").map(x => x.trim());
-    if (!ønskt.some(a => har.includes(a))) return utelat("anna aldersgruppe");
+    if (cfg.aldermodus === "yngst") {
+      // Berre den yngste gruppa tel, så ei bok for 3–16 år ikkje kjem med som ungdomsbok,
+      // og ei bok ikkje høyrer til to karusellar som byter på å visast
+      const yngst = ALDERSREKKJE.find(a => har.includes(a));
+      if (!yngst || !ønskt.includes(yngst)) return utelat("anna aldersgruppe");
+    } else if (!ønskt.some(a => har.includes(a))) return utelat("anna aldersgruppe");
   }
   // Språk: Bibliofil gir språket som ein kode (nob, nno, eng …). Har boka
   // ein kode som ikkje er vald, fell ho bort. Manglar koden, får ho berre

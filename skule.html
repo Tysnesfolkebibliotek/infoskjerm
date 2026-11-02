@@ -32,14 +32,17 @@
 <script>
 // ---- Innstillingane til karusellane ------------------------------------
 // Malen «Nyheiter» frå byggjaren, avgrensa til aldersgruppe og bøker som
-// står på hylla. «Nyaste» hentar dei nyaste bøkene og sorterer bort resten
+// står på hylla. aldermodus «yngst»: berre den yngste aldersgruppa til boka
+// tel, så ei bok høyrer til éin karusell (9–16 år blir mellomtrinnet,
+// 13–16 år ungdomstrinnet, og 3–16 år blir ikkje med). Berre bøker på bokmål
+// og nynorsk (spraak). «Nyaste» hentar dei nyaste bøkene og sorterer bort resten
 // etterpå, så vi hentar fleire enn vi treng.
 const NYHEITER = { kjelde: "nyaste", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
                    omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "100", aarfra: "", aartil: "", alle: "0",
                    tema: "lys", sek: "15", oppdater: "360", omtale: "1" };
 const STANDARD = {
-  m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
-  u: { ...NYHEITER, avd: "tyfb,tyfv", alder: "mu",   namn: "8.–10. trinn", tittel: "Nytt for ungdomstrinnet" },
+  m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", aldermodus: "yngst", spraak: "nob,nno", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
+  u: { ...NYHEITER, avd: "tyfb,tyfv", alder: "mu",   aldermodus: "yngst", spraak: "nob,nno", namn: "8.–10. trinn", tittel: "Nytt for ungdomstrinnet" },
 };
 
 const adresse = new URLSearchParams(location.search);
@@ -83,8 +86,8 @@ const LIGGJANDE = `
 `;
 
 const rammer = [
-  { el: document.getElementById("mellom"), url: lenkje("m"), tom: false },
-  { el: document.getElementById("ungdom"), url: lenkje("u"), tom: false },
+  { el: document.getElementById("mellom"), url: lenkje("m"), klar: false, har: false },
+  { el: document.getElementById("ungdom"), url: lenkje("u"), klar: false, har: false },
 ];
 for (const r of rammer) {
   r.el.addEventListener("load", () => {
@@ -105,6 +108,17 @@ for (const r of rammer) {
 let aktiv = -1, viste = 0, sistBok = null;
 const send = (r, kva) => { try { r.el.contentWindow.postMessage({ nyheiter: kva }, "*"); } catch (e) {} };
 
+// Har karusellen ei lagra boklista frå før, startar han med henne utan å seie frå.
+function harLagra(r) {
+  try {
+    const w = r.el.contentWindow;
+    const l = JSON.parse(w.localStorage.getItem("karusell3:" + w.datanøkkel(w.lesAdresse().cfg)) || "null");
+    return !!(l && l.titlar && l.titlar.length);
+  } catch (e) { return false; }
+}
+
+// Ein karusell blir berre vist når han har bøker klare. Medan han hentar
+// første gong, står han gøymd, så ingen ser meldingar om henting og filtrering.
 function vis(n) {
   if (aktiv >= 0 && aktiv !== n) { send(rammer[aktiv], "skjul"); rammer[aktiv].el.classList.remove("synleg"); }
   aktiv = n; viste = 0; sistBok = null;
@@ -112,17 +126,19 @@ function vis(n) {
   send(rammer[n], "vis");
 }
 function neste() {
-  // Hopp over ein karusell utan bøker (om ikkje begge er tomme)
-  const n = (aktiv + 1) % rammer.length;
-  vis(rammer[n].tom && !rammer[aktiv].tom ? aktiv : n);
+  for (let steg = 1; steg <= rammer.length; steg++) {
+    const n = (aktiv + steg) % rammer.length;
+    if (rammer[n].klar && rammer[n].har) { if (n !== aktiv) vis(n); else viste = 1; return; }
+  }
 }
 
 addEventListener("message", e => {
   const r = rammer.find(x => x.el.contentWindow === e.source);
   if (!r || !e.data) return;
-  if (e.data.nyheiter === "klar" && aktiv < 0 && r === rammer[0]) vis(0);
-  if (e.data.nyheiter === "tom") { r.tom = true; if (rammer[aktiv] === r) neste(); }
-  if (e.data.nyheiter === "har") r.tom = false;
+  if (e.data.nyheiter === "klar") { r.klar = true; if (harLagra(r)) r.har = true; }
+  if (e.data.nyheiter === "har") r.har = true;
+  if (e.data.nyheiter === "tom") { r.har = false; if (rammer[aktiv] === r) neste(); }
+  if (aktiv < 0 && r.klar && r.har) vis(rammer.indexOf(r));
 });
 
 setInterval(() => {
