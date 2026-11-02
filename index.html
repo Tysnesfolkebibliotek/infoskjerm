@@ -2511,7 +2511,7 @@ function startByggjar(startCfg) {
   const skriftknapp = document.getElementById("skriftknapp");
   const skriftmeny = document.getElementById("skriftmeny");
   // [id, namn, skildring, skrift til namnet, skrift til skildringa]
-  const SKRIFTVAL = [["standard", "Standard", "skrifta på skjermen", null, null],
+  const SKRIFTVAL = [["standard", "Som temaet", "skrifta på skjermen", null, null],
     ...Object.entries(SKRIFTER).map(([id, x]) => [id, x.namn, x.skildring, x.overskrift || x.tekst, x.par ? x.tekst : null])];
   for (const [id, namn] of SKRIFTVAL) skriftSelect.append(new Option(namn, id));
   const skriftstil = id => id ? `"${FONTAR[id][0]}", var(--skrift)` : "var(--skrift)";
@@ -2532,13 +2532,23 @@ function startByggjar(startCfg) {
       document.head.append(l);
     }
   }
+  // «Standard» = skrifta til temaet. Vist som «Som temaet (…)», som bakgrunn og overgang.
+  function temaSkrift() {
+    const t = (typeof TEMA !== "undefined" && TEMA[document.getElementById("tema").value]) || {};
+    return SKRIFTVAL.find(x => x[0] === t.skrift && x[0] !== "standard") || null;
+  }
+  function standardSkriftval() {
+    const ts = temaSkrift();
+    return ["standard", "Som temaet", ts ? ts[1] : "skrifta på skjermen", ts ? ts[3] : null, ts ? ts[4] : null];
+  }
   function teiknSkriftknapp() {
-    const [, namn, , fNamn] = SKRIFTVAL.find(x => x[0] === skriftSelect.value) || SKRIFTVAL[0];
+    let [id, namn, , fNamn] = SKRIFTVAL.find(x => x[0] === skriftSelect.value) || SKRIFTVAL[0];
+    if (id === "standard") { const ts = temaSkrift(); namn = `Som temaet (${ts ? ts[1] : "skrifta på skjermen"})`; fNamn = ts ? ts[3] : null; }
     const n = skriftknapp.querySelector(".temanamn");
     n.textContent = namn; n.style.fontFamily = skriftstil(fNamn);
     if (fNamn) lastSkriftprøver();
   }
-  // «Standard» står øvst; skriftene og skriftpara ligg i kvar si gruppe som kan faldast saman
+  // «Som temaet» står øvst; skriftene og skriftpara ligg i kvar si gruppe som kan faldast saman
   const opneSkriftgrupper = new Set();
   const skriftgruppe = id => id === "standard" ? null : SKRIFTER[id].par ? "Skriftpar" : "Skrifter";
   function skriftalternativ(id, namn, skildring, fNamn, fSkildring) {
@@ -2559,7 +2569,7 @@ function startByggjar(startCfg) {
   }
   function teiknSkriftmeny() {
     skriftmeny.replaceChildren();
-    const standard = skriftalternativ(...SKRIFTVAL[0]);
+    const standard = skriftalternativ(...standardSkriftval());
     standard.classList.add("utan-gruppe");
     skriftmeny.append(standard);
     for (const namn of ["Skrifter", "Skriftpar"]) {
@@ -3166,6 +3176,7 @@ function startByggjar(startCfg) {
     $("tilpassinfo").textContent = `Temaet vel: ${temaval.overgang.toLowerCase()}, ${temaval.bakgrunn.toLowerCase()}, nedteljing med ${temaval.teljar.toLowerCase()}.`;
     $("tilpassinfo").hidden = !$("tilpass").hidden;
     $("fartfelt").hidden = $("visingsmate").value !== "rull";
+    teiknSkriftknapp();
   }
   $("tilpassknapp").addEventListener("click", teiknTilpass);
 
