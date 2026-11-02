@@ -36,7 +36,7 @@
 // ---- Innstillingane til karusellane ------------------------------------
 // Malen «Nyheiter» frå byggjaren, avgrensa til aldersgruppe og bøker som
 // står på hylla. aldermodus «yngst»: berre den yngste aldersgruppa til boka
-// tel, så ei bok høyrer til éin karusell (9–16 år blir mellomtrinnet,
+// tel, så ei bok høyrer til éin karusell (6–16 år blir mellomtrinnet,
 // 13–16 år ungdomstrinnet, og 3–16 år blir ikkje med). Berre bøker på bokmål
 // og nynorsk (spraak). «Nyaste» hentar dei nyaste bøkene og sorterer bort resten
 // etterpå, så vi hentar fleire enn vi treng.
@@ -44,7 +44,7 @@ const NYHEITER = { kjelde: "nyaste", lf: "", sjanger: "", plass: "", emne: "", e
                    omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "100", aarfra: "", aartil: "", alle: "0",
                    tema: "lys", bakgrunn: "flat", omtalelengd: "380", sek: "18", oppdater: "360", omtale: "1" };
 const STANDARD = {
-  m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", aldermodus: "yngst", spraak: "nob,nno", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
+  m: { ...NYHEITER, avd: "tyfb",      alder: "b,bu,u", aldermodus: "yngst", spraak: "nob,nno", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
   // Ungdom: «Nyaste» åleine gav for få treff. «begge» tek dei nyaste bøkene på
   // biblioteket og i tillegg bøker gjevne ut i år (aarsiste 1). Bøker for 13–16 år,
   // gjerne òg unge vaksne, men ikkje berre unge vaksne.
