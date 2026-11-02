@@ -23,7 +23,10 @@
 <style>
   html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #14110f; cursor: none; }
   iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity 1s ease; background: #14110f; }
-  iframe.synleg { opacity: 1; }
+  /* Den nye ramma tonar inn oppå den gamle, som står heilt synleg under til overgangen er ferdig.
+     Då skin ikkje bakgrunnen til sida gjennom midt i overgangen. */
+  iframe.synleg { opacity: 1; z-index: 2; }
+  iframe.ut { opacity: 1; z-index: 1; transition: none; }
 </style>
 </head>
 <body>
@@ -39,7 +42,7 @@
 // etterpå, så vi hentar fleire enn vi treng.
 const NYHEITER = { kjelde: "nyaste", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", ccl: "", rekkje: "tilfeldig",
                    omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "100", aarfra: "", aartil: "", alle: "0",
-                   tema: "lys", sek: "15", oppdater: "360", omtale: "1" };
+                   tema: "lys", bakgrunn: "flat", sek: "15", oppdater: "360", omtale: "1" };
 const STANDARD = {
   m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", aldermodus: "yngst", spraak: "nob,nno", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
   u: { ...NYHEITER, avd: "tyfb,tyfv", alder: "mu",   aldermodus: "yngst", spraak: "nob,nno", namn: "8.–10. trinn", tittel: "Nytt for ungdomstrinnet" },
@@ -123,7 +126,12 @@ function harLagra(r) {
 function vis(n) {
   clearTimeout(byttTid);
   // «vidare»: den gamle karusellen hoppar over boka han viste, så ho ikkje kjem att neste gong
-  if (aktiv >= 0 && aktiv !== n) { send(rammer[aktiv], "skjul", { vidare: true }); rammer[aktiv].el.classList.remove("synleg"); }
+  if (aktiv >= 0 && aktiv !== n) {
+    const gamal = rammer[aktiv].el;
+    send(rammer[aktiv], "skjul", { vidare: true });
+    gamal.classList.add("ut"); gamal.classList.remove("synleg");
+    setTimeout(() => gamal.classList.remove("ut"), 1100);
+  }
   aktiv = n; viste = 0; sistBok = null;
   rammer[n].el.classList.add("synleg");
   send(rammer[n], "vis");
