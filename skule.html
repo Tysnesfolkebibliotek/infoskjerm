@@ -90,6 +90,7 @@ const rammer = [
   { el: document.getElementById("ungdom"), url: lenkje("u"), klar: false, har: false },
 ];
 for (const r of rammer) {
+  r.sek = Number(new URLSearchParams(r.url.split("#")[1]).get("sek")) || 20;   // sekund per bok
   r.el.addEventListener("load", () => {
     try {
       const s = r.el.contentDocument.createElement("style");
@@ -105,8 +106,8 @@ for (const r of rammer) {
 // Vi ser etter når den synlege karusellen byrjar på ei ny bok. Når han har vist
 // BYTT bøker, set vi han på pause og viser den andre. Ved pause hugsar karusellen
 // boka han nett byrja på, og viser henne først neste gong.
-let aktiv = -1, viste = 0, sistBok = null;
-const send = (r, kva) => { try { r.el.contentWindow.postMessage({ nyheiter: kva }, "*"); } catch (e) {} };
+let aktiv = -1, viste = 0, sistBok = null, byttTid = null;
+const send = (r, kva, meir) => { try { r.el.contentWindow.postMessage({ nyheiter: kva, ...meir }, "*"); } catch (e) {} };
 
 // Har karusellen ei lagra boklista frå før, startar han med henne utan å seie frå.
 function harLagra(r) {
@@ -120,7 +121,9 @@ function harLagra(r) {
 // Ein karusell blir berre vist når han har bøker klare. Medan han hentar
 // første gong, står han gøymd, så ingen ser meldingar om henting og filtrering.
 function vis(n) {
-  if (aktiv >= 0 && aktiv !== n) { send(rammer[aktiv], "skjul"); rammer[aktiv].el.classList.remove("synleg"); }
+  clearTimeout(byttTid);
+  // «vidare»: den gamle karusellen hoppar over boka han viste, så ho ikkje kjem att neste gong
+  if (aktiv >= 0 && aktiv !== n) { send(rammer[aktiv], "skjul", { vidare: true }); rammer[aktiv].el.classList.remove("synleg"); }
   aktiv = n; viste = 0; sistBok = null;
   rammer[n].el.classList.add("synleg");
   send(rammer[n], "vis");
@@ -128,7 +131,7 @@ function vis(n) {
 function neste() {
   for (let steg = 1; steg <= rammer.length; steg++) {
     const n = (aktiv + steg) % rammer.length;
-    if (rammer[n].klar && rammer[n].har) { if (n !== aktiv) vis(n); else viste = 1; return; }
+    if (rammer[n].klar && rammer[n].har) { if (n !== aktiv) vis(n); else viste = 0; return; }
   }
 }
 
@@ -141,6 +144,8 @@ addEventListener("message", e => {
   if (aktiv < 0 && r.klar && r.har) vis(rammer.indexOf(r));
 });
 
+// Vi byter karusell litt før boka ville ha gått over til den neste, så ein
+// aldri ser byrjinga på ei bok som så forsvinn.
 setInterval(() => {
   if (aktiv < 0) return;
   let bok = null;
@@ -148,8 +153,11 @@ setInterval(() => {
   if (!bok || bok === sistBok) return;
   sistBok = bok;
   viste++;
-  if (viste > BYTT) neste();
-}, 250);
+  if (viste >= BYTT) {
+    clearTimeout(byttTid);
+    byttTid = setTimeout(neste, Math.max(2000, rammer[aktiv].sek * 1000 - 1500));
+  }
+}, 200);
 
 // Last sida på nytt kvar natt, så endringar i karusellen kjem med av seg sjølv.
 (function nattleg() {

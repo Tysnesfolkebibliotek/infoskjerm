@@ -1451,7 +1451,15 @@ function startVisning(cfg) {
   if (iRotasjon) {
     window.addEventListener("message", e => {
       if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); sjekkSvarteliste(5 * 60 * 1000); }
-      if (e.data && e.data.nyheiter === "skjul") { køyrer = false; pause(); }
+      if (e.data && e.data.nyheiter === "skjul") {
+        køyrer = false; pause();
+        // «vidare»: boka som står no, er ferdigvist, så neste gong byrjar vi på den neste (skule.html)
+        if (e.data.vidare && titlar.length) {
+          i = (i + 1) % titlar.length;
+          // Ta bort boka når ramma er tona ut, så ho ikkje skimtar fram att når vi held fram
+          setTimeout(() => { if (!køyrer && førre && !VIFTE) { førre.remove(); førre = null; } }, 1500);
+        }
+      }
     });
     window.parent.postMessage({ nyheiter: "klar" }, "*");
   } else {
