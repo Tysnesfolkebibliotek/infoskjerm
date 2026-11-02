@@ -17,6 +17,7 @@
 //   pynt     Funksjon som teiknar pynten bak bøkene. Valfritt.
 //
 // Nytt tema: kopier eit liknande tema, gje det ein ny id og endre resten.
+// Bilete og logoar til tema ligg i mappa bilete/ (t.d. "bilete/ibsen.png").
 // «kveld» har ingen fargar her: det brukar standardfargane i index.html.
 
 const TEMAGRUPPER = ["Faste", "Årstider", "Høgtider og merkedagar", "Sjangrar", "Bibliotek"];
@@ -190,7 +191,7 @@ const TEMA_LISTE = [
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Kvinnesymbolet med knytt neve øvst til høgre, plassert som flagga i dei andre temaa
       const logo = document.createElement("img");
-      logo.src = "kvinnedagen.png"; logo.alt = "";
+      logo.src = "bilete/kvinnedagen.png"; logo.alt = "";
       logo.style.cssText = "position:absolute; right:6vw; top:4vh; width:14vw; height:auto;";
       pynt.append(logo);
     },
@@ -204,10 +205,10 @@ const TEMA_LISTE = [
     fargar: { bakgrunn: "#17130f", tekst: "#f3ece0", dempa: "#c8b9a0", aksent: "#c9a45c", "aksent-tekst": "#17130f", skugge: "23,19,15", "reserve-a": "#5a4630", "reserve-b": "#241c14" },
     pynt({ pynt }) {
       // Portrett av Henrik Ibsen (fotografi frå om lag 1900, fritt å bruke). Bakgrunnen i
-      // fotografiet er gjord gjennomsiktig og kantane tona ut (sjå ibsen.png). Hovudet står
+      // fotografiet er gjord gjennomsiktig og kantane tona ut (sjå bilete/ibsen.png). Hovudet står
       // øvst til høgre ved sida av overskrifta; frakken tonar ut bak boka.
       const bilete = document.createElement("img");
-      bilete.src = "ibsen.png?v=2"; bilete.alt = "";   // auk v når biletet blir bytt, så nettlesarane hentar det nye
+      bilete.src = "bilete/ibsen.png?v=2"; bilete.alt = "";   // auk v når biletet blir bytt, så nettlesarane hentar det nye
       bilete.style.cssText = "position:absolute; right:-16vw; top:-1vh; width:66vw; height:auto; opacity:.5;";
       pynt.append(bilete);
     },
@@ -364,7 +365,7 @@ const TEMA_LISTE = [
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       snøfall(28, 0.5);
       const slede = document.createElement("img");
-      slede.src = "julenisse.svg"; slede.alt = ""; slede.className = "slede";
+      slede.src = "bilete/julenisse.svg"; slede.alt = ""; slede.className = "slede";
       // Ny høgd for kvar tur, og første tur kjem etter 10–60 sekund
       const nyHøgd = () => { slede.style.top = tilf(3, 20) + "vh"; };
       nyHøgd();
@@ -387,12 +388,12 @@ const TEMA_LISTE = [
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Sommarles-logoen øvst til høgre, og fargerike bobler som stig
       const logo = document.createElement("img");
-      logo.src = "sommarles.svg"; logo.alt = "Sommarles";
+      logo.src = "bilete/sommarles.svg"; logo.alt = "Sommarles";
       logo.style.cssText = "position:absolute; right:5vw; top:3vh; width:18vw; height:auto;";
       pynt.append(logo);
       // Illustrasjonen frå Sommarles stor og dempa nedst, for stemning. Han ligg bak boka og teksten.
       const figurar = document.createElement("img");
-      figurar.src = "sommarles-figurar.webp"; figurar.alt = "";
+      figurar.src = "bilete/sommarles-figurar.webp"; figurar.alt = "";
       // Tydeleg øvst, der andleta er, og tonar ut nedover, der boktittelen og omtalen står
       const maske = "linear-gradient(to bottom, #000 0%, #000 24%, rgba(0,0,0,.2) 50%, transparent 78%)";
       figurar.style.cssText = "position:absolute; left:50%; bottom:-6vh; width:105vw; height:auto; transform:translateX(-50%); opacity:.24;" +
@@ -420,7 +421,7 @@ const TEMA_LISTE = [
       const header = document.querySelector("#visning header");
       if (header && !header.querySelector(".veke17")) {
         const logo = document.createElement("img");
-        logo.className = "veke17"; logo.src = "veke17.png"; logo.alt = "Veke 17 – Berekraftsveka";
+        logo.className = "veke17"; logo.src = "bilete/veke17.png"; logo.alt = "Veke 17 – Berekraftsveka";
         header.prepend(logo);
       }
       // Skrå, avrunda strekar i fargane til dei 17 berekraftsmåla, som i logoen.
@@ -463,7 +464,7 @@ const TEMA_LISTE = [
     fargar: { bakgrunn: "#fdfcf9", tekst: "#111111", dempa: "#57534d", aksent: "#ea4239", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.06)", skugge: "253,252,249", spor: "rgba(0,0,0,.12)", "reserve-a": "#fcd36b", "reserve-b": "#fab50f", "bakteppe-lys": "1.15" },
     pynt({ pynt }) {
       const logo = document.createElement("img");
-      logo.src = "falturiltu-logo.png"; logo.className = "falturiltu-logo"; logo.alt = "Falturiltu";
+      logo.src = "bilete/falturiltu-logo.png"; logo.className = "falturiltu-logo"; logo.alt = "Falturiltu";
       pynt.append(logo);
       // Overskrifta blir sett like etter pynten. Då får kvar bokstav sin farge.
       setTimeout(() => {
@@ -491,7 +492,7 @@ const TEMA_LISTE = [
       const header = document.querySelector("#visning header");
       if (header && !header.querySelector(".forbodne-logo")) {
         const logo = document.createElement("img");
-        logo.className = "forbodne-logo"; logo.src = "forbodne.png"; logo.alt = "Forbodne bøker";
+        logo.className = "forbodne-logo"; logo.src = "bilete/forbodne.png"; logo.alt = "Forbodne bøker";
         header.prepend(logo);
       }
     },

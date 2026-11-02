@@ -13,8 +13,10 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | `forrigebok.json` | Appellfaktorar frå Forrige bok for bøkene i samlinga, per tittelnummer. Blir laga med same knappen |
 | `svarteliste.json` | Bøker som aldri skal visast på skjermane. Blir endra på oversiktssida |
 | `skjerm/rotasjon.html` | Fila som køyrer på kvar skjerm. Les `oppsett.json` og vekslar mellom sidene |
-| `julenisse.svg` | Julenisse med slede og reinsdyr som flyg forbi i juletemaet. Fri til ikkje-kommersiell bruk |
-| `falturiltu-logo.png` | Falturiltu-logoen (svart, utan bakgrunn), til temaet Falturiltu |
+| `tema.js` | Alle tema (fargar, CSS og pynt) til karusellen |
+| `bilete/` | Bilete og logoar til tema. Nye bilete skal òg liggje her |
+| `bilete/julenisse.svg` | Julenisse med slede og reinsdyr som flyg forbi i juletemaet. Fri til ikkje-kommersiell bruk |
+| `bilete/falturiltu-logo.png` | Falturiltu-logoen (svart, utan bakgrunn), til temaet Falturiltu |
 | `skjerm/skjermbilete.py` | Tek eit bilete av det skjermen viser, over SSH |
 | `skjerm/hent_nytt.py`, `skjerm/hent_sakprosa.py` | Lagar dei gamle lokale karusellane, som no berre er reserve |
 
