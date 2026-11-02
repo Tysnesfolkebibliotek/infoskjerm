@@ -15,6 +15,12 @@
 //   css      Ekstra CSS for temaet. Valfritt. Har temaet eit symbol øvst til høgre
 //            (flagg, logo), set --symbol-plass så overskrifta ikkje går inn i det.
 //   pynt     Funksjon som teiknar pynten bak bøkene. Valfritt.
+//   overgang, bakgrunn, teljar
+//            Kva temaet vel når karusellen står på «Som temaet». Valfritt.
+//            Utan dei blir det ton og løft, flat farge og hjul.
+//            overgang: kryss, glid, zoom, bla, vend, ingen
+//            bakgrunn: uskarp, svak, zoom, farge, flat
+//            teljar:   hjulsek, sek, linje, botn, ingen
 //
 // Nytt tema: kopier eit liknande tema, gje det ein ny id og endre resten.
 // Bilete og logoar til tema ligg i mappa bilete/ (t.d. "bilete/ibsen.png").
@@ -43,7 +49,7 @@ const TEMA_LISTE = [
     fargar: { bakgrunn: "#f4efe6", tekst: "#1f1b16", dempa: "#62584c", aksent: "#b8741a", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "244,239,230", spor: "rgba(0,0,0,.10)", "reserve-a": "#e4d8c4", "reserve-b": "#d3c3a9", "bakteppe-lys": "1.15" },
   },
   {
-    id: "natt", namn: "Natt", gruppe: "Faste",
+    id: "natt", namn: "Natt", gruppe: "Faste", overgang: "kryss",
     skrift: "par-historisk",
     fargar: { bakgrunn: "#070b1f", tekst: "#eef1ff", dempa: "#a9b1d6", aksent: "#9db4ff", "aksent-tekst": "#070b1f", skugge: "7,11,31", "reserve-a": "#22306b", "reserve-b": "#0c1230" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
@@ -60,7 +66,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "kontrast", namn: "Kontrast (lettlesen)", gruppe: "Faste",
+    id: "kontrast", namn: "Kontrast (lettlesen)", gruppe: "Faste", overgang: "ingen", teljar: "sek",
     fargar: { bakgrunn: "#000000", tekst: "#ffffff", dempa: "#ececec", aksent: "#ffd400", "aksent-tekst": "#000000", brikke: "#262626", skugge: "0,0,0", spor: "rgba(255,255,255,.25)", "reserve-a": "#262626", "reserve-b": "#111111" },
     css: `
       :root[data-tema="kontrast"] .tittel { font-size: 6.6vw; }
@@ -83,7 +89,7 @@ const TEMA_LISTE = [
       :root[data-tema="libry"] .omslag { border-radius: .3vw; }`,
   },
   {
-    id: "vinter", namn: "Vinter", gruppe: "Årstider",
+    id: "vinter", namn: "Vinter", gruppe: "Årstider", overgang: "kryss",
     aktuell: "12-01/02-28",
     fargar: { bakgrunn: "#0b1724", tekst: "#f2f7fb", dempa: "#a9bccb", aksent: "#8fd3ff", "aksent-tekst": "#06121c", skugge: "11,23,36", "reserve-a": "#1d3a55", "reserve-b": "#0e1f30" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
@@ -195,7 +201,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "ibsen", namn: "Ibsen", gruppe: "Høgtider og merkedagar",
+    id: "ibsen", namn: "Ibsen", gruppe: "Høgtider og merkedagar", overgang: "bla",
     dato: "Ibsenåret 2028",
     skrift: "par-elegant",
     css: `
@@ -331,7 +337,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "halloween", namn: "Halloween", gruppe: "Høgtider og merkedagar",
+    id: "halloween", namn: "Halloween", gruppe: "Høgtider og merkedagar", overgang: "vend",
     skrift: "par-skummel",
     dato: "31. oktober",
     aktuell: "10-10/10-31",
@@ -368,7 +374,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "jul", namn: "Jul", gruppe: "Høgtider og merkedagar",
+    id: "jul", namn: "Jul", gruppe: "Høgtider og merkedagar", overgang: "kryss",
     aktuell: "11-20/12-26",
     // Julenissen med slede og reinsdyr flyg forbi i ein svak boge kvart par minutt.
     // Han er synleg i om lag ein sjettedel av runden og ligg utanfor skjermen resten
@@ -504,7 +510,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "forbodne", namn: "Forbodne bøker", gruppe: "Bibliotek",
+    id: "forbodne", namn: "Forbodne bøker", gruppe: "Bibliotek", overgang: "bla",
     dato: "byrjinga av okt.", aktuell: "09-20/10-10",
     fargar: { bakgrunn: "#1d1430", tekst: "#fbf6e4", dempa: "#cfc6dd", aksent: "#faee9c", "aksent-tekst": "#3d2670", skugge: "29,20,48", "reserve-a": "#4f338a", "reserve-b": "#26193f" },
     css: `
@@ -520,7 +526,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "spel", namn: "Spel", gruppe: "Bibliotek",
+    id: "spel", namn: "Spel", gruppe: "Bibliotek", overgang: "glid",
     dato: "pikselstil, t.d. Bibliobattles",
     skrift: "par-spel",
     fargar: { bakgrunn: "#121628", tekst: "#ffffff", dempa: "#b6bdd8", aksent: "#6fd14f", "aksent-tekst": "#0d1a08", skugge: "18,22,40", "reserve-a": "#2b4a8a", "reserve-b": "#18203d" },
@@ -619,7 +625,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "manga", namn: "Manga", gruppe: "Sjangrar",
+    id: "manga", namn: "Manga", gruppe: "Sjangrar", overgang: "glid",
     skrift: "par-teikneserie",
     fargar: { bakgrunn: "#111111", tekst: "#ffffff", dempa: "#c4c4c4", aksent: "#e8203a", "aksent-tekst": "#ffffff", skugge: "17,17,17", "reserve-a": "#3a3a3a", "reserve-b": "#1a1a1a" },
     pynt({ pynt, svg, tilf }) {
@@ -644,7 +650,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "fantasy", namn: "Fantasy", gruppe: "Sjangrar",
+    id: "fantasy", namn: "Fantasy", gruppe: "Sjangrar", overgang: "bla",
     skrift: "par-historisk",
     fargar: { bakgrunn: "#150f24", tekst: "#f6f0ff", dempa: "#c3b6dc", aksent: "#e6b85c", "aksent-tekst": "#1a1206", skugge: "21,15,36", "reserve-a": "#4a2f7a", "reserve-b": "#1e1533" },
     pynt({ pynt, svg, stigande }) {
@@ -658,7 +664,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "scifi", namn: "Sci-fi", gruppe: "Sjangrar",
+    id: "scifi", namn: "Sci-fi", gruppe: "Sjangrar", overgang: "zoom",
     skrift: "par-framtid",
     fargar: { bakgrunn: "#05101a", tekst: "#e9f7ff", dempa: "#9fb9c9", aksent: "#33e1ff", "aksent-tekst": "#04121a", skugge: "5,16,26", "reserve-a": "#0f3550", "reserve-b": "#071a28" },
     pynt({ pynt, svg, tilf }) {
@@ -693,7 +699,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "biletbok", namn: "Biletbøker", gruppe: "Sjangrar",
+    id: "biletbok", namn: "Biletbøker", gruppe: "Sjangrar", overgang: "bla",
     skrift: "par-leiken",
     css: `
       @keyframes duppe { from { transform: translateY(-.9vh) rotate(var(--v, 0deg)); } to { transform: translateY(.9vh) rotate(var(--v, 0deg)); } }`,

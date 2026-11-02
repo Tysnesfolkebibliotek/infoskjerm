@@ -268,6 +268,9 @@
                   background: var(--b-aksent); color: var(--b-aksent-tekst); font-size: 13px; font-weight: 600; border: 0; cursor: pointer; }
   .appellbrikke span { opacity: .8; padding: 0 5px; }
   .brikkerad { gap: 0 6px; align-items: center; }
+  .tilpassknapp { background: none; border: 0; padding: 4px 0; margin: 4px 0 0; font: inherit; font-weight: 600; color: var(--b-aksent); cursor: pointer; }
+  .tilpassknapp span { display: inline-block; transition: transform .15s; }
+  .tilpassknapp[aria-expanded="true"] span { transform: rotate(90deg); }
   /* «og»/«eller» mellom brikkene: klikk for å byte */
   .koplingsord { margin-top: 8px; padding: 2px 10px; border-radius: 99px; border: 1px dashed var(--b-dempa); background: transparent;
                  color: var(--b-dempa); font: inherit; font-size: 12.5px; cursor: pointer; }
@@ -647,30 +650,6 @@
         </div>
       </div>
       <div class="rad">
-      <div class="felt">
-        <label for="bakgrunn">Bakgrunn</label>
-        <select id="bakgrunn" name="bakgrunn">
-          <option value="">Flat farge (standard)</option>
-          <option value="uskarp">Uskarpt omslag</option>
-          <option value="svak">Svakt uskarpt omslag</option>
-          <option value="zoom">Omslag med sakte zoom</option>
-          <option value="farge">Fargane frå omslaget</option>
-        </select>
-      </div>
-      <div class="felt">
-        <label for="overgang">Overgang</label>
-        <select id="overgang" name="overgang">
-          <option value="">Ton og løft (standard)</option>
-          <option value="kryss">Krysstoning</option>
-          <option value="glid">Glid frå sida</option>
-          <option value="zoom">Zoom</option>
-          <option value="bla">Bla som ei bokside</option>
-          <option value="vend">Flipp</option>
-          <option value="ingen">Ingen (direkte byte)</option>
-        </select>
-      </div>
-      </div>
-      <div class="rad">
         <div class="felt">
           <label for="visingsmate">Visingsmåte</label>
           <select id="visingsmate" name="visning">
@@ -680,23 +659,52 @@
           </select>
         </div>
         <div class="felt">
-          <label for="fart">Fart på rulleteksten</label>
-          <select id="fart" name="fart">
+          <label for="sek">Sekund per bok</label>
+          <input type="number" id="sek" name="sek" min="4" max="60">
+        </div>
+      </div>
+      <div class="felt" id="fartfelt">
+        <label for="fart">Fart på rulleteksten</label>
+        <select id="fart" name="fart">
             <option value="sakte">Sakte</option>
             <option value="">Middels</option>
             <option value="rask">Rask</option>
           </select>
-        </div>
       </div>
-      <div class="rad">
-        <div class="felt">
-          <label for="sek">Sekund per bok</label>
-          <input type="number" id="sek" name="sek" min="4" max="60">
+      <button type="button" class="tilpassknapp" id="tilpassknapp" aria-expanded="false">Tilpass utsjånaden <span>▸</span></button>
+      <p class="hjelp" id="tilpassinfo"></p>
+      <div id="tilpass" hidden>
+        <div class="rad">
+          <div class="felt">
+            <label for="bakgrunn">Bakgrunn</label>
+            <select id="bakgrunn" name="bakgrunn">
+          <option value="">Som temaet</option>
+          <option value="flat">Flat farge</option>
+          <option value="uskarp">Uskarpt omslag</option>
+          <option value="svak">Svakt uskarpt omslag</option>
+          <option value="zoom">Omslag med sakte zoom</option>
+          <option value="farge">Fargane frå omslaget</option>
+        </select>
+          </div>
+          <div class="felt">
+            <label for="overgang">Overgang</label>
+            <select id="overgang" name="overgang">
+          <option value="">Som temaet</option>
+          <option value="ton">Ton og løft</option>
+          <option value="kryss">Krysstoning</option>
+          <option value="glid">Glid frå sida</option>
+          <option value="zoom">Zoom</option>
+          <option value="bla">Bla som ei bokside</option>
+          <option value="vend">Flipp</option>
+          <option value="ingen">Ingen (direkte byte)</option>
+        </select>
+          </div>
         </div>
         <div class="felt">
           <label for="teljar">Nedteljing</label>
           <select id="teljar" name="teljar">
-            <option value="">Hjul (standard)</option>
+            <option value="">Som temaet</option>
+            <option value="hjul">Hjul</option>
             <option value="hjulsek">Hjul med sekund</option>
             <option value="sek">Sekund</option>
             <option value="linje">Linje ved biblioteknamnet</option>
@@ -996,7 +1004,10 @@ function startVisning(cfg) {
   const hjul = document.getElementById("hjul");
   const teljartal = document.getElementById("teljartal");
   let hjulAnim = null;
-  const TELJAR = ["hjulsek", "sek", "linje", "botn", "ingen"].includes(cfg.teljar) ? cfg.teljar : "";
+  // Bakgrunn, overgang og nedteljing: eige val, elles det temaet har valt, elles standard.
+  // «flat», «ton» og «hjul» er standardane valde med vilje (overstyrer temaet).
+  const temaVal = k => cfg[k] || (TEMA[cfg.tema] || {})[k] || "";
+  const TELJAR = ["hjulsek", "sek", "linje", "botn", "ingen"].includes(temaVal("teljar")) ? temaVal("teljar") : "";
   if (TELJAR) document.documentElement.dataset.teljar = TELJAR;
   const bakteppe = [document.getElementById("bakteppe-a"), document.getElementById("bakteppe-b")];
   let aktivtBakteppe = 0;
@@ -1004,9 +1015,10 @@ function startVisning(cfg) {
   const SEK = Math.max(4, Number(cfg.sek) || 20);
   document.documentElement.style.setProperty("--sek", SEK + "s");
   // Utan eige val (eller med eit ukjent) blir bakgrunnen flat farge i alle tema.
-  const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "flat";
+  const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(temaVal("bakgrunn")) ? temaVal("bakgrunn") : "flat";
   document.documentElement.dataset.bakgrunn = BAKGRUNN;
-  if (["kryss", "glid", "zoom", "vend", "bla", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
+  const OVERGANG = ["kryss", "glid", "zoom", "vend", "bla", "ingen"].includes(temaVal("overgang")) ? temaVal("overgang") : "";
+  if (OVERGANG) document.documentElement.dataset.overgang = OVERGANG;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell3:" + datanøkkel(cfg);   // auk talet når lagra lister må hentast på nytt (3: mest reservert med 1500 kandidatar)
   ryddLager(nøkkel);
@@ -1229,7 +1241,7 @@ function startVisning(cfg) {
   // Omslaget til boka som går, får ei papirfarga bakside og blir snudd rundt
   // venstre kant. Storleiken blir låst til det omslaget er no, sidan biletet
   // elles reknar storleiken sin ut frå ramma.
-  const BLA = cfg.overgang === "bla";
+  const BLA = OVERGANG === "bla";
   function lagBlad(bok) {
     const framside = bok.querySelector(".omslag-ramme > .omslag, .omslag-ramme > .reserve");
     if (!framside || !framside.offsetWidth) return;
@@ -2604,6 +2616,9 @@ function startByggjar(startCfg) {
     oppdaterSynlege();
     teiknTemaknapp(); teiknSkriftknapp();
     teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk(); teiknOppdater();
+    // «Tilpass utsjånaden» er open når karusellen har eigne val
+    visTilpass(["bakgrunn", "overgang", "teljar"].some(k => cfg[k] && !(k === "bakgrunn" && cfg[k] === "flat")));
+    teiknTilpass();
     const endra = endraDelar(cfg);
     delar.forEach(d => d.open = endra.includes(d));   // opne berre delane med val som ikkje er standard
   }
@@ -2670,6 +2685,7 @@ function startByggjar(startCfg) {
 
   function oppdater(straks) {
     oppdaterSynlege();
+    teiknTilpass();
     endraDelar(lesSkjema());
     const cfg = lesSkjema();
     const visHash = lagHash(cfg, true);
@@ -3130,6 +3146,28 @@ function startByggjar(startCfg) {
     if (v === "eige") $("aarfra").focus();
     oppdater(false);
   });
+
+  // ---- Tilpass utsjånaden: bakgrunn, overgang og nedteljing ---------------
+  // Første val i kvar meny er «Som temaet (…)», med det temaet vel.
+  function visTilpass(open) {
+    $("tilpass").hidden = !open;
+    $("tilpassknapp").setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  $("tilpassknapp").addEventListener("click", () => visTilpass($("tilpass").hidden));
+  const TEMASTANDARD = { bakgrunn: "flat", overgang: "ton", teljar: "hjul" };
+  function teiknTilpass() {
+    const tema = (typeof TEMA !== "undefined" && TEMA[$("tema").value]) || {};
+    const namn = (k, v) => { const o = [...$(k).options].find(o => o.value === v); return o ? o.textContent : v; };
+    const temaval = {};
+    for (const k of ["bakgrunn", "overgang", "teljar"]) {
+      temaval[k] = namn(k, tema[k] || TEMASTANDARD[k]);
+      $(k).options[0].textContent = `Som temaet (${temaval[k].toLowerCase()})`;
+    }
+    $("tilpassinfo").textContent = `Temaet vel: ${temaval.overgang.toLowerCase()}, ${temaval.bakgrunn.toLowerCase()}, nedteljing med ${temaval.teljar.toLowerCase()}.`;
+    $("tilpassinfo").hidden = !$("tilpass").hidden;
+    $("fartfelt").hidden = $("visingsmate").value !== "rull";
+  }
+  $("tilpassknapp").addEventListener("click", teiknTilpass);
 
   // ---- Hent oppdatert boklista: meny som skriv minutt til det skjulte feltet
   function teiknOppdater() {
