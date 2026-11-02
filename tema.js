@@ -449,8 +449,10 @@ const TEMA_LISTE = [
     // svart øvst til høgre, og bokstavane i overskrifta får raudt, grønt, gult og blått.
     // Gulfargen i overskrifta er litt mørkare enn på plakaten, så han syner mot det lyse.
     css: `
-      :root[data-tema="falturiltu"] { --symbol-plass: 22vw; }
-      .falturiltu-logo { position: absolute; right: 5vw; top: 3vh; width: 18vw; height: auto; }
+      :root[data-tema="falturiltu"] { --symbol-plass: 20vw; }
+      .falturiltu-logo { position: absolute; right: 5vw; top: 3vh; width: 15vw; height: auto; }
+      /* Logoen er høg (med kråka). Overskriftsfeltet er minst like høgt, så omslaget alltid startar under logoen. */
+      :root[data-tema="falturiltu"] #visning header { min-height: 10.5vh; }
       /* Merkelappane får kant i grønt, blått, gult og raudt etter tur. «Står på hylla» er raud
          og står først, så den neste er aldri raud. Den første utan hylla blir gul. */
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+2) { box-shadow: inset 0 0 0 .3vw #4a9e2c; }
