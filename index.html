@@ -458,7 +458,7 @@
         </select>
       </div>
       <div id="sokefelt">
-        <div class="felt">
+        <div class="felt" id="sjangerfelt">
           <label for="sjangersok">Sjanger</label>
           <input type="hidden" id="sjanger" name="sjanger">
           <input type="hidden" id="sjangermodus" name="sjangermodus">
@@ -469,7 +469,7 @@
           </datalist>
           <div class="vallinje brikkerad" id="sjangervalde"></div>
         </div>
-        <div class="felt">
+        <div class="felt" id="emnefelt">
           <label for="emnesok">Emne</label>
           <input type="hidden" id="emne" name="emne">
           <input type="hidden" id="emnemodus" name="emnemodus">
@@ -1766,6 +1766,15 @@ function førehand(post, cfg) {
     const har = [].concat(d.bsdc_language || []).map(x => String(x).trim().toLowerCase());
     if (har.length ? !språk.some(s => har.includes(s)) : cfg._språkLokalt !== false) return utelat("anna språk");
   }
+  // Sjanger for Nyaste: lista kjem ferdig frå Bibliofil, så sjangeren blir sjekka her.
+  // (For Søk står sjangeren i sjølve søket.) «Eller»: minst éin sjanger. «Og»: alle.
+  if (cfg.kjelde === "nyaste" && (cfg.sjanger || "").trim()) {
+    const grupper = cfg.sjanger.split(",").map(g => g.split("|").map(reinOrd).filter(Boolean)).filter(g => g.length);
+    const emnar = Array.isArray(d.bsdc_subject) ? d.bsdc_subject : [];
+    const har = new Set([...emnar.filter(e => e.id === "genre").map(e => e.name), ...[].concat(d.bs_genre || [])].map(reinOrd));
+    const passar = g => g.some(f => har.has(f));
+    if (grupper.length && !(cfg.sjangermodus === "alle" ? grupper.every(passar) : grupper.some(passar))) return utelat("anna sjanger");
+  }
   if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
   if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");   // tryggingsnett mot feilkatalogiserte romanar
   if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");              // for Nyaste, der søket ikkje filtrerer
@@ -1824,6 +1833,8 @@ function flett(lister) {
 const TAK_ALLE = 500;
 async function hentBøker(cfg, framdrift) {
   utelatne = {}; nåddeGrense = false;
+  // Nyaste har ikkje appellfaktor (feltet er gøymt i byggjaren)
+  if (cfg.kjelde === "nyaste" && cfg.appell) cfg = { ...cfg, appell: "" };
   await lastSvarteliste(60 * 1000);
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
   if (cfg.kjelde === "utval") return forrigebokBerik(await hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
@@ -1845,11 +1856,12 @@ async function hentBøker(cfg, framdrift) {
   const alle = (visAlle || appell) && cfg.kjelde === "sok";     // hent heile trefflista
   const lister = [];
   for (const avd of avdar) {
-    // Nyaste med appellfaktor: hent fleire, sidan berre nokre av dei er skildra
-    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? (appell ? Math.min(200, antal * 4) : antal) : Math.ceil(antal / avdar.length);
+    // Nyaste med sjanger: hent fleire, sidan berre nokre av dei har sjangeren
+    const nyastSjanger = cfg.kjelde === "nyaste" && !!(cfg.sjanger || "").trim();
+    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? (appell || nyastSjanger ? Math.min(200, antal * 4) : antal) : Math.ceil(antal / avdar.length);
     const funneFør = lister.reduce((s, l) => s + l.length, 0);
     const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
-    lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld)
+    lister.push(cfg.kjelde === "nyaste" ? (await hentNyaste(cfg, avd, mål, meld)).slice(0, antal)
       : cfg.kjelde === "begge" ? await hentBegge(cfg, avd, antal, mål, meld)
       : await hentSøk(cfg, avd, mål, meld));
   }
@@ -2623,11 +2635,12 @@ function startByggjar(startCfg) {
 
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
-    document.getElementById("sokefelt").hidden = kjelde !== "sok";
+    document.getElementById("sokefelt").hidden = kjelde !== "sok" && kjelde !== "nyaste";
+    document.getElementById("emnefelt").hidden = kjelde !== "sok";     // Nyaste: berre sjanger
     const fast = kjelde === "utval" || kjelde === "likte";     // bøkene er valde på førehand
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     document.getElementById("liktefelt").hidden = kjelde !== "likte";
-    document.getElementById("appellfelt").hidden = fast;
+    document.getElementById("appellfelt").hidden = fast || kjelde === "nyaste";
     document.getElementById("lffelt").hidden = fast;
     document.getElementById("antalfelt").hidden = fast;
     document.getElementById("del-sok").hidden = fast;
