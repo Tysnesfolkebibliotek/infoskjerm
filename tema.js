@@ -444,7 +444,7 @@ const TEMA_LISTE = [
   {
     id: "falturiltu", namn: "Faltu Riltu", gruppe: "Bibliotek",
     dato: "litteraturfestival, november",
-    skrift: "nunito",
+    skrift: "par-blokk",
     // Fargane frå 2019-plakaten: svart, raud, gul, grøn og blå. Ordmerket øvst til høgre
     // har bokstavane farga som på plakaten, og kråka står stor og dempa i bakgrunnen.
     css: `

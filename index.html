@@ -833,6 +833,9 @@ const FONTAR = {
   orbitron:     ["Orbitron",              "Orbitron:wght@500;700",                              0.75],       // svært brei
   exo2:         ["Exo 2",                 "Exo+2:wght@400;600;700"],
   creepster:    ["Creepster",             "Creepster",                                          1.05, 400],  // grøsserskrift med bokstavar som renn
+  bungee:       ["Bungee",                "Bungee",                                             0.8,  400],  // feit og kantete, skiltskrift
+  dela:         ["Dela Gothic One",       "Dela+Gothic+One",                                    0.85, 400],  // tung og kantete
+  rubikmono:    ["Rubik Mono One",        "Rubik+Mono+One",                                     0.7,  400],  // svært brei og feit
 };
 // Vala i byggjaren. «tekst» er brødteksten. «overskrift» og «titlar» er valfrie:
 // utan dei brukar overskrifta og boktitlane same skrift som teksten.
@@ -863,6 +866,9 @@ const SKRIFTER = {
   "par-framtid":    { par: true, namn: "Framtid",    skildring: "Orbitron + Exo 2",             overskrift: "orbitron",     titlar: "exo2",         tekst: "exo2" },
   "par-skummel":    { par: true, namn: "Skummel",    skildring: "Creepster + Nunito",           overskrift: "creepster",    titlar: "nunito",       tekst: "nunito" },
   "par-spel":       { par: true, namn: "Spel",       skildring: "Pixelify Sans + Nunito",       overskrift: "pixelify",     titlar: "nunito",       tekst: "nunito" },
+  "par-blokk":      { par: true, namn: "Blokk",      skildring: "Bungee + Nunito",              overskrift: "bungee",       titlar: "nunito",       tekst: "nunito" },
+  "par-tung":       { par: true, namn: "Tung",       skildring: "Dela Gothic + Nunito",         overskrift: "dela",         titlar: "nunito",       tekst: "nunito" },
+  "par-brei":       { par: true, namn: "Brei",       skildring: "Rubik Mono + Nunito",          overskrift: "rubikmono",    titlar: "nunito",       tekst: "nunito" },
 };
 const fontstabel = id => `"${FONTAR[id][0]}", "Ubuntu", "DejaVu Sans", system-ui, sans-serif`;
 function brukSkrift(namn) {
