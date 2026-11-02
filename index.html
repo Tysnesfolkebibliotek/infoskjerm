@@ -1832,11 +1832,13 @@ async function hentBøker(cfg, framdrift) {
     const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? (appell ? Math.min(200, antal * 4) : antal) : Math.ceil(antal / avdar.length);
     const funneFør = lister.reduce((s, l) => s + l.length, 0);
     const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
-    lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld) : await hentSøk(cfg, avd, mål, meld));
+    lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld)
+      : cfg.kjelde === "begge" ? await hentBegge(cfg, avd, antal, mål, meld)
+      : await hentSøk(cfg, avd, mål, meld));
   }
   const reservert = cfg.kjelde === "sok" && cfg.rekkje === "reservert";
   let ut = reservert ? lister.flat().sort((a, b) => b.kø - a.kø)
-    : cfg.kjelde === "nyaste" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
+    : cfg.kjelde === "nyaste" || cfg.kjelde === "begge" ? flett(lister) : (cfg.rekkje === "nyaste" ? flett(lister) : stokk(lister.flat()));
   ut = await forrigebokBerik(ut, cfg);
   if (reservert) ut = ut.slice(0, visAlle ? TAK_ALLE : antal);
   else if (appell && !visAlle) ut = ut.slice(0, antal);
@@ -2187,6 +2189,16 @@ async function hentNyaste(cfg, avd, mål, meld) {
   }
   meld(ut.length);
   return ut;
+}
+
+// «begge» (brukt av skule.html): dei nyaste bøkene på biblioteket, same kva år dei
+// er gjevne ut, og i tillegg søket med krava i skjemaet (til dømes «berre i år»).
+// Utgjevingsåret gjeld berre søket. Bøker som er med i begge, kjem med éin gong.
+async function hentBegge(cfg, avd, antal, mål, meld) {
+  const nye = await hentNyaste({ ...cfg, aarsiste: "", aarfra: "", aartil: "" }, avd, antal, meld);
+  const sett = new Set(nye.map(t => String(t.id)));
+  const søk = await hentSøk(cfg, avd, mål, n => meld(nye.length + n));
+  return nye.concat(søk.filter(t => !sett.has(String(t.id))));
 }
 
 // Eitt ord blir trunkert (klima → klima*), så det treff alle emneord som

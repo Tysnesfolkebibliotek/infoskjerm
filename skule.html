@@ -45,9 +45,10 @@ const NYHEITER = { kjelde: "nyaste", lf: "", sjanger: "", plass: "", emne: "", e
                    tema: "lys", bakgrunn: "flat", sek: "15", oppdater: "360", omtale: "1" };
 const STANDARD = {
   m: { ...NYHEITER, avd: "tyfb",      alder: "bu,u", aldermodus: "yngst", spraak: "nob,nno", namn: "5.–7. trinn",  tittel: "Nytt for mellomtrinnet" },
-  // Ungdom: «Nyaste» gav for få treff. Søk i staden etter bøker for 13–16 år
-  // (gjerne òg unge vaksne, men ikkje berre unge vaksne) gjevne ut i år eller i fjor.
-  u: { ...NYHEITER, kjelde: "sok", rekkje: "nyaste", aarsiste: "2", antal: "40",
+  // Ungdom: «Nyaste» åleine gav for få treff. «begge» tek dei nyaste bøkene på
+  // biblioteket og i tillegg bøker gjevne ut i år (aarsiste 1). Bøker for 13–16 år,
+  // gjerne òg unge vaksne, men ikkje berre unge vaksne.
+  u: { ...NYHEITER, kjelde: "begge", aarsiste: "1", antal: "60",
        avd: "tyfb,tyfv", alder: "mu", aldermodus: "yngst", spraak: "nob,nno", namn: "8.–10. trinn", tittel: "Nytt for ungdomstrinnet" },
 };
 
