@@ -203,10 +203,14 @@
   :root[data-teljar="hjulsek"] .teljar-tal { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; font-size: 1.8vh; color: var(--tekst); }
   :root[data-teljar="sek"] .hjul { display: none; }
   :root[data-teljar="sek"] .teljar-tal { display: block; font-size: 3vh; }
-  :root[data-teljar="linje"] .teljar, :root[data-teljar="ingen"] .teljar { display: none; }
-  .framdrift { display: none; order: -1; flex: 1 0 100%; height: .6vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
+  :root:is([data-teljar="linje"], [data-teljar="botn"], [data-teljar="ingen"]) .teljar { display: none; }
+  /* Linja står på same line som biblioteknamnet og fyller plassen til høgre for det */
+  .framdrift { display: none; order: 1; flex: 1 1 0; min-width: 10vw; height: .6vh; background: var(--spor); border-radius: 99px; overflow: hidden; }
   .framdrift > div { height: 100%; background: var(--aksent); border-radius: 99px; transform-origin: 0 50%; will-change: transform; }
-  :root[data-teljar="linje"] .framdrift { display: block; }
+  :root:is([data-teljar="linje"], [data-teljar="botn"]) .framdrift { display: block; }
+  /* «Heilt nedst»: ei tynn linje langs nedre kant av skjermen */
+  :root[data-teljar="botn"] .framdrift { position: fixed; left: 0; right: 0; bottom: 0; height: .5vh; border-radius: 0; }
+  :root[data-teljar="botn"] .framdrift > div { border-radius: 0; }
   .melding {
     position: absolute; inset: 0; display: flex; flex-direction: column; gap: 3vh;
     align-items: center; justify-content: center; text-align: center;
@@ -713,7 +717,8 @@
             <option value="">Hjul (standard)</option>
             <option value="hjulsek">Hjul med sekund</option>
             <option value="sek">Sekund</option>
-            <option value="linje">Linje over botnen</option>
+            <option value="linje">Linje ved biblioteknamnet</option>
+            <option value="botn">Linje heilt nedst</option>
             <option value="ingen">Ingen</option>
           </select>
         </div>
@@ -991,7 +996,7 @@ function startVisning(cfg) {
   const hjul = document.getElementById("hjul");
   const teljartal = document.getElementById("teljartal");
   let hjulAnim = null;
-  const TELJAR = ["hjulsek", "sek", "linje", "ingen"].includes(cfg.teljar) ? cfg.teljar : "";
+  const TELJAR = ["hjulsek", "sek", "linje", "botn", "ingen"].includes(cfg.teljar) ? cfg.teljar : "";
   if (TELJAR) document.documentElement.dataset.teljar = TELJAR;
   const bakteppe = [document.getElementById("bakteppe-a"), document.getElementById("bakteppe-b")];
   let aktivtBakteppe = 0;
@@ -1119,7 +1124,7 @@ function startVisning(cfg) {
     const ms = SEK * 1000;
     if (hjulAnim) hjulAnim.cancel();
     hjulAnim = null;
-    if (TELJAR === "linje")
+    if (TELJAR === "linje" || TELJAR === "botn")
       hjulAnim = framdrift.animate([{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }],
         { duration: ms, easing: "linear", fill: "forwards" });
     else if (TELJAR === "" || TELJAR === "hjulsek")
