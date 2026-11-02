@@ -149,6 +149,23 @@
   :root[data-overgang="vend"] .bok:not(.synleg) { transform: perspective(1400px) rotateY(-70deg); }
   :root[data-overgang="vend"] .bok.ut { transform: perspective(1400px) rotateY(70deg); }
   :root[data-overgang="ingen"] .bok { transition: none; }
+  /* Bla som ei bokside: omslaget som går, blir snudd rundt venstre kant (bokryggen) med
+     papirfarga bakside, og neste bok ligg klar under og lysnar etter kvart som sida opnar seg. */
+  :root[data-overgang="bla"] .bok { opacity: 1; transform: none; transition: none; }
+  :root[data-overgang="bla"] .bok .omslag-ramme { perspective: 160vw; transition: filter 1.2s ease; }
+  :root[data-overgang="bla"] .bok:not(.synleg):not(.ut) .omslag-ramme { filter: brightness(.5); }
+  :root[data-overgang="bla"] .bok .info { transition: opacity .6s ease .6s; }
+  :root[data-overgang="bla"] .bok:not(.synleg) .info { opacity: 0; }
+  :root[data-overgang="bla"] .bok.ut { z-index: 2; }
+  :root[data-overgang="bla"] .bok.ut .info { transition: opacity .3s ease; }
+  .blad { position: relative; flex: none; transform-style: preserve-3d; transform-origin: 0 50%; }
+  .blad > * { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .blad-bakside { transform: rotateY(180deg); background: #e8e2d6; border-radius: .6vw; box-shadow: inset -2vw 0 3vw rgba(0,0,0,.12); }
+  .bok.ut .blad { animation: bla 1.4s cubic-bezier(.45, 0, .25, 1) forwards; }
+  /* Opasitet på sjølve bladet ville flata ut 3D-en (og vist framsida gjennom baksida), så det er ramma som tonar ut */
+  :root[data-overgang="bla"] .bok.ut .omslag-ramme { animation: bla-ut 1.4s ease forwards; }
+  @keyframes bla { from { transform: rotateY(0); } to { transform: rotateY(-178deg); } }
+  @keyframes bla-ut { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
   .omslag-ramme { flex: 1 1 auto; min-height: 0; max-height: 50vh; width: 100%; display: flex; align-items: center; justify-content: center; }
   .omslag { max-height: 100%; max-width: 80vw; border-radius: .6vw; box-shadow: 0 3vh 6vh rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); }
   .reserve {
@@ -198,7 +215,7 @@
   .melding .liten { font-size: 2.4vw; opacity: .8; }
   .snurr { width: 7vw; height: 7vw; border-radius: 50%; border: .7vw solid var(--spor); border-top-color: var(--aksent); animation: snurr 1s linear infinite; }
   @keyframes snurr { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe, .bok .omslag-ramme, .bok .info { transition-duration: .01s !important; } .bakteppe.synleg { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe, .bok .omslag-ramme, .bok .info { transition-duration: .01s !important; } .bok.ut .blad, .bok.ut .omslag-ramme { animation-duration: .01s !important; } .bakteppe.synleg { animation: none !important; } }
 
   /* ================================================================== */
   /* BYGGJAR                                                            */
@@ -661,7 +678,8 @@
           <option value="kryss">Krysstoning</option>
           <option value="glid">Glid frå sida</option>
           <option value="zoom">Zoom</option>
-          <option value="vend">Vend som eit blad</option>
+          <option value="bla">Bla som ei bokside</option>
+          <option value="vend">Flipp</option>
           <option value="ingen">Ingen (direkte byte)</option>
         </select>
       </div>
@@ -982,7 +1000,7 @@ function startVisning(cfg) {
   document.documentElement.style.setProperty("--sek", SEK + "s");
   const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(cfg.bakgrunn) ? cfg.bakgrunn : "";
   if (BAKGRUNN) document.documentElement.dataset.bakgrunn = BAKGRUNN;
-  if (["kryss", "glid", "zoom", "vend", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
+  if (["kryss", "glid", "zoom", "vend", "bla", "ingen"].includes(cfg.overgang)) document.documentElement.dataset.overgang = cfg.overgang;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell3:" + datanøkkel(cfg);   // auk talet når lagra lister må hentast på nytt (3: mest reservert med 1500 kandidatar)
   ryddLager(nøkkel);
@@ -1185,7 +1203,7 @@ function startVisning(cfg) {
       const bok = lagBok(t);
       scene.append(bok);
       requestAnimationFrame(() => requestAnimationFrame(() => bok.classList.add("synleg")));
-      if (førre) { const g = førre; g.classList.remove("synleg"); g.classList.add("ut"); setTimeout(() => g.remove(), 1200); }
+      if (førre) { const g = førre; if (BLA) lagBlad(g); g.classList.remove("synleg"); g.classList.add("ut"); setTimeout(() => g.remove(), BLA ? 1600 : 1200); }
       else scene.querySelectorAll(".melding").forEach(m => m.remove());
       førre = bok;
     }
@@ -1199,6 +1217,22 @@ function startVisning(cfg) {
   // ---- vifte -----------------------------------------------------------
   // Boka i midten blir vist som vanleg. Forrige bok ligg dempa til venstre og
   // neste bok til høgre. Ved bytte glir heile vifta eitt hakk mot venstre.
+  // ---- bla som ei bokside ------------------------------------------------
+  // Omslaget til boka som går, får ei papirfarga bakside og blir snudd rundt
+  // venstre kant. Storleiken blir låst til det omslaget er no, sidan biletet
+  // elles reknar storleiken sin ut frå ramma.
+  const BLA = cfg.overgang === "bla";
+  function lagBlad(bok) {
+    const framside = bok.querySelector(".omslag-ramme > .omslag, .omslag-ramme > .reserve");
+    if (!framside || !framside.offsetWidth) return;
+    const blad = el("div", "blad");
+    blad.style.width = framside.offsetWidth + "px";
+    blad.style.height = framside.offsetHeight + "px";
+    framside.replaceWith(blad);
+    Object.assign(framside.style, { width: "100%", height: "100%", maxWidth: "none", maxHeight: "none" });
+    blad.append(framside, el("div", "blad-bakside"));
+  }
+
   const VIFTE = cfg.visning === "vifte";
   if (VIFTE) document.documentElement.dataset.visning = "vifte";
   const PLASSAR = ["pos-v", "pos-m", "pos-h", "pos-utv", "pos-innh", "pos-uth"];
