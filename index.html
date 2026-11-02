@@ -435,7 +435,7 @@
       <div class="felt">
         <span class="etikett">Kjelde</span>
         <div class="segment" role="radiogroup">
-          <label><input type="radio" name="kjelde" value="nyaste"> Nyaste</label>
+          <label><input type="radio" name="kjelde" value="nyaste"> Nyheiter</label>
           <label><input type="radio" name="kjelde" value="sok"> Søk</label>
           <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
           <label><input type="radio" name="kjelde" value="likte"> Neste bok</label>
@@ -1768,7 +1768,7 @@ function førehand(post, cfg) {
   }
   if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
   if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");   // tryggingsnett mot feilkatalogiserte romanar
-  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");              // for Nyaste, der søket ikkje filtrerer
+  if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");              // for Nyheiter, der søket ikkje filtrerer
   return true;
 }
 
@@ -2620,7 +2620,7 @@ function startByggjar(startCfg) {
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
     document.getElementById("sokefelt").hidden = kjelde !== "sok" && kjelde !== "nyaste";
-    document.getElementById("emnefelt").hidden = kjelde !== "sok";     // Nyaste: berre sjanger
+    document.getElementById("emnefelt").hidden = kjelde !== "sok";     // Nyheiter: berre sjanger
     const fast = kjelde === "utval" || kjelde === "likte";     // bøkene er valde på førehand
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     document.getElementById("liktefelt").hidden = kjelde !== "likte";
@@ -2628,7 +2628,7 @@ function startByggjar(startCfg) {
     document.getElementById("lffelt").hidden = fast;
     document.getElementById("antalfelt").hidden = fast;
     document.getElementById("del-sok").hidden = fast;
-    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyaste har si eiga liste frå Bibliofil
+    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyheiter har si eiga liste frå Bibliofil
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
       if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
