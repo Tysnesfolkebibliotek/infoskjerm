@@ -445,15 +445,16 @@ const TEMA_LISTE = [
     id: "falturiltu", namn: "Faltu Riltu", gruppe: "Bibliotek",
     dato: "litteraturfestival, november",
     skrift: "par-blokk",
-    // Svart bakgrunn med fargane frå 2019-plakaten. Logoen (ordmerket og kråka) står
-    // kvit øvst til høgre, og bokstavane i overskrifta får raudt, grønt, gult og blått.
+    // Lys bakgrunn med fargane frå 2019-plakaten. Logoen (ordmerket og kråka) står
+    // svart øvst til høgre, og bokstavane i overskrifta får raudt, grønt, gult og blått.
+    // Gulfargen i overskrifta er litt mørkare enn på plakaten, så han syner mot det lyse.
     css: `
       :root[data-tema="falturiltu"] { --symbol-plass: 22vw; }
       .falturiltu-logo { position: absolute; right: 5vw; top: 3vh; width: 18vw; height: auto; }
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+2) { box-shadow: inset 0 0 0 .3vw #ea4239; }
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+3) { box-shadow: inset 0 0 0 .3vw #4a9e2c; }
       :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n)   { box-shadow: inset 0 0 0 .3vw #0081a1; }`,
-    fargar: { bakgrunn: "#000000", tekst: "#ffffff", dempa: "#d6d1c8", aksent: "#fab50f", "aksent-tekst": "#000000", brikke: "rgba(255,255,255,.12)", skugge: "0,0,0", spor: "rgba(255,255,255,.22)", "reserve-a": "#ea4239", "reserve-b": "#8c231d" },
+    fargar: { bakgrunn: "#fdfcf9", tekst: "#111111", dempa: "#57534d", aksent: "#ea4239", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.06)", skugge: "253,252,249", spor: "rgba(0,0,0,.12)", "reserve-a": "#fcd36b", "reserve-b": "#fab50f", "bakteppe-lys": "1.15" },
     pynt({ pynt }) {
       const logo = document.createElement("img");
       logo.src = "falturiltu-logo.png"; logo.className = "falturiltu-logo"; logo.alt = "Faltu Riltu";
@@ -462,7 +463,7 @@ const TEMA_LISTE = [
       setTimeout(() => {
         const h = document.getElementById("overskrift");
         if (!h) return;
-        const fargar = ["#ea4239", "#4a9e2c", "#fab50f", "#0081a1"];
+        const fargar = ["#ea4239", "#4a9e2c", "#eba300", "#0081a1"];
         let n = 0;
         h.replaceChildren(...[...h.textContent].map(t => {
           if (/\s/.test(t)) return document.createTextNode(t);

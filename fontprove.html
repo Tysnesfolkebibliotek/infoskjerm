@@ -8,15 +8,15 @@
 <!-- Mellombels side for å velje overskriftsskrift til Faltu Riltu-temaet. Kan slettast etterpå. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Big+Shoulders+Display:wght@900&family=Bowlby+One&family=Bungee&family=Chango&family=Dela+Gothic+One&family=Montserrat:wght@900&family=Paytone+One&family=Rubik+Mono+One&family=Titan+One&family=Unbounded:wght@900&family=Nunito:wght@700&display=swap">
 <style>
-  body { margin: 0; background: #000; color: #fff; font-family: Nunito, system-ui, sans-serif; padding: 32px; }
-  h1 { font-size: 18px; font-weight: 700; color: #d6d1c8; margin: 0 0 6px; }
+  body { margin: 0; background: #fdfcf9; color: #111; font-family: Nunito, system-ui, sans-serif; padding: 32px; }
+  h1 { font-size: 18px; font-weight: 700; color: #57534d; margin: 0 0 6px; }
   p.hjelp { color: #9a958c; margin: 0 0 28px; font-size: 15px; }
   .topp { display: flex; align-items: center; gap: 32px; margin-bottom: 36px; }
   .topp img { width: 160px; }
   .rutenett { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 20px; }
-  .prove { border: 1px solid #2a2a2a; border-radius: 10px; padding: 20px 22px; }
+  .prove { border: 1px solid #e3ded4; border-radius: 10px; padding: 20px 22px; }
   .namn { font-size: 14px; color: #9a958c; margin-bottom: 10px; }
-  .namn b { color: #fff; font-size: 16px; }
+  .namn b { color: #111; font-size: 16px; }
   .ord { font-size: 46px; line-height: 1.1; }
   .ord.stor { font-size: 64px; line-height: .95; }
   .ord + .ord { margin-top: 10px; }
@@ -46,7 +46,7 @@
     ["Anton", "'Anton'", 400, "smal og høg"],
     ["Big Shoulders Display Black", "'Big Shoulders Display'", 900, "smal og kantete"],
   ];
-  const FARGAR = ["#ea4239", "#4a9e2c", "#fab50f", "#0081a1"];
+  const FARGAR = ["#ea4239", "#4a9e2c", "#eba300", "#0081a1"];
   const farg = tekst => { let n = 0; return [...tekst].map(t => /\s/.test(t) ? t : `<span style="color:${FARGAR[n++ % 4]}">${t}</span>`).join(""); };
   document.getElementById("rutenett").innerHTML = SKRIFTER.map(([namn, familie, vekt, om]) => `
     <div class="prove" style="font-family:${familie}, sans-serif; font-weight:${vekt}">
