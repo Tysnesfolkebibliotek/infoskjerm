@@ -347,9 +347,30 @@ const TEMA_LISTE = [
   {
     id: "jul", namn: "Jul", gruppe: "Høgtider og merkedagar",
     aktuell: "11-20/12-26",
+    // Julenissen med slede og reinsdyr flyg forbi i ein svak boge kvart par minutt.
+    // Han er synleg i om lag ein sjettedel av runden og ligg utanfor skjermen resten
+    // av tida. Rørsla er berre transform, så grafikkbrikka gjer jobben.
+    css: `
+      .slede { position: absolute; left: 0; width: 56vw; opacity: .28; will-change: transform;
+               animation: sledetur var(--runde, 150s) linear infinite backwards; }
+      @media (prefers-reduced-motion: reduce) { .slede { display: none; } }
+      @keyframes sledetur {
+        0%   { transform: translate(-60vw, 4vh) rotate(-3deg); }
+        8%   { transform: translate(40vw, -1vh) rotate(-1deg); }
+        16%  { transform: translate(125vw, -5vh) rotate(-4deg); }
+        100% { transform: translate(125vw, -5vh) rotate(-4deg); }
+      }`,
     fargar: { bakgrunn: "#0d1f17", tekst: "#fbf5ea", dempa: "#c9bda6", aksent: "#c9392f", "aksent-tekst": "#ffffff", skugge: "13,31,23", "reserve-a": "#6b1e19", "reserve-b": "#123326" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       snøfall(28, 0.5);
+      const slede = document.createElement("img");
+      slede.src = "julenisse.svg"; slede.alt = ""; slede.className = "slede";
+      // Ny høgd for kvar tur, og første tur kjem etter 10–60 sekund
+      const nyHøgd = () => { slede.style.top = tilf(3, 20) + "vh"; };
+      nyHøgd();
+      slede.style.animationDelay = tilf(10, 60) + "s";
+      slede.addEventListener("animationiteration", nyHøgd);
+      pynt.append(slede);
       // Grantre-silhuettar nedst i begge hjørna
       const tre = (x, h) => `<g transform="translate(${x},${100 - h}) scale(${h / 100})">` +
         `<polygon points="50,0 68,28 60,28 78,55 66,55 88,88 12,88 34,55 22,55 40,28 32,28"/><rect x="45" y="88" width="10" height="12"/></g>`;
