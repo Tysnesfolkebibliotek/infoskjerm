@@ -868,7 +868,7 @@ const MALAR = {
   // Julekalender: 24 handplukka bøker, éi ny luke kvar dag i desember
   julekalender: { kjelde: "utval", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
                   omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "24", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
-                  tittel: "Julekalenderen", namn: "", sek: "20", oppdater: "360", omtale: "1", visning: "kalender", tema: "jul" },
+                  tittel: "Julekalenderen", namn: "", sek: "20", oppdater: "360", omtale: "1", visning: "kalender", tema: "advent" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
   biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker, Bildebøker, Biletbok, Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
   born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
@@ -903,7 +903,7 @@ const MALTEMA = {
   nyheiter: "lys", reservert: "natt", kulturfond: "kveld",
   sakprosa: "kveld", krim: "krim", biografi: "kveld", lokal: "fjord", natur: "skog", klima: "klima", handarbeid: "hobby",
   fantasy: "fantasy", fotball: "sport", teikne: "manga", biletbok_nn: "biletbok", born_nn: "lys", ungdom_nn: "natt",
-  jul: "jul", julekalender: "jul",
+  jul: "jul", julekalender: "advent",
 };
 for (const [mal, tema] of Object.entries(MALTEMA)) if (MALAR[mal]) MALAR[mal] = { ...MALAR[mal], tema };
 
