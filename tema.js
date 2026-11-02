@@ -417,7 +417,7 @@ const TEMA_LISTE = [
       const by = svg("0 0 470 100", "left:0; bottom:0; width:100vw; height:13vh;", `<defs>${glød}</defs><g fill="#1a0c2b">${hus}</g><g filter="url(#vindaugeglod)">${lys}</g>`);
       by.setAttribute("preserveAspectRatio", "xMidYMax slice");
       pynt.append(by);
-      // Av og til blir eitt lys skrudd av eller på, med 6–20 sekund mellom kvar gong.
+      // Av og til blir eitt lys skrudd av eller på, med 2–7 sekund mellom kvar gong.
       // Er mange lys tende, blir det oftare skrudd av, og omvendt, så balansen held seg.
       const vindauga = [...by.querySelectorAll(".vindauge")];
       const skru = () => {
@@ -426,9 +426,9 @@ const TEMA_LISTE = [
         const kandidatar = slokk ? vindauga.filter(v => !v.classList.contains("av")) : av;
         const v = kandidatar[Math.floor(Math.random() * kandidatar.length)];
         if (v) v.classList.toggle("av");
-        setTimeout(skru, tilf(6, 20) * 1000);
+        setTimeout(skru, tilf(2, 7) * 1000);
       };
-      if (vindauga.length) setTimeout(skru, tilf(4, 12) * 1000);
+      if (vindauga.length) setTimeout(skru, tilf(2, 5) * 1000);
       // Små gylne stjerner som blinkar svakt
       for (let i = 0; i < 45; i++) {
         const st = document.createElement("div"), d = tilf(0.15, 0.4);
