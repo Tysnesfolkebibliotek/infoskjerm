@@ -377,6 +377,10 @@
   .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
   .segment label { flex: 1; text-align: center; padding: 8px 4px; white-space: nowrap; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
   .segment label:last-child { border-right: 0; }
+  /* Kjelde: fem val i to rader (3 + 2), med strekar mellom som gap på strekfarga bakgrunn */
+  .segment.kjeldeval { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--b-strek); }
+  .segment.kjeldeval label { grid-column: span 2; border-right: 0; background: var(--b-flate); }
+  .segment.kjeldeval label:nth-child(n+4) { grid-column: span 3; }
   .segment input { position: absolute; opacity: 0; pointer-events: none; }
   .segment label:has(input:checked) { background: var(--b-aksent); color: var(--b-aksent-tekst); font-weight: 600; }
   .segment label:has(input:focus-visible) { outline: 2px solid var(--b-fokus); outline-offset: -2px; }
@@ -500,7 +504,7 @@
       <legend>Kva bøker</legend>
       <div class="felt">
         <span class="etikett">Kjelde</span>
-        <div class="segment" role="radiogroup">
+        <div class="segment kjeldeval" role="radiogroup">
           <label><input type="radio" name="kjelde" value="nyaste"> Nyheiter</label>
           <label><input type="radio" name="kjelde" value="sok"> Søk</label>
           <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
