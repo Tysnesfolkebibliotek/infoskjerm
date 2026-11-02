@@ -898,6 +898,15 @@ const MALAR = {
   handarbeid: { kjelde: "sok", avd: "tyfv", lf: "0", sjanger: "", plass: "", emne: "strikking, søm, hekling, handarbeid, håndarbeid", emnemodus: "eitt", dewey: "746.4, 646.2", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "0", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", alle: "1", tittel: "Sy og strikk", tema: "kveld", namn: "", sek: "20", oppdater: "360", omtale: "1" },
 };
 
+// Temaet som følgjer med kvar mal. Det kan endrast etterpå som vanleg.
+const MALTEMA = {
+  nyheiter: "lys", reservert: "natt", kulturfond: "kveld",
+  sakprosa: "kveld", krim: "krim", biografi: "kveld", lokal: "fjord", natur: "skog", klima: "berekraft", handarbeid: "hobby",
+  fantasy: "fantasy", fotball: "skog", teikne: "manga", biletbok_nn: "biletbok", born_nn: "lys", ungdom_nn: "natt",
+  jul: "jul", julekalender: "jul",
+};
+for (const [mal, tema] of Object.entries(MALTEMA)) if (MALAR[mal]) MALAR[mal] = { ...MALAR[mal], tema };
+
 const NØKLAR = Object.keys(STANDARD);
 
 function lesAdresse() {
@@ -3064,8 +3073,8 @@ function startByggjar(startCfg) {
     const mal = MALAR[namn];
     if (!mal) return;
     const no = lesSkjema();
-    // Behald tema og skrift, men julekalenderen får juletemaet
-    fyllInn({ ...STANDARD, ...mal, tema: namn === "julekalender" ? mal.tema : no.tema, skrift: no.skrift });
+    // Malen tek med seg temaet sitt (MALTEMA). Skrifta blir behalden.
+    fyllInn({ ...STANDARD, ...mal, tema: mal.tema || no.tema, skrift: no.skrift });
     oppdater(true);
     malval.value = "";
   }
