@@ -451,9 +451,13 @@ const TEMA_LISTE = [
     css: `
       :root[data-tema="falturiltu"] { --symbol-plass: 22vw; }
       .falturiltu-logo { position: absolute; right: 5vw; top: 3vh; width: 18vw; height: auto; }
-      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+2) { box-shadow: inset 0 0 0 .3vw #ea4239; }
-      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+3) { box-shadow: inset 0 0 0 .3vw #4a9e2c; }
-      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n)   { box-shadow: inset 0 0 0 .3vw #0081a1; }`,
+      /* Merkelappane får kant i grønt, blått, gult og raudt etter tur. «Står på hylla» er raud
+         og står først, så den neste er aldri raud. Den første utan hylla blir gul. */
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+2) { box-shadow: inset 0 0 0 .3vw #4a9e2c; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+3) { box-shadow: inset 0 0 0 .3vw #0081a1; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n)   { box-shadow: inset 0 0 0 .3vw #eba300; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+1) { box-shadow: inset 0 0 0 .3vw #ea4239; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):first-child     { box-shadow: inset 0 0 0 .3vw #eba300; }`,
     fargar: { bakgrunn: "#fdfcf9", tekst: "#111111", dempa: "#57534d", aksent: "#ea4239", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.06)", skugge: "253,252,249", spor: "rgba(0,0,0,.12)", "reserve-a": "#fcd36b", "reserve-b": "#fab50f", "bakteppe-lys": "1.15" },
     pynt({ pynt }) {
       const logo = document.createElement("img");
