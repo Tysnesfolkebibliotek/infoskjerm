@@ -764,6 +764,49 @@ const TEMA_LISTE = [
     },
   },
   {
+    id: "sport", namn: "Sport", gruppe: "Sjangrar", overgang: "glid",
+    dato: "fotball, idrett, friluftsliv",
+    skrift: "par-plakat",
+    fargar: { bakgrunn: "#0d3320", tekst: "#f4f8f2", dempa: "#b4c9b8", aksent: "#ffd23f", "aksent-tekst": "#10200f", skugge: "13,51,32", "reserve-a": "#1f5a37", "reserve-b": "#0f3622" },
+    pynt({ pynt, svg }) {
+      // Klipt gras: breie loddrette striper i to grønnfargar
+      const gras = document.createElement("div");
+      gras.style.cssText = "position:absolute; inset:0; background:repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 9vw, transparent 9vw 18vw);";
+      pynt.append(gras);
+      // Kritstrekar: midtsirkelen stikk fram øvst, straffefeltet står nedst
+      const strek = "fill:none; stroke:#ffffff; stroke-width:.6; opacity:.13;";
+      pynt.append(svg("0 0 100 30", `left:0; top:-1vh; width:100vw; ${strek}`,
+        `<circle cx="50" cy="0" r="16"/><line x1="0" y1="0" x2="100" y2="0"/><circle cx="50" cy="0" r=".9" fill="#ffffff"/>`));
+      pynt.append(svg("0 0 100 40", `left:0; bottom:0; width:100vw; ${strek}`,
+        `<rect x="18" y="8" width="64" height="33"/><rect x="36" y="28" width="28" height="13"/>` +
+        `<path d="M39 8 A13 13 0 0 1 61 8"/><circle cx="50" cy="19" r=".9" fill="#ffffff"/>` +
+        `<path d="M0 37 A3 3 0 0 1 3 40"/><path d="M100 37 A3 3 0 0 0 97 40"/>`));
+    },
+  },
+  {
+    id: "klima", namn: "Klima og miljø", gruppe: "Sjangrar", overgang: "kryss",
+    dato: "natur, klima, berekraft",
+    skrift: "par-venleg",
+    fargar: { bakgrunn: "#eef3ea", tekst: "#1e3327", dempa: "#55675b", aksent: "#2e7d4f", "aksent-tekst": "#ffffff", brikke: "rgba(30,51,39,.08)", skugge: "238,243,234", spor: "rgba(30,51,39,.14)", "reserve-a": "#8cc49b", "reserve-b": "#4f8f69", "bakteppe-lys": "1.15" },
+    pynt({ pynt, svg, dalande }) {
+      // Ei mild sol øvst til høgre
+      pynt.append(svg("0 0 100 100", "right:2vw; top:4vh; width:20vw; opacity:.55;",
+        `<defs><radialGradient id="klimasol"><stop offset="35%" stop-color="#f6d67a"/><stop offset="100%" stop-color="#f6d67a" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#klimasol)"/>`));
+      // Grøne blad som dalar sakte
+      dalande(9, "0 0 12 14", `<path fill="FARGE" d="M6,0 C10,3 10,9 6,14 C2,9 2,3 6,0 Z"/><path d="M6,2 L6,13" stroke="rgba(255,255,255,.35)" stroke-width=".6"/>`,
+        ["#4f8f69", "#7fb27a", "#2e7d4f", "#a3c78a"], [1.8, 3.2], [0.18, 0.32]);
+      // Åsar og sjø nedst, som glir sakte sidelengs
+      const lag = (d, farge, o, sek, h) => {
+        const l = svg("0 0 400 60", `left:0; bottom:0; width:200vw; opacity:${o}; animation: glidSide ${sek}s linear infinite;`, `<path fill="${farge}" d="${d}"/>`);
+        l.setAttribute("preserveAspectRatio", "none"); l.style.height = h; pynt.append(l);
+      };
+      const ås = (y, h) => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 100) d += ` C${x + 30},${y - h} ${x + 70},${y - h} ${x + 100},${y}`; return d + " L400,60 L0,60 Z"; };
+      const bølgje = y => { let d = `M0,${y}`; for (let x = 0; x < 400; x += 40) d += ` Q${x + 20},${y - 4} ${x + 40},${y}`; return d + " L400,60 L0,60 Z"; };
+      lag(ås(34, 22), "#7fb27a", .22, 90, "12vh");
+      lag(bølgje(44), "#4a90a8", .22, 40, "7vh");
+    },
+  },
+  {
     id: "krim", namn: "Krim", gruppe: "Sjangrar",
     skrift: "par-krim",
     fargar: { bakgrunn: "#0e0e10", tekst: "#f2efe9", dempa: "#aaa69f", aksent: "#f2c230", "aksent-tekst": "#111111", skugge: "14,14,16", "reserve-a": "#3a3328", "reserve-b": "#17161a" },
