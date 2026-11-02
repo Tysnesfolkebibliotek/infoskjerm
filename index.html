@@ -219,6 +219,68 @@
   .melding .liten { font-size: 2.4vw; opacity: .8; }
   .snurr { width: 7vw; height: 7vw; border-radius: 50%; border: .7vw solid var(--spor); border-top-color: var(--aksent); animation: snurr 1s linear infinite; }
   @keyframes snurr { to { transform: rotate(360deg); } }
+  /* ---- Julekalender (kjelde=kalender): 24 pakkar, éi luke opnar seg kvar dag i desember ---- */
+  /* Pakkane er teikna med CSS. Alle mål inne i ein pakke er i cqmin, så same pakke kan vere   */
+  /* liten i rutenettet og stor når han zoomar fram.                                          */
+  .kalender { position: absolute; inset: 0; display: grid; grid-template: repeat(6, 1fr) / repeat(4, 1fr); gap: 1.2vh 2vw;
+              transition: opacity .9s ease, filter .9s ease; }
+  .kalender.dempa { opacity: .1; filter: saturate(.3); }
+  .luke { position: relative; container-type: size; display: flex; align-items: center; justify-content: center; }
+  .luke.borte > * { visibility: hidden; }
+  .luke > .gave { width: 74cqmin; height: 74cqmin; margin-top: 12cqmin; }
+  .gave { position: relative; container-type: size; flex: none; }
+  .gave-skugge { position: absolute; inset: 0; border-radius: 3cqmin; box-shadow: 0 3cqmin 7cqmin rgba(0,0,0,.5); transition: opacity .6s ease; }
+  .gave-papir { position: absolute; inset: 0; border-radius: 3cqmin; background: var(--papir); }
+  /* To halvdelar med takka kant på midten, så papiret kan rivast i to */
+  .gave-papir.v { clip-path: polygon(0 0, 52% 0, 47% 10%, 53% 20%, 47% 30%, 53% 40%, 47% 50%, 53% 60%, 47% 70%, 53% 80%, 47% 90%, 52% 100%, 0 100%); }
+  .gave-papir.h { clip-path: polygon(52% 0, 100% 0, 100% 100%, 52% 100%, 47% 90%, 53% 80%, 47% 70%, 53% 60%, 47% 50%, 53% 40%, 47% 30%, 53% 20%, 47% 10%); }
+  .gave-band { position: absolute; background: var(--band); box-shadow: 0 0 1.5cqmin rgba(0,0,0,.25); }
+  .gave-band.loddrett { top: 0; bottom: 0; left: 50%; width: 13cqmin; transform: translateX(-50%); }
+  .gave-band.vassrett { left: 0; right: 0; top: 50%; height: 13cqmin; transform: translateY(-50%); }
+  .gave-sloyfe { position: absolute; left: 50%; top: 0; width: 58cqmin; transform: translate(-50%, -52%); color: var(--band);
+                 filter: drop-shadow(0 1cqmin 1.2cqmin rgba(0,0,0,.35)); }
+  .gave-sloyfe svg { display: block; width: 100%; height: auto; }
+  .gave-nr { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 36cqmin; height: 36cqmin; border-radius: 50%;
+             background: #fbf6ec; color: #2b1d15; display: flex; align-items: center; justify-content: center;
+             font: 700 20cqmin/1 var(--skrift-tittel, var(--skrift)); font-variant-numeric: tabular-nums; box-shadow: 0 1cqmin 2.5cqmin rgba(0,0,0,.4); }
+  .gave[data-papir="0"] { --papir: radial-gradient(circle, rgba(255,214,120,.6) 0 9%, transparent 11%) 0 0 / 20cqmin 20cqmin, #b4232c; --band: #f1c24f; }
+  .gave[data-papir="1"] { --papir: repeating-linear-gradient(45deg, #1d6a3b 0 6cqmin, #26804a 6cqmin 12cqmin); --band: #f5efe4; }
+  .gave[data-papir="2"] { --papir: radial-gradient(circle, rgba(255,255,255,.55) 0 7%, transparent 9%) 0 0 / 17cqmin 17cqmin, #1f3a63; --band: #e3424d; }
+  .gave[data-papir="3"] { --papir: repeating-linear-gradient(90deg, #c99a43 0 8cqmin, #ba8a34 8cqmin 16cqmin); --band: #8e1d2a; }
+  /* Dagens luke pulserer svakt før ho blir opna */
+  .luke.dagens > .gave { animation: puls 2.6s ease-in-out infinite; }
+  @keyframes puls { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  .luke.innpakka > .gave { animation: innpakka .8s cubic-bezier(.3, 1.4, .5, 1) both; }
+  @keyframes innpakka { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+  .gave.rist { animation: rist .95s ease-in-out; }
+  @keyframes rist { 0%, 100% { transform: rotate(0); } 12% { transform: rotate(-5deg); } 26% { transform: rotate(5deg); } 40% { transform: rotate(-4deg); }
+                    54% { transform: rotate(4deg); } 68% { transform: rotate(-2deg); } 82% { transform: rotate(1.5deg); } }
+  /* Opne luker: lite omslag med lukenummeret i hjørnet */
+  .opna { position: relative; height: 86cqh; max-width: 94cqw; aspect-ratio: var(--r, .67); }
+  .opna-omslag { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 1.6cqmin; box-shadow: 0 2cqmin 5cqmin rgba(0,0,0,.55); }
+  .opna-tittel { display: flex; align-items: center; justify-content: center; text-align: center; padding: 6cqmin; font-size: 9cqmin; line-height: 1.2;
+                 background: linear-gradient(160deg, var(--reserve-a), var(--reserve-b)); overflow: hidden; }
+  .opna-nr { position: absolute; left: -7cqmin; top: -6cqmin; min-width: 22cqmin; height: 22cqmin; padding: 0 3cqmin; border-radius: 99px;
+             background: #fbf6ec; color: #2b1d15; display: flex; align-items: center; justify-content: center;
+             font: 700 13cqmin/1 var(--skrift-tittel, var(--skrift)); box-shadow: 0 1cqmin 2cqmin rgba(0,0,0,.4); }
+  .luke.tom span { width: 40cqmin; height: 40cqmin; border-radius: 50%; border: 1.2cqmin dashed var(--spor); color: var(--dempa);
+                   display: flex; align-items: center; justify-content: center; font: 700 18cqmin/1 var(--skrift-tittel, var(--skrift)); opacity: .6; }
+  /* Den store pakken som zoomar fram. Storleiken blir animert, ikkje skalert, så kantane held seg skarpe. */
+  .gave.stor { position: fixed; z-index: 5; margin: 0; }
+  .gave-omslag { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 1.2cqmin; }
+  .gave.stor.utan-papir > :not(.gave-omslag):not(.gave-skugge) { display: none; }
+  .gave.opnar .gave-sloyfe { transition: transform .8s cubic-bezier(.3, 0, .2, 1), opacity .8s ease; transform: translate(-50%, -150%) scale(1.3) rotate(-10deg); opacity: 0; }
+  .gave.opnar :is(.gave-band, .gave-nr) { transition: opacity .5s ease .2s; opacity: 0; }
+  .gave.opnar .gave-papir.v { transition: transform 1.2s cubic-bezier(.5, 0, .3, 1) .35s, opacity 1s ease .6s; transform: translate(-80%, 6%) rotate(-16deg); opacity: 0; }
+  .gave.opnar .gave-papir.h { transition: transform 1.2s cubic-bezier(.5, 0, .3, 1) .35s, opacity 1s ease .6s; transform: translate(80%, 4%) rotate(14deg); opacity: 0; }
+  .glitter { position: absolute; left: 50%; top: 45%; width: 3.5cqmin; height: 3.5cqmin; border-radius: 50%; background: #fff1c2;
+             box-shadow: 0 0 2.5cqmin #ffd66b; opacity: 0; animation: glitter 1.6s ease-out .35s forwards; }
+  @keyframes glitter { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); } 15% { opacity: 1; }
+                       100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); } }
+  .luke-info { position: absolute; left: 0; right: 0; opacity: 0; transition: opacity .8s ease; }
+  .luke-info.synleg { opacity: 1; }
+  .luke-info .info { margin-top: 3vh; }
+
   @media (prefers-reduced-motion: reduce) { .snurr { animation-duration: 3s; } .bok, .bakteppe, .bok .omslag-ramme, .bok .info { transition-duration: .01s !important; } .bok.ut .blad, .bok.ut .omslag-ramme { animation-duration: .01s !important; } .bakteppe.synleg { animation: none !important; } }
 
   /* ================================================================== */
@@ -416,6 +478,7 @@
         <option value="born_nn">Barnebøker på nynorsk</option>
         <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
         <option value="jul">Julebøker</option>
+        <option value="julekalender">Julekalender</option>
         <option value="reservert">Mest reservert akkurat no</option>
       </select>
         <button type="button" class="knapp sekundær" id="tom">Tøm skjema</button>
@@ -442,6 +505,7 @@
           <label><input type="radio" name="kjelde" value="sok"> Søk</label>
           <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
           <label><input type="radio" name="kjelde" value="likte"> Neste bok</label>
+          <label><input type="radio" name="kjelde" value="kalender"> Julekalender</label>
         </div>
       </div>
       <div class="felt">
@@ -502,9 +566,16 @@
           <ul class="utvaltreff" id="utvaltreff"></ul>
         </div>
         <div class="felt">
-          <span class="etikett">Valde bøker (<span id="utvaltal">0</span>)</span>
+          <span class="etikett"><span id="utvaletikett">Valde bøker</span> (<span id="utvaltal">0</span>)</span>
           <ol class="utvalliste" id="utvalliste"></ol>
           <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
+        </div>
+        <!-- Julekalender: same liste, men kvar bok er ei luke -->
+        <div class="felt" id="kalenderfelt" hidden>
+          <p class="hjelp">Den første boka i lista er luke 1, den andre luke 2, og så vidare. Ei ny luke opnar seg kvar dag frå 1. desember. Før det står alle pakkane attlatne. Utlånte bøker er med.</p>
+          <label for="testdato" style="margin-top:10px">Test: sjå kalenderen som om det var</label>
+          <input type="date" id="testdato">
+          <p class="hjelp">Gjeld berre førehandsvisinga og «Opne». Lenkja til skjermane brukar alltid dagens dato.</p>
         </div>
       </div>
 
@@ -786,6 +857,10 @@ const MALAR = {
   jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "plass=jul",
          rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
          tittel: "Julebøker", namn: "", sek: "20", oppdater: "360", omtale: "1" },
+  // Julekalender: 24 handplukka bøker, éi ny luke kvar dag i desember
+  julekalender: { kjelde: "kalender", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+                  omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "24", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
+                  tittel: "Julekalenderen", namn: "", sek: "20", oppdater: "360", omtale: "1", visning: "", tema: "jul" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
   biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker, Bildebøker, Biletbok, Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
   born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar, Romaner, Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
@@ -1030,6 +1105,10 @@ function startVisning(cfg) {
     document.getElementById("kjeldetekst").textContent = `${storForbokstav(kva)}: Forrige bok, Biblioteksentralen`;
   }
 
+  // Julekalender: eiga visning med pakkar i staden for éi bok om gongen
+  const KALENDER = cfg.kjelde === "kalender";
+  if (KALENDER) document.documentElement.dataset.visning = "kalender";
+
   let titlar = [];
   let i = 0, førre = null, tidtakar = null, gjeldande = null, køyrer = false;
   const iRotasjon = window.parent !== window && !new URLSearchParams(location.hash.slice(1)).has("forhand");
@@ -1077,6 +1156,7 @@ function startVisning(cfg) {
     if (t.forfattar) info.append(el("div", "forfattar", t.forfattar));
     const brikker = el("div", "brikker");
     if (cfg.rekkje === "reservert" && t.kø) brikker.append(el("span", "brikke", `${t.kø} i kø`));
+    if (KALENDER && t.ledig === false) brikker.append(el("span", "brikke", "Utlånt – kan reserverast"));
     if (t.hylle) brikker.append(el("span", "brikke hylle", t.hylle));
     if (t.alder) brikker.append(el("span", "brikke", t.alder));
     const appell = cfg.merkelapp === "1" ? (t.appell || []) : [];
@@ -1165,13 +1245,14 @@ function startVisning(cfg) {
   // Biletserveren kan vere treig. Alle omslag blir difor henta i bakgrunnen
   // med ein gong, og karusellen viser berre bøker der omslaget er ferdig.
   const bilete = new Map();   // adresse → "lastar" | "ok" | "feil"
+  const forhold = new Map();  // adresse → breidd/høgd på omslaget (til julekalenderen)
   const PRØV_IGJEN_MIN = 2;
 
   function forlast(url) {
     if (!url || bilete.has(url)) return;
     bilete.set(url, "lastar"); lastarSidan.set(url, Date.now());
     const img = new Image();
-    img.onload = () => { bilete.set(url, "ok"); if (ventarPåBilete) { ventarPåBilete = false; clearTimeout(tidtakar); tidtakar = null; fortset(); } };
+    img.onload = () => { bilete.set(url, "ok"); if (img.naturalHeight) forhold.set(url, img.naturalWidth / img.naturalHeight); if (ventarPåBilete) { ventarPåBilete = false; clearTimeout(tidtakar); tidtakar = null; fortset(); } };
     img.onerror = () => { bilete.set(url, "feil"); setTimeout(() => bilete.delete(url), PRØV_IGJEN_MIN * 60000); };
     img.src = url;
   }
@@ -1200,6 +1281,7 @@ function startVisning(cfg) {
 
   function neste() {
     if (!titlar.length) return;
+    if (KALENDER) return kalenderSteg();
     if (RULL) return startRull();
     titlar.forEach(t => forlast(t.omslag));          // nye forsøk på omslag som feila for lenge sidan
     // Finn neste bok som er klar, frå der vi er
@@ -1253,7 +1335,7 @@ function startVisning(cfg) {
     blad.append(framside, el("div", "blad-bakside"));
   }
 
-  const VIFTE = cfg.visning === "vifte";
+  const VIFTE = cfg.visning === "vifte" && !KALENDER;
   if (VIFTE) document.documentElement.dataset.visning = "vifte";
   const PLASSAR = ["pos-v", "pos-m", "pos-h", "pos-utv", "pos-innh", "pos-uth"];
   const plasser = (bok, plass) => { bok.classList.remove(...PLASSAR); bok.classList.add(plass); };
@@ -1319,8 +1401,201 @@ function startVisning(cfg) {
     førre = m;
   }
 
+  // ---- julekalender ----------------------------------------------------
+  // Luke 1 er den første boka i lista (t.luke). Kvar dag i desember opnar éi
+  // luke til. Dagens luke blir pakka opp kvar gong turen kjem til henne; dei
+  // som alt er opna, zoomar berre fram. «dato=ÅÅÅÅ-MM-DD» i lenkja lèt deg
+  // sjå kalenderen som om det var ein annan dag (til førehandsvising).
+  const LUKEPLASS = [7, 15, 2, 21, 11, 18, 4, 24, 13, 1, 9, 20, 16, 6, 23, 3, 12, 19, 8, 14, 22, 5, 17, 10];
+  const SLØYFE = `<svg viewBox="0 0 120 74" aria-hidden="true"><g fill="currentColor">
+    <path d="M60 42C42 6 6 4 10 28c3 20 32 22 50 14z"/><path d="M60 42c18-36 54-38 50-14-3 20-32 22-50 14z"/>
+    <path d="M55 44 38 74l10-4 5 6 7-30z"/><path d="M65 44l17 30-10-4-5 6-7-30z"/></g>
+    <g fill="rgba(0,0,0,.2)"><path d="M58 40C46 18 24 14 24 28c0 10 18 14 34 12z"/><path d="M62 40c12-22 34-26 34-12 0 10-18 14-34 12z"/></g>
+    <circle cx="60" cy="42" r="9" fill="currentColor"/></svg>`;
+  let kalEl = null, kalDag = -1, kalRunde = 0, kalAktiv = false, kalByggPåNytt = false;
+  let dagensOpna = false, startMedDagens = true;
+  const lukeEl = new Map();
+
+  function kalenderdag() {
+    const m = (new URLSearchParams(location.hash.slice(1)).get("dato") || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const d = m ? new Date(+m[1], m[2] - 1, +m[3]) : new Date();
+    if (d.getMonth() === 11) return d.getDate();   // desember: så mange luker som datoen
+    if (d.getMonth() === 0) return 25;              // januar: alle opna
+    return 0;                                       // før desember: alle attlatne
+  }
+  const bokForLuke = n => titlar.find(t => t.luke === n);
+  const dagensLuke = () => kalDag >= 1 && kalDag <= 24 ? kalDag : 0;
+  const erOpna = n => n <= Math.min(kalDag, 24) && !(n === dagensLuke() && !dagensOpna);
+  const forholdFor = t => Math.min(1, Math.max(.5, (t && t.omslag && forhold.get(t.omslag)) || .67));
+
+  function lagGave(n, t) {
+    const g = el("div", "gave");
+    g.dataset.papir = String(n % 4);
+    if (t) {
+      if (t.omslag) { const img = el("img", "gave-omslag"); img.alt = ""; img.src = t.omslag; g.append(img); }
+      else g.append(el("div", "gave-omslag opna-tittel", t.tittel));
+    }
+    const sløyfe = el("div", "gave-sloyfe"); sløyfe.innerHTML = SLØYFE;
+    g.append(el("div", "gave-skugge"), el("div", "gave-papir v"), el("div", "gave-papir h"),
+             el("div", "gave-band loddrett"), el("div", "gave-band vassrett"), sløyfe, el("div", "gave-nr", String(n)));
+    return g;
+  }
+
+  function teiknLuke(n) {
+    const l = lukeEl.get(n);
+    if (!l) return;
+    const t = bokForLuke(n);
+    l.className = "luke";
+    l.replaceChildren();
+    if (!erOpna(n)) {
+      l.append(lagGave(n));
+      if (n === dagensLuke() && t) l.classList.add("dagens");
+    } else if (t) {
+      l.classList.add("er-opna");
+      const o = el("div", "opna");
+      o.style.setProperty("--r", forholdFor(t));
+      if (t.omslag) { const img = el("img", "opna-omslag"); img.alt = ""; img.src = t.omslag; o.append(img); }
+      else o.append(el("div", "opna-omslag opna-tittel", t.tittel));
+      o.append(el("span", "opna-nr", String(n)));
+      l.append(o);
+    } else {
+      l.classList.add("tom");
+      l.append(el("span", "", String(n)));
+    }
+  }
+
+  function byggKalender() {
+    kalDag = kalenderdag();
+    kalByggPåNytt = false;
+    lukeEl.clear();
+    kalEl = el("div", "kalender");
+    for (const n of LUKEPLASS) { const l = el("div", "luke"); lukeEl.set(n, l); kalEl.append(l); teiknLuke(n); }
+    document.querySelectorAll(".gave.stor").forEach(g => g.remove());
+    scene.replaceChildren(kalEl);
+    førre = null;
+    avdelingFelt.textContent = kalDag === 0 ? "Første luke opnar 1. desember" : (cfg.namn || "Ei ny bok kvar dag fram til jul");
+  }
+
+  function stoppKalender() {
+    kalRunde++;
+    kalAktiv = false;
+    document.querySelectorAll(".gave.stor").forEach(g => g.remove());
+    scene.querySelectorAll(".luke-info").forEach(b => b.remove());
+    if (kalEl) { kalEl.classList.remove("dempa"); kalEl.querySelectorAll(".borte").forEach(l => l.classList.remove("borte")); }
+  }
+
+  const kalVent = ms => new Promise(ferdig => setTimeout(ferdig, ms));
+  const px = r => ({ left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+
+  function kalenderSteg() {
+    tidtakar = "kalender";   // så fortset() ikkje startar eit steg til medan dette går
+    if (!kalEl || !kalEl.isConnected || kalByggPåNytt || kalenderdag() !== kalDag) {
+      if (kalenderdag() !== kalDag) { dagensOpna = false; startMedDagens = true; }
+      byggKalender();
+    }
+    startFramdrift();
+    const r = kalRunde;
+    // Opna luker med bok, nyaste først
+    const ring = [];
+    for (let n = Math.min(kalDag, 24); n >= 1; n--) if (bokForLuke(n)) ring.push(n);
+    if (!ring.length) {
+      // Før 1. desember: ein tilfeldig pakke ristar litt, så skjermen ikkje står heilt still
+      const gåver = [...kalEl.querySelectorAll(".luke > .gave")];
+      const g = gåver[Math.floor(Math.random() * gåver.length)];
+      if (g) { g.classList.remove("rist"); g.offsetWidth; g.classList.add("rist"); }
+      tidtakar = setTimeout(() => { tidtakar = null; neste(); }, Math.min(SEK, 8) * 1000);
+      return;
+    }
+    let n;
+    const dagens = dagensLuke();
+    if (startMedDagens && dagens && bokForLuke(dagens)) { n = dagens; startMedDagens = false; }
+    else {
+      startMedDagens = false;
+      // Vidare frå den sist viste (utan noko lagra: frå dagens luke, som alt er vist)
+      const ix = ring.indexOf(Number(lesSist()));
+      const sist = ix >= 0 ? ix : dagens ? 0 : -1;
+      n = ring[(sist + 1) % ring.length];
+      lagreSist(String(n));
+    }
+    visLuke(n, n === dagens, r);
+  }
+
+  async function visLuke(n, pakkUt, r) {
+    kalAktiv = true;
+    const ferdig = () => r === kalRunde;
+    const t = bokForLuke(n);
+    let l = lukeEl.get(n);
+    // Dagens luke er alt opna (andre runde): pakk henne inn att først
+    if (pakkUt && dagensOpna) {
+      dagensOpna = false; teiknLuke(n); l.classList.add("innpakka");
+      await kalVent(1000); if (!ferdig()) return;
+    }
+    const frå = (l.querySelector(".gave, .opna") || l).getBoundingClientRect();
+    // Målet: omslaget øvst i scena, med plass til teksten under
+    const sc = scene.getBoundingClientRect();
+    const f = forholdFor(t);
+    let h = sc.height * .5, w = h * f;
+    if (w > sc.width * .8) { w = sc.width * .8; h = w / f; }
+    const til = { left: sc.left + (sc.width - w) / 2, top: sc.top + sc.height * .02, width: w, height: h };
+    const g = lagGave(n, t);
+    g.classList.add("stor");
+    if (!pakkUt) g.classList.add("utan-papir");
+    Object.assign(g.style, px(frå));
+    document.getElementById("visning").append(g);
+    l.classList.remove("dagens", "innpakka");
+    l.classList.add("borte");
+    avdelingFelt.textContent = pakkUt ? `Dagens luke: ${n}` : `Luke ${n}`;
+    kalEl.classList.add("dempa");
+    g.animate([px(frå), px(til)], { duration: 1300, easing: "cubic-bezier(.4, 0, .2, 1)", fill: "forwards" });
+    await kalVent(1400); if (!ferdig()) return;
+    if (pakkUt) {
+      g.classList.add("rist");
+      await kalVent(1000); if (!ferdig()) return;
+      g.classList.remove("rist");
+      for (let k = 0; k < 18; k++) {
+        const v = Math.random() * Math.PI * 2, d = 45 + Math.random() * 40;
+        const s = el("span", "glitter");
+        s.style.setProperty("--dx", (Math.cos(v) * d).toFixed(1) + "cqmin");
+        s.style.setProperty("--dy", (Math.sin(v) * d).toFixed(1) + "cqmin");
+        s.style.animationDelay = (.3 + Math.random() * .3).toFixed(2) + "s";
+        g.append(s);
+      }
+      g.classList.add("opnar");
+      await kalVent(1700); if (!ferdig()) return;
+    }
+    // Tittel, forfattar, hylle og omtale under omslaget
+    const info = lagBok(t).querySelector(".info");
+    const boks = el("div", "luke-info");
+    boks.style.top = (til.top - sc.top + h) + "px";
+    boks.append(info);
+    scene.append(boks);
+    requestAnimationFrame(() => requestAnimationFrame(() => boks.classList.add("synleg")));
+    avdelingFelt.textContent = `Luke ${n}`;
+    visBakteppe(t.omslag);
+    const brukt = 1400 + (pakkUt ? 2700 : 0) + 1300 + 400;
+    await kalVent(Math.max(5000, SEK * 1000 - brukt)); if (!ferdig()) return;
+    // Tilbake til plassen sin i kalenderen, no som opna luke
+    boks.classList.remove("synleg");
+    if (pakkUt) dagensOpna = true;
+    teiknLuke(n);
+    l = lukeEl.get(n);
+    l.classList.add("borte");
+    g.classList.add("utan-papir");
+    const mål = (l.querySelector(".opna") || l).getBoundingClientRect();
+    g.animate([px(til), px(mål)], { duration: 1200, easing: "cubic-bezier(.4, 0, .2, 1)", fill: "forwards" });
+    kalEl.classList.remove("dempa");
+    avdelingFelt.textContent = cfg.namn || "Ei ny bok kvar dag fram til jul";
+    await kalVent(1300); if (!ferdig()) return;
+    l.classList.remove("borte");
+    g.remove(); boks.remove();
+    await kalVent(400); if (!ferdig()) return;
+    kalAktiv = false;
+    tidtakar = null;
+    if (køyrer) neste();
+  }
+
   // ---- rulletekst ------------------------------------------------------
-  const RULL = cfg.visning === "rull";
+  const RULL = cfg.visning === "rull" && !KALENDER;
   if (RULL) document.documentElement.dataset.visning = "rull";
   const FART = { sakte: 2.2, rask: 6 }[cfg.fart] || 3.6;      // skjermhøgder i hundredelar per sekund
   let rullSpor = null, rullAnim = null, rullY = 0, rullSist = 0, rullSjekk = 0, rullMidt = null;
@@ -1380,7 +1655,7 @@ function startVisning(cfg) {
   }
   function stoppRull() { if (rullAnim) cancelAnimationFrame(rullAnim); rullAnim = null; }
 
-  function pause() { stoppRull(); clearTimeout(tidtakar); tidtakar = null; if (gjeldande) i = gjeldandeIdx; gjeldande = null; ventarPåBilete = false; }
+  function pause() { stoppRull(); if (KALENDER) stoppKalender(); clearTimeout(tidtakar); tidtakar = null; if (gjeldande) i = gjeldandeIdx; gjeldande = null; ventarPåBilete = false; }
   function fortset() { if (!tidtakar && køyrer && titlar.length) neste(); }
 
   // Byt til ny liste utan å hoppe tilbake til første bok
@@ -1392,6 +1667,12 @@ function startVisning(cfg) {
     if (!titlar.length) { pause(); visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava."); return; }
     if (RULL) { const gjekk = !!rullAnim; stoppRull(); rullSpor = null; if (gjekk || (varTom && køyrer)) startRull(); return; }
     titlar.forEach(t => forlast(t.omslag));
+    if (KALENDER) {
+      // Teikn kalenderen på nytt med ein gong, eller når pakken som er framme, har gått tilbake
+      if (kalAktiv) kalByggPåNytt = true; else byggKalender();
+      if (varTom && køyrer) fortset();
+      return;
+    }
     const sist = titlar.findIndex(t => String(t.id) === lesSist());
     i = sist >= 0 ? sist + 1 : 0;
     if (varTom && køyrer) fortset();
@@ -1464,7 +1745,10 @@ function startVisning(cfg) {
   // (Same beskjedar som Nyheiter-sida brukar i dag.)
   if (iRotasjon) {
     window.addEventListener("message", e => {
-      if (e.data && e.data.nyheiter === "vis") { køyrer = true; fortset(); sjekkSvarteliste(5 * 60 * 1000); }
+      if (e.data && e.data.nyheiter === "vis") {
+        // Julekalender: dagens luke blir pakka inn att og opna først kvar gong karusellen kjem fram
+        if (KALENDER && titlar.length) { dagensOpna = false; startMedDagens = true; byggKalender(); }
+        køyrer = true; fortset(); sjekkSvarteliste(5 * 60 * 1000); }
       if (e.data && e.data.nyheiter === "skjul") {
         køyrer = false; pause();
         // «vidare»: boka som står no, er ferdigvist, så neste gong byrjar vi på den neste (skule.html)
@@ -1821,6 +2105,7 @@ function vurder(post, avd, eks, cfg) {
     forfattarNøkkel: (forfattarFrå(d) || "").trim().toLowerCase() || "utan-" + post.id,
     omslag: d.bs_krydderbildeurl || "",
     hylle: lagHylle(d, e), alder, sjanger,
+    ledig: påHylla(e),
     // Berre den lange omtalen blir lagra. Den korte blir laga ved visning.
     omtaleHeil: kortOmtale(d.bsdc_description || "", 4000),
     etikett: cfg.namn || AVD_NAMN[avd] || avd,
@@ -1848,6 +2133,7 @@ async function hentBøker(cfg, framdrift) {
   await lastSvarteliste(60 * 1000);
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
   if (cfg.kjelde === "utval") return forrigebokBerik(await hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
+  if (cfg.kjelde === "kalender") return forrigebokBerik(await hentKalender(cfg, framdrift), cfg);
   if (cfg.kjelde === "likte") return forrigebokBerik(await hentLikte(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
   if (!avdar.length) return [];
   const antal = Math.min(60, Math.max(5, Number(cfg.antal) || 40));
@@ -2190,6 +2476,16 @@ async function hentUtval(cfg, avdar, meld) {
     if (t) ut.push(t);
   }
   return ut;   // i den rekkjefølgja bøkene vart valde
+}
+
+// Julekalender: dei handplukka bøkene i luke-rekkjefølgje (den første boka er
+// luke 1). Utlånte bøker er med, og boka kan stå i kva avdeling som helst.
+// Bøker som ikkje finst lenger eller er svartelista, gir ei tom luke.
+async function hentKalender(cfg, meld) {
+  const idar = (cfg.titlar || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 24);
+  const ut = await hentUtval({ ...cfg, titlar: idar.join(","), hylla: "0" }, ["tyfv", "tyfb"], meld);
+  for (const t of ut) t.luke = idar.indexOf(String(t.id)) + 1;
+  return ut;
 }
 
 // Fritekstsøk etter tittel eller forfattar, for å finne bøker å leggje til
@@ -2653,8 +2949,12 @@ function startByggjar(startCfg) {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
     document.getElementById("sokefelt").hidden = kjelde !== "sok" && kjelde !== "nyaste";
     document.getElementById("emnefelt").hidden = kjelde !== "sok";     // Nyheiter: berre sjanger
-    const fast = kjelde === "utval" || kjelde === "likte";     // bøkene er valde på førehand
-    document.getElementById("utvalfelt").hidden = kjelde !== "utval";
+    const kalender = kjelde === "kalender";
+    const fast = kjelde === "utval" || kjelde === "likte" || kalender;     // bøkene er valde på førehand
+    document.getElementById("utvalfelt").hidden = kjelde !== "utval" && !kalender;
+    document.getElementById("kalenderfelt").hidden = !kalender;
+    document.getElementById("utvaletikett").textContent = kalender ? "Luker" : "Valde bøker";
+    document.getElementById("del-krav").hidden = kalender;     // ingen filter gjeld for kalenderen
     document.getElementById("liktefelt").hidden = kjelde !== "likte";
     document.getElementById("appellfelt").hidden = fast || kjelde === "nyaste";
     document.getElementById("lffelt").hidden = fast;
@@ -2663,6 +2963,7 @@ function startByggjar(startCfg) {
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
       if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
+    document.getElementById("hyllarad").hidden = kalender;     // utlånte bøker er med i kalenderen
     document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyheiter har si eiga liste frå Bibliofil
     // Frå/til år syner berre med «Eige spenn» i årsmenyen
     document.getElementById("aarspenn").hidden = fast || document.getElementById("aarval").value !== "eige";
@@ -2671,11 +2972,18 @@ function startByggjar(startCfg) {
     document.getElementById("allerad").hidden = kjelde !== "sok";
     skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
     // Val som ikkje har nokon effekt med den valde visingsmåten, blir grå
-    const rull = skjema.elements.visning.value === "rull";
-    skjema.elements.overgang.disabled = rull || skjema.elements.visning.value === "vifte";   // vifta har si eiga rørsle
+    const rull = skjema.elements.visning.value === "rull" && !kalender;
+    skjema.elements.visning.disabled = kalender;     // kalenderen har si eiga visning
+    skjema.elements.overgang.disabled = rull || kalender || skjema.elements.visning.value === "vifte";   // vifta har si eiga rørsle
     skjema.elements.sek.disabled = rull;
     skjema.elements.teljar.disabled = rull;     // rulleteksten har inga nedteljing
     skjema.elements.fart.disabled = !rull;
+  }
+
+  // Testdatoen for julekalenderen blir berre lagd til førehandsvisinga og «Opne»
+  function testdato(cfg) {
+    const d = document.getElementById("testdato").value;
+    return cfg.kjelde === "kalender" && d ? "&dato=" + d : "";
   }
 
   function skaler() {
@@ -2701,13 +3009,13 @@ function startByggjar(startCfg) {
     const visHash = lagHash(cfg, true);
     const lenkje = base + "#" + visHash;
     lenkjeFelt.textContent = lenkje;
-    opne.href = lenkje;
+    opne.href = lenkje + testdato(cfg);
     teiknTilSkjerm(cfg, lenkje);
     history.replaceState(null, "", "#" + lagHash(cfg, false));   // byggjaren hugsar skjemaet ved omlasting
 
     clearTimeout(ventar);
     ventar = setTimeout(() => {
-      const ny = visHash + "&forhand=1";
+      const ny = visHash + "&forhand=1" + testdato(cfg);
       if (ny === sistHash) return;
       sistHash = ny;
       status.textContent = "Hentar bøker …";
@@ -2739,7 +3047,8 @@ function startByggjar(startCfg) {
     const mal = MALAR[namn];
     if (!mal) return;
     const no = lesSkjema();
-    fyllInn({ ...STANDARD, ...mal, tema: no.tema, skrift: no.skrift });   // behald tema og skrift
+    // Behald tema og skrift, men julekalenderen får juletemaet
+    fyllInn({ ...STANDARD, ...mal, tema: namn === "julekalender" ? mal.tema : no.tema, skrift: no.skrift });
     oppdater(true);
     malval.value = "";
   }
@@ -2750,6 +3059,7 @@ function startByggjar(startCfg) {
   // blir fylt ut ved oppstart), så dei slår opp elementa sjølve.
   function $(id) { return document.getElementById(id); }
   function valde() { return $("titlar").value.split(",").map(s => s.trim()).filter(Boolean); }
+  function erKalender() { return (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value === "kalender"; }
   function setjValde(idar) {
     $("titlar").value = idar.join(",");
     teiknUtval();
@@ -2777,16 +3087,22 @@ function startByggjar(startCfg) {
   var teikneNr = 0;
   async function teiknUtval() {
     const idar = valde(), nr = ++teikneNr;
-    document.getElementById("utvaltal").textContent = idar.length;
+    document.getElementById("utvaltal").textContent = erKalender() ? `${Math.min(idar.length, 24)} av 24` : idar.length;
     document.getElementById("utvaltom").hidden = idar.length > 0;
     const rader = [];
     for (const [i, id] of idar.entries()) {
       const p = postCache.get(id) || { id, sru_recordData: { bsdc_title: "Hentar tittelnr. " + id + " …" } };
-      rader.push(postRad(p, [
+      const rad = postRad(p, [
         knapp("↑", "Flytt opp", () => { if (i > 0) { const a = valde(); [a[i - 1], a[i]] = [a[i], a[i - 1]]; setjValde(a); } }),
         knapp("↓", "Flytt ned", () => { const a = valde(); if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; setjValde(a); } }),
         knapp("✕", "Fjern", () => setjValde(valde().filter(x => x !== id))),
-      ]));
+      ]);
+      // Julekalender: lukenummeret framfor tittelen. Bøker etter nr. 24 blir ikkje viste.
+      if (erKalender()) {
+        const b = rad.querySelector(".utval-tekst b");
+        b.textContent = (i < 24 ? `Luke ${i + 1}: ` : "Ikkje med (over 24): ") + b.textContent;
+      }
+      rader.push(rad);
     }
     $("utvalliste").replaceChildren(...rader);
     // Hent titlar vi ikkje har sett før (til dømes frå ei lenkje), og teikn på nytt
@@ -2808,6 +3124,7 @@ function startByggjar(startCfg) {
       utvaltreff.replaceChildren(...treff.map(p => {
         const id = String(p.id);
         const leggTil = knapp(valde().includes(id) ? "Lagt til" : "Legg til", "Legg til i karusellen", () => {
+          if (erKalender() && !valde().includes(id) && valde().length >= 24) { utvalstatus.textContent = "Alle 24 lukene er fylte. Fjern ei bok først."; return; }
           if (!valde().includes(id)) setjValde([...valde(), id]);
           leggTil.textContent = "Lagt til";
         });

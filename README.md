@@ -70,10 +70,27 @@ skjermen dei utan tidsstyring.
 
 ## Karusellane
 
-Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøker
-og **Neste bok** (liknande bøker frå Forrige bok). Søk og Nyaste kan òg
+Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøker,
+**Neste bok** (liknande bøker frå Forrige bok) og **Julekalender**. Søk og Nyaste kan òg
 avgrensast med **appellfaktorar** frå Forrige bok, og bøkene kan få
 **merkelappar** med appellfaktorar.
+
+### Julekalender
+
+Kjelda **Julekalender** (eller malen «Julekalender») viser 24 pakkar. Bøkene
+blir valde som Handplukka: den første boka i lista er luke 1, den andre luke 2,
+og så vidare. Utlånte bøker er med, og får merkelappen «Utlånt – kan reserverast».
+
+- Før 1. desember står alle pakkane attlatne, og ein og ein pakke ristar litt.
+- Frå 1. desember er så mange luker opne som datoen. Dagens luke blir pakka opp
+  kvar gong turen kjem til henne, og først kvar gong karusellen kjem fram i
+  rotasjonen. Dei andre opne lukene zoomar fram éi og éi, nyaste først.
+- Etter 24. desember (og i januar) er alle opne.
+
+**Teste før desember:** vel ein dato i feltet «Test: sjå kalenderen som om det
+var» i byggjaren. Førehandsvisinga og «Opne» viser då kalenderen den dagen.
+Det same kan gjerast med `&dato=2026-12-07` til slutt i lenkja. Lenkja som
+blir lagd på skjermane, har aldri testdatoen.
 
 Appellfaktorane og merkelappane kjem frå `forrigebok.json`, så karusellen
 slepp å slå opp kvar bok. Fila blir laga med knappen **Oppdater emneordlista og
