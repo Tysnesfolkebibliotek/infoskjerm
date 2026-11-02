@@ -790,17 +790,11 @@ const TEMA_LISTE = [
     fargar: { bakgrunn: "#123d26", tekst: "#eef6e6", dempa: "#b3cba8", aksent: "#9ad46c", "aksent-tekst": "#0f2a1a", brikke: "rgba(238,246,230,.10)", skugge: "18,61,38", spor: "rgba(238,246,230,.14)", "reserve-a": "#2c6a3f", "reserve-b": "#123d26" },
     css: `
       :root[data-tema="klima"] { --symbol-plass: 19vw; }`,
-    pynt({ pynt, svg, tilf }) {
-      // Skog sett ovanfrå: mjuke flekkar i mørkare og lysare grønt over heile skjermen
-      const flekkar = [];
-      for (let i = 0; i < 140; i++) {
-        const lys = Math.random() < .45;
-        flekkar.push(`radial-gradient(circle at ${tilf(0, 100).toFixed(1)}% ${tilf(0, 100).toFixed(1)}%, ` +
-          `${lys ? "rgba(120,190,110,.10)" : "rgba(4,24,12,.28)"} 0, transparent ${tilf(1.8, 4.5).toFixed(1)}vw)`);
-      }
-      const skog = document.createElement("div");
-      skog.style.cssText = `position:absolute; inset:0; background:${flekkar.join(",")};`;
-      pynt.append(skog);
+    pynt({ pynt, svg, stigande }) {
+      // Grøne partiklar som stig sakte, nokre som små prikkar og nokre som blad
+      const FARGAR = ["#9ad46c", "#c8eaa8", "#6fb552", "#b5e08f"];
+      stigande(26, "0 0 10 10", i => `<circle cx="5" cy="5" r="5" fill="${FARGAR[i % FARGAR.length]}"/>`, [0.5, 1.6], [0.3, 0.7]);
+      stigande(10, "0 0 12 14", i => `<path fill="${FARGAR[i % FARGAR.length]}" d="M6,0 C10,3 10,9 6,14 C2,9 2,3 6,0 Z" transform="rotate(${(i * 37) % 360} 6 7)"/>`, [1.4, 2.6], [0.25, 0.45]);
       // Symbol øvst til høgre: ein lysegrøn klode med to blad på toppen og ein boge rundt
       pynt.append(svg("0 0 100 100", "right:6vw; top:3vh; width:15vw; overflow:visible;",
         `<path d="M30 21 A40 40 0 1 0 90 58" fill="none" stroke="#c8eaa8" stroke-width="3.2" stroke-linecap="round"/>` +
