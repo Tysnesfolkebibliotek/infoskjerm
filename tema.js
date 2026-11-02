@@ -291,10 +291,34 @@ const TEMA_LISTE = [
     aktuell: "06-01/06-30",
     fargar: { bakgrunn: "#15121c", tekst: "#ffffff", dempa: "#c4bdd2", aksent: "#ffffff", "aksent-tekst": "#15121c", skugge: "21,18,28", "reserve-a": "#5a3d7a", "reserve-b": "#1f1a29" },
     css: `
-      :root[data-tema="pride"] { --symbol-plass: 18vw; }`,
+      :root[data-tema="pride"] { --symbol-plass: 18vw;
+        --regnboge: linear-gradient(90deg, #ff7ac2, #e40303, #ff8c00, #ffed00, #008026, #14c7c7, #3b1f9e, #8a1fa0); }
+      /* Regnbogefargar på nedteljinga: linja og sekundtalet (hjulet blir laga i pynt under) */
+      :root[data-tema="pride"] .framdrift > div { background: var(--regnboge); }
+      :root[data-tema="pride"][data-teljar="sek"] .teljar-tal {
+        background: var(--regnboge); -webkit-background-clip: text; background-clip: text; color: transparent; }`,
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
       // Eit regnbogehjarte med dei åtte fargane i det opphavlege prideflagget
       const fargar = ["#ff7ac2", "#e40303", "#ff8c00", "#ffed00", "#008026", "#14c7c7", "#3b1f9e", "#8a1fa0"];
+      // Nedteljingshjulet i regnbogefargar: ringen blir delt i åtte fargebitar, og den
+      // vanlege hjul-sirkelen blir ei maske over dei. Han tømmer seg difor akkurat som før.
+      const hjulSvg = document.querySelector("svg.hjul"), hjulRing = document.getElementById("hjul");
+      if (hjulSvg && hjulRing && !hjulSvg.querySelector("#regnbogemaske")) {
+        const ns = "http://www.w3.org/2000/svg", omkrins = 2 * Math.PI * 15, bit = omkrins / fargar.length;
+        const defs = document.createElementNS(ns, "defs"), maske = document.createElementNS(ns, "mask");
+        maske.id = "regnbogemaske";
+        maske.setAttribute("maskUnits", "userSpaceOnUse");
+        ["x", "y"].forEach(a => maske.setAttribute(a, "0")); ["width", "height"].forEach(a => maske.setAttribute(a, "36"));
+        hjulRing.style.stroke = "#fff";
+        maske.append(hjulRing); defs.append(maske);
+        const g = document.createElementNS(ns, "g");
+        g.setAttribute("mask", "url(#regnbogemaske)");
+        g.innerHTML = fargar.map((f, i) => `<circle cx="18" cy="18" r="15" style="stroke:${f}; stroke-width:4.2;" ` +
+          `stroke-dasharray="${(bit + 0.3).toFixed(2)} ${omkrins.toFixed(2)}" stroke-dashoffset="${(-i * bit).toFixed(2)}"/>`).join("") +
+          // Den runde enden øvst skal vere rosa, ikkje lilla: legg ein liten rosa bit heilt i slutten av ringen, rett før starten
+          `<circle cx="18" cy="18" r="15" style="stroke:${fargar[0]}; stroke-width:4.2;" stroke-dasharray="3 ${omkrins.toFixed(2)}" stroke-dashoffset="${(-(omkrins - 2.5)).toFixed(2)}"/>`;
+        hjulSvg.append(defs, g);
+      }
       const hjarte = "M50,88 C22,68 3,50 3,29 C3,14 14,3 28,3 C38,3 46,9 50,18 C54,9 62,3 72,3 C86,3 97,14 97,29 C97,50 78,68 50,88 Z";
       const h = 85 / fargar.length;
       const striper = fargar.map((f, i) => `<rect x="0" y="${(3 + i * h).toFixed(2)}" width="100" height="${(h + 0.3).toFixed(2)}" fill="${f}"/>`).join("");
