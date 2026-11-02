@@ -69,7 +69,7 @@ skjermen dei utan tidsstyring.
 ## Karusellane
 
 Kjelder i byggjaren: **Nyaste** titlar, **Søk** i samlinga, **Handplukka** bøker
-og **Likte du?** (liknande bøker frå Forrige bok). Søk og Nyaste kan òg
+og **Neste bok** (liknande bøker frå Forrige bok). Søk og Nyaste kan òg
 avgrensast med **appellfaktorar** frå Forrige bok, og bøkene kan få
 **merkelappar** med appellfaktorar.
 
@@ -80,7 +80,7 @@ i Vaksen og Born og unge frå Bibliofil, lastar ned heile katalogen til Forrige
 bok og koplar verka til tittelnummera på tittel og forfattar. Køyr han ein gong
 i blant, til dømes kvar månad. Bøker som har kome inn etter at fila vart laga,
 er ikkje med når ein filtrerer på appellfaktor før fila er laga på nytt.
-«Likte du?» hentar framleis frå Forrige bok direkte.
+«Neste bok» hentar framleis frå Forrige bok direkte.
 
 Når appellfaktor er det einaste innhaldskravet i eit Søk (ikkje sjanger, emne,
 dewey, serie eller eige CCL-søk) og rekkjefølgja er tilfeldig, hentar karusellen

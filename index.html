@@ -95,7 +95,7 @@
   #visning header { display: flex; flex-direction: column; gap: 1.2vh; }
   .overskrift { font-weight: var(--vekt-overskrift, 700); font-size: calc(6.2vw * var(--skala-overskrift, 1)); letter-spacing: .01em; font-family: var(--skrift-overskrift, var(--skrift)); }
   :root[data-versalar] .overskrift { text-transform: uppercase; letter-spacing: .05em; }
-  /* «Likte du?»: omslaget til boka det heile tek utgangspunkt i, lite og til høgre for overskrifta */
+  /* «Neste bok»: omslaget til boka det heile tek utgangspunkt i, lite og til høgre for overskrifta */
   /* Plass til symbol øvst til høgre i nokre tema (flagg, logo): sjå --symbol-plass i tema.js */
   #visning header { padding-right: var(--symbol-plass, 0); }
   #visning header.med-kjelde { position: relative; padding-right: calc(19vw + var(--symbol-plass, 0px)); min-height: 13vh; }
@@ -411,7 +411,7 @@
           <label><input type="radio" name="kjelde" value="nyaste"> Nyaste</label>
           <label><input type="radio" name="kjelde" value="sok"> Søk</label>
           <label><input type="radio" name="kjelde" value="utval"> Handplukka</label>
-          <label><input type="radio" name="kjelde" value="likte"> Likte du?</label>
+          <label><input type="radio" name="kjelde" value="likte"> Neste bok</label>
         </div>
       </div>
       <div class="felt">
@@ -472,7 +472,7 @@
         </div>
       </div>
 
-      <!-- Likte du …? Liknande bøker frå Forrige bok (Biblioteksentralen) -->
+      <!-- Neste bok: liknande bøker frå Forrige bok (Biblioteksentralen) -->
       <div id="liktefelt" hidden>
         <input type="hidden" id="likte" name="likte">
         <input type="hidden" id="liktenamn" name="liktenamn">
@@ -1792,7 +1792,7 @@ async function hentBøker(cfg, framdrift) {
 // ---- Forrige bok (Biblioteksentralen) ----------------------------------
 // Appellfaktorar («Lett», «Godt driv» …) og liknande bøker. Fritt for
 // bibliotek (CC BY-NC 4.0), men kjelda må nemnast: sjå «kjeldetekst» nedst
-// på karusellen. «Likte du?» koplar bøkene til Bibliofil på ISBN.
+// på karusellen. «Neste bok» koplar bøkene til Bibliofil på ISBN.
 // Appellfaktorar og merkelappar for andre bøker kjem frå forrigebok.json
 // (sjå forrigebokIndeks nedanfor).
 const FORRIGEBOK = "https://forrigebok.no/api/v2023-01-12";
@@ -1846,7 +1846,7 @@ function fbFråIndeks(ix, id) {
   const l = nr.map(i => ix.termar[i]).filter(Boolean);
   return { t: l.map(([id]) => id), l };
 }
-// Kort utdrag av eit verk («Likte du?» har verket med seg): appelltermar (id) og merkelappar
+// Kort utdrag av eit verk («Neste bok» har verket med seg): appelltermar (id) og merkelappar
 const verkUtdrag = w => ({ w: w.id, t: (w.appealTerms || []).filter(a => (a.averageWeight ?? 0) >= 0.5).map(a => a.term.id), a: appellMerke(w),
   l: appellMerke(w, 12, true) });
 // Kvifor ei bok ikkje passar appellfilteret, eller null når ho passar
@@ -1939,13 +1939,13 @@ function appellMerke(w, maks = 3, medId = false) {
 
 // Legg på merkelappar og filtrerer på appellfaktor
 async function forrigebokBerik(liste, cfg) {
-  // Appellfilteret gjeld berre Søk og Nyaste. For Handplukka og «Likte du?»
+  // Appellfilteret gjeld berre Søk og Nyaste. For Handplukka og «Neste bok»
   // er bøkene valde på førehand, og feltet er gøymt, så ein gammal verdi skal ikkje telje.
   const filtrer = cfg.kjelde === "sok" || cfg.kjelde === "nyaste";
   const ønskte = new Set(filtrer ? (cfg.appell || "").split(",").filter(Boolean) : []);
   const merkelapp = cfg.merkelapp === "1";
   if (!liste.length || (!ønskte.size && !merkelapp)) { liste.forEach(t => delete t.forrigebok); return liste; }
-  // Bøker frå «Likte du?» har verket med seg frå før. Dei andre finn vi i indeksen.
+  // Bøker frå «Neste bok» har verket med seg frå før. Dei andre finn vi i indeksen.
   let ix = null;
   if (liste.some(t => !t.forrigebok)) {
     try { ix = await forrigebokIndeks(); }
@@ -2009,7 +2009,7 @@ async function posterForVerk(verkId, isbnar) {
   return poster;
 }
 
-// Likte du …? Liknande bøker frå Forrige bok som finst i samlinga
+// Neste bok: liknande bøker frå Forrige bok som finst i samlinga
 async function hentLikte(cfg, avdar, meld) {
   if (!cfg.likte) return [];
   const d = await forrigebok(`/readalikes?language=nn&limit=20&workId=${encodeURIComponent(cfg.likte)}`);
@@ -2705,7 +2705,7 @@ function startByggjar(startCfg) {
   $("utvaltom-felt").addEventListener("click", () => { $("utvalsok").value = ""; visTøm(); $("utvalsok").focus(); });
   $("utvalsok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkUtval(); } });
 
-  // ---- Likte du …? ---------------------------------------------------
+  // ---- Neste bok -----------------------------------------------------
   function verkRad(w, knappar) {
     const m = w.simplifiedPresentationMetadata || {};
     const li = document.createElement("li");
