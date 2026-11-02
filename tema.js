@@ -442,6 +442,30 @@ const TEMA_LISTE = [
     },
   },
   {
+    id: "falturiltu", namn: "Faltu Riltu", gruppe: "Bibliotek",
+    dato: "litteraturfestival, november",
+    skrift: "nunito",
+    // Fargane frå 2019-plakaten: svart, raud, gul, grøn og blå. Ordmerket øvst til høgre
+    // har bokstavane farga som på plakaten, og kråka står stor og dempa i bakgrunnen.
+    css: `
+      :root[data-tema="falturiltu"] { --symbol-plass: 26vw; }
+      .falturiltu-logo { position: absolute; right: 5vw; top: 3.5vh; width: 22vw; height: auto; }
+      .falturiltu-kraake { position: absolute; left: -10vw; bottom: 9vh; width: 72vw; height: auto; opacity: .13; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+2) { box-shadow: inset 0 0 0 .3vw #ea4239; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n+3) { box-shadow: inset 0 0 0 .3vw #4a9e2c; }
+      :root[data-tema="falturiltu"] .brikke:not(.hylle):nth-child(4n)   { box-shadow: inset 0 0 0 .3vw #0081a1; }`,
+    fargar: { bakgrunn: "#000000", tekst: "#ffffff", dempa: "#d6d1c8", aksent: "#fab50f", "aksent-tekst": "#000000", brikke: "rgba(255,255,255,.12)", skugge: "0,0,0", spor: "rgba(255,255,255,.22)", "reserve-a": "#ea4239", "reserve-b": "#8c231d" },
+    pynt({ pynt }) {
+      const bilete = (src, klasse, alt) => {
+        const img = document.createElement("img");
+        img.src = src; img.className = klasse; img.alt = alt;
+        pynt.append(img);
+      };
+      bilete("falturiltu-kraake.png", "falturiltu-kraake", "");
+      bilete("falturiltu-logo.png", "falturiltu-logo", "Faltu Riltu");
+    },
+  },
+  {
     id: "forbodne", namn: "Forbodne bøker", gruppe: "Bibliotek",
     dato: "byrjinga av okt.", aktuell: "09-20/10-10",
     fargar: { bakgrunn: "#1d1430", tekst: "#fbf6e4", dempa: "#cfc6dd", aksent: "#faee9c", "aksent-tekst": "#3d2670", skugge: "29,20,48", "reserve-a": "#4f338a", "reserve-b": "#26193f" },
