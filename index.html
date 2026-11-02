@@ -2872,7 +2872,14 @@ function startByggjar(startCfg) {
     }));
   }
   $("appellsok").addEventListener("focus", lastAppellOrd);
-  $("appellsok").addEventListener("change", async () => {
+  // Vel ein frå lista: blir lagt til med ein gong, som i emnefeltet. «change»
+  // kjem i Chrome først ved Enter eller når ein går ut av feltet.
+  $("appellsok").addEventListener("input", e => {
+    if (e.inputType && e.inputType !== "insertReplacementText") return;
+    velAppell();
+  });
+  $("appellsok").addEventListener("change", velAppell);
+  async function velAppell() {
     const ord = await lastAppellOrd();
     const v = $("appellsok").value.trim().toLowerCase();
     const o = (ord || []).find(o => o.namn.toLowerCase() === v) || (ord || []).find(o => o.syn.some(s => s.toLowerCase() === v));
@@ -2882,7 +2889,7 @@ function startByggjar(startCfg) {
     if (!valdeAppell().includes(o.id)) $("appell").value = [...valdeAppell(), o.id].join(",");
     $("appellsok").value = "";
     teiknAppell(); oppdater(false);
-  });
+  }
 
   // ---- Til skjermane (oversiktssida) ---------------------------------
   // Kom vi frå «Endre i byggjaren», hugsar vi kva side som skal oppdaterast,
