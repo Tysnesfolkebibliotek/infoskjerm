@@ -653,7 +653,7 @@
     <input type="hidden" id="ccl" name="ccl">
 
 
-    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,kulturfond,aarfra,aartil,aarsiste,alder,spraak,plass,utan">
+    <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,kulturfond,aarfra,aartil,aarsiste,alder,spraak">
       <summary>Filter <span class="merke" hidden>endra</span></summary>
       <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
       <label class="val" id="hyllarad"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
@@ -706,14 +706,6 @@
         <datalist id="spraakliste"></datalist>
         <div class="vallinje brikkerad" id="spraakvalde"></div>
       </div>
-      <div class="felt">
-        <label for="plass">Berre plasseringar som inneheld</label>
-        <input type="text" id="plass" name="plass" placeholder="fantasy, kriminal">
-      </div>
-      <div class="felt">
-        <label for="utan">Hopp over plasseringar som inneheld</label>
-        <input type="text" id="utan" name="utan" placeholder="magasin, nærmag">
-      </div>
     </details>
 
 
@@ -752,7 +744,7 @@
             <option value="kalender">Julekalender (berre handplukka)</option>
           </select>
         </div>
-        <div class="felt">
+        <div class="felt" id="sekfelt">
           <label for="sek">Sekund per bok</label>
           <input type="number" id="sek" name="sek" min="4" max="60">
         </div>
@@ -812,7 +804,7 @@
       <p class="hjelp">Vifte viser forrige og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p>
     </details>
 
-    <details class="del" id="del-avansert" data-felt="oppdater">
+    <details class="del" id="del-avansert" data-felt="plass,utan,oppdater">
       <summary>Avanserte innstillingar <span class="merke" hidden>endra</span></summary>
       <div class="felt">
         <label for="oppdaterval">Hent oppdatert boklista</label>
@@ -825,6 +817,17 @@
         </select>
         <input type="hidden" id="oppdater" name="oppdater">
         <p class="hjelp">Kor ofte skjermen spør Bibliofil om bøkene på nytt, til dømes for å fjerne bøker som er lånte ut. Sjeldnare er skånsamt for biblioteksystemet.</p>
+      </div>
+      <div id="plassfelt">
+        <div class="felt">
+          <label for="plass">Berre plasseringar som inneheld</label>
+          <input type="text" id="plass" name="plass" placeholder="fantasy, kriminal">
+        </div>
+        <div class="felt">
+          <label for="utan">Hopp over plasseringar som inneheld</label>
+          <input type="text" id="utan" name="utan" placeholder="magasin, nærmag">
+        </div>
+        <p class="hjelp">Skil fleire ord med komma. Det er plasseringa i Bibliofil, til dømes «Krim» eller «Nærmagasin».</p>
       </div>
     </details>
 
@@ -3022,6 +3025,8 @@ function startByggjar(startCfg) {
     const rull = skjema.elements.visning.value === "rull" && !kalender;
     skjema.elements.overgang.disabled = rull || kalender || skjema.elements.visning.value === "vifte";   // vifta har si eiga rørsle
     skjema.elements.sek.disabled = rull;
+    document.getElementById("sekfelt").hidden = rull;          // rulleteksten brukar fart i staden
+    document.getElementById("plassfelt").hidden = fast;        // handplukka bøker blir ikkje filtrerte på plassering
     skjema.elements.teljar.disabled = rull;     // rulleteksten har inga nedteljing
     skjema.elements.fart.disabled = !rull;
   }
