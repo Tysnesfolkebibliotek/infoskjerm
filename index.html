@@ -2114,15 +2114,6 @@ function førehand(post, cfg) {
     const har = [].concat(d.bsdc_language || []).map(x => String(x).trim().toLowerCase());
     if (har.length ? !språk.some(s => har.includes(s)) : cfg._språkLokalt !== false) return utelat("anna språk");
   }
-  // Sjanger for Nyaste: lista kjem ferdig frå Bibliofil, så sjangeren blir sjekka her.
-  // (For Søk står sjangeren i sjølve søket.) «Eller»: minst éin sjanger. «Og»: alle.
-  if (cfg.kjelde === "nyaste" && (cfg.sjanger || "").trim()) {
-    const grupper = cfg.sjanger.split(",").map(g => g.split("|").map(reinOrd).filter(Boolean)).filter(g => g.length);
-    const emnar = Array.isArray(d.bsdc_subject) ? d.bsdc_subject : [];
-    const har = new Set([...emnar.filter(e => e.id === "genre").map(e => e.name), ...[].concat(d.bs_genre || [])].map(reinOrd));
-    const passar = g => g.some(f => har.has(f));
-    if (grupper.length && !(cfg.sjangermodus === "alle" ? grupper.every(passar) : grupper.some(passar))) return utelat("anna sjanger");
-  }
   if (cfg.omslag === "1" && !d.bs_krydderbildeurl) return utelat("utan omslag");
   if (cfg.lf === "0" && !serUtSomFag(d)) return utelat("ser ut som skjønnlitteratur");   // tryggingsnett mot feilkatalogiserte romanar
   if (cfg.lf === "1" && String(d.bs_lf) === "0") return utelat("sakprosa");              // for Nyheiter, der søket ikkje filtrerer
@@ -2206,12 +2197,11 @@ async function hentBøker(cfg, framdrift) {
   const alle = (visAlle || appell) && cfg.kjelde === "sok";     // hent heile trefflista
   const lister = [];
   for (const avd of avdar) {
-    // Nyaste med sjanger: hent fleire, sidan berre nokre av dei har sjangeren
-    const nyastSjanger = cfg.kjelde === "nyaste" && !!(cfg.sjanger || "").trim();
-    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? (appell || nyastSjanger ? Math.min(200, antal * 4) : antal) : Math.ceil(antal / avdar.length);
+    // Nyaste med appellfaktor: hent fleire, sidan berre nokre av dei er skildra
+    const mål = alle ? Infinity : cfg.kjelde === "nyaste" ? (appell ? Math.min(200, antal * 4) : antal) : Math.ceil(antal / avdar.length);
     const funneFør = lister.reduce((s, l) => s + l.length, 0);
     const meld = n => framdrift(funneFør + n, alle ? 0 : cfg.kjelde === "nyaste" ? antal * avdar.length : antal);
-    lister.push(cfg.kjelde === "nyaste" ? (await hentNyaste(cfg, avd, mål, meld)).slice(0, antal)
+    lister.push(cfg.kjelde === "nyaste" ? await hentNyaste(cfg, avd, mål, meld)
       : cfg.kjelde === "begge" ? await hentBegge(cfg, avd, antal, mål, meld)
       : await hentSøk(cfg, avd, mål, meld));
   }
@@ -3001,8 +2991,7 @@ function startByggjar(startCfg) {
 
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
-    document.getElementById("sokefelt").hidden = kjelde !== "sok" && kjelde !== "nyaste";
-    document.getElementById("emnefelt").hidden = kjelde !== "sok";     // Nyheiter: berre sjanger
+    document.getElementById("sokefelt").hidden = kjelde !== "sok";
     // Julekalender er berre mogleg med handplukka bøker
     const kalOpt = skjema.elements.visning.querySelector('option[value="kalender"]');
     kalOpt.disabled = kjelde !== "utval";
