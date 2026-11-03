@@ -46,7 +46,7 @@
   #visning header { display: flex; flex-direction: column; gap: 1.6vh; padding-right: var(--symbol-plass, 0); }
   .avdeling { font-size: 3vw; color: var(--aksent-tekstfarge, var(--aksent)); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; min-height: 1.2em; }
   .overskrift { font-weight: var(--vekt-overskrift, 700); font-size: calc(9vw * var(--skala-overskrift, 1)); line-height: 1.05;
-                font-family: var(--skrift-overskrift, var(--skrift)); overflow-wrap: anywhere; hyphens: auto; }
+                font-family: var(--skrift-overskrift, var(--skrift)); hyphens: manual; overflow-wrap: normal; }
   :root[data-versalar] .overskrift { text-transform: uppercase; letter-spacing: .04em; }
   .overskrift.lang { font-size: calc(7vw * var(--skala-overskrift, 1)); }
   /* Logoen er ein maske, så han får tekstfargen til temaet (logo med gjennomsiktig bakgrunn) */
@@ -494,6 +494,16 @@ function visPlakat(cfg) {
   }
   $("overskrift").textContent = cfg.overskrift || "";
   $("overskrift").classList.toggle("lang", (cfg.overskrift || "").length > 22);
+  // Ingen orddeling: er eit ord for langt for linja, blir skrifta mindre til det får plass
+  const tilpassOverskrift = () => {
+    const h = $("overskrift");
+    h.style.fontSize = "";
+    let px = parseFloat(getComputedStyle(h).fontSize);
+    while (h.scrollWidth > h.clientWidth + 1 && px > 20) { px *= 0.95; h.style.fontSize = px + "px"; }
+  };
+  tilpassOverskrift();
+  if (document.fonts) document.fonts.ready.then(tilpassOverskrift);
+  addEventListener("resize", tilpassOverskrift);
 
   const midt = $("midt");
   // Eit nyopplasta bilete kan bruke litt tid før GitHub har publisert det: prøv igjen ei stund
