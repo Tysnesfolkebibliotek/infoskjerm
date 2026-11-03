@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#b8741a"/>
+  <!-- ståande skjerm -->
+  <rect x="146" y="86" width="220" height="310" rx="22" fill="#f6f3ee"/>
+  <rect x="236" y="396" width="40" height="34" fill="#f6f3ee"/>
+  <rect x="196" y="424" width="120" height="18" rx="9" fill="#f6f3ee"/>
+  <!-- bøker på skjermen -->
+  <rect x="180" y="150" width="44" height="180" rx="6" fill="#22201d"/>
+  <rect x="234" y="130" width="44" height="200" rx="6" fill="#b8741a"/>
+  <rect x="288" y="164" width="44" height="166" rx="6" fill="#2f7d4a"/>
+  <rect x="180" y="342" width="152" height="10" rx="5" fill="#6f675d"/>
+</svg>

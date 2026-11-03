@@ -17,6 +17,7 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | `bilete/` | Bilete og logoar til tema. Nye bilete skal òg liggje her |
 | `bilete/julenisse.svg` | Julenisse med slede og reinsdyr som flyg forbi i juletemaet. Fri til ikkje-kommersiell bruk |
 | `bilete/falturiltu-logo.png` | Falturiltu-logoen (svart, utan bakgrunn), til temaet Falturiltu |
+| `manifest.webmanifest`, `ikon/` | Gjer at oversikta og byggjaren kan leggjast på startskjermen på mobilen som appen «Infoskjerm» (opnar oversikta). Med vilje ingen service worker, så skjermane aldri får gamle filer frå mellomlager |
 | `skjerm/skjermbilete.py` | Tek eit bilete av det skjermen viser, over SSH |
 | `skjerm/hent_nytt.py`, `skjerm/hent_sakprosa.py` | Lagar dei gamle lokale karusellane, som no berre er reserve |
 
