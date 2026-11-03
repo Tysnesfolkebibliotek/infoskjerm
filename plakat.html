@@ -365,7 +365,7 @@ function lagPynt(tema) {
 // Ei enkel teikning i stilen til framsida på bibsok.no (ikkje eit skjermbilete):
 // søket blir skrive bokstav for bokstav, knappen blir trykt, og svaret syner.
 // Søka kan endrast med «anim» i lenkja, skilde med | (t.d. anim=Ingelin Røssland|Kongen av Os).
-const STANDARDSØK = ["Ingelin Røssland", "Kongen av Os"];
+const STANDARDSØK = ["Ingelin Røssland", "Norske Gaardnavne", "Kongen av Os", "Kongespeilet"];
 function biblioteksøkAnimasjon(eigne) {
   const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
   const liste = søk.length ? søk : STANDARDSØK;
