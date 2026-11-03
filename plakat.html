@@ -63,6 +63,33 @@
   /* Ferdig plakat (t.d. frå Canva): biletet fyller heile skjermen, alt anna blir borte */
   .heilbilete { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
   .heil #visning main { display: none; }
+  /* ---- Animasjon: nokon søkjer i Biblioteksøk (bilete=anim:biblioteksok) ---- */
+  .bsok { position: relative; width: 100%; max-height: 100%; aspect-ratio: 1.3; border-radius: 3vw; overflow: hidden;
+          background: #13285a; color: #fff; font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+          box-shadow: 0 2vh 5vh rgba(0,0,0,.3); display: flex; flex-direction: column; justify-content: center; padding: 0 6vw; }
+  /* Ballongar i bakgrunnen, svakt, som på framsida til Biblioteksøk */
+  .bsok .ballong { position: absolute; border-radius: 50% 50% 48% 52%; background: radial-gradient(circle at 35% 30%, #5470a8, #2a4479 60%, #1d3466);
+                   opacity: .55; animation: sveve 9s ease-in-out infinite alternate; }
+  @keyframes sveve { to { transform: translateY(-1.6vh) rotate(3deg); } }
+  .bsok > *:not(.ballong) { position: relative; }
+  .bsok h3 { font-weight: 400; font-size: 6.4vw; margin-bottom: 2.6vh; letter-spacing: .01em; }
+  .bsok .bs-felt { display: flex; align-items: stretch; height: 7.6vw; background: #f6f4f1; border-radius: .4vw; overflow: hidden; }
+  .bsok .etikett { color: #c8202a; font-size: 3.4vw; padding: 0 2.6vw; display: flex; align-items: center; flex: none; }
+  .bsok .skrive { flex: 1; display: flex; align-items: center; color: #222; font-size: 3.4vw; white-space: nowrap; overflow: hidden; }
+  .bsok .plasshaldar { color: #b9b3aa; }
+  .bsok .skrive:not(.tom) .plasshaldar { display: none; }
+  .bsok .markor { width: .3vw; height: 4.2vw; background: #222; margin-left: .2vw; animation: blink-m 1s steps(1) infinite; }
+  .bsok .skrive.tom .markor { order: -1; margin: 0 .3vw 0 0; }
+  @keyframes blink-m { 50% { opacity: 0; } }
+  .bsok .knapp-s { width: 7.6vw; flex: none; background: #c8202a; display: grid; place-items: center; transition: transform .15s, filter .15s; }
+  .bsok .knapp-s svg { width: 4vw; height: 4vw; }
+  .bsok .knapp-s.trykt { transform: scale(.9); filter: brightness(1.25); }
+  .bsok .svar { margin-top: 2.6vh; display: flex; align-items: center; gap: 2vw; background: rgba(255,255,255,.12); border-radius: 1.2vw; padding: 1.8vw 2.4vw;
+                font-size: 3vw; opacity: 0; transform: translateY(1.5vh); transition: opacity .5s, transform .5s; }
+  .bsok .svar.synleg { opacity: 1; transform: none; }
+  .bsok .svar .hake { width: 5vw; height: 5vw; flex: none; border-radius: 50%; background: #2bb673; display: grid; place-items: center; }
+  .bsok .svar .hake svg { width: 3vw; height: 3vw; }
+  .bsok .svar b { display: block; font-size: 3.3vw; }
   /* Utan bilete og ikon får teksten heile plassen */
   .midt.tom { flex: .6; }
 
@@ -192,6 +219,8 @@
       <label class="felt" id="eigebilete" hidden><span>Adressa til biletet</span><input type="text" id="eigeadresse" placeholder="bilete/… eller https://…"><small>Bilete i repoet: legg dei i mappa bilete/ og skriv til dømes bilete/plakat.png.</small></label>
       <label class="felt" id="opplastval" hidden><span>Vel eit bilete frå maskina</span><input type="file" id="fil" accept="image/*">
         <small>Biletet blir lagra i mappa bilete/plakatar/ i repoet. Det kan ta eit par minutt før det syner.</small></label>
+      <label class="felt" id="animval" hidden><span>Søk i animasjonen</span><input type="text" name="anim" placeholder="Naiv. Super. | strikkeoppskrifter | Kongen av Os">
+        <small>Skil søka med |. Tomt = standardsøka.</small></label>
       <div class="opplasting" id="opplasting"></div>
       <label class="felt" id="formval" hidden><span>Korleis biletet blir vist</span><select id="biletform">
         <option value="">Utklipt (t.d. ein mobil med gjennomsiktig bakgrunn)</option>
@@ -243,7 +272,7 @@
 <script>
 // Nøklane i lenkja. Alt innhaldet står i lenkja, så ein plakat er uendra sjølv
 // om tenester.json blir endra seinare.
-const NØKLAR = ["mal", "overlinje", "overskrift", "logo", "avsendar", "tekst", "merkelapp", "bilete", "biletform", "ikon",
+const NØKLAR = ["mal", "overlinje", "overskrift", "logo", "avsendar", "anim", "tekst", "merkelapp", "bilete", "biletform", "ikon",
                 "dato", "tid", "stad", "lenkje", "qrtekst", "tema", "skrift"];
 const TEMA = typeof TEMA_ETTER_ID !== "undefined" ? TEMA_ETTER_ID : {};
 const $ = id => document.getElementById(id);
@@ -332,6 +361,45 @@ function lagPynt(tema) {
   if (t && t.pynt) try { t.pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }); } catch (e) { console.warn("Pynt:", e); }
 }
 
+// ---- Animasjon: nokon søkjer i Biblioteksøk ----------------------------
+// Ei enkel teikning i stilen til framsida på bibsok.no (ikkje eit skjermbilete):
+// søket blir skrive bokstav for bokstav, knappen blir trykt, og svaret syner.
+// Søka kan endrast med «anim» i lenkja, skilde med | (t.d. anim=Naiv. Super.|Anne Holt).
+const STANDARDSØK = ["Naiv. Super.", "strikkeoppskrifter", "Kongen av Os", "fuglar i Noreg", "Anne-Cath. Vestly"];
+function biblioteksøkAnimasjon(eigne) {
+  const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
+  const liste = søk.length ? søk : STANDARDSØK;
+  const boks = document.createElement("div");
+  boks.className = "bsok"; boks.setAttribute("aria-hidden", "true");
+  const baller = [[-6, 8, 24], [14, -10, 20], [58, -8, 26], [80, 18, 22], [36, 46, 18], [70, 62, 24], [-4, 66, 20]];
+  boks.innerHTML = baller.map(([x, y, d], i) => `<span class="ballong" style="left:${x}%; top:${y}%; width:${d}vw; height:${d * 1.15}vw; animation-delay:${-i * 1.3}s"></span>`).join("") +
+    `<h3>Biblioteksøk</h3>
+     <div class="bs-felt"><span class="etikett">Søkeord</span><span class="skrive tom"><span class="tekst"></span><span class="markor"></span><span class="plasshaldar">Skriv søket ditt her</span></span>
+       <span class="knapp-s"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="12" r="6"/><path d="M15 12h7"/></svg></span></div>
+     <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+       <span><b>Finst i bibliotek over heile landet</b>Bestill, og hent boka på Tysnes</span></div>`;
+  const skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst"), knapp = boks.querySelector(".knapp-s"), svar = boks.querySelector(".svar");
+  const vent = ms => new Promise(r => setTimeout(r, ms));
+  (async () => {
+    for (let n = 0; ; n++) {
+      const ord = liste[n % liste.length];
+      await vent(900);
+      skrive.classList.remove("tom");
+      for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
+      await vent(650);
+      knapp.classList.add("trykt"); await vent(180); knapp.classList.remove("trykt");
+      await vent(350);
+      svar.classList.add("synleg");
+      await vent(3200);
+      svar.classList.remove("synleg");
+      await vent(500);
+      while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
+      skrive.classList.add("tom");
+    }
+  })();
+  return boks;
+}
+
 // =====================================================================
 // PLAKATEN
 // =====================================================================
@@ -377,6 +445,8 @@ function visPlakat(cfg) {
     img.src = cfg.bilete;
     document.body.classList.add("heil");
     $("visning").append(img);
+  } else if (cfg.bilete && cfg.bilete.startsWith("anim:")) {
+    if (cfg.bilete === "anim:biblioteksok") midt.append(biblioteksøkAnimasjon(cfg.anim));
   } else if (cfg.bilete && cfg.bilete !== "ikon") {
     const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : ""), alt: "", src: cfg.bilete });
     prøvIgjen(img, () => { midt.innerHTML = cfg.ikon ? `<div class="ikonsirkel">${ikonSvg(cfg.ikon)}</div>` : ""; });
@@ -496,6 +566,7 @@ async function startByggjar() {
     $("eigebilete").hidden = v !== "eige";
     $("opplastval").hidden = v !== "last";
     $("formval").hidden = !["eige", "last"].includes(v);
+    $("animval").hidden = !v.startsWith("anim:");
 
   }
 
@@ -551,6 +622,7 @@ async function startByggjar() {
       bilete, biletform,
       ikon: t ? t.ikon : id === "arrangement" ? "kalender" : "",
       dato: felt("dato").value.trim(), tid: felt("tid").value.trim(), stad: felt("stad").value.trim(),
+      anim: sel.startsWith("anim:") ? felt("anim").value.split("|").map(x => x.trim()).filter(Boolean).join("|") : "",
       lenkje: felt("lenkje").value.trim(),
       qrtekst: felt("qrtekst").value.trim(),
       tema: felt("tema").value,
@@ -562,6 +634,7 @@ async function startByggjar() {
   function fyllFrå(cfg) {
     mal.value = teneste(cfg.mal) || ["arrangement", "tom"].includes(cfg.mal) ? cfg.mal : "tom";
     for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "dato", "tid", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
+    felt("anim").value = (cfg.anim || "").split("|").join(" | ");
     // Ein eldre plakat kan ha eit tema som er skjult no: ta det med i lista, så det ikkje blir bytt ut
     if (cfg.tema && TEMA[cfg.tema] && ![...felt("tema").options].some(o => o.value === cfg.tema))
       felt("tema").append(new Option(TEMA[cfg.tema].namn, cfg.tema));
