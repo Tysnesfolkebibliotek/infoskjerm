@@ -102,6 +102,10 @@ standard.
 (tekst, lenkje, merkelapp, bilete, tema …) som ny standard for malen i `tenester.json`.
 Neste gong du vel malen, startar plakaten slik. For «Arrangement» blir datoen ikkje lagra.
 
+**Nedteljing:** ei tynn linje nedst kryp saman til plakaten blir bytt. Tida er den som står
+på oversikta (sekund): rotasjonssida sender ho med til plakaten når han blir vist. Krev
+`rotasjon.html` frå 3.11.2026 (kveld) på skjermane; med ei eldre fil er plakaten utan linje.
+
 All teksten står i lenkja til plakaten. Endrar du `tenester.json`, gjeld det nye
 plakatar, ikkje dei som alt er på skjermen. Ny teneste: legg til ei linje i
 `tenester.json`, og logo og bilete i `bilete/tenester/`.

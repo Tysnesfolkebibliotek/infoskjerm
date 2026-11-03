@@ -213,14 +213,17 @@ function bytOppsett(sider, json) {
 
 // Nyheiter-sida (index.html) kan ta pause når ho ikkje blir vist, så ho
 // hugsar kvar ho slapp. Andre sider bryr seg ikkje om desse beskjedane.
-function send(ramme, beskjed) {
-  try { ramme.contentWindow.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {}
+// «vis» har òg med kor lenge sida skal stå («sekund») og kor mange
+// millisekund som er att («att»). Plakatane brukar det til nedteljingslinja.
+function send(ramme, beskjed, meir) {
+  try { ramme.contentWindow.postMessage({ nyheiter: beskjed, ...meir }, "*"); } catch (e) {}
 }
+const tidFor = r => r.dataset.slutt ? { sekund: Number(r.dataset.sekund), att: Math.max(0, Number(r.dataset.slutt) - Date.now()) } : {};
 window.addEventListener("message", e => {
   if (!e.data || !e.data.nyheiter) return;
   const r = [...document.querySelectorAll("iframe")].find(r => r.contentWindow === e.source);
   if (!r) return;
-  if (e.data.nyheiter === "klar") send(r, r === aktivRamme ? "vis" : "skjul");
+  if (e.data.nyheiter === "klar") send(r, r === aktivRamme ? "vis" : "skjul", r === aktivRamme ? tidFor(r) : undefined);
   // Karusellar seier frå om dei har bøker å vise. Ein tom karusell (ingen
   // treff, eller ingen kontakt med Bibliofil og inga lagra liste) blir hoppa
   // over, så skjermen ikkje viser ei melding i fleire minutt.
@@ -299,7 +302,9 @@ async function vis(n) {
   const førre = aktivRamme;
   aktivRamme = r;
   r.classList.add("synleg");
-  send(r, "vis");
+  r.dataset.sekund = Number(side.sekund);
+  r.dataset.slutt = Date.now() + Number(side.sekund) * 1000;
+  send(r, "vis", tidFor(r));
 
   if (førre && førre !== r) {
     førre.classList.remove("synleg");

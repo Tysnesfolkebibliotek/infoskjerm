@@ -137,6 +137,9 @@
   .avsendar { height: 2.4vh; aspect-ratio: 7.3; background: var(--tekst); opacity: .7;
               -webkit-mask: var(--avsendar) right center / contain no-repeat; mask: var(--avsendar) right center / contain no-repeat; }
 
+  /* Nedteljing: tynn linje nedst som kryp saman til plakaten blir bytt (tida kjem frå rotasjonen) */
+  .nedteljing { position: fixed; left: 0; right: 0; bottom: 0; height: .55vh; background: var(--aksent); transform-origin: left center;
+                transform: scaleX(0); z-index: 5; opacity: .9; }
   /* Rolig inngang kvar gong plakaten kjem fram på skjermen */
   .inn { opacity: 0; transform: translateY(2.2vh); }
   .spel .inn { animation: inn .9s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: calc(var(--n, 0) * .18s + .15s); }
@@ -211,6 +214,7 @@
         <div><div class="qrtekst" id="qrtekst"></div><div class="qrlenkje" id="qrlenkje"></div></div>
       </div>
     </section>
+    <div class="nedteljing" id="nedteljing" aria-hidden="true"></div>
     <footer><span class="botnnamn"><b>Tysnes</b> folkebibliotek</span><span class="avsendar" id="avsendar" role="img" hidden></span></footer>
   </main>
 </div>
@@ -551,11 +555,29 @@ function visPlakat(cfg) {
   // Inngangen blir spela kvar gong rotasjonen viser plakaten
   const spel = () => { const m = document.querySelector("#visning main"); m.classList.remove("spel"); void m.offsetWidth; m.classList.add("spel"); };
   const iRotasjon = window.parent !== window && !("forhand" in cfg);
+  // Nedteljingslinja: full ved «sekund», så ho kryp saman over «att» millisekund
+  let linje = null;
+  const nedteljing = (sekund, att) => {
+    if (linje) linje.cancel();
+    if (!(sekund > 0) || !(att > 0)) return;
+    const frå = Math.min(1, att / (sekund * 1000));
+    linje = $("nedteljing").animate([{ transform: `scaleX(${frå})` }, { transform: "scaleX(0)" }], { duration: att, easing: "linear", fill: "forwards" });
+  };
   if (iRotasjon) {
-    window.addEventListener("message", e => { if (e.data && e.data.nyheiter === "vis") spel(); });
+    window.addEventListener("message", e => {
+      if (!e.data) return;
+      if (e.data.nyheiter === "vis") {
+        // Kjem «vis» på nytt (t.d. etter «klar»), blir inngangen ikkje spela om att
+        if (!linje || e.data.att >= e.data.sekund * 1000 - 1500) spel();
+        nedteljing(Number(e.data.sekund), Number(e.data.att));
+      }
+      if (e.data.nyheiter === "skjul" && linje) { linje.cancel(); linje = null; }
+    });
     try { parent.postMessage({ nyheiter: "klar" }, "*"); parent.postMessage({ nyheiter: "har" }, "*"); } catch (e) {}
   }
   spel();
+  // I førehandsvisinga i byggjaren: vis linja med 20 sekund om gongen
+  if ("forhand" in cfg) { nedteljing(20, 20000); setInterval(() => nedteljing(20, 20000), 20000); }
 }
 
 // =====================================================================
