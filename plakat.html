@@ -85,6 +85,9 @@
   #visning footer { display: flex; align-items: center; justify-content: space-between; margin-top: 3vh; flex: none; }
   .botnnamn { font-size: 2.8vw; color: var(--tekst); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
   .botnnamn b { font-weight: 700; }
+  /* Logoen til den som står bak tenesta (t.d. Nasjonalbiblioteket), liten nedst til høgre */
+  .avsendar { height: 2.4vh; aspect-ratio: 7.3; background: var(--tekst); opacity: .7;
+              -webkit-mask: var(--avsendar) right center / contain no-repeat; mask: var(--avsendar) right center / contain no-repeat; }
 
   /* Rolig inngang kvar gong plakaten kjem fram på skjermen */
   .inn { opacity: 0; transform: translateY(2.2vh); }
@@ -160,7 +163,7 @@
         <div><div class="qrtekst" id="qrtekst"></div><div class="qrlenkje" id="qrlenkje"></div></div>
       </div>
     </section>
-    <footer><span class="botnnamn"><b>Tysnes</b> folkebibliotek</span></footer>
+    <footer><span class="botnnamn"><b>Tysnes</b> folkebibliotek</span><span class="avsendar" id="avsendar" role="img" hidden></span></footer>
   </main>
 </div>
 
@@ -182,6 +185,7 @@
       <label class="felt"><span>Liten tekst øvst</span><input type="text" name="overlinje" placeholder="Digitalt bibliotek"></label>
       <label class="felt"><span>Overskrift</span><input type="text" name="overskrift"></label>
       <label class="avkryss" id="logoval" hidden><input type="checkbox" id="brukLogo"> Vis logoen i staden for overskrifta</label>
+      <label class="avkryss" id="avsendarval" hidden><input type="checkbox" id="brukAvsendar"> <span id="avsendartekst">Vis logoen til avsendaren nedst</span></label>
       <label class="felt"><span>Tekst</span><textarea name="tekst" rows="3"></textarea></label>
       <label class="felt"><span>Merkelapp</span><input type="text" name="merkelapp" placeholder="Til dømes «Gratis med lånekortet»"><small>Tom = ingen merkelapp.</small></label>
       <label class="felt"><span>Bilete</span><select id="bileteval"></select></label>
@@ -239,7 +243,7 @@
 <script>
 // Nøklane i lenkja. Alt innhaldet står i lenkja, så ein plakat er uendra sjølv
 // om tenester.json blir endra seinare.
-const NØKLAR = ["mal", "overlinje", "overskrift", "logo", "tekst", "merkelapp", "bilete", "biletform", "ikon",
+const NØKLAR = ["mal", "overlinje", "overskrift", "logo", "avsendar", "tekst", "merkelapp", "bilete", "biletform", "ikon",
                 "dato", "tid", "stad", "lenkje", "qrtekst", "tema", "skrift"];
 const TEMA = typeof TEMA_ETTER_ID !== "undefined" ? TEMA_ETTER_ID : {};
 const $ = id => document.getElementById(id);
@@ -353,6 +357,13 @@ function visPlakat(cfg) {
     logo.hidden = false;
     logo.setAttribute("role", "img"); logo.setAttribute("aria-label", cfg.overskrift || "");
     $("overskrift").hidden = true;
+  }
+  if (cfg.avsendar) {
+    const a = $("avsendar");
+    a.style.setProperty("--avsendar", `url("${cfg.avsendar}")`);
+    const img = new Image();
+    img.onload = () => { a.style.aspectRatio = img.naturalWidth / img.naturalHeight; a.hidden = false; };
+    img.src = cfg.avsendar;
   }
   $("overskrift").textContent = cfg.overskrift || "";
   $("overskrift").classList.toggle("lang", (cfg.overskrift || "").length > 22);
@@ -506,6 +517,7 @@ async function startByggjar() {
       felt("qrtekst").value = m.qrtekst ?? "Skann for å kome i gang";
       logoFor = t.logo || "";
       $("brukLogo").checked = !!t.logo && m.brukLogo !== false;
+      $("brukAvsendar").checked = !!t.avsendarlogo && m.brukAvsendar !== false;
       teiknBileteval(t, m.standardbilete || (t.bilete && t.bilete[0] ? t.bilete[0].fil : "ikon"));
       $("biletform").value = m.standardbiletform || "";
     } else {
@@ -533,6 +545,7 @@ async function startByggjar() {
       overlinje: felt("overlinje").value.trim(),
       overskrift: felt("overskrift").value.trim(),
       logo: logoFor && $("brukLogo").checked ? logoFor : "",
+      avsendar: t && t.avsendarlogo && $("brukAvsendar").checked ? t.avsendarlogo : "",
       tekst: felt("tekst").value.trim(),
       merkelapp: felt("merkelapp").value.trim(),
       bilete, biletform,
@@ -557,6 +570,7 @@ async function startByggjar() {
     const t = teneste(mal.value);
     logoFor = cfg.logo || (t && t.logo) || "";
     $("brukLogo").checked = !!cfg.logo;
+    $("brukAvsendar").checked = !!cfg.avsendar;
     teiknBileteval(t, cfg.bilete || "ingen");
     $("biletform").value = ["foto", "heil"].includes(cfg.biletform) ? cfg.biletform : "";
   }
@@ -570,6 +584,9 @@ async function startByggjar() {
   function oppdater() {
     const cfg = lesSkjema();
     $("logoval").hidden = !logoFor;
+    { const t = teneste(mal.value);
+      $("avsendarval").hidden = !(t && t.avsendarlogo);
+      if (t && t.avsendarlogo) $("avsendartekst").textContent = `Vis logoen til ${t.avsendarnamn || "avsendaren"} nedst`; }
     teiknMalboks();
     $("arrdel").hidden = mal.value !== "arrangement" && !(cfg.dato || cfg.tid || cfg.stad);
     const hash = lagHash(cfg, false);
@@ -603,7 +620,7 @@ async function startByggjar() {
       standardbiletform: ["eige", "last"].includes(sel) ? cfg.biletform : "",
     };
     if (t) return { ...fast, overskrift: cfg.overskrift === t.namn ? "" : cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp,
-                    lenkje: cfg.lenkje, brukLogo: !t.logo || $("brukLogo").checked };
+                    lenkje: cfg.lenkje, brukLogo: !t.logo || $("brukLogo").checked, brukAvsendar: !t.avsendarlogo || $("brukAvsendar").checked };
     // Arrangement: datoen er alltid ny, så han blir ikkje lagra
     return { ...fast, overskrift: cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp, lenkje: cfg.lenkje, stad: cfg.stad, tid: cfg.tid };
   }
@@ -637,6 +654,7 @@ async function startByggjar() {
         for (const k of ["tekst", "merkelapp", "lenkje"]) t[k] = ny[k];
         for (const k of ["overskrift", "overlinje", "qrtekst", "tema", "skrift", "standardbilete", "standardbiletform"]) { if (ny[k]) t[k] = ny[k]; else delete t[k]; }
         if (t.logo && !ny.brukLogo) t.brukLogo = false; else delete t.brukLogo;
+        if (t.avsendarlogo && !ny.brukAvsendar) t.brukAvsendar = false; else delete t.brukAvsendar;
       } else d.malar[id] = Object.fromEntries(Object.entries(ny).filter(([, v]) => v !== "" && v != null));
       const svar = await fetch(REPO_API + "tenester.json", { method: "PUT", headers: { ...hode, "Content-Type": "application/json" },
         body: JSON.stringify({ message: `Ny standard for malen «${malNamn(id)}» i plakatbyggjaren`, content: til64(tenesterJson(d)), sha: j.sha, author: FORFATTAR, committer: FORFATTAR }) });
