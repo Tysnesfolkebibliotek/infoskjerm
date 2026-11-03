@@ -30,7 +30,12 @@
 
     { "id": "pressreader", "namn": "PressReader", "kategori": "Aviser og magasin",
       "tekst": "Les aviser og magasin frå heile verda.", "merkelapp": "Gratis med lånekortet", "ikon": "avis",
-      "logo": "bilete/tenester/pressreader-logo.svg" },
+      "logo": "bilete/tenester/pressreader-logo.svg",
+      "bilete": [
+        { "fil": "bilete/tenester/pressreader-nettbrett.webp", "namn": "Nettbrett og mobil", "form": "foto" },
+        { "fil": "bilete/tenester/pressreader-mobil.webp", "namn": "Mobil", "form": "foto" },
+        { "fil": "bilete/tenester/pressreader-magasin.webp", "namn": "Aviser og magasin", "form": "foto" }
+      ] },
 
     { "id": "lokalhistorisk", "namn": "Lokalhistorisk biletsamling", "kategori": "Lokalhistorie og arkiv",
       "tekst": "Sjå historiske bilete frå Tysnes.", "merkelapp": "", "ikon": "arkiv" },
