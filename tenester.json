@@ -29,7 +29,8 @@
       "tekst": "Sjå kvalitetsfilm gratis i biblioteka si eiga strøymeteneste.", "merkelapp": "Gratis med lånekortet", "ikon": "film" },
 
     { "id": "pressreader", "namn": "PressReader", "kategori": "Aviser og magasin",
-      "tekst": "Les aviser og magasin frå heile verda.", "merkelapp": "Gratis med lånekortet", "ikon": "avis" },
+      "tekst": "Les aviser og magasin frå heile verda.", "merkelapp": "Gratis med lånekortet", "ikon": "avis",
+      "logo": "bilete/tenester/pressreader-logo.svg" },
 
     { "id": "lokalhistorisk", "namn": "Lokalhistorisk biletsamling", "kategori": "Lokalhistorie og arkiv",
       "tekst": "Sjå historiske bilete frå Tysnes.", "merkelapp": "", "ikon": "arkiv" },
