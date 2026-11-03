@@ -96,6 +96,10 @@ standard.
 - **Arrangement:** gje plakaten ein periode på oversikta (til dømes
   `2026-11-01/2026-11-12`), så forsvinn han av seg sjølv etterpå.
 
+**Lagre som standard** (under malvalet, krev nøkkelen) lagrar det du har skrive og valt
+(tekst, lenkje, merkelapp, bilete, tema …) som ny standard for malen i `tenester.json`.
+Neste gong du vel malen, startar plakaten slik. For «Arrangement» blir datoen ikkje lagra.
+
 All teksten står i lenkja til plakaten. Endrar du `tenester.json`, gjeld det nye
 plakatar, ikkje dei som alt er på skjermen. Ny teneste: legg til ei linje i
 `tenester.json`, og logo og bilete i `bilete/tenester/`.

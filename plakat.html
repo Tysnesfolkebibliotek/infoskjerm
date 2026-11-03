@@ -120,6 +120,8 @@
   .b-lenkje { margin-top: 22px; padding: 14px; border-radius: 10px; background: var(--b-bg); border: 1px solid var(--b-strek); }
   .b-lenkje .etikett { font-weight: 700; font-size: 14px; }
   .b-lenkje code { display: block; margin: 8px 0 10px; font-size: 12px; word-break: break-all; color: var(--b-dempa); max-height: 6.5em; overflow: auto; }
+  .malboks { margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--b-strek); border-radius: 8px; font-size: 13px; color: var(--b-dempa); }
+  .malboks .knapp { margin-top: 8px; }
   .opplasting { font-size: 13px; color: var(--b-dempa); margin-top: 6px; min-height: 1.2em; }
   .tilskjerm { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--b-strek); }
   .tilskjerm .etikett { margin-bottom: 8px; }
@@ -170,6 +172,11 @@
     <p class="intro">Plakatar for digitale tenester og arrangement. Vel ei teneste for å få teksten og lenkja ferdig utfylte. Karusellar lagar du i <a href="index.html">karusellbyggjaren</a>.</p>
 
     <label class="felt"><span>Mal</span><select id="mal" name="mal"></select></label>
+    <div class="malboks" id="malboks" hidden>
+      <div id="malhjelp"></div>
+      <button type="button" class="knapp sekundær" id="lagremal">Lagre som standard</button>
+      <div id="malstatus" style="margin-top:6px"></div>
+    </div>
 
     <div class="del"><h2>Innhald</h2>
       <label class="felt"><span>Liten tekst øvst</span><input type="text" name="overlinje" placeholder="Digitalt bibliotek"></label>
@@ -409,8 +416,26 @@ async function startByggjar() {
   const skjema = $("skjema");
   const felt = n => skjema.elements[n];
 
-  let data = { standardlenkje: "", tenester: [] };
-  try { data = await (await fetch("tenester.json", { cache: "no-cache" })).json(); } catch (e) { console.warn("tenester.json:", e); }
+  // Med nøkkelen les vi tenester.json rett frå GitHub, så nyleg lagra malar er med med ein gong
+  // (GitHub Pages brukar nokre minutt på å publisere). Utan nøkkel: den publiserte fila.
+  const REPO_API = "https://api.github.com/repos/Tysnesfolkebibliotek/infoskjerm/contents/";
+  const FORFATTAR = { name: "Tysnesfolkebibliotek", email: "Tysnesfolkebibliotek@users.noreply.github.com" };
+  const nøkkel = () => { try { return localStorage.getItem("infoskjerm-oversikt-nokkel"); } catch (e) { return null; } };
+  const frå64 = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), c => c.charCodeAt(0)));
+  const til64 = t => { let r = ""; for (const b of new TextEncoder().encode(t)) r += String.fromCharCode(b); return btoa(r); };
+  let data = { standardlenkje: "", tenester: [] }, dataSha = null;
+  try {
+    if (nøkkel()) {
+      const svar = await fetch(REPO_API + "tenester.json?t=" + Date.now(), { headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel() }, cache: "no-store" });
+      if (!svar.ok) throw new Error(svar.status);
+      const j = await svar.json(); data = JSON.parse(frå64(j.content)); dataSha = j.sha;
+    } else throw new Error("utan nøkkel");
+  } catch (e) {
+    try { data = await (await fetch("tenester.json", { cache: "no-cache" })).json(); } catch (e2) { console.warn("tenester.json:", e2); }
+  }
+  data.malar ||= {};
+  // Ei teneste, eller dei lagra standardane for «Arrangement» og «Tom plakat»
+  const malData = id => data.tenester.find(t => t.id === id) || data.malar[id] || null;
   const teneste = id => data.tenester.find(t => t.id === id);
 
   // Malar: tenestene etter kategori, så arrangement og tom plakat
@@ -469,20 +494,26 @@ async function startByggjar() {
     const tema = felt("tema").value, skrift = felt("skrift").value;
     skjema.reset();
     mal.value = id; felt("tema").value = tema || "lys"; felt("skrift").value = skrift || "standard";
+    const m = malData(id) || {};   // lagra standardar (frå «Lagre som standard»)
+    if (m.tema && TEMA[m.tema]) felt("tema").value = m.tema;
+    if (m.skrift) felt("skrift").value = m.skrift;
     if (t) {
-      felt("overlinje").value = "Digitalt bibliotek";
-      felt("overskrift").value = t.namn;
+      felt("overlinje").value = m.overlinje ?? "Digitalt bibliotek";
+      felt("overskrift").value = m.overskrift || t.namn;
       felt("tekst").value = t.tekst || "";
       felt("merkelapp").value = t.merkelapp || "";
       felt("lenkje").value = t.lenkje || data.standardlenkje || "";
-      felt("qrtekst").value = "Skann for å kome i gang";
+      felt("qrtekst").value = m.qrtekst ?? "Skann for å kome i gang";
       logoFor = t.logo || "";
-      $("brukLogo").checked = !!t.logo;
-      teiknBileteval(t, t.bilete && t.bilete[0] ? t.bilete[0].fil : "ikon");
+      $("brukLogo").checked = !!t.logo && m.brukLogo !== false;
+      teiknBileteval(t, m.standardbilete || (t.bilete && t.bilete[0] ? t.bilete[0].fil : "ikon"));
+      $("biletform").value = m.standardbiletform || "";
     } else {
       logoFor = ""; $("brukLogo").checked = false;
       if (id === "arrangement") { felt("overlinje").value = "Arrangement"; felt("qrtekst").value = "Les meir"; }
-      teiknBileteval(null, id === "arrangement" ? "ikon" : "ingen");
+      for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "lenkje", "qrtekst", "stad", "tid"]) if (m[k] != null) felt(k).value = m[k];
+      teiknBileteval(null, m.standardbilete || (id === "arrangement" ? "ikon" : "ingen"));
+      $("biletform").value = m.standardbiletform || "";
     }
     oppdater();
   }
@@ -539,6 +570,7 @@ async function startByggjar() {
   function oppdater() {
     const cfg = lesSkjema();
     $("logoval").hidden = !logoFor;
+    teiknMalboks();
     $("arrdel").hidden = mal.value !== "arrangement" && !(cfg.dato || cfg.tid || cfg.stad);
     const hash = lagHash(cfg, false);
     history.replaceState(null, "", "#" + hash);
@@ -555,6 +587,67 @@ async function startByggjar() {
       setTimeout(() => { iframe.src = ny; }, 0);
     }, 250);
   }
+
+  // ---- Lagre endringane som ny standard for malen ----------------------
+  // Tenestene: namn i menyen og kategori blir ikkje endra; overskrift, tekst, merkelapp,
+  // lenkje, tekst ved QR-koden, liten tekst øvst, bilete, logo og tema blir lagra.
+  // «Arrangement» og «Tom plakat» lagrar under «malar» i same fil (ikkje dato).
+  // Plakatar som alt er laga, er uendra: dei har teksten i lenkja si.
+  const malNamn = id => (data.tenester.find(t => t.id === id) || {}).namn || { arrangement: "Arrangement", tom: "Tom plakat" }[id] || id;
+  function standardFrå(cfg, id) {
+    const t = data.tenester.find(x => x.id === id);
+    const sel = $("bileteval").value;
+    const fast = {
+      overlinje: cfg.overlinje, qrtekst: cfg.qrtekst, tema: cfg.tema, skrift: cfg.skrift || "",
+      standardbilete: sel === "eige" ? cfg.bilete : sel === "last" ? "" : sel,
+      standardbiletform: ["eige", "last"].includes(sel) ? cfg.biletform : "",
+    };
+    if (t) return { ...fast, overskrift: cfg.overskrift === t.namn ? "" : cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp,
+                    lenkje: cfg.lenkje, brukLogo: !t.logo || $("brukLogo").checked };
+    // Arrangement: datoen er alltid ny, så han blir ikkje lagra
+    return { ...fast, overskrift: cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp, lenkje: cfg.lenkje, stad: cfg.stad, tid: cfg.tid };
+  }
+  // Same rekkjefølgje og ei teneste per line, så fila er lett å lese og endre for hand
+  function tenesterJson(d) {
+    const l = ['{', `  "_forklaring": ${JSON.stringify(d._forklaring || "")},`, `  "standardlenkje": ${JSON.stringify(d.standardlenkje || "")},`];
+    l.push(`  "malar": ${JSON.stringify(d.malar || {})},`);
+    l.push('  "tenester": [', d.tenester.map(t => "    " + JSON.stringify(t)).join(",\n"), '  ]', '}', '');
+    return l.join("\n");
+  }
+  function teiknMalboks() {
+    const id = mal.value, boks = $("malboks");
+    boks.hidden = !nøkkel();
+    if (boks.hidden) return;
+    $("malhjelp").textContent = `Vil du at «${malNamn(id)}» skal starte slik neste gong? Plakatar som alt er laga, blir ikkje endra.`;
+    $("lagremal").textContent = `Lagre som standard for «${malNamn(id)}»`;
+  }
+  $("lagremal").addEventListener("click", async () => {
+    const id = mal.value, status = $("malstatus"), knapp = $("lagremal");
+    const cfg = lesSkjema(), ny = standardFrå(cfg, id);
+    knapp.disabled = true; status.textContent = "Lagrar …";
+    try {
+      const hode = { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel() };
+      // Hent den nyaste utgåva først, så vi ikkje skriv over endringar gjorde andre stader
+      const før = await fetch(REPO_API + "tenester.json?t=" + Date.now(), { headers: hode, cache: "no-store" });
+      if (!før.ok) throw new Error("fekk ikkje lese tenester.json (" + før.status + ")");
+      const j = await før.json(), d = JSON.parse(frå64(j.content));
+      d.malar ||= {};
+      const t = d.tenester.find(x => x.id === id);
+      if (t) {
+        for (const k of ["tekst", "merkelapp", "lenkje"]) t[k] = ny[k];
+        for (const k of ["overskrift", "overlinje", "qrtekst", "tema", "skrift", "standardbilete", "standardbiletform"]) { if (ny[k]) t[k] = ny[k]; else delete t[k]; }
+        if (t.logo && !ny.brukLogo) t.brukLogo = false; else delete t.brukLogo;
+      } else d.malar[id] = Object.fromEntries(Object.entries(ny).filter(([, v]) => v !== "" && v != null));
+      const svar = await fetch(REPO_API + "tenester.json", { method: "PUT", headers: { ...hode, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: `Ny standard for malen «${malNamn(id)}» i plakatbyggjaren`, content: til64(tenesterJson(d)), sha: j.sha, author: FORFATTAR, committer: FORFATTAR }) });
+      if (svar.status === 401 || svar.status === 403) throw new Error("nøkkelen vart avvist (sjå oversikta)");
+      if (svar.status === 409) throw new Error("fila vart endra samstundes. Prøv igjen");
+      if (!svar.ok) throw new Error("GitHub svarte " + svar.status);
+      data = { ...d, malar: d.malar };
+      status.textContent = `Lagra. Neste gong du vel «${malNamn(id)}», startar plakaten slik.`;
+    } catch (e) { status.textContent = "Fekk ikkje lagre: " + e.message; }
+    knapp.disabled = false;
+  });
 
   // ---- Til skjermane (same ordning som i karusellbyggjaren) -------------
   function retur() {
@@ -598,7 +691,6 @@ async function startByggjar() {
 
   // ---- Last opp eit bilete til repoet (krev nøkkelen frå oversikta) --------
   // Biletet blir gjort mindre (maks 1920 punkt) og lagra som WebP i bilete/plakatar/.
-  const FORFATTAR = { name: "Tysnesfolkebibliotek", email: "Tysnesfolkebibliotek@users.noreply.github.com" };
   async function lastOpp(fil) {
     const status = $("opplasting");
     try {
