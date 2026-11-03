@@ -4,6 +4,7 @@
   "lang": "nn",
   "start_url": "./oversikt.html",
   "scope": "./",
+  "display_override": ["fullscreen"],
   "display": "standalone",
   "background_color": "#f6f3ee",
   "theme_color": "#f6f3ee",
