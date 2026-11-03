@@ -162,7 +162,7 @@
 
   <details class="nokkel" id="emneboks">
     <summary>Emneordlista og Forrige bok-indeksen</summary>
-    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord, sjangrar og seriar som er i bruk i avdelingane Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong iblant. Er listene meir enn to månader gamle, får du ei påminning når du opnar sida. Det tek nokre minutt og krev nøkkelen nedanfor.</p>
+    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord og sjangrar som er i bruk i avdelingane Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong iblant. Er listene meir enn to månader gamle, får du ei påminning når du opnar sida. Det tek nokre minutt og krev nøkkelen nedanfor.</p>
     <p id="emneinfo">Hentar informasjon om lista …</p>
     <p id="fbinfo"></p>
     <button type="button" id="emneknapp">Oppdater emneordlista og Forrige bok-indeksen</button>
@@ -832,7 +832,7 @@ async function visEmneinfo() {
     const d = await (await fetch(EMNE_API + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" })).json();
     if (!d.content) throw new Error();
     const l = JSON.parse(frå64(d.content));
-    $("emneinfo").textContent = `Sist laga ${l.laga.split("-").reverse().join(".")}: ${l.emne.length} emneord, ${l.sjanger.length} sjangrar${l.serie ? ` og ${l.serie.length} seriar` : ""} frå ${Object.values(l.titlar).reduce((a, b) => a + b, 0)} titlar.`;
+    $("emneinfo").textContent = `Sist laga ${l.laga.split("-").reverse().join(".")}: ${l.emne.length} emneord, ${l.sjanger.length} sjangrar frå ${Object.values(l.titlar).reduce((a, b) => a + b, 0)} titlar.`;
     return d.sha;
   } catch (e) { $("emneinfo").textContent = "Lista er ikkje laga enno."; return null; }
 }
@@ -843,7 +843,7 @@ async function oppdaterEmneord() {
   $("emneknapp").disabled = true;
   let emneOk = false;
   try {
-    const tabellar = { emne: {}, sjanger: {}, serie: {} }, titlar = {};
+    const tabellar = { emne: {}, sjanger: {} }, titlar = {};
     const allePostar = new Map();      // tittelnummer → tittel og forfattar, til Forrige bok-indeksen
     for (const avd of EMNE_AVD) {
       const query = `bibliofil.ccl="avd=${avd}" and norzig.materialType=l`;
@@ -863,8 +863,8 @@ async function oppdaterEmneord() {
       .sort((a, b) => (b[1] + b[2]) - (a[1] + a[2])).slice(0, maks);
     const liste = { laga: new Date().toISOString().slice(0, 10), avdelingar: EMNE_AVD, titlar,
       forklaring: "Kvar rad: [namn, titlar i tyfv, titlar i tyfb, alle formene skilde med komma]. Laga med «Oppdater emneordlista» på oversikt.html.",
-      emne: ferdig(tabellar.emne, 5000), sjanger: ferdig(tabellar.sjanger, 300), serie: ferdig(tabellar.serie, 3000) };
-    st.textContent = `Fann ${liste.emne.length} emneord, ${liste.sjanger.length} sjangrar og ${liste.serie.length} seriar. Lagrar …`;
+      emne: ferdig(tabellar.emne, 5000), sjanger: ferdig(tabellar.sjanger, 300) };
+    st.textContent = `Fann ${liste.emne.length} emneord og ${liste.sjanger.length} sjangrar. Lagrar …`;
     await lagreIRepo(EMNE_API, JSON.stringify(liste) + "\n", "Oppdater emneordlista", nøkkel);
     emneOk = true;
     await visEmneinfo();
@@ -1072,23 +1072,11 @@ function telEmne(post, avd, tabellar) {
       if (b.nno && !m.nno) { m.namn = b.namn; m.nno = true; }
     }
   }
-  // Serien står i bokposten som <bsdc:relation ispartof="Fotballstjerner">.
-  // Lenkjer til omslag o.l. er òg «relation», men utan ispartof.
-  const rel = [].concat((post.sru_recordData || {}).bsdc_relation || []);
-  const seriar = new Map();
-  for (const r of rel) {
-    const namn = String((r && typeof r === "object" && r.ispartof) || "").normalize("NFC").replace(/\s*;.*$/, "").trim();
-    if (namn) seriar.set(namn.toLowerCase(), namn);
-  }
-  for (const [k, namn] of seriar) {
-    const m = tabellar.serie[k] || (tabellar.serie[k] = { namn, nno: false, former: new Set([namn]), tal: {} });
-    m.tal[avd] = (m.tal[avd] || 0) + 1;
-  }
 }
 $("emneknapp").addEventListener("click", oppdaterEmneord);
 
 // ---- Påminning: listene er meir enn to månader gamle ----------------------
-// Emneordlista (med seriar) og Forrige bok-indeksen blir ikkje oppdaterte av
+// Emneordlista og Forrige bok-indeksen blir ikkje oppdaterte av
 // seg sjølve, sidan Bibliofil ikkje svarar GitHub sine maskiner. Er den eldste
 // meir enn 60 dagar gammal, kjem ein dialog med knapp for å oppdatere.
 const PÅMINN_DAGAR = 60, UTSETT_NØKKEL = "infoskjerm-paaminning-utsett";
@@ -1108,7 +1096,7 @@ async function sjekkAlder() {
   const eldst = datoar[0], dagar = Math.floor((Date.now() - new Date(eldst + "T12:00:00")) / 864e5);
   if (dagar < PÅMINN_DAGAR) return;
   $("paaminningtekst").textContent = `Emneordlista og Forrige bok-indeksen vart sist oppdaterte ${eldst.split("-").reverse().join(".")}, for ${dagar} dagar sidan. `
-    + "Ei ny oppdatering tek med nye bøker, emneord, seriar og appellfaktorar. Ho tek nokre minutt, og du må ha sida open til ho er ferdig.";
+    + "Ei ny oppdatering tek med nye bøker, emneord og appellfaktorar. Ho tek nokre minutt, og du må ha sida open til ho er ferdig.";
   $("paaminning").showModal();
 }
 $("paaminningseinare").addEventListener("click", () => {
