@@ -18,6 +18,6 @@
     {"id":"lesedigg","namn":"Lesedigg","kategori":"Andre digitale tenester","tekst":"Gode tips til magiske leseopplevingar.","merkelapp":"","ikon":"bok"},
     {"id":"nettbiblioteket","namn":"Nasjonalbibliotekets nettbibliotek","kategori":"Andre digitale tenester","tekst":"Søk i ei stor samling digitaliserte bøker og anna spanande materiale.","merkelapp":"","ikon":"skjerm","avsendarlogo":"bilete/tenester/nasjonalbiblioteket-logo.svg","avsendarnamn":"Nasjonalbiblioteket"},
     {"id":"sok-og-skriv","namn":"Søk & Skriv","kategori":"Andre digitale tenester","tekst":"Lær meir om informasjonssøk, studieteknikk og akademisk skriving.","merkelapp":"","ikon":"skjerm"},
-    {"id":"tibi","namn":"Tibi","kategori":"Andre digitale tenester","tekst":"Lån tilrettelagd litteratur om du har vanskar med å lese visuell tekst.","merkelapp":"","ikon":"lydbok"}
+    {"id":"tibi","namn":"Tibi","kategori":"Andre digitale tenester","tekst":"Lån tilrettelagd litteratur om du har vanskar med å lese visuell tekst.","merkelapp":"","ikon":"lydbok","avsendarlogo":"bilete/tenester/nasjonalbiblioteket-logo.svg","avsendarnamn":"Nasjonalbiblioteket"}
   ]
 }

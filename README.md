@@ -87,7 +87,7 @@ standard.
   bilete fylte ut frå `tenester.json`. Du kan endre alt etterpå. **Arrangement**
   har felt for dato, klokkeslett og stad. **Tom plakat** startar blankt.
 - **Logo:** logoar med gjennomsiktig bakgrunn blir farga i tekstfargen til temaet.
-  Tenester frå Nasjonalbiblioteket (Biblioteksøk, Bibliotekkortet, nettbiblioteket) kan òg
+  Tenester frå Nasjonalbiblioteket (Biblioteksøk, Bibliotekkortet, nettbiblioteket, Tibi) kan òg
   få NB-logoen lite nedst til høgre («avsendarlogo» i `tenester.json`).
 - **Bilete:** ikon, eitt av bileta til tenesta, eit eige bilete (adresse) eller
   **Last opp bilete** (krev nøkkelen frå oversikta). Opplasta bilete blir gjorde
