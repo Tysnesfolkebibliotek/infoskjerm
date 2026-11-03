@@ -597,15 +597,15 @@ const TEMA_LISTE = [
     skrift: "par-litteraer",
     css: `
       :root[data-tema="brage"] { --symbol-plass: 20vw; }`,
-    fargar: { bakgrunn: "#0f1320", tekst: "#f4efe4", dempa: "#bdb6a6", aksent: "#d4af5a", "aksent-tekst": "#12100e", skugge: "15,19,32", "reserve-a": "#3d3423", "reserve-b": "#171b2a" },
+    fargar: { bakgrunn: "#0f1320", tekst: "#f4efe4", dempa: "#bdb6a6", aksent: "#acc0c9", "aksent-tekst": "#0f1320", skugge: "15,19,32", "reserve-a": "#2b3d48", "reserve-b": "#171b2a" },
     pynt({ pynt, stigande }) {
       // Brageprisen-logoen øvst til høgre
       const logo = document.createElement("img");
       logo.src = "brage.png"; logo.alt = "Brageprisen";
       logo.style.cssText = "position:absolute; right:6vw; top:3.5vh; width:18vw; height:auto;";
       pynt.append(logo);
-      // Nokre få gullgnistar som stig sakte
-      stigande(10, "0 0 10 10", `<path fill="#e8c977" d="M5,0 L5.8,4.2 L10,5 L5.8,5.8 L5,10 L4.2,5.8 L0,5 L4.2,4.2 Z"/>`, [0.9, 1.8], [0.2, 0.5]);
+      // Nokre få gnistar i same farge som logoen, som stig sakte
+      stigande(10, "0 0 10 10", `<path fill="#cfdde3" d="M5,0 L5.8,4.2 L10,5 L5.8,5.8 L5,10 L4.2,5.8 L0,5 L4.2,4.2 Z"/>`, [0.9, 1.8], [0.2, 0.5]);
     },
   },
   {
