@@ -90,6 +90,38 @@
   .bsok .svar .hake { width: 5vw; height: 5vw; flex: none; border-radius: 50%; background: #2bb673; display: grid; place-items: center; }
   .bsok .svar .hake svg { width: 3vw; height: 3vw; }
   .bsok .svar b { display: block; font-size: 3.3vw; }
+  /* ---- Animasjon: nokon søkjer i Nasjonalbibliotekets nettbibliotek (bilete=anim:nettbiblioteket) ---- */
+  .nbsok { position: relative; width: 100%; max-height: 100%; aspect-ratio: 1.15; border-radius: 3vw; overflow: hidden; background: #fff; color: #1c1c1c;
+           font-family: "Inter", "Helvetica Neue", Arial, sans-serif; box-shadow: 0 2vh 5vh rgba(0,0,0,.25); display: flex; flex-direction: column; }
+  .nbsok .topp { display: flex; align-items: center; gap: 1.6vw; padding: 2.6vw 3.4vw 1.8vw; font-size: 2.9vw; color: #444; }
+  .nbsok .nblogo { height: 3.6vw; aspect-ratio: 7.35; background: #1a47c8;
+                   -webkit-mask: url("bilete/tenester/nasjonalbiblioteket-logo.svg") left center / contain no-repeat; mask: url("bilete/tenester/nasjonalbiblioteket-logo.svg") left center / contain no-repeat; }
+  .nbsok .nb-felt { margin: 0 3.4vw 2vw; height: 6.6vw; border: .25vw solid #9a9a9a; border-radius: .6vw; display: flex; align-items: center; gap: 1.6vw; padding: 0 2vw;
+                    font-size: 3vw; transition: border-color .2s, box-shadow .2s; }
+  .nbsok .nb-felt.aktiv { border-color: #1a47c8; box-shadow: 0 0 0 .5vw rgba(26,71,200,.18); }
+  .nbsok .nb-felt svg { width: 3.6vw; height: 3.6vw; flex: none; }
+  .nbsok .nb-felt .skrive { flex: 1; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+  .nbsok .plasshaldar { color: #6d6d6d; }
+  .nbsok .skrive:not(.tom) .plasshaldar { display: none; }
+  .nbsok .markor { width: .3vw; height: 3.6vw; background: #222; animation: blink-m 1s steps(1) infinite; }
+  .nbsok .skrive.tom .markor { order: -1; margin-right: .3vw; }
+  .nbsok .meny { background: #1a47c8; color: #fff; display: flex; gap: 3.4vw; padding: 1.7vw 3.4vw; font-size: 2.2vw; white-space: nowrap; overflow: hidden; }
+  .nbsok .meny span:first-child { box-shadow: 0 .9vw 0 -.5vw #fff; }
+  .nbsok .kort { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.2vw; padding: 2.6vw 3.4vw 3vw; background: #fff; }
+  .nbsok .k { border-radius: 1.8vw; box-shadow: 0 .4vw 1.4vw rgba(0,0,0,.16); display: flex; flex-direction: column; overflow: hidden; background: #fff;
+              transition: transform .4s, box-shadow .4s; }
+  .nbsok .k .bilde { flex: 1; background: #efe8da; display: grid; place-items: center; }
+  .nbsok .k .bilde svg { width: 40%; height: 60%; color: #6b5a44; }
+  .nbsok .k .namn { font-family: "Space Mono", "DejaVu Sans Mono", monospace; font-size: 2.5vw; text-align: center; padding: 1.2vw 0 1.4vw; letter-spacing: .04em; }
+  .nbsok .k.treff { transform: translateY(-.8vw); box-shadow: 0 0 0 .45vw #1a47c8, 0 1.2vw 2.4vw rgba(26,71,200,.28); }
+  .nbsok .k.treff .bilde { background: #dfe6fb; }
+  .nbsok .k.treff .bilde svg { color: #1a47c8; }
+  .nbsok .svar { position: absolute; left: 3.4vw; right: 3.4vw; bottom: 3vw; display: flex; align-items: center; gap: 2vw; background: #1a47c8; color: #fff;
+                 border-radius: 1.4vw; padding: 1.8vw 2.4vw; font-size: 2.8vw; opacity: 0; transform: translateY(1.5vh); transition: opacity .5s, transform .5s; }
+  .nbsok .svar.synleg { opacity: 1; transform: none; }
+  .nbsok .svar b { display: block; font-size: 3.1vw; }
+  .nbsok .svar .hake { width: 5vw; height: 5vw; flex: none; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+  .nbsok .svar .hake svg { width: 3vw; height: 3vw; }
   /* Utan bilete og ikon får teksten heile plassen */
   .midt.tom { flex: .6; }
 
@@ -219,7 +251,7 @@
       <label class="felt" id="eigebilete" hidden><span>Adressa til biletet</span><input type="text" id="eigeadresse" placeholder="bilete/… eller https://…"><small>Bilete i repoet: legg dei i mappa bilete/ og skriv til dømes bilete/plakat.png.</small></label>
       <label class="felt" id="opplastval" hidden><span>Vel eit bilete frå maskina</span><input type="file" id="fil" accept="image/*">
         <small>Biletet blir lagra i mappa bilete/plakatar/ i repoet. Det kan ta eit par minutt før det syner.</small></label>
-      <label class="felt" id="animval" hidden><span>Søk i animasjonen</span><input type="text" name="anim" placeholder="Ingelin Røssland | Kongen av Os">
+      <label class="felt" id="animval" hidden><span>Søk i animasjonen</span><input type="text" name="anim" placeholder="Til dømes: Ingelin Røssland | Kongen av Os">
         <small>Skil søka med |. Tomt = standardsøka.</small></label>
       <div class="opplasting" id="opplasting"></div>
       <label class="felt" id="formval" hidden><span>Korleis biletet blir vist</span><select id="biletform">
@@ -400,6 +432,60 @@ function biblioteksøkAnimasjon(eigne) {
   return boks;
 }
 
+// ---- Animasjon: nokon søkjer i Nasjonalbibliotekets nettbibliotek -------
+// I stilen til nettbiblioteket på nb.no: logo og søkjefelt øvst, blå meny og kort
+// for kvar materialtype. Bileta på korta er enkle teikningar (ikkje frå nb.no).
+// Etter søket lyser korta opp som treff, eitt etter eitt, og svaret syner.
+const STANDARDSØK_NB = ["Tysnes", "Kristin Lavransdatter", "Sunnhordland 1950", "Kongespeilet"];
+const NB_KORT = [
+  ["Bøker", IKON.bok],
+  ["Aviser", IKON.avis],
+  ["Bilete", '<rect x="2.5" y="6" width="19" height="14" rx="2.5"/><circle cx="12" cy="13" r="3.8"/><path d="M8 6l1.6-2.5h4.8L16 6"/>'],
+  ["Kart", '<path d="m3 6 6-2.5 6 2.5 6-2.5v14.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 3.5v14.5M15 6v14.5"/>'],
+  ["Radio", '<rect x="2.5" y="8" width="19" height="12" rx="2.5"/><circle cx="8" cy="14" r="3"/><path d="M14 12h4.5M14 15h4.5M6 8l9-5"/>'],
+  ["Noter", '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'],
+];
+function nettbibliotekAnimasjon(eigne) {
+  const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
+  const liste = søk.length ? søk : STANDARDSØK_NB;
+  const boks = document.createElement("div");
+  boks.className = "nbsok"; boks.setAttribute("aria-hidden", "true");
+  const strek = innhald => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${innhald}</svg>`;
+  boks.innerHTML =
+    `<div class="topp"><span class="nblogo"></span><span>|&nbsp; Nettbiblioteket</span></div>
+     <div class="nb-felt"><svg viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
+       <span class="skrive tom"><span class="tekst"></span><span class="markor"></span><span class="plasshaldar">Søk i Nettbiblioteket</span></span></div>
+     <div class="meny">${["Alt", "Bøker", "Aviser", "Bilete", "Tidsskrift", "Radio", "Kart", "Musikk", "Film"].map(m => `<span>${m}</span>`).join("")}</div>
+     <div class="kort">${NB_KORT.map(([namn, ikon]) => `<div class="k"><div class="bilde">${strek(ikon)}</div><div class="namn">${namn}</div></div>`).join("")}</div>
+     <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#1a47c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+       <span><b>Bøker, aviser, bilete og radio</b>Les og lytt gratis på nett</span></div>`;
+  const felt = boks.querySelector(".nb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
+  const kort = [...boks.querySelectorAll(".k")], svar = boks.querySelector(".svar");
+  const vent = ms => new Promise(r => setTimeout(r, ms));
+  (async () => {
+    for (let n = 0; ; n++) {
+      const ord = liste[n % liste.length];
+      await vent(900);
+      felt.classList.add("aktiv"); skrive.classList.remove("tom");
+      for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
+      await vent(600);
+      felt.classList.remove("aktiv");
+      // Nokre av korta lyser opp som treff, ulikt for kvart søk
+      const treff = kort.filter((k, i) => (i + n) % 3 !== 2);
+      for (const k of treff) { k.classList.add("treff"); await vent(260); }
+      await vent(400);
+      svar.classList.add("synleg");
+      await vent(3000);
+      svar.classList.remove("synleg");
+      kort.forEach(k => k.classList.remove("treff"));
+      await vent(400);
+      while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
+      skrive.classList.add("tom");
+    }
+  })();
+  return boks;
+}
+
 // =====================================================================
 // PLAKATEN
 // =====================================================================
@@ -447,6 +533,7 @@ function visPlakat(cfg) {
     $("visning").append(img);
   } else if (cfg.bilete && cfg.bilete.startsWith("anim:")) {
     if (cfg.bilete === "anim:biblioteksok") midt.append(biblioteksøkAnimasjon(cfg.anim));
+    if (cfg.bilete === "anim:nettbiblioteket") midt.append(nettbibliotekAnimasjon(cfg.anim));
   } else if (cfg.bilete && cfg.bilete !== "ikon") {
     const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : ""), alt: "", src: cfg.bilete });
     prøvIgjen(img, () => { midt.innerHTML = cfg.ikon ? `<div class="ikonsirkel">${ikonSvg(cfg.ikon)}</div>` : ""; });
