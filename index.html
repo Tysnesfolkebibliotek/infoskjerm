@@ -3386,10 +3386,11 @@ function startByggjar(startCfg) {
     const kol = avdar.map(a => 1 + emneord.avdelingar.indexOf(a)).filter(k => k > 0);
     const tal = rad => kol.reduce((s, k) => s + (rad[k] || 0), 0);
     const ordna = rader => rader.map(r => [r, tal(r)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
-    $("emneliste").replaceChildren(...ordna(emneord.emne).map(([r, n]) => new Option(`${r[0]} (${n})`, r[0])));
+    $("emneliste").replaceChildren(...ordna(emneord.emne).map(([r, n]) => new Option(`${r[0]} (${n})`, r[0])),
+      ...ordna(emneord.serie || []).map(([r, n]) => new Option(`Serie (${n} titlar)`, `Serie: ${r[0]}`)));
     $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[0])));
     const dato = emneord.laga ? emneord.laga.split("-").reverse().join(".") : "";
-    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre, eit deweynummer (til dømes 796.334) eller ein serie.`;
+    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord${emneord.serie ? ` og ${emneord.serie.length} seriar` : ""} i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre emneord eller eit deweynummer (til dømes 796.334).`;
   }
   const emneDelar = () => $("emne").value.split(",").map(x => x.trim()).filter(Boolean);
   function teiknEmne() {
@@ -3480,7 +3481,7 @@ function startByggjar(startCfg) {
     const v = tekst.trim();
     ekstra = !v || /^serie:/i.test(v) ? [] : /^\d[\d.]*$/.test(v)
       ? [new Option(`Deweynummer som byrjar på ${v}`, `Dewey ${v}`)]
-      : v.length >= 2 ? [new Option(`Bøker i serien «${v}»`, `Serie: ${v}`)] : [];
+      : v.length >= 2 && !(emneord && emneord.serie) ? [new Option(`Bøker i serien «${v}»`, `Serie: ${v}`)] : [];
     $("emneliste").prepend(...ekstra);
   }
   // Vel ein frå lista: blir lagt til med ein gong. Eige ord: Enter (komma skil fleire).

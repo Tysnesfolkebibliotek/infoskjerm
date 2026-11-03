@@ -818,7 +818,7 @@ async function visEmneinfo() {
     const d = await (await fetch(EMNE_API + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" })).json();
     if (!d.content) throw new Error();
     const l = JSON.parse(frå64(d.content));
-    $("emneinfo").textContent = `Sist laga ${l.laga.split("-").reverse().join(".")}: ${l.emne.length} emneord og ${l.sjanger.length} sjangrar frå ${Object.values(l.titlar).reduce((a, b) => a + b, 0)} titlar.`;
+    $("emneinfo").textContent = `Sist laga ${l.laga.split("-").reverse().join(".")}: ${l.emne.length} emneord, ${l.sjanger.length} sjangrar${l.serie ? ` og ${l.serie.length} seriar` : ""} frå ${Object.values(l.titlar).reduce((a, b) => a + b, 0)} titlar.`;
     return d.sha;
   } catch (e) { $("emneinfo").textContent = "Lista er ikkje laga enno."; return null; }
 }
@@ -829,7 +829,7 @@ async function oppdaterEmneord() {
   $("emneknapp").disabled = true;
   let emneOk = false;
   try {
-    const tabellar = { emne: {}, sjanger: {} }, titlar = {};
+    const tabellar = { emne: {}, sjanger: {}, serie: {} }, titlar = {};
     const allePostar = new Map();      // tittelnummer → tittel og forfattar, til Forrige bok-indeksen
     for (const avd of EMNE_AVD) {
       const query = `bibliofil.ccl="avd=${avd}" and norzig.materialType=l`;
@@ -849,8 +849,8 @@ async function oppdaterEmneord() {
       .sort((a, b) => (b[1] + b[2]) - (a[1] + a[2])).slice(0, maks);
     const liste = { laga: new Date().toISOString().slice(0, 10), avdelingar: EMNE_AVD, titlar,
       forklaring: "Kvar rad: [namn, titlar i tyfv, titlar i tyfb, alle formene skilde med komma]. Laga med «Oppdater emneordlista» på oversikt.html.",
-      emne: ferdig(tabellar.emne, 5000), sjanger: ferdig(tabellar.sjanger, 300) };
-    st.textContent = `Fann ${liste.emne.length} emneord og ${liste.sjanger.length} sjangrar. Lagrar …`;
+      emne: ferdig(tabellar.emne, 5000), sjanger: ferdig(tabellar.sjanger, 300), serie: ferdig(tabellar.serie, 3000) };
+    st.textContent = `Fann ${liste.emne.length} emneord, ${liste.sjanger.length} sjangrar og ${liste.serie.length} seriar. Lagrar …`;
     await lagreIRepo(EMNE_API, JSON.stringify(liste) + "\n", "Oppdater emneordlista", nøkkel);
     emneOk = true;
     await visEmneinfo();
@@ -1057,6 +1057,18 @@ function telEmne(post, avd, tabellar) {
       b.former.forEach(f => m.former.add(f));
       if (b.nno && !m.nno) { m.namn = b.namn; m.nno = true; }
     }
+  }
+  // Serien står i bokposten som <bsdc:relation ispartof="Fotballstjerner">.
+  // Lenkjer til omslag o.l. er òg «relation», men utan ispartof.
+  const rel = [].concat((post.sru_recordData || {}).bsdc_relation || []);
+  const seriar = new Map();
+  for (const r of rel) {
+    const namn = String((r && typeof r === "object" && r.ispartof) || "").normalize("NFC").replace(/\s*;.*$/, "").trim();
+    if (namn) seriar.set(namn.toLowerCase(), namn);
+  }
+  for (const [k, namn] of seriar) {
+    const m = tabellar.serie[k] || (tabellar.serie[k] = { namn, nno: false, former: new Set([namn]), tal: {} });
+    m.tal[avd] = (m.tal[avd] || 0) + 1;
   }
 }
 $("emneknapp").addEventListener("click", oppdaterEmneord);
