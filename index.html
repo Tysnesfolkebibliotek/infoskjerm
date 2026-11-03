@@ -318,7 +318,9 @@
   select, .temaknapp { appearance: none; -webkit-appearance: none; background-image: var(--b-pil); background-repeat: no-repeat;
                        background-position: right 10px center; background-size: 12px 12px; padding-right: 30px; }
   input:disabled, select:disabled { opacity: .45; cursor: not-allowed; }
-  .felt:has(:disabled) > label { opacity: .5; }
+  /* Berre etiketten til eit felt som er slått av, blir grå – ikkje avkryssingar ved sida av */
+  .felt:has(> input:disabled, > select:disabled) > label:not(.val) { opacity: .5; }
+  .val:has(> input:disabled) { opacity: .5; }
   input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--b-fokus); outline-offset: 1px; }
   .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .malrad { display: flex; gap: 8px; align-items: stretch; }
