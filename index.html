@@ -651,8 +651,6 @@
 
     </fieldset>
 
-    <!-- CCL-søk frå malar (til dømes plass=jul). Ikkje synleg, men blir teke vare på i lenkja. -->
-    <input type="hidden" id="ccl" name="ccl">
 
 
     <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,kulturfond,aarfra,aartil,aarsiste,alder,spraak">
@@ -806,7 +804,7 @@
       <p class="hjelp">Vifte viser førre og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p>
     </details>
 
-    <details class="del" id="del-avansert" data-felt="plass,utan,oppdater">
+    <details class="del" id="del-avansert" data-felt="plass,utan,oppdater,ccl">
       <summary>Avanserte innstillingar <span class="merke" hidden>endra</span></summary>
       <div class="felt">
         <label for="oppdaterval">Hent oppdatert bokliste</label>
@@ -830,6 +828,13 @@
           <input type="text" id="utan" name="utan" placeholder="magasin, nærmag">
         </div>
         <p class="hjelp">Skil fleire ord med komma. Orda blir samanlikna med plasseringa i Bibliofil, til dømes «Krim» eller «Nærmagasin».</p>
+      </div>
+      <!-- Eige CCL-krav frå eldre lenkjer. Blir vist når det finst, så ingen krav er usynlege. -->
+      <div class="felt" id="cclfelt" hidden>
+        <span class="etikett">Ekstra søkjekrav (Bibliofil-CCL)</span>
+        <input type="hidden" id="ccl" name="ccl">
+        <div class="vallinje brikkerad" id="cclvalde"></div>
+        <p class="hjelp">Kjem frå ei eldre lenkje og gjeld i tillegg til alt anna i skjemaet. Klikk for å fjerne.</p>
       </div>
     </details>
 
@@ -2975,7 +2980,7 @@ function startByggjar(startCfg) {
     }
     oppdaterSynlege();
     teiknTemaknapp(); teiknSkriftknapp();
-    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk(); teiknOppdater();
+    teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk(); teiknOppdater(); teiknCcl();
     // «Tilpass utsjånaden» er open når karusellen har eigne val
     visTilpass(["bakgrunn", "overgang", "teljar"].some(k => cfg[k] && !(k === "bakgrunn" && cfg[k] === "flat")));
     teiknTilpass();
@@ -3557,6 +3562,11 @@ function startByggjar(startCfg) {
   $("tilpassknapp").addEventListener("click", teiknTilpass);
 
   // ---- Hent oppdatert bokliste: meny som skriv minutt til det skjulte feltet
+  function teiknCcl() {
+    const v = $("ccl").value.trim();
+    $("cclfelt").hidden = !v;
+    teiknBrikker("cclvalde", v ? [{ tekst: v, tittel: "Klikk for å fjerne", fjern: () => { $("ccl").value = ""; teiknCcl(); oppdater(false); } }] : [], null);
+  }
   function teiknOppdater() {
     const v = $("oppdater").value || STANDARD.oppdater, val = $("oppdaterval");
     if (![...val.options].some(o => o.value === v)) {
