@@ -15,6 +15,9 @@
 //   css      Ekstra CSS for temaet. Valfritt. Har temaet eit symbol øvst til høgre
 //            (flagg, logo), set --symbol-plass så overskrifta ikkje går inn i det.
 //   pynt     Funksjon som teiknar pynten bak bøkene. Valfritt.
+//   logo     true når temaet viser logoen til eit arrangement eller ein kampanje
+//            (Sommarles, Brageprisen …). Desse temaa er skjulte i plakatbyggjaren,
+//            så ein plakat for ei anna teneste ikkje får ein framand logo.
 //   overgang, bakgrunn, teljar
 //            Kva temaet vel når karusellen står på «Som temaet». Valfritt.
 //            Utan dei blir det ton og løft, flat farge og hjul.
@@ -474,7 +477,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "sommarles", namn: "Sommarles", gruppe: "Bibliotek",
+    id: "sommarles", namn: "Sommarles", logo: true, gruppe: "Bibliotek",
     dato: "1. juni–31. august", aktuell: "05-15/08-31",
     css: `
       :root[data-tema="sommarles"] { --symbol-plass: 18vw; }`,
@@ -503,7 +506,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "berekraft", namn: "Berekraftsveka", gruppe: "Bibliotek",
+    id: "berekraft", namn: "Berekraftsveka", logo: true, gruppe: "Bibliotek",
     dato: "veke 17",
     aktuell: "veke17",
     fargar: { bakgrunn: "#f7f8f5", tekst: "#3c3c3b", dempa: "#5f6366", aksent: "#00689d", "aksent-tekst": "#ffffff", brikke: "rgba(60,60,59,.08)", skugge: "247,248,245", spor: "rgba(60,60,59,.14)", "reserve-a": "#26bde2", "reserve-b": "#19486a", "bakteppe-lys": "1.15" },
@@ -537,7 +540,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "falturiltu", namn: "Falturiltu", gruppe: "Bibliotek",
+    id: "falturiltu", namn: "Falturiltu", logo: true, gruppe: "Bibliotek",
     dato: "litteraturfestival, november",
     skrift: "par-feit",
     // Lys bakgrunn med fargane frå 2019-plakaten. Logoen (ordmerket og kråka) står
@@ -576,7 +579,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "forbodne", namn: "Forbodne bøker", gruppe: "Bibliotek", overgang: "bla",
+    id: "forbodne", namn: "Forbodne bøker", logo: true, gruppe: "Bibliotek", overgang: "bla",
     dato: "byrjinga av okt.", aktuell: "09-20/10-10",
     fargar: { bakgrunn: "#1d1430", tekst: "#fbf6e4", dempa: "#cfc6dd", aksent: "#faee9c", "aksent-tekst": "#3d2670", skugge: "29,20,48", "reserve-a": "#4f338a", "reserve-b": "#26193f" },
     css: `
@@ -592,7 +595,7 @@ const TEMA_LISTE = [
     },
   },
   {
-    id: "brage", namn: "Brageprisen", gruppe: "Bibliotek",
+    id: "brage", namn: "Brageprisen", logo: true, gruppe: "Bibliotek",
     dato: "nominasjon i oktober, pris i november", aktuell: "10-15/11-30",
     skrift: "par-litteraer",
     css: `

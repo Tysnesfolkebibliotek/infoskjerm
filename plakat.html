@@ -430,7 +430,8 @@ async function startByggjar() {
   const temaSel = $("tema");
   const temaListe = typeof TEMA_LISTE !== "undefined" ? TEMA_LISTE : [{ id: "kveld", namn: "Kveld", gruppe: "Faste" }];
   for (const g of (typeof TEMAGRUPPER !== "undefined" ? TEMAGRUPPER : ["Faste"])) {
-    const liste = temaListe.filter(t => (t.gruppe || "Faste") === g);
+    // Tema med logoen til eit arrangement eller ein kampanje passar ikkje på plakatar for andre ting
+    const liste = temaListe.filter(t => (t.gruppe || "Faste") === g && !t.logo);
     if (!liste.length) continue;
     const og = document.createElement("optgroup"); og.label = g;
     for (const t of liste) og.append(new Option(t.namn, t.id));
@@ -515,6 +516,9 @@ async function startByggjar() {
   function fyllFrå(cfg) {
     mal.value = teneste(cfg.mal) || ["arrangement", "tom"].includes(cfg.mal) ? cfg.mal : "tom";
     for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "dato", "tid", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
+    // Ein eldre plakat kan ha eit tema som er skjult no: ta det med i lista, så det ikkje blir bytt ut
+    if (cfg.tema && TEMA[cfg.tema] && ![...felt("tema").options].some(o => o.value === cfg.tema))
+      felt("tema").append(new Option(TEMA[cfg.tema].namn, cfg.tema));
     felt("tema").value = cfg.tema || "lys";
     felt("skrift").value = cfg.skrift || "standard";
     const t = teneste(mal.value);
