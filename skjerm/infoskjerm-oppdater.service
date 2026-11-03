@@ -1,0 +1,9 @@
+[Unit]
+Description=Hent ny rotasjon.html frå stabil-greina på GitHub
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=tysnes-folkebibliotek
+ExecStart=/home/tysnes-folkebibliotek/nytt-paa-hylla/oppdater-skjerm.sh

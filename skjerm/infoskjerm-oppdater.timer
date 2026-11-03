@@ -1,0 +1,11 @@
+[Unit]
+Description=Sjekk etter ny rotasjon.html ved oppstart og før omstarten kl. 15
+
+[Timer]
+# Tre minutt etter at maskina har starta
+OnBootSec=3min
+# Kvar dag kl. 14:45, så ny fil blir teken i bruk ved omstarten kl. 15
+OnCalendar=*-*-* 14:45
+
+[Install]
+WantedBy=timers.target
