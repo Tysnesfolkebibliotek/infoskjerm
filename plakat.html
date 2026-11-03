@@ -219,7 +219,7 @@
       <label class="felt" id="eigebilete" hidden><span>Adressa til biletet</span><input type="text" id="eigeadresse" placeholder="bilete/… eller https://…"><small>Bilete i repoet: legg dei i mappa bilete/ og skriv til dømes bilete/plakat.png.</small></label>
       <label class="felt" id="opplastval" hidden><span>Vel eit bilete frå maskina</span><input type="file" id="fil" accept="image/*">
         <small>Biletet blir lagra i mappa bilete/plakatar/ i repoet. Det kan ta eit par minutt før det syner.</small></label>
-      <label class="felt" id="animval" hidden><span>Søk i animasjonen</span><input type="text" name="anim" placeholder="Naiv. Super. | strikkeoppskrifter | Kongen av Os">
+      <label class="felt" id="animval" hidden><span>Søk i animasjonen</span><input type="text" name="anim" placeholder="Ingelin Røssland | Kongen av Os">
         <small>Skil søka med |. Tomt = standardsøka.</small></label>
       <div class="opplasting" id="opplasting"></div>
       <label class="felt" id="formval" hidden><span>Korleis biletet blir vist</span><select id="biletform">
@@ -364,8 +364,8 @@ function lagPynt(tema) {
 // ---- Animasjon: nokon søkjer i Biblioteksøk ----------------------------
 // Ei enkel teikning i stilen til framsida på bibsok.no (ikkje eit skjermbilete):
 // søket blir skrive bokstav for bokstav, knappen blir trykt, og svaret syner.
-// Søka kan endrast med «anim» i lenkja, skilde med | (t.d. anim=Naiv. Super.|Anne Holt).
-const STANDARDSØK = ["Naiv. Super.", "strikkeoppskrifter", "Kongen av Os", "fuglar i Noreg", "Anne-Cath. Vestly"];
+// Søka kan endrast med «anim» i lenkja, skilde med | (t.d. anim=Ingelin Røssland|Kongen av Os).
+const STANDARDSØK = ["Ingelin Røssland", "Kongen av Os"];
 function biblioteksøkAnimasjon(eigne) {
   const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
   const liste = søk.length ? søk : STANDARDSØK;
