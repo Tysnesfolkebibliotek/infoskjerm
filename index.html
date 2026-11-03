@@ -881,8 +881,9 @@ const MALAR = {
   reservert: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "reservert",
                omslag: "1", hylla: "0", perforf: "0", utan: "", antal: "20", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
                tittel: "Mest reservert akkurat no", namn: "", sek: "20", oppdater: "240", omtale: "1" },
-  // Julebøker: søk direkte på plasseringa «jul» med CCL (plass=jul).
-  jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "plass=jul",
+  // Julebøker: plasseringa «jul». Står i det synlege plasseringsfeltet (Avanserte
+  // innstillingar), så ein ser kravet og kan ta det bort.
+  jul: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "jul", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "",
          rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
          tittel: "Julebøker", namn: "", sek: "20", oppdater: "360", omtale: "1" },
   // Julekalender: 24 handplukka bøker, éi ny luke kvar dag i desember
@@ -935,6 +936,10 @@ function lesAdresse() {
   for (const k of NØKLAR) if (p.has(k)) cfg[k] = p.get(k);
   // Julekalenderen var ei eiga kjelde ei kort stund. No er han Handplukka med visingsmåten «kalender».
   if (cfg.kjelde === "kalender") { cfg.kjelde = "utval"; cfg.visning = "kalender"; }
+  // Jul-malen la før «plass=jul» i eit usynleg CCL-felt, så kravet vart med
+  // utan at ein såg det. No blir det flytta over i det synlege plasseringsfeltet.
+  const ccl = (cfg.ccl || "").trim().match(/^plass\s*=\s*([^\s*"]+)\*?$/i);
+  if (ccl && !(cfg.plass || "").trim()) { cfg.plass = ccl[1]; cfg.ccl = ""; }
   return { cfg, vis: p.get("vis") === "1" };
 }
 
