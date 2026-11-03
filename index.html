@@ -1450,7 +1450,7 @@ function startVisning(cfg) {
     <g fill="rgba(0,0,0,.2)"><path d="M58 40C46 18 24 14 24 28c0 10 18 14 34 12z"/><path d="M62 40c12-22 34-26 34-12 0 10-18 14-34 12z"/></g>
     <circle cx="60" cy="42" r="9" fill="currentColor"/></svg>`;
   let kalEl = null, kalDag = -1, kalRunde = 0, kalAktiv = false, kalByggPåNytt = false;
-  let dagensOpna = false, startMedDagens = true;
+  let dagensOpna = false, runde = null;
   const lukeEl = new Map();
 
   function kalenderdag() {
@@ -1524,18 +1524,42 @@ function startVisning(cfg) {
   const kalVent = ms => new Promise(ferdig => setTimeout(ferdig, ms));
   const px = r => ({ left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
 
+  // Ein runde er dagens luke og opptil ELDRE_PER_RUNDE eldre luker. Etterpå seier
+  // kalenderen «ferdig» til rotasjonen, som går vidare til neste side med ein gong.
+  // Dei eldre lukene går i ring på tvers av rundane (lagreSist), så alle blir viste.
+  const ELDRE_PER_RUNDE = 5;
+  function nyRunde() {
+    const dagens = dagensLuke();
+    const eldre = [];   // opna luker med bok, utan dagens, nyaste først
+    for (let n = Math.min(kalDag, 24); n >= 1; n--) if (n !== dagens && bokForLuke(n)) eldre.push(n);
+    const ut = [];
+    if (dagens && bokForLuke(dagens)) ut.push(dagens);
+    if (!ut.length && !eldre.length) return [0, 0];   // før 1. desember: to pakkar ristar, så er runden ferdig
+    const tal = Math.min(eldre.length, ut.length ? ELDRE_PER_RUNDE : ELDRE_PER_RUNDE + 1);
+    const ix = eldre.indexOf(Number(lesSist()));
+    for (let k = 1; k <= tal; k++) ut.push(eldre[(ix + k) % eldre.length]);
+    return ut;
+  }
+
+  function rundeFerdig() {
+    runde = null;
+    // Ny rotasjon.html går vidare til neste side. Ein gammal skjønar ikkje
+    // meldinga, og då startar vi berre ein ny runde etter ein kort pause.
+    if (iRotasjon) try { window.parent.postMessage({ nyheiter: "ferdig" }, "*"); } catch (e) {}
+    tidtakar = setTimeout(() => { tidtakar = null; if (køyrer) neste(); }, 3000);
+  }
+
   function kalenderSteg() {
     tidtakar = "kalender";   // så fortset() ikkje startar eit steg til medan dette går
     if (!kalEl || !kalEl.isConnected || kalByggPåNytt || kalenderdag() !== kalDag) {
-      if (kalenderdag() !== kalDag) { dagensOpna = false; startMedDagens = true; }
+      if (kalenderdag() !== kalDag) { dagensOpna = false; runde = null; }
       byggKalender();
     }
+    if (runde === null) runde = nyRunde();
+    if (!runde.length) return rundeFerdig();
     startFramdrift();
-    const r = kalRunde;
-    // Opna luker med bok, nyaste først
-    const ring = [];
-    for (let n = Math.min(kalDag, 24); n >= 1; n--) if (bokForLuke(n)) ring.push(n);
-    if (!ring.length) {
+    const n = runde.shift();
+    if (n === 0) {
       // Før 1. desember: ein tilfeldig pakke ristar litt, så skjermen ikkje står heilt still
       const gåver = [...kalEl.querySelectorAll(".luke > .gave")];
       const g = gåver[Math.floor(Math.random() * gåver.length)];
@@ -1543,18 +1567,9 @@ function startVisning(cfg) {
       tidtakar = setTimeout(() => { tidtakar = null; neste(); }, Math.min(SEK, 8) * 1000);
       return;
     }
-    let n;
     const dagens = dagensLuke();
-    if (startMedDagens && dagens && bokForLuke(dagens)) { n = dagens; startMedDagens = false; }
-    else {
-      startMedDagens = false;
-      // Vidare frå den sist viste (utan noko lagra: frå dagens luke, som alt er vist)
-      const ix = ring.indexOf(Number(lesSist()));
-      const sist = ix >= 0 ? ix : dagens ? 0 : -1;
-      n = ring[(sist + 1) % ring.length];
-      lagreSist(String(n));
-    }
-    visLuke(n, n === dagens, r);
+    if (n !== dagens) lagreSist(String(n));
+    visLuke(n, n === dagens, kalRunde);
   }
 
   async function visLuke(n, pakkUt, r) {
@@ -1581,7 +1596,8 @@ function startVisning(cfg) {
     document.getElementById("visning").append(g);
     l.classList.remove("dagens", "innpakka");
     l.classList.add("borte");
-    avdelingFelt.textContent = pakkUt ? `Dagens luke: ${n}` : `Luke ${n}`;
+    const lukeTekst = pakkUt ? `Dagens luke: ${n}` : dagensLuke() ? `Tidlegare luke: ${n}` : `Luke ${n}`;
+    avdelingFelt.textContent = lukeTekst;
     kalEl.classList.add("dempa");
     g.animate([px(frå), px(til)], { duration: 1300, easing: "cubic-bezier(.4, 0, .2, 1)", fill: "forwards" });
     await kalVent(1400); if (!ferdig()) return;
@@ -1607,7 +1623,7 @@ function startVisning(cfg) {
     boks.append(info);
     scene.append(boks);
     requestAnimationFrame(() => requestAnimationFrame(() => boks.classList.add("synleg")));
-    avdelingFelt.textContent = `Luke ${n}`;
+    avdelingFelt.textContent = lukeTekst;
     visBakteppe(t.omslag);
     const brukt = 1400 + (pakkUt ? 2700 : 0) + 1300 + 400;
     await kalVent(Math.max(5000, SEK * 1000 - brukt)); if (!ferdig()) return;
@@ -1784,7 +1800,7 @@ function startVisning(cfg) {
     window.addEventListener("message", e => {
       if (e.data && e.data.nyheiter === "vis") {
         // Julekalender: dagens luke blir pakka inn att og opna først kvar gong karusellen kjem fram
-        if (KALENDER && titlar.length) { dagensOpna = false; startMedDagens = true; byggKalender(); }
+        if (KALENDER && titlar.length) { dagensOpna = false; runde = null; byggKalender(); }
         køyrer = true; fortset(); sjekkSvarteliste(5 * 60 * 1000); }
       if (e.data && e.data.nyheiter === "skjul") {
         køyrer = false; pause();

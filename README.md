@@ -59,7 +59,8 @@ Kvar side i `oppsett.json` er éi linje:
 - **`namn`**: berre for deg.
 - **`url`**: ei lenkje frå karusellbyggjaren eller ei kanalside på tysnesbibliotek.no.
 - **`lokal`**: i staden for `url`, ei fil på skjermen i `~/nytt-paa-hylla/`.
-- **`sekund`**: kor lenge sida blir vist. Minst 5.
+- **`sekund`**: kor lenge sida blir vist. Minst 5. For julekalenderen er det eit
+  tak: han går vidare sjølv når runden er ferdig.
 - **`frisk`**: `true` lastar sida på nytt kvar gong ho blir vist (kanalsider).
 - **`periode`**: `12-01/12-24` kvart år, kan gå over nyttår (`11-15/01-15`).
   Med årstal (`2026-10-01/2026-10-31`) berre den eine gongen.
@@ -84,10 +85,16 @@ Kalenderen viser 24 pakkar: den første boka i lista er luke 1, den andre luke 2
 og så vidare. Utlånte bøker er med, og får merkelappen «Utlånt – kan reserverast».
 
 - Før 1. desember står alle pakkane attlatne, og ein og ein pakke ristar litt.
-- Frå 1. desember er så mange luker opne som datoen. Dagens luke blir pakka opp
-  kvar gong turen kjem til henne, og først kvar gong karusellen kjem fram i
-  rotasjonen. Dei andre opne lukene zoomar fram éi og éi, nyaste først.
-- Etter 24. desember (og i januar) er alle opne.
+- Frå 1. desember er så mange luker opne som datoen.
+- Kvar gong kalenderen kjem fram, er det éin **runde**: dagens luke blir pakka
+  opp, og så zoomar opptil 5 eldre luker fram, éi og éi («Tidlegare luke»). Dei
+  eldre lukene går i ring på tvers av rundane, så alle blir viste etter kvart.
+- Etter runden seier kalenderen «ferdig» til rotasjonen, som går vidare til neste
+  side med ein gong. Sekunda i oppsettet er då berre eit tak (til dømes 240).
+  Ein runde tek om lag 25 sekund 1. desember og om lag 2 minutt frå 6. desember.
+  Oversikta viser ein merknad ved julekalendrar. Krev ny `rotasjon.html` på
+  skjermane (frå 3.11.2026). Med ein eldre fil får kalenderen fast lengd.
+- Etter 24. desember (og i januar) er alle opne, og kvar runde viser 6 av dei.
 
 **Teste før desember:** vel ein dato i feltet «Test: sjå kalenderen som om det
 var» i byggjaren. Førehandsvisinga og «Opne» viser då kalenderen den dagen.

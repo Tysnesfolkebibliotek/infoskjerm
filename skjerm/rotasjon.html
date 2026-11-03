@@ -228,6 +228,10 @@ window.addEventListener("message", e => {
     r.dataset.tom = e.data.nyheiter === "tom" ? "1" : "";
     if (e.data.nyheiter === "tom" && r === aktivRamme && andreHar(r) && nesteNo) { clearTimeout(nesteTid); const f = nesteNo; nesteNo = null; f(); }
   }
+  // Ein karusell som har vist det han skal (julekalenderen), seier «ferdig».
+  // Då går vi vidare med ein gong i staden for å vente på tida i oppsettet,
+  // som berre blir eit tak.
+  if (e.data.nyheiter === "ferdig" && r === aktivRamme && nesteNo) { clearTimeout(nesteTid); const f = nesteNo; nesteNo = null; f(); }
 });
 // Finst det ei anna side som ikkje er meld tom?
 const andreHar = r => rammer.some(x => x !== r && x.dataset.tom !== "1");

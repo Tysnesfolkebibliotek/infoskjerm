@@ -78,6 +78,7 @@
   .merke.no { background: var(--ok); color: #fff; }
   .merke.ikkje { background: var(--strek); color: var(--dempa); }
   .side .detaljar { font-size: 13px; color: var(--dempa); margin-top: 3px; }
+  .side .detaljar.merknad { font-style: italic; }
   .side .knappar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   button, .knapp { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--strek);
     background: var(--flate); color: var(--tekst); cursor: pointer; text-decoration: none; display: inline-block; }
@@ -298,7 +299,7 @@ function typeTekst(s) {
   if (/github\.io\/infoskjerm/.test(s.url || "")) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
     const tema = p.get("tema") ? ` · tema ${p.get("tema")}` : "";
-    const visning = { rull: " · rulletekst", vifte: " · vifte" }[p.get("visning")] || "";
+    const visning = { rull: " · rulletekst", vifte: " · vifte", kalender: " · julekalender" }[p.get("visning")] || (p.get("kjelde") === "kalender" ? " · julekalender" : "");
     return `Karusell${tema}${visning}`;
   }
   return "Nettside";
@@ -307,6 +308,15 @@ const adresse = s => s.lokal ? null : s.url;
 
 // ---- Samspel med karusellbyggjaren ---------------------------------------
 const erKarusell = s => !s.lokal && /github\.io\/infoskjerm\/(index\.html)?#vis=1/.test(s.url || "");
+// Julekalenderen styrer lengda sjølv: sekunda i oppsettet er berre eit tak
+const erKalender = s => {
+  if (!erKarusell(s)) return false;
+  const p = new URLSearchParams((s.url.split("#")[1]) || "");
+  return p.get("kjelde") === "kalender" || (p.get("kjelde") === "utval" && p.get("visning") === "kalender");
+};
+const detaljTekst = s => `${typeTekst(s)} · ${erKalender(s) ? "maks " : ""}${s.sekund} sek · ${tidsTekst(s)}`;
+const kalenderMerknad = s => erKalender(s) ? el("div", { class: "detaljar merknad" },
+  "Julekalender: går vidare til neste side når dagens luke og opptil 5 eldre luker er viste, om lag 2 minutt. Sekunda er berre eit tak.") : null;
 // Opnar karusellen i byggjaren (utan vis=1), med beskjed om kvar han skal tilbake
 function tilByggjaren(s, skjerm, i) {
   const [, hash = ""] = s.url.split("#");
@@ -368,7 +378,8 @@ function teikn() {
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
           el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
-        el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
+        el("div", { class: "detaljar" }, detaljTekst(s)),
+        kalenderMerknad(s),
         el("div", { class: "knappar" },
           el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
@@ -387,7 +398,8 @@ function teikn() {
           el("div", { class: "topp" },
             el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
             el("span", { class: "merke ikkje" }, "Avpublisert")),
-          el("div", { class: "detaljar" }, `${typeTekst(s)} · ${s.sekund} sek · ${tidsTekst(s)}`),
+          el("div", { class: "detaljar" }, detaljTekst(s)),
+          kalenderMerknad(s),
           el("div", { class: "knappar" },
             el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser"),
             ...felleKnappar(s, AV(lk), i, erOpen),
@@ -557,7 +569,7 @@ function skjema(s, lk, i) {
     el("div", {}, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
-      el("div", {}, el("label", { for: "f-sek" }, "Sekund på skjermen"),
+      el("div", {}, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : "Sekund på skjermen"),
         el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: s.sekund || 180 })),
       el("div", {}, el("label", {}, " "),
         el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
