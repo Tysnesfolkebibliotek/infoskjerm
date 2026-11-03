@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="ikon/apple-touch-icon.png">
+<link rel="icon" href="ikon/ikon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<title>Plakatbyggjar</title>
+<!--
+  Plakatar for Tysnes folkebibliotek: digitale tenester og arrangement.
+
+  Éi fil, to roller, som karusellbyggjaren (index.html):
+    plakat.html             → byggjaren (skjema + førehandsvising)
+    plakat.html#vis=1&…     → sjølve plakaten, slik skjermen viser han
+
+  Alle innstillingane står i adressa etter #, så plakaten er ei vanleg side i
+  oppsett.json. Tenestene å velje mellom ligg i tenester.json. Tema kjem frå
+  tema.js og skriftene frå skrifter.js, så plakatane ser ut som karusellane.
+  QR-koden blir laga i nettlesaren med qrcode.js (Kazuhiko Arase, MIT).
+-->
+<style>
+  :root {
+    --bakgrunn: #14110f; --tekst: #f5efe6; --dempa: #b8ab98; --aksent: #e8a33d;
+    --brikke: rgba(255,255,255,.10); --aksent-tekst: #1b140c; --skugge: 20,17,15;
+    --skrift: "Ubuntu", "DejaVu Sans", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --b-bg: #f6f3ee; --b-flate: #ffffff; --b-tekst: #22201d; --b-dempa: #6f675d;
+    --b-strek: #e3ddd3; --b-aksent: #b8741a; --b-aksent-tekst: #ffffff; --b-fokus: #e8a33d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --b-bg: #171513; --b-flate: #211e1b; --b-tekst: #f1ebe2; --b-dempa: #a99f92;
+            --b-strek: #36312b; --b-aksent: #e8a33d; --b-aksent-tekst: #1b140c; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { width: 100%; height: 100%; font-family: var(--skrift); }
+
+  /* ================================================================== */
+  /* PLAKATEN                                                           */
+  /* ================================================================== */
+  body.vis { background: var(--bakgrunn); color: var(--tekst); overflow: hidden; cursor: none; }
+  #visning { position: fixed; inset: 0; }
+  #visning main { position: relative; height: 100%; display: flex; flex-direction: column; padding: 5vh 7vw 4vh; }
+  #visning header { display: flex; flex-direction: column; gap: 1.6vh; padding-right: var(--symbol-plass, 0); }
+  .avdeling { font-size: 3vw; color: var(--aksent-tekstfarge, var(--aksent)); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; min-height: 1.2em; }
+  .overskrift { font-weight: var(--vekt-overskrift, 700); font-size: calc(9vw * var(--skala-overskrift, 1)); line-height: 1.05;
+                font-family: var(--skrift-overskrift, var(--skrift)); overflow-wrap: anywhere; hyphens: auto; }
+  :root[data-versalar] .overskrift { text-transform: uppercase; letter-spacing: .04em; }
+  .overskrift.lang { font-size: calc(7vw * var(--skala-overskrift, 1)); }
+  /* Logoen er ein maske, så han får tekstfargen til temaet (logo med gjennomsiktig bakgrunn) */
+  .logo { width: 62vw; max-height: 15vh; background: var(--tekst);
+          -webkit-mask: var(--logo) left center / contain no-repeat; mask: var(--logo) left center / contain no-repeat; }
+  .logo.original { background: var(--logo) left center / contain no-repeat; -webkit-mask: none; mask: none; }
+
+  .midt { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 3vh 0; }
+  .bilete { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 2vh 4vh rgba(0,0,0,.28)); }
+  .bilete.foto { border-radius: 3vw; filter: none; box-shadow: 0 2vh 5vh rgba(0,0,0,.3); }
+  .ikonsirkel { height: min(52vw, 100%); aspect-ratio: 1; border-radius: 50%; background: var(--brikke); display: grid; place-items: center;
+                box-shadow: inset 0 0 0 1vw color-mix(in srgb, var(--aksent) 35%, transparent); }
+  .ikonsirkel svg { width: 52%; height: 52%; color: var(--aksent-tekstfarge, var(--aksent)); }
+  /* Ferdig plakat (t.d. frå Canva): biletet fyller heile skjermen, alt anna blir borte */
+  .heilbilete { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
+  .heil #visning main { display: none; }
+  /* Utan bilete og ikon får teksten heile plassen */
+  .midt.tom { flex: .6; }
+
+  .brodtekst { font-size: 5vw; line-height: 1.32; font-weight: 500; }
+  .brikker { display: flex; flex-wrap: wrap; gap: 1.4vw; margin-top: 2.6vh; }
+  .brikke { background: var(--brikke); border-radius: 99px; padding: .9vh 2.6vw; font-size: 3vw; }
+  .brikke.hylle { background: var(--aksent); color: var(--aksent-tekst); font-weight: 700; }
+
+  .arr { display: grid; gap: 1.2vh; margin-top: 3vh; font-size: 4.2vw; font-weight: 600; }
+  .arr div { display: flex; align-items: center; gap: 2.4vw; }
+  .arr svg { width: 5vw; height: 5vw; flex: none; color: var(--aksent-tekstfarge, var(--aksent)); }
+
+  .qrrad { display: flex; align-items: center; gap: 4.5vw; margin-top: 4vh; padding: 2.6vw; border-radius: 3vw; background: var(--brikke); }
+  /* QR-koden står alltid mørk på kvitt, så han kan skannast same kva tema */
+  .qr { width: 25vw; flex: none; aspect-ratio: 1; background: #fff; border-radius: 1.6vw; padding: 1.8vw; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .qrtekst { font-size: 4vw; font-weight: 700; line-height: 1.2; }
+  .qrlenkje { font-size: 2.6vw; color: var(--dempa); margin-top: 1vh; overflow-wrap: anywhere; }
+
+  #visning footer { display: flex; align-items: center; justify-content: space-between; margin-top: 3vh; flex: none; }
+  .botnnamn { font-size: 2.8vw; color: var(--tekst); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+  .botnnamn b { font-weight: 700; }
+
+  /* Rolig inngang kvar gong plakaten kjem fram på skjermen */
+  .inn { opacity: 0; transform: translateY(2.2vh); }
+  .spel .inn { animation: inn .9s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: calc(var(--n, 0) * .18s + .15s); }
+  @keyframes inn { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .inn { opacity: 1; transform: none; } .spel .inn { animation: none; } }
+
+  /* ================================================================== */
+  /* BYGGJAREN                                                          */
+  /* ================================================================== */
+  body.bygg { background: var(--b-bg); color: var(--b-tekst); font-size: 15px; }
+  .b-ramme { display: grid; grid-template-columns: minmax(340px, 460px) 1fr; height: 100vh; }
+  .b-skjema { background: var(--b-flate); border-right: 1px solid var(--b-strek); padding: 26px 26px 40px; overflow: auto; }
+  .b-skjema h1 { font-size: 22px; margin-bottom: 4px; }
+  .b-skjema .intro { color: var(--b-dempa); font-size: 14px; margin-bottom: 14px; line-height: 1.45; }
+  .applenkje { font-size: 14px; color: var(--b-dempa); text-decoration: none; display: inline-block; margin-bottom: 8px; }
+  .felt { display: flex; flex-direction: column; gap: 5px; margin-top: 14px; }
+  .felt > span { font-weight: 600; font-size: 14px; }
+  .felt small, .hjelp { color: var(--b-dempa); font-size: 12.5px; line-height: 1.4; }
+  input[type=text], input[type=url], textarea, select {
+    font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--b-strek); border-radius: 8px;
+    background: var(--b-bg); color: var(--b-tekst); width: 100%; }
+  textarea { resize: vertical; min-height: 70px; line-height: 1.4; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--b-fokus); outline-offset: -1px; }
+  .rad { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .avkryss { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; }
+  .del { border-top: 1px solid var(--b-strek); margin-top: 20px; padding-top: 4px; }
+  .del > h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--b-dempa); padding-top: 12px; }
+  .knappar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .knapp { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--b-aksent);
+           background: var(--b-aksent); color: var(--b-aksent-tekst); cursor: pointer; text-decoration: none; }
+  .knapp.sekundær { background: transparent; color: var(--b-tekst); border-color: var(--b-strek); }
+  .b-lenkje { margin-top: 22px; padding: 14px; border-radius: 10px; background: var(--b-bg); border: 1px solid var(--b-strek); }
+  .b-lenkje .etikett { font-weight: 700; font-size: 14px; }
+  .b-lenkje code { display: block; margin: 8px 0 10px; font-size: 12px; word-break: break-all; color: var(--b-dempa); max-height: 6.5em; overflow: auto; }
+  .opplasting { font-size: 13px; color: var(--b-dempa); margin-top: 6px; min-height: 1.2em; }
+  .tilskjerm { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--b-strek); }
+  .tilskjerm .etikett { margin-bottom: 8px; }
+  .b-forhand { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 12px; min-width: 0; }
+  .b-skjerm { position: relative; height: min(calc(100vh - 80px), 1100px); aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; background: #000;
+              box-shadow: 0 0 0 10px #2a2622, 0 20px 50px rgba(0,0,0,.35); }
+  .b-skjerm iframe { position: absolute; top: 0; left: 0; width: 1080px; height: 1920px; border: 0; transform-origin: 0 0; }
+  @media (max-width: 820px) {
+    .b-ramme { grid-template-columns: 1fr; height: auto; }
+    .b-skjema { border-right: 0; border-bottom: 1px solid var(--b-strek); padding: 20px 16px 28px; }
+    .b-skjerm { height: auto; width: min(100%, 360px); }
+  }
+</style>
+<script src="tema.js"></script>
+<script src="skrifter.js"></script>
+<script src="qrcode.js"></script>
+</head>
+<body>
+
+<!-- ======================= PLAKATEN ======================= -->
+<div id="visning" hidden>
+  <div id="pynt" aria-hidden="true"></div>
+  <main>
+    <header>
+      <div class="avdeling inn" id="overlinje" style="--n:0"></div>
+      <div class="logo inn" id="logo" style="--n:1" hidden></div>
+      <h1 class="overskrift inn" id="overskrift" style="--n:1"></h1>
+    </header>
+    <div class="midt inn" id="midt" style="--n:2"></div>
+    <section>
+      <p class="brodtekst inn" id="brodtekst" style="--n:3"></p>
+      <div class="brikker inn" id="brikker" style="--n:4"></div>
+      <div class="arr inn" id="arr" style="--n:4" hidden></div>
+      <div class="qrrad inn" id="qrrad" style="--n:5" hidden>
+        <div class="qr" id="qr"></div>
+        <div><div class="qrtekst" id="qrtekst"></div><div class="qrlenkje" id="qrlenkje"></div></div>
+      </div>
+    </section>
+    <footer><span class="botnnamn"><b>Tysnes</b> folkebibliotek</span></footer>
+  </main>
+</div>
+
+<!-- ======================= BYGGJAREN ======================= -->
+<div class="b-ramme" id="byggjar" hidden>
+  <form class="b-skjema" id="skjema" autocomplete="off" onsubmit="return false">
+    <a class="applenkje" href="oversikt.html">← Oversikta</a>
+    <h1>Plakatbyggjar</h1>
+    <p class="intro">Plakatar for digitale tenester og arrangement. Vel ei teneste for å få teksten og lenkja ferdig utfylte. Karusellar lagar du i <a href="index.html">karusellbyggjaren</a>.</p>
+
+    <label class="felt"><span>Mal</span><select id="mal" name="mal"></select></label>
+
+    <div class="del"><h2>Innhald</h2>
+      <label class="felt"><span>Liten tekst øvst</span><input type="text" name="overlinje" placeholder="Digitalt bibliotek"></label>
+      <label class="felt"><span>Overskrift</span><input type="text" name="overskrift"></label>
+      <label class="avkryss" id="logoval" hidden><input type="checkbox" id="brukLogo"> Vis logoen i staden for overskrifta</label>
+      <label class="felt"><span>Tekst</span><textarea name="tekst" rows="3"></textarea></label>
+      <label class="felt"><span>Merkelapp</span><input type="text" name="merkelapp" placeholder="Til dømes «Gratis med lånekortet»"><small>Tom = ingen merkelapp.</small></label>
+      <label class="felt"><span>Bilete</span><select id="bileteval"></select></label>
+      <label class="felt" id="eigebilete" hidden><span>Adressa til biletet</span><input type="text" id="eigeadresse" placeholder="bilete/… eller https://…"><small>Bilete i repoet: legg dei i mappa bilete/ og skriv til dømes bilete/plakat.png.</small></label>
+      <label class="felt" id="opplastval" hidden><span>Vel eit bilete frå maskina</span><input type="file" id="fil" accept="image/*">
+        <small>Biletet blir lagra i mappa bilete/plakatar/ i repoet. Det kan ta eit par minutt før det syner.</small></label>
+      <div class="opplasting" id="opplasting"></div>
+      <label class="felt" id="formval" hidden><span>Korleis biletet blir vist</span><select id="biletform">
+        <option value="">Utklipt (t.d. ein mobil med gjennomsiktig bakgrunn)</option>
+        <option value="foto">Fotografi med runde hjørne</option>
+        <option value="heil">Ferdig plakat: fyller heile skjermen</option></select>
+        <small>«Ferdig plakat» passar for plakatar laga i Canva o.l. i ståande format (1080 × 1920).</small></label>
+    </div>
+
+    <div class="del" id="arrdel"><h2>Arrangement</h2>
+      <p class="hjelp">Fyll ut det som passar. Det som står tomt, blir ikkje vist.</p>
+      <label class="felt"><span>Dato</span><input type="text" name="dato" placeholder="Torsdag 12. november"></label>
+      <div class="rad">
+        <label class="felt"><span>Klokkeslett</span><input type="text" name="tid" placeholder="18.00"></label>
+        <label class="felt"><span>Stad</span><input type="text" name="stad" placeholder="Biblioteket"></label>
+      </div>
+      <p class="hjelp" style="margin-top:10px">Tips: gje plakaten ein periode på oversikta, så forsvinn han av seg sjølv etter arrangementet.</p>
+    </div>
+
+    <div class="del"><h2>QR-kode</h2>
+      <label class="felt"><span>Lenkje</span><input type="url" name="lenkje" placeholder="https://www.tysnesbibliotek.no/nn/…"><small>Helst undersida på tysnesbibliotek.no. Tom = ingen QR-kode.</small></label>
+      <label class="felt"><span>Tekst ved QR-koden</span><input type="text" name="qrtekst" placeholder="Skann for å kome i gang"></label>
+    </div>
+
+    <div class="del"><h2>Utsjånad</h2>
+      <div class="rad">
+        <label class="felt"><span>Tema</span><select name="tema" id="tema"></select></label>
+        <label class="felt"><span>Skrift</span><select name="skrift" id="skrift"></select></label>
+      </div>
+    </div>
+
+    <div class="b-lenkje">
+      <div class="etikett">Lenkje til plakaten</div>
+      <code id="lenkjefelt"></code>
+      <div class="knappar">
+        <button type="button" class="knapp sekundær" id="kopier">Kopier lenkje</button>
+        <a class="knapp sekundær" id="opne" target="_blank" rel="noopener">Opne</a>
+      </div>
+      <div class="tilskjerm" id="tilskjerm" hidden>
+        <div class="etikett">Til skjermane</div>
+        <div class="knappar" id="tilskjermknappar"></div>
+      </div>
+    </div>
+  </form>
+  <section class="b-forhand" aria-label="Førehandsvising">
+    <div class="b-skjerm" id="skjerm"><iframe id="forhand" title="Førehandsvising av plakaten"></iframe></div>
+  </section>
+</div>
+
+<script>
+// Nøklane i lenkja. Alt innhaldet står i lenkja, så ein plakat er uendra sjølv
+// om tenester.json blir endra seinare.
+const NØKLAR = ["mal", "overlinje", "overskrift", "logo", "tekst", "merkelapp", "bilete", "biletform", "ikon",
+                "dato", "tid", "stad", "lenkje", "qrtekst", "tema", "skrift"];
+const TEMA = typeof TEMA_ETTER_ID !== "undefined" ? TEMA_ETTER_ID : {};
+const $ = id => document.getElementById(id);
+const lesHash = () => Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+function lagHash(cfg, vis) {
+  const p = new URLSearchParams();
+  if (vis) p.set("vis", "1");
+  for (const k of NØKLAR) if (cfg[k]) p.set(k, cfg[k]);
+  return p.toString();
+}
+
+// ---- Ikon (enkle strekteikningar, fargen kjem frå temaet) ---------------
+const IKON = {
+  bok:     '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+  lydbok:  '<path d="M3 15v-3a9 9 0 0 1 18 0v3"/><rect x="2.5" y="14" width="5" height="7" rx="2"/><rect x="16.5" y="14" width="5" height="7" rx="2"/>',
+  film:    '<rect x="2.5" y="4" width="19" height="16" rx="2.5"/><path d="M7 4v16M17 4v16M2.5 9H7M2.5 15H7M17 9h4.5M17 15h4.5"/>',
+  avis:    '<path d="M4 4h13v16H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v10a2 2 0 0 1-2 2"/><path d="M7.5 8h6M7.5 12h6M7.5 16h4"/>',
+  arkiv:   '<rect x="3" y="3.5" width="18" height="5" rx="1.5"/><path d="M5 8.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V8.5"/><path d="M10 12.5h4"/>',
+  app:     '<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 18.5h3"/>',
+  kort:    '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/>',
+  sok:     '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5.5 5.5"/>',
+  lese:    '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  helse:   '<path d="M12 20.5s-8-4.8-8-11A4.5 4.5 0 0 1 12 6.6a4.5 4.5 0 0 1 8 2.9c0 6.2-8 11-8 11z"/><path d="M9 12h6M12 9v6"/>',
+  skjerm:  '<rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8 20.5h8M12 16.5v4"/>',
+  kalender:'<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+  klokke:  '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  stad:    '<path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+  stjerne: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+};
+const ikonSvg = namn => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IKON[namn] || IKON.stjerne}</svg>`;
+
+// ---- QR-kode som SVG ------------------------------------------------------
+function qrSvg(tekst) {
+  const q = qrcode(0, "M");
+  q.addData(unescape(encodeURIComponent(tekst)), "Byte");   // UTF-8
+  q.make();
+  const n = q.getModuleCount();
+  let d = "";
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`;
+  return `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path fill="#111" d="${d}"/></svg>`;
+}
+const kortLenkje = u => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+
+// ---- Pynt for temaa -------------------------------------------------------
+// Same hjelparar som lagPynt i index.html, så pynten i tema.js fungerer her òg.
+function lagPynt(tema) {
+  const pynt = $("pynt");
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = (viewBox, stil, innhald) => {
+    const s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", viewBox); s.setAttribute("style", stil);
+    s.innerHTML = innhald; return s;
+  };
+  const tilf = (a, b) => a + Math.random() * (b - a);
+  const vel = liste => liste[Math.floor(Math.random() * liste.length)];
+  const snøfall = (n, opasitet) => {
+    for (let i = 0; i < n; i++) {
+      const f = document.createElement("div"), d = tilf(0.25, 0.8);
+      f.className = "snø";
+      f.style.cssText = `left:${tilf(0, 100)}vw; width:${d}vw; height:${d}vw; opacity:${tilf(opasitet * 0.5, opasitet)};` +
+        `animation-duration:${tilf(16, 34)}s; animation-delay:${-tilf(0, 30)}s;`;
+      pynt.append(f);
+    }
+  };
+  const stigande = (n, viewBox, innhald, [minB, maksB], [minO, maksO]) => {
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement("div");
+      d.className = "boble";
+      d.style.cssText = `left:${tilf(0, 94)}vw; width:${tilf(minB, maksB)}vw; height:auto; border-radius:0; opacity:${tilf(minO, maksO)};` +
+        `animation-duration:${tilf(26, 44)}s; animation-delay:${-tilf(0, 44)}s;`;
+      d.append(svg(viewBox, "position:static; width:100%; height:auto; display:block;", typeof innhald === "function" ? innhald(i) : innhald));
+      pynt.append(d);
+    }
+  };
+  const dalande = (n, viewBox, form, fargar, [minB, maksB], [minO, maksO]) => {
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement("div");
+      d.className = "dalar";
+      d.style.cssText = `left:${tilf(0, 96)}vw; width:${tilf(minB, maksB)}vw; opacity:${tilf(minO, maksO)};` +
+        `animation-duration:${tilf(20, 36)}s; animation-delay:${-tilf(0, 36)}s;`;
+      d.append(svg(viewBox, "", form.replace("FARGE", vel(fargar))));
+      pynt.append(d);
+    }
+  };
+  const t = TEMA[tema];
+  if (t && t.pynt) try { t.pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }); } catch (e) { console.warn("Pynt:", e); }
+}
+
+// =====================================================================
+// PLAKATEN
+// =====================================================================
+function visPlakat(cfg) {
+  document.body.className = "vis";
+  const tema = TEMA[cfg.tema];
+  if (tema && tema.id !== "kveld") document.documentElement.dataset.tema = cfg.tema;
+  lagPynt(cfg.tema);
+  if (typeof brukSkrift === "function")
+    brukSkrift(tema && tema.skrift && (!cfg.skrift || cfg.skrift === "standard") ? tema.skrift : cfg.skrift);
+  document.title = cfg.overskrift || "Plakat";
+  $("visning").hidden = false;
+  window.addEventListener("hashchange", () => location.reload());
+
+  $("overlinje").textContent = cfg.overlinje || "";
+  if (cfg.logo) {
+    const logo = $("logo");
+    logo.style.setProperty("--logo", `url("${cfg.logo}")`);
+    const img = new Image();
+    img.onload = () => { logo.style.aspectRatio = img.naturalWidth / img.naturalHeight; };
+    img.onerror = () => { logo.hidden = true; $("overskrift").hidden = false; };
+    img.src = cfg.logo;
+    logo.hidden = false;
+    logo.setAttribute("role", "img"); logo.setAttribute("aria-label", cfg.overskrift || "");
+    $("overskrift").hidden = true;
+  }
+  $("overskrift").textContent = cfg.overskrift || "";
+  $("overskrift").classList.toggle("lang", (cfg.overskrift || "").length > 22);
+
+  const midt = $("midt");
+  // Eit nyopplasta bilete kan bruke litt tid før GitHub har publisert det: prøv igjen ei stund
+  const prøvIgjen = (img, ved) => { let n = 0; img.onerror = () => { if (++n <= 12) setTimeout(() => { img.src = cfg.bilete + (cfg.bilete.includes("?") ? "&" : "?") + "p=" + n; }, 15000); else ved(); }; };
+  if (cfg.bilete && cfg.biletform === "heil") {
+    const img = Object.assign(document.createElement("img"), { className: "heilbilete", alt: cfg.overskrift || "" });
+    prøvIgjen(img, () => {});
+    img.src = cfg.bilete;
+    document.body.classList.add("heil");
+    $("visning").append(img);
+  } else if (cfg.bilete && cfg.bilete !== "ikon") {
+    const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : ""), alt: "", src: cfg.bilete });
+    prøvIgjen(img, () => { midt.innerHTML = cfg.ikon ? `<div class="ikonsirkel">${ikonSvg(cfg.ikon)}</div>` : ""; });
+    midt.append(img);
+  } else if (cfg.bilete === "ikon" || (!cfg.bilete && cfg.ikon)) {
+    midt.innerHTML = `<div class="ikonsirkel">${ikonSvg(cfg.ikon || "stjerne")}</div>`;
+  } else midt.classList.add("tom");
+
+  $("brodtekst").textContent = cfg.tekst || "";
+  if (cfg.merkelapp) $("brikker").append(Object.assign(document.createElement("span"), { className: "brikke hylle", textContent: cfg.merkelapp }));
+
+  const arr = [["kalender", cfg.dato], ["klokke", cfg.tid], ["stad", cfg.stad]].filter(([, v]) => v);
+  if (arr.length) {
+    $("arr").hidden = false;
+    for (const [ikon, v] of arr) {
+      const d = document.createElement("div");
+      d.innerHTML = ikonSvg(ikon);
+      d.append(v);
+      $("arr").append(d);
+    }
+  }
+
+  if (cfg.lenkje) {
+    try {
+      $("qr").innerHTML = qrSvg(cfg.lenkje);
+      $("qrtekst").textContent = cfg.qrtekst || "Skann for meir informasjon";
+      $("qrlenkje").textContent = kortLenkje(cfg.lenkje);
+      $("qrrad").hidden = false;
+    } catch (e) { console.warn("QR:", e); }
+  }
+
+  // Inngangen blir spela kvar gong rotasjonen viser plakaten
+  const spel = () => { const m = document.querySelector("#visning main"); m.classList.remove("spel"); void m.offsetWidth; m.classList.add("spel"); };
+  const iRotasjon = window.parent !== window && !("forhand" in cfg);
+  if (iRotasjon) {
+    window.addEventListener("message", e => { if (e.data && e.data.nyheiter === "vis") spel(); });
+    try { parent.postMessage({ nyheiter: "klar" }, "*"); parent.postMessage({ nyheiter: "har" }, "*"); } catch (e) {}
+  }
+  spel();
+}
+
+// =====================================================================
+// BYGGJAREN
+// =====================================================================
+async function startByggjar() {
+  document.body.className = "bygg";
+  $("byggjar").hidden = false;
+  const skjema = $("skjema");
+  const felt = n => skjema.elements[n];
+
+  let data = { standardlenkje: "", tenester: [] };
+  try { data = await (await fetch("tenester.json", { cache: "no-cache" })).json(); } catch (e) { console.warn("tenester.json:", e); }
+  const teneste = id => data.tenester.find(t => t.id === id);
+
+  // Malar: tenestene etter kategori, så arrangement og tom plakat
+  const mal = $("mal");
+  const grupper = {};
+  for (const t of data.tenester) (grupper[t.kategori] ||= []).push(t);
+  for (const [k, liste] of Object.entries(grupper)) {
+    const g = document.createElement("optgroup"); g.label = k;
+    for (const t of liste) g.append(new Option(t.namn, t.id));
+    mal.append(g);
+  }
+  const andre = document.createElement("optgroup"); andre.label = "Anna";
+  andre.append(new Option("Arrangement", "arrangement"), new Option("Tom plakat", "tom"));
+  mal.append(andre);
+
+  // Tema og skrift
+  const temaSel = $("tema");
+  const temaListe = typeof TEMA_LISTE !== "undefined" ? TEMA_LISTE : [{ id: "kveld", namn: "Kveld", gruppe: "Faste" }];
+  for (const g of (typeof TEMAGRUPPER !== "undefined" ? TEMAGRUPPER : ["Faste"])) {
+    const liste = temaListe.filter(t => (t.gruppe || "Faste") === g);
+    if (!liste.length) continue;
+    const og = document.createElement("optgroup"); og.label = g;
+    for (const t of liste) og.append(new Option(t.namn, t.id));
+    temaSel.append(og);
+  }
+  const skriftSel = $("skrift");
+  skriftSel.append(new Option("Som temaet", "standard"));
+  for (const [id, s] of Object.entries(typeof SKRIFTER !== "undefined" ? SKRIFTER : {})) skriftSel.append(new Option(s.par ? `${s.namn} (${s.skildring})` : s.namn, id));
+
+  // Bileta til tenesta som er vald
+  let logoFor = "";
+  function teiknBileteval(t, valt) {
+    const sel = $("bileteval");
+    sel.replaceChildren(new Option("Ikon", "ikon"));
+    for (const b of (t && t.bilete) || []) sel.append(new Option(b.namn, b.fil));
+    if (harNøkkel()) sel.append(new Option("Last opp bilete …", "last"));
+    sel.append(new Option("Eige bilete (adresse) …", "eige"), new Option("Ingen", "ingen"));
+    if (valt && ![...sel.options].some(o => o.value === valt)) { sel.value = "eige"; $("eigeadresse").value = valt; }
+    else sel.value = valt || "ikon";
+    visBileteFelt();
+  }
+  function visBileteFelt() {
+    const v = $("bileteval").value;
+    $("eigebilete").hidden = v !== "eige";
+    $("opplastval").hidden = v !== "last";
+    $("formval").hidden = !["eige", "last"].includes(v);
+
+  }
+
+  // Fyll ut skjemaet frå ein mal
+  function brukMal(id) {
+    const t = teneste(id);
+    const tema = felt("tema").value, skrift = felt("skrift").value;
+    skjema.reset();
+    mal.value = id; felt("tema").value = tema || "lys"; felt("skrift").value = skrift || "standard";
+    if (t) {
+      felt("overlinje").value = "Digitalt bibliotek";
+      felt("overskrift").value = t.namn;
+      felt("tekst").value = t.tekst || "";
+      felt("merkelapp").value = t.merkelapp || "";
+      felt("lenkje").value = t.lenkje || data.standardlenkje || "";
+      felt("qrtekst").value = "Skann for å kome i gang";
+      logoFor = t.logo || "";
+      $("brukLogo").checked = !!t.logo;
+      teiknBileteval(t, t.bilete && t.bilete[0] ? t.bilete[0].fil : "ikon");
+    } else {
+      logoFor = ""; $("brukLogo").checked = false;
+      if (id === "arrangement") { felt("overlinje").value = "Arrangement"; felt("qrtekst").value = "Les meir"; }
+      teiknBileteval(null, id === "arrangement" ? "ikon" : "ingen");
+    }
+    oppdater();
+  }
+
+  function lesSkjema() {
+    const id = mal.value, t = teneste(id);
+    const sel = $("bileteval").value;
+    let bilete = "", biletform = "";
+    if (sel === "eige" || sel === "last") { bilete = sel === "eige" ? $("eigeadresse").value.trim() : ""; biletform = bilete ? $("biletform").value : ""; }
+    else if (sel !== "ingen") {
+      bilete = sel;
+      const b = ((t && t.bilete) || []).find(b => b.fil === sel);
+      if (b && b.form === "foto") biletform = "foto";
+    }
+    return {
+      mal: id,
+      overlinje: felt("overlinje").value.trim(),
+      overskrift: felt("overskrift").value.trim(),
+      logo: logoFor && $("brukLogo").checked ? logoFor : "",
+      tekst: felt("tekst").value.trim(),
+      merkelapp: felt("merkelapp").value.trim(),
+      bilete, biletform,
+      ikon: t ? t.ikon : id === "arrangement" ? "kalender" : "",
+      dato: felt("dato").value.trim(), tid: felt("tid").value.trim(), stad: felt("stad").value.trim(),
+      lenkje: felt("lenkje").value.trim(),
+      qrtekst: felt("qrtekst").value.trim(),
+      tema: felt("tema").value,
+      skrift: felt("skrift").value === "standard" ? "" : felt("skrift").value,
+    };
+  }
+
+  // Fyll ut skjemaet frå ei lenkje (t.d. «Endre i byggjaren» på oversikta)
+  function fyllFrå(cfg) {
+    mal.value = teneste(cfg.mal) || ["arrangement", "tom"].includes(cfg.mal) ? cfg.mal : "tom";
+    for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "dato", "tid", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
+    felt("tema").value = cfg.tema || "lys";
+    felt("skrift").value = cfg.skrift || "standard";
+    const t = teneste(mal.value);
+    logoFor = cfg.logo || (t && t.logo) || "";
+    $("brukLogo").checked = !!cfg.logo;
+    teiknBileteval(t, cfg.bilete || "ingen");
+    $("biletform").value = ["foto", "heil"].includes(cfg.biletform) ? cfg.biletform : "";
+  }
+
+  // ---- Førehandsvising og lenkje -------------------------------------
+  const iframe = $("forhand"), skjerm = $("skjerm");
+  const skaler = () => { iframe.style.transform = `scale(${skjerm.clientWidth / 1080})`; };
+  new ResizeObserver(skaler).observe(skjerm);
+  const base = location.href.split("#")[0].replace(/[^/]*$/, "") + "plakat.html";
+  let tidtakar = null, sistHash = null;
+  function oppdater() {
+    const cfg = lesSkjema();
+    $("logoval").hidden = !logoFor;
+    $("arrdel").hidden = mal.value !== "arrangement" && !(cfg.dato || cfg.tid || cfg.stad);
+    const hash = lagHash(cfg, false);
+    history.replaceState(null, "", "#" + hash);
+    const lenkje = base + "#" + lagHash(cfg, true);
+    $("lenkjefelt").textContent = lenkje;
+    $("opne").href = lenkje;
+    teiknTilSkjerm(cfg, lenkje);
+    clearTimeout(tidtakar);
+    tidtakar = setTimeout(() => {
+      const ny = "plakat.html#" + lagHash(cfg, true) + "&forhand=1";
+      if (ny === sistHash) return;
+      sistHash = ny;
+      iframe.src = "about:blank";   // hashendring åleine lastar ikkje sida på nytt i alle nettlesarar
+      setTimeout(() => { iframe.src = ny; }, 0);
+    }, 250);
+  }
+
+  // ---- Til skjermane (same ordning som i karusellbyggjaren) -------------
+  function retur() {
+    try {
+      const p = new URLSearchParams(location.hash.slice(1));
+      if (p.has("retur")) sessionStorage.setItem("infoskjerm-retur", JSON.stringify({ r: p.get("retur"), namn: p.get("returnamn") || "" }));
+      return JSON.parse(sessionStorage.getItem("infoskjerm-retur") || "null");
+    } catch (e) { return null; }
+  }
+  const returInfo = retur();
+  function harNøkkel() { try { return !!localStorage.getItem("infoskjerm-oversikt-nokkel"); } catch (e) { return false; } }
+  function teiknTilSkjerm(cfg, lenkje) {
+    const boks = $("tilskjerm");
+    boks.hidden = !harNøkkel();
+    if (boks.hidden) return;
+    const til = p => "oversikt.html#" + new URLSearchParams(p).toString();
+    const a = (tekst, href, hoved) => Object.assign(document.createElement("a"), { className: "knapp" + (hoved ? "" : " sekundær"), href, textContent: tekst });
+    const knappar = [];
+    const tittel = "Plakat: " + (cfg.overskrift || "utan overskrift");
+    if (returInfo) {
+      const [sk, i] = returInfo.r.split(":");
+      const nr = (sk.match(/skjerm(\d)/) || [])[1] || "";
+      const k = a(`Oppdater «${returInfo.namn || "sida"}» ${sk.includes("avpublisert") ? `(avpublisert, skjerm ${nr})` : `på skjerm ${nr}`}`, til({ skjerm: sk, endre: i, namn: returInfo.namn, url: lenkje }), true);
+      k.addEventListener("click", () => { try { sessionStorage.removeItem("infoskjerm-retur"); } catch (e) {} });
+      knappar.push(k);
+    }
+    for (const n of ["1", "2"]) knappar.push(a(`Legg på skjerm ${n}`, til({ skjerm: "skjerm" + n, tittel, url: lenkje, sekund: 20 }), !returInfo));
+    knappar.push(a("Til oversikta", "oversikt.html", false));
+    $("tilskjermknappar").replaceChildren(...knappar);
+  }
+
+  $("kopier").addEventListener("click", async e => {
+    const k = e.currentTarget;
+    try { await navigator.clipboard.writeText($("lenkjefelt").textContent); k.textContent = "Kopiert!"; }
+    catch (err) { k.textContent = "Kunne ikkje kopiere"; }
+    setTimeout(() => k.textContent = "Kopier lenkje", 1800);
+  });
+  mal.addEventListener("change", () => brukMal(mal.value));
+  $("bileteval").addEventListener("change", () => { visBileteFelt(); oppdater(); });
+  $("fil").addEventListener("change", () => { const f = $("fil").files[0]; if (f) lastOpp(f); });
+
+  // ---- Last opp eit bilete til repoet (krev nøkkelen frå oversikta) --------
+  // Biletet blir gjort mindre (maks 1920 punkt) og lagra som WebP i bilete/plakatar/.
+  const FORFATTAR = { name: "Tysnesfolkebibliotek", email: "Tysnesfolkebibliotek@users.noreply.github.com" };
+  async function lastOpp(fil) {
+    const status = $("opplasting");
+    try {
+      status.textContent = "Gjer biletet klart …";
+      const bm = await createImageBitmap(fil);
+      const skala = Math.min(1, 1920 / Math.max(bm.width, bm.height));
+      const c = Object.assign(document.createElement("canvas"), { width: Math.round(bm.width * skala), height: Math.round(bm.height * skala) });
+      c.getContext("2d").drawImage(bm, 0, 0, c.width, c.height);
+      const blob = await new Promise(r => c.toBlob(r, "image/webp", 0.86));
+      const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(",")[1]); fr.readAsDataURL(blob); });
+      const namn = (fil.name.replace(/\.[^.]+$/, "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "a").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "bilete")
+        + "-" + Date.now().toString(36) + ".webp";
+      const sti = "bilete/plakatar/" + namn;
+      status.textContent = "Lastar opp …";
+      const svar = await fetch(`https://api.github.com/repos/Tysnesfolkebibliotek/infoskjerm/contents/${sti}`, {
+        method: "PUT",
+        headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + localStorage.getItem("infoskjerm-oversikt-nokkel"), "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "Nytt plakatbilete: " + namn, content: b64, author: FORFATTAR, committer: FORFATTAR }),
+      });
+      if (svar.status === 401 || svar.status === 403) throw new Error("nøkkelen vart avvist (sjå oversikta)");
+      if (!svar.ok) throw new Error("GitHub svarte " + svar.status);
+      // Byt til «eige bilete» med adressa, så plakaten peikar på fila i repoet
+      const sel = $("bileteval");
+      sel.value = "eige"; $("eigeadresse").value = sti;
+      if (c.width / c.height < 0.6 && !$("biletform").value) $("biletform").value = "heil";   // ståande plakat
+      visBileteFelt();
+      status.textContent = "Lasta opp. Det kan ta eit par minutt før biletet syner i førehandsvisinga.";
+      $("opplasting").hidden = false;
+      oppdater();
+    } catch (e) { status.textContent = "Fekk ikkje lasta opp biletet: " + e.message; }
+  }
+  skjema.addEventListener("input", e => { if (e.target !== mal) oppdater(); });
+  skjema.addEventListener("change", e => { if (e.target !== mal && e.target.id !== "bileteval") oppdater(); });
+
+  felt("tema").value = "lys";   // standardtemaet for nye plakatar
+  const start = lesHash();
+  if (start.mal) { fyllFrå(start); oppdater(); }
+  else brukMal(data.tenester[0] ? data.tenester.find(t => t.id === "biblio") ? "biblio" : data.tenester[0].id : "tom");
+}
+
+// =====================================================================
+const cfg = lesHash();
+if (cfg.vis === "1") visPlakat(cfg); else startByggjar();
+</script>
+</body>
+</html>

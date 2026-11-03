@@ -7,6 +7,12 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | Fil | Kva ho gjer |
 |---|---|
 | `index.html` | Karusellbyggjaren, og sjølve karusellen når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
+| `plakat.html` | Plakatbyggjaren for digitale tenester og arrangement, og sjølve plakaten når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html> |
+| `tenester.json` | Dei digitale tenestene i plakatbyggjaren: namn, tekst, merkelapp, lenkje, ikon, logo og bilete |
+| `skrifter.js` | Skriftene (Google Fonts) som karusellane og plakatane deler |
+| `qrcode.js` | Lagar QR-kodane på plakatane (Kazuhiko Arase, MIT-lisens) |
+| `bilete/tenester/` | Logoar og bilete til tenestene (marknadsmateriell frå leverandørane) |
+| `bilete/plakatar/` | Bilete lasta opp frå plakatbyggjaren |
 | `oversikt.html` | Oversikt over og redigering av kva skjermane viser. Ikkje lenkja til frå byggjaren for andre, og skjult for søkjemotorar. Lagring krev ein GitHub-nøkkel |
 | `oppsett.json` | Kva kvar skjerm viser, kor lenge og når. Blir endra frå oversiktssida |
 | `emneord.json` | Emneord og sjangrar til forslaga i byggjaren. Blir laga med knappen på oversiktssida |
@@ -69,6 +75,30 @@ Kvar side i `oppsett.json` er éi linje:
 
 Sider utan tidsstyring blir alltid viste. Gjeld ingen sider akkurat no, viser
 skjermen dei utan tidsstyring.
+
+## Plakatar
+
+Plakatar blir laga i **plakatbyggjaren** (`plakat.html`, eller **+ Lag ny plakat**
+på oversikta). Ein plakat er ei vanleg side i `oppsett.json`, så han kan
+tidsstyrast, avpubliserast og flyttast som karusellane. Han får 20 sekund som
+standard.
+
+- **Mal:** vel ei digital teneste, så blir namn, tekst, merkelapp, lenkje, logo og
+  bilete fylte ut frå `tenester.json`. Du kan endre alt etterpå. **Arrangement**
+  har felt for dato, klokkeslett og stad. **Tom plakat** startar blankt.
+- **Logo:** logoar med gjennomsiktig bakgrunn blir farga i tekstfargen til temaet.
+- **Bilete:** ikon, eitt av bileta til tenesta, eit eige bilete (adresse) eller
+  **Last opp bilete** (krev nøkkelen frå oversikta). Opplasta bilete blir gjorde
+  mindre og lagra i `bilete/plakatar/`. **Ferdig plakat** viser biletet over heile
+  skjermen, til dømes ein plakat laga i Canva (1080 × 1920).
+- **QR-kode:** peikar til lenkja, helst undersida for tenesta på tysnesbibliotek.no.
+  Koden står alltid mørk på kvitt, så han kan skannast i alle tema.
+- **Arrangement:** gje plakaten ein periode på oversikta (til dømes
+  `2026-11-01/2026-11-12`), så forsvinn han av seg sjølv etterpå.
+
+All teksten står i lenkja til plakaten. Endrar du `tenester.json`, gjeld det nye
+plakatar, ikkje dei som alt er på skjermen. Ny teneste: legg til ei linje i
+`tenester.json`, og logo og bilete i `bilete/tenester/`.
 
 ## Karusellane
 

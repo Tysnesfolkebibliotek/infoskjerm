@@ -54,6 +54,7 @@
   .filter { margin: 0 0 14px; }
   .toppline { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   .toppline .knapp { text-decoration: none; color: inherit; }
+  .nyknappar { display: flex; gap: 8px; flex-wrap: wrap; }
   .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
   .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
   .side[draggable=true] { cursor: grab; }
@@ -137,7 +138,7 @@
 </head>
 <body>
 <main>
-  <div class="toppline"><h1>Infoskjermar</h1><a class="knapp" href="index.html">+ Lag ny karusell</a></div>
+  <div class="toppline"><h1>Infoskjermar</h1><span class="nyknappar"><a class="knapp" href="index.html">+ Lag ny karusell</a> <a class="knapp" href="plakat.html">+ Lag ny plakat</a></span></div>
   <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og kjem fram på skjermane innan om lag ein halvtime, ofte raskare.</p>
 
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
@@ -310,6 +311,10 @@ function tidsTekst(s) {
 function typeTekst(s) {
   if (s.lokal) return "Lokal fil på skjermen";
   if (/tysnesbibliotek\.no\/.*kanal/.test(s.url || "")) return "Kanalside på tysnesbibliotek.no";
+  if (erPlakat(s)) {
+    const p = new URLSearchParams((s.url.split("#")[1] || ""));
+    return `Plakat${p.get("tema") ? ` · tema ${p.get("tema")}` : ""}`;
+  }
   if (/github\.io\/infoskjerm/.test(s.url || "")) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
     const tema = p.get("tema") ? ` · tema ${p.get("tema")}` : "";
@@ -322,6 +327,8 @@ const adresse = s => s.lokal ? null : s.url;
 
 // ---- Samspel med karusellbyggjaren ---------------------------------------
 const erKarusell = s => !s.lokal && /github\.io\/infoskjerm\/(index\.html)?#vis=1/.test(s.url || "");
+// Plakatar frå plakatbyggjaren (plakat.html)
+const erPlakat = s => !s.lokal && /github\.io\/infoskjerm\/plakat\.html#vis=1/.test(s.url || "");
 // Julekalenderen styrer lengda sjølv: sekunda i oppsettet er berre eit tak
 const erKalender = s => {
   if (!erKarusell(s)) return false;
@@ -338,7 +345,7 @@ function tilByggjaren(s, skjerm, i) {
   p.delete("vis");
   p.set("retur", `${skjerm}:${i}`);
   p.set("returnamn", s.namn || "");
-  return "index.html#" + p.toString();
+  return (erPlakat(s) ? "plakat.html#" : "index.html#") + p.toString();
 }
 // Når byggjaren sender oss hit: «#skjerm=…&url=…» (ny side) eller «…&endre=3» (endre side 3)
 function fråByggjaren() {
@@ -358,9 +365,9 @@ function fråByggjaren() {
       return;
     }
   }
-  nyFørehand = { namn: p.get("tittel") || "", url, sekund: 180 };
+  nyFørehand = { namn: p.get("tittel") || "", url, sekund: Number(p.get("sekund")) || 180 };
   open = { lk: skjerm, i: -1 }; teikn();
-  oppdaterStatus("Karusellen frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «Legg til» og så Lagre.");
+  oppdaterStatus((/plakat\.html/.test(url) ? "Plakaten" : "Karusellen") + " frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «Legg til» og så Lagre.");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } }, 50);
 }
 
@@ -542,7 +549,7 @@ function felleKnappar(s, lk, i, erOpen) {
   return [
     el("button", { type: "button", onclick: () => { open = erOpen ? null : { lk, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
     adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
-    erKarusell(s) ? el("button", { type: "button", title: "Opne karusellen i byggjaren. Du kjem tilbake hit etterpå.", onclick: () => { location.href = tilByggjaren(s, lk, i); } }, "Endre i byggjaren") : null,
+    erKarusell(s) || erPlakat(s) ? el("button", { type: "button", title: `Opne ${erPlakat(s) ? "plakaten i plakatbyggjaren" : "karusellen i byggjaren"}. Du kjem tilbake hit etterpå.`, onclick: () => { location.href = tilByggjaren(s, lk, i); } }, "Endre i byggjaren") : null,
   ];
 }
 
