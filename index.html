@@ -127,7 +127,7 @@
   .rull-spor .omslag-ramme { flex: none; height: 40vh; }
   .rull-spor .omslag, .rull-spor .reserve { height: 100%; width: auto; max-width: 80vw; flex: none; object-fit: contain; }
   .rull-spor .omtale { display: block; -webkit-line-clamp: unset; overflow: visible; max-width: 78vw; }
-  /* ---- Vifte: forrige og neste bok ligg dempa og skråstilte bak den som blir vist ---- */
+  /* ---- Vifte: førre og neste bok ligg dempa og skråstilte bak den som blir vist ---- */
   /* Kvar bok har ein plass: pos-v (forrige), pos-m (midten), pos-h (neste), og        */
   /* pos-utv / pos-innh / pos-uth utanfor. Berre omslaget flyttar seg; teksten tonar. */
   :root[data-visning="vifte"] { --vifte-lys: .38; }
@@ -584,7 +584,7 @@
             </span>
             <button type="button" class="knapp sekundær" id="utvalknapp">Søk</button>
           </div>
-          <p class="hjelp" id="utvalstatus">Søkjer i avdelingane som er kryssa av over.</p>
+          <p class="hjelp" id="utvalstatus">Søkjer i avdelingane som er kryssa av ovanfor.</p>
           <ul class="utvaltreff" id="utvaltreff"></ul>
         </div>
         <div class="felt">
@@ -612,7 +612,7 @@
             <span class="sokeboks"><input type="search" id="liktesok" placeholder="Tittel, forfattar eller ISBN"></span>
             <button type="button" class="knapp sekundær" id="likteknapp">Søk</button>
           </div>
-          <p class="hjelp" id="liktestatus">Søkjer i Forrige bok frå Biblioteksentralen. Karusellen viser opptil 20 liknande bøker, av dei som finst hos oss.</p>
+          <p class="hjelp" id="liktestatus">Søkjer i Forrige bok frå Biblioteksentralen. Karusellen viser opptil 20 liknande bøker som finst hos oss.</p>
           <ul class="utvaltreff" id="liktetreff"></ul>
         </div>
         <div class="felt" id="liktevald" hidden>
@@ -625,7 +625,7 @@
         <label for="appellsok">Appellfaktor</label>
         <input type="hidden" id="appell" name="appell">
         <input type="hidden" id="appellmodus" name="appellmodus">
-        <input type="text" id="appellsok" list="appelltermar" placeholder="Skriv for forslag, til dømes godt driv">
+        <input type="text" id="appellsok" list="appelltermar" placeholder="Skriv for forslag, til dømes «godt driv»">
         <datalist id="appelltermar"></datalist>
         <div class="vallinje brikkerad" id="appellvalde"></div>
         <p class="hjelp" id="appellhjelp">Frå Forrige bok. Berre bøker som Biblioteksentralen har skildra slik, blir med. Mange eldre bøker og fagbøker er ikkje skildra.</p>
@@ -674,7 +674,7 @@
           <option value="eige">Eige spenn …</option>
         </select>
         <input type="hidden" id="aarsiste" name="aarsiste">
-        <p class="hjelp" id="aarhjelp" hidden>Følgjer med over nyttår, så karusellen held seg fersk.</p>
+        <p class="hjelp" id="aarhjelp" hidden>Rekna frå inneverande år, så utvalet flyttar seg av seg sjølv ved nyttår.</p>
       </div>
       <div class="rad" id="aarspenn" hidden>
         <div class="felt">
@@ -682,7 +682,7 @@
           <input type="number" id="aarfra" name="aarfra" min="1800" max="2100" placeholder="2020">
         </div>
         <div class="felt">
-          <label for="aartil">til og med år</label>
+          <label for="aartil">Til og med år</label>
           <input type="number" id="aartil" name="aartil" min="1800" max="2100" placeholder="i dag">
         </div>
       </div>
@@ -739,7 +739,7 @@
           <label for="visingsmate">Visingsmåte</label>
           <select id="visingsmate" name="visning">
             <option value="">Éi bok om gongen</option>
-            <option value="vifte">Vifte (forrige og neste bok bak)</option>
+            <option value="vifte">Vifte (førre og neste bok bak)</option>
             <option value="rull">Rulletekst</option>
             <option value="kalender">Julekalender (berre handplukka)</option>
           </select>
@@ -781,7 +781,7 @@
           <option value="glid">Glid frå sida</option>
           <option value="zoom">Zoom</option>
           <option value="bla">Bla som ei bokside</option>
-          <option value="vend">Flipp</option>
+          <option value="vend">Vend</option>
           <option value="ingen">Ingen (direkte byte)</option>
         </select>
           </div>
@@ -800,14 +800,14 @@
         </div>
       </div>
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
-      <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett», «Godt driv»)</label>
-      <p class="hjelp">Vifte viser forrige og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p>
+      <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett» og «Godt driv»)</label>
+      <p class="hjelp">Vifte viser førre og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p>
     </details>
 
     <details class="del" id="del-avansert" data-felt="plass,utan,oppdater">
       <summary>Avanserte innstillingar <span class="merke" hidden>endra</span></summary>
       <div class="felt">
-        <label for="oppdaterval">Hent oppdatert boklista</label>
+        <label for="oppdaterval">Hent oppdatert bokliste</label>
         <select id="oppdaterval">
           <option value="60">Kvar time</option>
           <option value="180">Kvar 3. time</option>
@@ -816,7 +816,7 @@
           <option value="1440">Ein gong i døgnet</option>
         </select>
         <input type="hidden" id="oppdater" name="oppdater">
-        <p class="hjelp">Kor ofte skjermen spør Bibliofil om bøkene på nytt, til dømes for å fjerne bøker som er lånte ut. Sjeldnare er skånsamt for biblioteksystemet.</p>
+        <p class="hjelp">Kor ofte skjermen spør Bibliofil om bøkene på nytt, til dømes for å fjerne bøker som er lånte ut. Sjeldnare henting skåner biblioteksystemet.</p>
       </div>
       <div id="plassfelt">
         <div class="felt">
@@ -827,7 +827,7 @@
           <label for="utan">Hopp over plasseringar som inneheld</label>
           <input type="text" id="utan" name="utan" placeholder="magasin, nærmag">
         </div>
-        <p class="hjelp">Skil fleire ord med komma. Det er plasseringa i Bibliofil, til dømes «Krim» eller «Nærmagasin».</p>
+        <p class="hjelp">Skil fleire ord med komma. Orda blir samanlikna med plasseringa i Bibliofil, til dømes «Krim» eller «Nærmagasin».</p>
       </div>
     </details>
 
@@ -836,7 +836,7 @@
       <code id="lenkje"></code>
       <div class="knappar">
         <button type="button" class="knapp" id="kopier">Kopier lenkje</button>
-        <a class="knapp sekundær" id="opne" target="_blank" rel="noopener">Opne i nytt vindauge</a>
+        <a class="knapp sekundær" id="opne" target="_blank" rel="noopener">Opne i ny fane</a>
       </div>
       <!-- Berre synleg for den som har lagra ein nøkkel på oversiktssida -->
       <div class="tilskjerm" id="tilskjerm" hidden>
@@ -1141,7 +1141,7 @@ function startVisning(cfg) {
   const brukarForrigebok = cfg.kjelde === "likte" || cfg.merkelapp === "1" || (!!cfg.appell && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"));
   document.getElementById("kjeldetekst").hidden = !brukarForrigebok;
   if (brukarForrigebok) {
-    const kva = [cfg.kjelde === "likte" ? "Liknande bøker" : "", cfg.merkelapp === "1" || cfg.appell ? "appellfaktorar" : ""].filter(Boolean).join(" og ");
+    const kva = [cfg.kjelde === "likte" ? "Liknande bøker" : "", cfg.merkelapp === "1" || cfg.appell ? "merkelappar" : ""].filter(Boolean).join(" og ");
     document.getElementById("kjeldetekst").textContent = `${storForbokstav(kva)}: Forrige bok, Biblioteksentralen`;
   }
 
@@ -1720,7 +1720,7 @@ function startVisning(cfg) {
     const varTom = !titlar.length;
     heileLista = nye;
     titlar = nye.filter(t => !svartelista(t.id));
-    if (!titlar.length) { pause(); visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava."); return; }
+    if (!titlar.length) { pause(); visMelding("Fann ingen bøker som passar.", "Prøv å slakke på krava."); return; }
     if (RULL) { const gjekk = !!rullAnim; stoppRull(); rullSpor = null; if (gjekk || (varTom && køyrer)) startRull(); return; }
     titlar.forEach(t => forlast(t.omslag));
     if (KALENDER) {
@@ -1760,7 +1760,7 @@ function startVisning(cfg) {
         meldTilByggjar({ status: "hentar", funne, mål });
       });
       if (nye.length) { skrivLager(nye); brukListe(nye); }
-      else if (!titlar.length) visMelding("Fann ingen bøker som passar.", "Prøv å løyse på krava.");
+      else if (!titlar.length) visMelding("Fann ingen bøker som passar.", "Prøv å slakke på krava.");
       meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1" || (!!cfg.appell && cfg.kjelde === "sok"), appell: !!cfg.appell && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"), appellalle: cfg.appellmodus !== "eitt" && (cfg.appell || "").includes(",") && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"), sek: Math.round((Date.now() - t0) / 1000) });
     } catch (e) {
       if (!titlar.length) visMelding("Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
@@ -2130,7 +2130,7 @@ function vurder(post, avd, eks, cfg) {
   const e = finnEksemplar(eks, post.id, avd);
   // Boka må ha eit fysisk eksemplar i avdelinga. Det sorterer ut e-bøker, men
   // tek med papirbøker som ved ein feil er katalogiserte som «elektronisk ressurs».
-  if (!e) return utelat("ikkje eksemplar i avdelinga (til dømes e-bok)") || null;
+  if (!e) return utelat("ingen eksemplar i avdelinga (til dømes e-bok)") || null;
   if (cfg.hylla === "1" && !påHylla(e)) return utelat("ikkje på hylla (utlånt eller reservert)") || null;
   const ord = f => (f || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
   const plc = ((e && e.plc) || "").toLowerCase();
@@ -2316,7 +2316,7 @@ async function hentFråIndeks(cfg, ix, avdar, mål, visAlle, meld) {
     const eks = await hentEksemplar(poster.map(p => String(p.id)));
     for (const p of poster) {
       const avd = avdar.find(a => finnEksemplar(eks, p.id, a));
-      if (!avd) { utelat("ikkje eksemplar i avdelinga"); continue; }
+      if (!avd) { utelat("ingen eksemplar i avdelinga"); continue; }
       const t = vurder(p, avd, eks, kfg);
       if (!t) continue;
       if (cfg.perforf === "1" && forfattarar.has(t.forfattarNøkkel)) { utelat("same forfattar"); continue; }
@@ -3084,7 +3084,7 @@ function startByggjar(startCfg) {
         + (grunnar.length ? ` Utelatne: ${grunnar.join(", ")}.` : "")
         + (!m.tal && m.appellalle ? " Ingen av bøkene hadde alle appellfaktorane. Prøv færre, eller klikk på «og» mellom dei for å byte til «eller»." : "")
         + (m.nåddeGrense ? (m.alle ? " Stoppa ved taket på 500 bøker."
-            : " Stoppa då «Tal bøker» var nådd, så resten av treffa vart ikkje sjekka. Kryss av for «Alle bøker som passar» for å få med alle.") : "");
+            : " Stoppa då «Tal bøker» var nådd, og resten av treffa vart difor ikkje sjekka. Kryss av for «Alle bøker som passar» for å få med alle.") : "");
     }
     if (m.status === "feil") status.textContent = "Fekk ikkje kontakt med Bibliofil: " + m.melding;
   });
@@ -3261,7 +3261,7 @@ function startByggjar(startCfg) {
       else if (i) {
         const k = document.createElement("button");
         k.type = "button"; k.className = "koplingsord"; k.textContent = ord;
-        k.title = ord === "og" ? "Bøkene må passe alle. Klikk for «eller»." : "Bøkene må passe minst éin. Klikk for «og».";
+        k.title = ord === "og" ? "Bøkene må ha alle desse. Klikk for å byte til «eller»." : "Bøkene må ha minst éin av desse. Klikk for å byte til «og».";
         k.addEventListener("click", () => { $(modusfelt).value = ord === "og" ? "eitt" : "alle"; teiknBrikker(boks, delar, modusfelt); oppdater(false); });
         ut.push(k);
       }
@@ -3549,7 +3549,7 @@ function startByggjar(startCfg) {
   }
   $("tilpassknapp").addEventListener("click", teiknTilpass);
 
-  // ---- Hent oppdatert boklista: meny som skriv minutt til det skjulte feltet
+  // ---- Hent oppdatert bokliste: meny som skriv minutt til det skjulte feltet
   function teiknOppdater() {
     const v = $("oppdater").value || STANDARD.oppdater, val = $("oppdaterval");
     if (![...val.options].some(o => o.value === v)) {

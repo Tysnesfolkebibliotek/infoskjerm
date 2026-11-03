@@ -23,7 +23,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 
-import hent_nytt as felles   # gjenbruker rydding, eksemplaroppslag og skriving
+import hent_nytt as felles   # gjenbrukar rydding, eksemplaroppslag og skriving
 
 # ---------------------------------------------------------------------------
 # Innstillingar

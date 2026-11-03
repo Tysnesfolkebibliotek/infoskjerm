@@ -138,7 +138,7 @@
 <body>
 <main>
   <div class="toppline"><h1>Infoskjermar</h1><a class="knapp" href="index.html">+ Lag ny karusell</a></div>
-  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og når skjermane innan om lag ein halvtime, ofte raskare.</p>
+  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og kjem fram på skjermane innan om lag ein halvtime, ofte raskare.</p>
 
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
 
@@ -146,9 +146,9 @@
 
   <details class="nokkel svart" id="svartboks">
     <summary>Svartelista bøker <span class="merke ikkje" id="svarttal" hidden></span></summary>
-    <p class="hjelp">Bøker på denne lista blir aldri viste på skjermane, til dømes fordi omslaget kan verke støytande. Kvar endring blir lagra med ein gong og når skjermane innan om lag ein halvtime, ofte raskare. Krev nøkkelen nedanfor.</p>
+    <p class="hjelp">Bøker på denne lista blir aldri viste på skjermane, til dømes fordi omslaget kan verke støytande. Kvar endring blir lagra med ein gong og kjem fram på skjermane innan om lag ein halvtime, ofte raskare. Krev nøkkelen nedanfor.</p>
     <div class="svartsok">
-      <input type="search" id="svartsok" placeholder="Søk på tittel (eller forfattar, tittelnummer)" autocomplete="off">
+      <input type="search" id="svartsok" placeholder="Søk på tittel, forfattar eller tittelnummer" autocomplete="off">
       <button type="button" id="svartknapp">Søk</button>
     </div>
     <div class="svartsok">
@@ -162,7 +162,7 @@
 
   <details class="nokkel" id="emneboks">
     <summary>Emneordlista og Forrige bok-indeksen</summary>
-    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord, sjangrar og seriar som er i bruk i Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong i blant. Er listene meir enn to månader gamle, får du ei påminning når du opnar sida. Det tek nokre minutt og krev nøkkelen nedanfor.</p>
+    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord, sjangrar og seriar som er i bruk i avdelingane Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong iblant. Er listene meir enn to månader gamle, får du ei påminning når du opnar sida. Det tek nokre minutt og krev nøkkelen nedanfor.</p>
     <p id="emneinfo">Hentar informasjon om lista …</p>
     <p id="fbinfo"></p>
     <button type="button" id="emneknapp">Oppdater emneordlista og Forrige bok-indeksen</button>
@@ -178,10 +178,10 @@
     <p class="hjelp">Slik lagar du ein nøkkel:</p>
     <ol class="hjelp">
       <li>Logg inn på GitHub som Tysnesfolkebibliotek og gå til <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
-      <li>Gi han eit namn, til dømes «Oversiktssida», og vel kor lenge han skal gjelde.</li>
+      <li>Gje han eit namn, til dømes «Oversiktssida», og vel kor lenge han skal gjelde.</li>
       <li>Under <b>Repository access</b>: vel <b>Only select repositories</b> og <b>infoskjerm</b>.</li>
       <li>Under <b>Permissions → Repository permissions</b>: set <b>Contents</b> til <b>Read and write</b>.</li>
-      <li>Klikk <b>Generate token</b>, kopier nøkkelen og lim han inn over.</li>
+      <li>Klikk <b>Generate token</b>, kopier nøkkelen og lim han inn i feltet ovanfor.</li>
     </ol>
   </details>
 
@@ -431,7 +431,7 @@ function teikn() {
     boks.append(el("section", { class: "skjerm" },
       ...skjermHovud(lk),
       liste,
-      sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi dei ikkje er i bruk no. `,
+      sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi ${sider.length - synlege.length === 1 ? "ho" : "dei"} ikkje er i bruk no. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
       nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1))
         : el("button", { type: "button", class: "leggtil", onclick: () => { nyFørehand = null; open = { lk, i: -1 }; teikn(); } }, "+ Legg til side"),
@@ -576,7 +576,7 @@ function skjema(s, lk, i) {
 
   const f = el("div", { class: "skjema" },
     el("div", { class: "rad" },
-      el("div", {}, el("label", { for: "f-namn" }, "Namn (berre for deg)"),
+      el("div", {}, el("label", { for: "f-namn" }, "Namn (blir ikkje vist på skjermen)"),
         el("input", { type: "text", id: "f-namn", value: s.namn || "", placeholder: "Til dømes Vinterbøker" })),
       el("div", {}, el("label", { for: "f-skjerm" }, "Skjerm"),
         el("select", { id: "f-skjerm" }, ...SKJERMAR.map(x => { const o = new Option(skjermInfo(x.nøkkel).namn, x.nøkkel); o.selected = x.nøkkel === skjermFor(lk); return o; })))),
@@ -661,7 +661,7 @@ function slett(lk, i) {
   const l = oppsett[lk], s = l[i];
   if (lk === skjermFor(lk) && l.length <= 1) return oppdaterStatus("Minst éi side må vere publisert på kvar skjerm.", "feil");
   const skjerm = skjermInfo(lk).namn;
-  if (!confirm(`Slette «${s.namn}» frå ${skjerm} for godt?\n\nVil du berre ta henne av skjermen og ta vare på henne, vel Avbryt og bruk Avpubliser.`)) return;
+  if (!confirm(`Vil du slette «${s.namn}» frå ${skjerm} for godt?\n\nVil du berre ta henne av skjermen og ta vare på henne, vel Avbryt og bruk Avpubliser.`)) return;
   l.splice(i, 1);
   if (!l.length && lk !== skjermFor(lk)) delete oppsett[lk];
   open = null; teikn();
@@ -715,7 +715,7 @@ async function hent() {
   teikn();
   if (nøkkelAvvist) {
     $("nokkelboks").open = true;
-    oppdaterStatus("Nøkkelen din er utgått eller sletta. Du kan sjå oversikta, men må lage ein ny nøkkel for å lagre (sjå nedanfor).", "feil");
+    oppdaterStatus("Nøkkelen din har gått ut eller er sletta. Du kan sjå oversikta, men må lage ein ny nøkkel for å lagre (sjå nedanfor).", "feil");
   }
 }
 
@@ -761,7 +761,7 @@ async function lagreNo(nøkkel, innhald) {
   if (svar.status === 401 || svar.status === 403) {
     $("nokkelboks").open = true;
     return oppdaterStatus(svar.status === 401
-      ? "Nøkkelen er utgått eller sletta. Lag ein ny (sjå nedanfor), lim han inn, og klikk Lagre igjen. Endringane dine er ikkje tapte."
+      ? "Nøkkelen har gått ut eller er sletta. Lag ein ny (sjå nedanfor), lim han inn, og klikk Lagre igjen. Endringane dine er ikkje tapte."
       : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.", "feil");
   }
   if (!svar.ok) return oppdaterStatus(`Lagringa feila (GitHub svarte ${svar.status}).`, "feil");
@@ -881,7 +881,7 @@ async function oppdaterEmneord() {
     await visFbInfo();
     st.textContent = `Begge listene er lagra (Forrige bok-indeksen er ${Math.round(new Blob([json]).size / 1024)} kB, tok ${Math.round((Date.now() - fbStart) / 1000)} sek). Byggjaren og skjermane brukar dei om nokre minutt.`;
   } catch (e) {
-    st.textContent = (emneOk ? "Emneordlista er lagra, men Forrige bok-indeksen vart ikkje laga: " : "Klarte ikkje lage lista: ") + e.message;
+    st.textContent = (emneOk ? "Emneordlista er lagra, men Forrige bok-indeksen vart ikkje laga: " : "Klarte ikkje å lage lista: ") + e.message;
   } finally { $("emneknapp").disabled = false; }
 }
 
@@ -1173,7 +1173,7 @@ async function endreSvarteliste(endring, melding) {
       if ((svar.status === 409 || svar.status === 422) && forsøk === 0) continue;
       if (svar.status === 401 || svar.status === 403) {
         $("nokkelboks").open = true;
-        throw new Error(svar.status === 401 ? "Nøkkelen er utgått eller sletta. Lag ein ny (sjå nedanfor)." : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.");
+        throw new Error(svar.status === 401 ? "Nøkkelen har gått ut eller er sletta. Lag ein ny (sjå nedanfor)." : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.");
       }
       if (!svar.ok) throw new Error(`Lagringa feila (GitHub svarte ${svar.status}).`);
       svarteBøker = nye;
@@ -1250,7 +1250,7 @@ async function søkSvart() {
       return { id: String(p.id), tittel: ryddTittel(r.bsdc_title || "")[0] || "", forfattar: snuNamn(forfattarFrå(r)),
         år: ((r.bsdc_date || "").match(/\d{4}/) || [""])[0], omslag: r.bs_krydderbildeurl || "" };
     });
-    st.textContent = svartTreff.length ? `${svartTreff.length} treff${svartTreff.length === 50 ? " (dei 50 første – skriv fleire ord for å snevre inn)" : ""}. Same tittel kan ha fleire utgåver med kvar sitt omslag.` : "Ingen treff.";
+    st.textContent = svartTreff.length ? `${svartTreff.length} treff${svartTreff.length === 50 ? " (dei 50 første – skriv fleire ord for å avgrense søket)" : ""}. Same tittel kan ha fleire utgåver med kvar sitt omslag.` : "Ingen treff.";
     teiknSvartTreff();
   } catch (e) { st.textContent = e.message + ". Prøv igjen."; }
 }
@@ -1266,7 +1266,7 @@ $("lagre").addEventListener("click", lagre);
 $("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; namnOpen = null; teikn(); });
 $("nokkellagre").addEventListener("click", () => {
   try { localStorage.setItem(NØKKEL_LAGER, $("nokkel").value.trim()); $("nokkel").value = ""; oppdaterStatus("Nøkkelen er lagra i denne nettlesaren.", "ok"); }
-  catch (e) { oppdaterStatus("Klarte ikkje lagre nøkkelen i nettlesaren.", "feil"); }
+  catch (e) { oppdaterStatus("Klarte ikkje å lagre nøkkelen i nettlesaren.", "feil"); }
 });
 $("nokkelfjern").addEventListener("click", () => {
   try { localStorage.removeItem(NØKKEL_LAGER); } catch (e) {}
