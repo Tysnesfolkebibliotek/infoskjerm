@@ -3402,7 +3402,7 @@ function startByggjar(startCfg) {
       ...ordna(emneord.serie || []).map(([r, n]) => new Option(`Serie (${n} titlar)`, `Serie: ${r[0]}`)));
     $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[0])));
     const dato = emneord.laga ? emneord.laga.split("-").reverse().join(".") : "";
-    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord${emneord.serie && emneord.serie.length ? ` og ${emneord.serie.length} seriar` : ""} i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre emneord, eit deweynummer (til dømes 796.334) eller ein serie med «Serie:» framfor (til dømes «Serie: Fotballstjerner»).`;
+    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord${emneord.serie && emneord.serie.length ? ` og ${emneord.serie.length} seriar` : ""} i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre emneord, eit deweynummer (til dømes 796.334) eller namnet på ein serie.`;
   }
   const emneDelar = () => $("emne").value.split(",").map(x => x.trim()).filter(Boolean);
   function teiknEmne() {
@@ -3490,13 +3490,42 @@ function startByggjar(startCfg) {
   }
   // Øvst i forslagslista: det som er skrive, som serie (og som dewey når det er eit tal)
   var ekstra = [];   // var: blir brukt av teiknForslag, som kan køyre før denne linja
+  // Seriar: Bibliofil sender ikkje serienamnet i JSON-svaret, så serielista
+  // frå oversikta er tom. I staden spør vi Bibliofil om kor mange bøker som
+  // finst i ein serie med det namnet, og føreslår serien berre når det finst bøker.
+  const treffCache = new Map();
+  function teljTreff(indeks, v) {
+    const avdar = Array.from(skjema.elements.avd).filter(c => c.checked).map(c => c.value);
+    const q = `${indeks}=${ordSøk(v)} and ${avdFilter(avdar.length ? avdar : ["tyfv", "tyfb"])} and norzig.materialType=l`;
+    if (!treffCache.has(q)) treffCache.set(q, sru({ query: q, startRecord: 1, maximumRecords: 1 }, 15000)
+      .then(d => Number((d && d.feed && d.feed.sru_numberOfRecords) || 0)).catch(() => { treffCache.delete(q); return 0; }));
+    return treffCache.get(q);
+  }
+  const iEmnelista = v => !!(emneord && emneord.emne.some(r => r[0].toLowerCase() === v.toLowerCase()));
+  let serieVent = null;
   function ekstraForslag(tekst) {
     ekstra.forEach(o => o.remove());
     const v = tekst.trim();
-    ekstra = !v || /^serie:/i.test(v) ? [] : /^\d[\d.]*$/.test(v)
-      ? [new Option(`Deweynummer som byrjar på ${v}`, `Dewey ${v}`)]
-      : v.length >= 2 && !(emneord && emneord.serie) ? [new Option(`Bøker i serien «${v}»`, `Serie: ${v}`)] : [];
+    ekstra = /^\d[\d.]*$/.test(v) ? [new Option(`Deweynummer som byrjar på ${v}`, `Dewey ${v}`)] : [];
     $("emneliste").prepend(...ekstra);
+    clearTimeout(serieVent);
+    if (reinOrd(v).length < 3 || /^(serie:|dewey )/i.test(v) || ekstra.length) return;
+    // Vent til ein har slutta å skrive, så vi ikkje spør Bibliofil for kvar bokstav
+    serieVent = setTimeout(async () => {
+      const n = await teljTreff("bib.titleSeries", v);
+      if (!n || $("emnesok").value.trim() !== v) return;
+      const o = new Option(`Serien «${v}» – ${n} ${n === 1 ? "bok" : "bøker"}`, `Serie: ${v}`);
+      ekstra.push(o); $("emneliste").prepend(o);
+    }, 500);
+  }
+  // Eige ord med Enter: er det ikkje eit kjent emneord, men namnet på ein serie
+  // (og ikkje eit emneord i Bibliofil), blir det ein serie.
+  async function leggTilFritekst(tekst) {
+    const v = tekst.trim();
+    if (!v) return;
+    if (/^(serie:|dewey )/i.test(v) || /^\d[\d.]*$/.test(v) || iEmnelista(v) || reinOrd(v).length < 3) return void leggTilEmne(v);
+    const [serie, emne] = await Promise.all([teljTreff("bib.titleSeries", v), teljTreff("dc.subject", v)]);
+    leggTilEmne(serie && !emne ? `Serie: ${v}` : v);
   }
   // Vel ein frå lista: blir lagt til med ein gong. Eige ord: Enter (komma skil fleire).
   $("emnesok").addEventListener("input", e => {
@@ -3510,7 +3539,7 @@ function startByggjar(startCfg) {
     if (emneord && v && emneord.emne.some(r => r[0].toLowerCase() === v)) leggTilEmne($("emnesok").value);
   });
   $("emnesok").addEventListener("keydown", e => {
-    if (e.key === "Enter") { e.preventDefault(); $("emnesok").value.split(",").forEach(leggTilEmne); }
+    if (e.key === "Enter") { e.preventDefault(); $("emnesok").value.split(",").forEach(leggTilFritekst); }
   });
   $("emnesok").addEventListener("blur", () => { if ($("emnesok").value.trim()) $("forslagstatus").textContent = "Trykk Enter for å leggje til emneordet du har skrive."; });
   for (const felt of [$("emnesok"), $("sjangersok")]) felt.addEventListener("focus", lastEmneord);
