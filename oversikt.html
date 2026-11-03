@@ -109,6 +109,11 @@
   /* Førehandsvising i ståande skjermformat (1080 × 1920, skalert ned) */
   dialog.forevis { border: none; padding: 0; background: transparent; max-width: none; max-height: none; }
   dialog.forevis::backdrop { background: rgba(10,10,10,.82); }
+  dialog.paaminning { border: 1px solid var(--strek); border-radius: 12px; background: var(--flate); color: var(--tekst); max-width: 440px; padding: 20px 22px; }
+  dialog.paaminning::backdrop { background: rgba(10,10,10,.6); }
+  dialog.paaminning h2 { margin: 0 0 8px; font-size: 18px; }
+  dialog.paaminning p { margin: 0 0 16px; }
+  dialog.paaminning .knappar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
   .forevis .linje { display: flex; gap: 10px; align-items: center; justify-content: space-between; color: #fff; margin-bottom: 8px; font-size: 14px; }
   .forevis .linje b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .forevis .linje span { display: flex; gap: 8px; flex-shrink: 0; }
@@ -186,6 +191,15 @@
     <button type="button" class="hoved" id="lagre" disabled>Lagre</button>
   </div>
 </main>
+
+<dialog class="paaminning" id="paaminning">
+  <h2>På tide å oppdatere listene</h2>
+  <p id="paaminningtekst"></p>
+  <div class="knappar">
+    <button type="button" id="paaminningseinare">Minn meg på om ei veke</button>
+    <button type="button" class="hoved" id="paaminningok" autofocus>Oppdater no</button>
+  </div>
+</dialog>
 
 <dialog class="forevis" id="forevis">
   <div class="linje"><b id="forevisnamn"></b>
@@ -1072,6 +1086,42 @@ function telEmne(post, avd, tabellar) {
   }
 }
 $("emneknapp").addEventListener("click", oppdaterEmneord);
+
+// ---- Påminning: listene er meir enn to månader gamle ----------------------
+// Emneordlista (med seriar) og Forrige bok-indeksen blir ikkje oppdaterte av
+// seg sjølve, sidan Bibliofil ikkje svarar GitHub sine maskiner. Er den eldste
+// meir enn 60 dagar gammal, kjem ein dialog med knapp for å oppdatere.
+const PÅMINN_DAGAR = 60, UTSETT_NØKKEL = "infoskjerm-paaminning-utsett";
+async function sjekkAlder() {
+  try {
+    const utsett = Number(localStorage.getItem(UTSETT_NØKKEL) || 0);
+    if (utsett > Date.now()) return;
+  } catch (e) {}
+  const laga = async api => {
+    try {
+      const r = await fetch(api + "?t=" + Date.now(), { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
+      return r.ok ? (await r.json()).laga || null : null;
+    } catch (e) { return null; }
+  };
+  const datoar = (await Promise.all([laga(EMNE_API), laga(FB_API)])).filter(Boolean).sort();
+  if (!datoar.length) return;      // fekk ikkje lese listene: ikkje mas
+  const eldst = datoar[0], dagar = Math.floor((Date.now() - new Date(eldst + "T12:00:00")) / 864e5);
+  if (dagar < PÅMINN_DAGAR) return;
+  $("paaminningtekst").textContent = `Emneordlista og Forrige bok-indeksen vart sist oppdaterte ${eldst.split("-").reverse().join(".")}, for ${dagar} dagar sidan. `
+    + "Ei ny oppdatering tek med nye bøker, emneord, seriar og appellfaktorar. Ho tek nokre minutt, og du må ha sida open til ho er ferdig.";
+  $("paaminning").showModal();
+}
+$("paaminningseinare").addEventListener("click", () => {
+  try { localStorage.setItem(UTSETT_NØKKEL, String(Date.now() + 7 * 864e5)); } catch (e) {}
+  $("paaminning").close();
+});
+$("paaminningok").addEventListener("click", () => {
+  $("paaminning").close();
+  $("emneboks").open = true;
+  $("emneboks").scrollIntoView({ behavior: "smooth", block: "center" });
+  oppdaterEmneord();     // ber om nøkkel om han manglar
+});
+sjekkAlder();
 $("emneboks").addEventListener("toggle", () => { if ($("emneboks").open) { visEmneinfo(); visFbInfo(); } }, { once: true });
 
 // ---- Svartelista (svarteliste.json) ----------------------------------------
