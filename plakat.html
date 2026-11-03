@@ -91,21 +91,21 @@
   .bsok .svar .hake svg { width: 3vw; height: 3vw; }
   .bsok .svar b { display: block; font-size: 3.3vw; }
   /* ---- Animasjon: nokon søkjer i Nasjonalbibliotekets nettbibliotek (bilete=anim:nettbiblioteket) ---- */
-  .nbsok { position: relative; width: 100%; max-height: 100%; border-radius: 4.35vw; overflow: hidden; background: #fff; padding-top: 2.03vw; color: #1c1c1c;
-           font-family: "Inter", "Helvetica Neue", Arial, sans-serif; box-shadow: 0 2vh 5vh rgba(0,0,0,.25); display: flex; flex-direction: column; }
-  .nbsok .topp { display: flex; align-items: center; gap: 2.32vw; padding: 3.77vw 4.93vw 2.61vw; font-size: 4.21vw; color: #444; }
-  .nbsok .nblogo { height: 5.22vw; aspect-ratio: 7.35; background: #1a47c8;
+  .nbsok { position: relative; width: 100%; max-height: 100%; border-radius: 4.35vw; overflow: hidden; background: #12141b; padding-top: 2.03vw; color: #eceef2;
+           font-family: "Inter", "Helvetica Neue", Arial, sans-serif; box-shadow: 0 0 0 .25vw rgba(255,255,255,.08), 0 2vh 5vh rgba(0,0,0,.35); display: flex; flex-direction: column; }
+  .nbsok .topp { display: flex; align-items: center; gap: 2.32vw; padding: 3.77vw 4.93vw 2.61vw; font-size: 4.21vw; color: #eceef2; }
+  .nbsok .nblogo { height: 5.22vw; aspect-ratio: 7.35; background: #fff;
                    -webkit-mask: url("bilete/tenester/nasjonalbiblioteket-logo.svg") left center / contain no-repeat; mask: url("bilete/tenester/nasjonalbiblioteket-logo.svg") left center / contain no-repeat; }
-  .nbsok .nb-felt { margin: 1.45vw 4.93vw 4.35vw; height: 9.57vw; border: .25vw solid #9a9a9a; border-radius: 0.87vw; display: flex; align-items: center; gap: 2.32vw; padding: 0 2.9vw;
+  .nbsok .nb-felt { margin: 1.45vw 4.93vw 4.35vw; height: 9.57vw; border: .25vw solid #7c808c; border-radius: 0.87vw; display: flex; align-items: center; gap: 2.32vw; padding: 0 2.9vw;
                     font-size: 4.4vw; transition: border-color .2s, box-shadow .2s; }
-  .nbsok .nb-felt.aktiv { border-color: #1a47c8; box-shadow: 0 0 0 0.72vw rgba(26,71,200,.18); }
+  .nbsok .nb-felt.aktiv { border-color: #d6d9e0; box-shadow: 0 0 0 0.72vw rgba(255,255,255,.08); }
   .nbsok .nb-felt svg { width: 5.22vw; height: 5.22vw; flex: none; }
   .nbsok .nb-felt .skrive { flex: 1; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
-  .nbsok .plasshaldar { color: #6d6d6d; }
+  .nbsok .plasshaldar { color: #a3a7b1; }
   .nbsok .skrive:not(.tom) .plasshaldar { display: none; }
-  .nbsok .markor { width: .4vw; height: 5.2vw; background: #222; animation: blink-m 1s steps(1) infinite; }
+  .nbsok .markor { width: .4vw; height: 5.2vw; background: #fff; animation: blink-m 1s steps(1) infinite; }
   .nbsok .skrive.tom .markor { order: -1; margin-right: .3vw; }
-  .nbsok .svar { margin: 0 4.93vw 4.93vw; display: flex; align-items: center; gap: 2.9vw; background: #1a47c8; color: #fff;
+  .nbsok .svar { margin: 0 4.93vw 4.93vw; display: flex; align-items: center; gap: 2.9vw; background: #262a35; color: #fff; box-shadow: inset 0 -.6vw 0 #6f8be8;
                  border-radius: 2vw; padding: 2.6vw 3.5vw; font-size: 4vw; opacity: 0; transform: translateY(1.5vh); transition: opacity .5s, transform .5s; }
   .nbsok .svar.synleg { opacity: 1; transform: none; }
   .nbsok .svar b { display: block; font-size: 4.1vw; }
@@ -422,7 +422,7 @@ function biblioteksøkAnimasjon(eigne) {
 }
 
 // ---- Animasjon: nokon søkjer i Nasjonalbibliotekets nettbibliotek -------
-// I stilen til nettbiblioteket på nb.no: logo og søkjefelt. Søket blir skrive,
+// I stilen til nettbiblioteket på nb.no i nattema: logo og søkjefelt. Søket blir skrive,
 // og svaret syner under feltet.
 const STANDARDSØK_NB = ["Tysnes Widerøe", "Kristin Lavransdatter", "Sunnhordland 1950", "Kongespeilet"];
 function nettbibliotekAnimasjon(eigne) {
@@ -432,9 +432,9 @@ function nettbibliotekAnimasjon(eigne) {
   boks.className = "nbsok"; boks.setAttribute("aria-hidden", "true");
   boks.innerHTML =
     `<div class="topp"><span class="nblogo"></span><span>|&nbsp; Nettbiblioteket</span></div>
-     <div class="nb-felt"><svg viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
+     <div class="nb-felt"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
        <span class="skrive tom"><span class="tekst"></span><span class="markor"></span><span class="plasshaldar">Søk i Nettbiblioteket</span></span></div>
-     <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#1a47c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+     <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#12141b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
        <span><b>Bøker, aviser, bilete og radio</b>Les og lytt gratis på nett</span></div>`;
   const felt = boks.querySelector(".nb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
   const svar = boks.querySelector(".svar");
