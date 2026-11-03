@@ -3402,7 +3402,7 @@ function startByggjar(startCfg) {
       ...ordna(emneord.serie || []).map(([r, n]) => new Option(`Serie (${n} titlar)`, `Serie: ${r[0]}`)));
     $("sjangrar").replaceChildren(...ordna(emneord.sjanger).map(([r, n]) => new Option(`${r[0]} (${n} titlar)`, r[0])));
     const dato = emneord.laga ? emneord.laga.split("-").reverse().join(".") : "";
-    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord${emneord.serie ? ` og ${emneord.serie.length} seriar` : ""} i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre emneord eller eit deweynummer (til dømes 796.334).`;
+    $("forslagstatus").textContent = `Forslag frå ${emneord.emne.length} emneord${emneord.serie && emneord.serie.length ? ` og ${emneord.serie.length} seriar` : ""} i bruk${dato ? ` (lista er frå ${dato})` : ""}. Du kan òg skrive inn andre emneord, eit deweynummer (til dømes 796.334) eller ein serie med «Serie:» framfor (til dømes «Serie: Fotballstjerner»).`;
   }
   const emneDelar = () => $("emne").value.split(",").map(x => x.trim()).filter(Boolean);
   function teiknEmne() {
