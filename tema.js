@@ -17,7 +17,8 @@
 //   pynt     Funksjon som teiknar pynten bak bøkene. Valfritt.
 //   logo     true når temaet viser logoen til eit arrangement eller ein kampanje
 //            (Sommarles, Brageprisen …). Desse temaa er skjulte i plakatbyggjaren,
-//            så ein plakat for ei anna teneste ikkje får ein framand logo.
+//            så ein plakat for ei anna teneste ikkje får ein framand logo. Tema som
+//            set --symbol-plass (flagg, symbol), er òg skjulte der, utan dette merket.
 //   overgang, bakgrunn, teljar
 //            Kva temaet vel når karusellen står på «Som temaet». Valfritt.
 //            Utan dei blir det ton og løft, flat farge og hjul.

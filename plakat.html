@@ -430,8 +430,10 @@ async function startByggjar() {
   const temaSel = $("tema");
   const temaListe = typeof TEMA_LISTE !== "undefined" ? TEMA_LISTE : [{ id: "kveld", namn: "Kveld", gruppe: "Faste" }];
   for (const g of (typeof TEMAGRUPPER !== "undefined" ? TEMAGRUPPER : ["Faste"])) {
-    // Tema med logoen til eit arrangement eller ein kampanje passar ikkje på plakatar for andre ting
-    const liste = temaListe.filter(t => (t.gruppe || "Faste") === g && !t.logo);
+    // Tema med logo eller symbol øvst til høgre (flagg, kampanjelogo o.l.) passar ikkje på
+    // plakatar, der logoen til tenesta står øvst. Symbola set --symbol-plass i tema.js.
+    const harSymbol = t => t.logo || /--symbol-plass/.test(t.css || "");
+    const liste = temaListe.filter(t => (t.gruppe || "Faste") === g && !harSymbol(t));
     if (!liste.length) continue;
     const og = document.createElement("optgroup"); og.label = g;
     for (const t of liste) og.append(new Option(t.namn, t.id));
