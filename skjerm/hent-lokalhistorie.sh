@@ -28,8 +28,8 @@ if [ "${2:-}" != "--no" ] && [ -f "$FIL" ] && grep -q "\"$I_DAG\"" <(head -c 200
   exit 0
 fi
 
-# 2. Spør Bibliofil etter 40 tilfeldige, ferdige postar
-SPURNAD='{"mode":"vt","instans":"tysneslokalsamling","marcjson":"1","antall":40,"offset":0,"pubsok_txt_0":"randomize","ccl":"ikke uuuferdig"}'
+# 2. Spør Bibliofil etter 60 tilfeldige, ferdige postar
+SPURNAD='{"mode":"vt","instans":"tysneslokalsamling","marcjson":"1","antall":60,"offset":0,"pubsok_txt_0":"randomize","ccl":"ikke uuuferdig"}'
 if ! curl -fsS --max-time 60 -X POST -H 'Content-Type: application/json' \
      -d "$SPURNAD" -o "$NY" "https://strdbib.bib.no/r/web_sok"; then
   logg "Fekk ikkje kontakt med Bibliofil. Endra ingenting."

@@ -90,6 +90,9 @@
 const P = new URLSearchParams(location.search);
 const MODUS = P.get("modus") === "karusell" ? "karusell" : "dagens";
 const SEK = Math.max(5, Number(P.get("sek")) || 20);
+// Bilete med desse orda i emneord eller skildring blir hoppa over (t.d. foto av
+// reiskapar). Kan endrast med ?utan=ord1,ord2 i lenkja; ?utan= (tomt) tek med alt.
+const UTAN = (P.has("utan") ? P.get("utan") : "reiskap,verktøy").split(",").map(x => x.trim().toLowerCase()).filter(Boolean);
 document.getElementById("overskrift").textContent = P.get("tittel") || (MODUS === "dagens" ? "Dagens bilete" : "Glimt frå gamle Tysnes");
 
 // Tema og skrift som i karusellane: ?tema=fjord&skrift=par-klassisk (standard: Kveld)
@@ -160,8 +163,9 @@ function postar(d) {
     const foto = hent(f, "100")[0] || "";
     return { titnr: p.titnr, tittel: String(p.stit_tittel || "").replace(/\s*[\/:;]\s*$/, ""), bilete,
              meta: [stad, år.replace(/[.,;]$/, ""), foto && "Foto: " + foto.replace(/[.,;]$/, "")].filter(Boolean).join(" · "),
-             skildring: vask(hent(f, "505").join(" ")) };
-  }).filter(p => /^https?:/.test(p.bilete));
+             skildring: vask(hent(f, "505").join(" ")),
+             _sjekk: [...hent(f, "650"), ...hent(f, "505"), p.stit_tittel || ""].join(" ").toLowerCase() };
+  }).filter(p => /^https?:/.test(p.bilete) && !UTAN.some(o => p._sjekk.includes(o)));
 }
 
 // ---- Data: les lokalhistorie.js på nytt kvar gong sida blir vist,
