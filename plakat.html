@@ -111,6 +111,32 @@
   .nbsok .svar b { display: block; font-size: 4.1vw; }
   .nbsok .svar .hake { width: 7.25vw; height: 7.25vw; flex: none; border-radius: 50%; background: #fff; display: grid; place-items: center; }
   .nbsok .svar .hake svg { width: 4.35vw; height: 4.35vw; }
+  /* ---- Animasjon: nokon søkjer i Helsebiblioteket (bilete=anim:helsebiblioteket) ---- */
+  .hbsok { position: relative; width: 100%; flex: none; border-radius: 3vw; overflow: hidden; background: #ecf3f6; color: #1f2a30;
+           font-family: "Inter", "Helvetica Neue", Arial, sans-serif; box-shadow: 0 2vh 5vh rgba(0,0,0,.3); padding: 5.5vw 5vw 5vw;
+           display: flex; flex-direction: column; align-items: stretch; }
+  .hbsok .hblogo { height: 7vw; background: url("bilete/tenester/helsebiblioteket-logo.svg") left center / contain no-repeat; margin-bottom: 4.5vw; }
+  .hbsok .hb-felt { height: 10vw; background: #fff; border-radius: 1.6vw; display: flex; align-items: center; gap: 2vw; padding: 0 3vw;
+                    font-size: 4vw; transition: box-shadow .2s; }
+  .hbsok .hb-felt.aktiv { box-shadow: 0 0 0 .5vw #2c6e8f; }
+  .hbsok .hb-felt svg { width: 5vw; height: 5vw; flex: none; }
+  .hbsok .skrive { flex: 1; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+  .hbsok .plasshaldar { color: #55636b; }
+  .hbsok .skrive:not(.tom) .plasshaldar { display: none; }
+  .hbsok .markor { width: .35vw; height: 5vw; background: #1f2a30; animation: blink-m 1s steps(1) infinite; }
+  .hbsok .skrive.tom .markor { order: -1; margin-right: .3vw; }
+  .hbsok .under { display: grid; margin-top: 2.6vw; }
+  .hbsok .under > * { grid-area: 1 / 1; }
+  .hbsok .knappar { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6vw; align-content: start; transition: opacity .4s; }
+  .hbsok .knappar span { background: #fff; border-radius: 1.4vw; padding: 2.4vw 2vw; font-size: 2.4vw; display: flex; align-items: center; gap: 1.4vw;
+                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hbsok .knappar svg { width: 3.8vw; height: 3.8vw; flex: none; }
+  .hbsok .svar { align-self: start; display: flex; align-items: center; gap: 2.6vw; background: #fff; border-left: 1vw solid #c41d4f;
+                 border-radius: 1.4vw; padding: 2.6vw 3vw; font-size: 3.4vw; opacity: 0; transform: translateY(1.5vh); transition: opacity .5s, transform .5s; }
+  .hbsok .svar.synleg { opacity: 1; transform: none; }
+  .hbsok .svar b { display: block; font-size: 3.8vw; }
+  .hbsok .svar .hake { width: 6.4vw; height: 6.4vw; flex: none; border-radius: 50%; background: #c41d4f; display: grid; place-items: center; }
+  .hbsok .svar .hake svg { width: 3.8vw; height: 3.8vw; }
   /* Utan bilete og ikon får teksten heile plassen */
   .midt.tom { flex: .6; }
 
@@ -463,6 +489,53 @@ function nettbibliotekAnimasjon(eigne) {
   return boks;
 }
 
+// ---- Animasjon: nokon søkjer i Helsebiblioteket -----------------------
+// I stilen til framsida på helsebiblioteket.no: logo, søkjefelt og kategoriknappar.
+// Søket blir skrive, knappane blir borte, og svaret syner.
+const STANDARDSØK_HB = ["Hjartesvikt", "Legevakthandboka", "Demens", "Diabetes type 2"];
+function helsebibliotekAnimasjon(eigne) {
+  const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
+  const liste = søk.length ? søk : STANDARDSØK_HB;
+  const boks = document.createElement("div");
+  boks.className = "hbsok"; boks.setAttribute("aria-hidden", "true");
+  const strek = 'fill="none" stroke="#1f2a30" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+  const knappar = [
+    ["Kommunehelsetjenesten", `<svg viewBox="0 0 24 24" ${strek}><path d="M5 3h14v11a7 7 0 0 1-14 0z"/><path d="m9 7-1.5 7M12 7v7M15 7v7"/></svg>`],
+    ["Kunnskapsbasert praksis", `<svg viewBox="0 0 24 24" ${strek}><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/></svg>`],
+    ["Kvalitetsforbedring", `<svg viewBox="0 0 24 24" ${strek}><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>`],
+    ["Omsorgsbiblioteket", `<svg viewBox="0 0 24 24" ${strek}><circle cx="12" cy="12" r="8"/><path d="M6 18 18 6M9 7c3 1 6 4 8 8"/></svg>`]];
+  boks.innerHTML =
+    `<div class="hblogo"></div>
+     <div class="hb-felt"><span class="skrive tom"><span class="tekst"></span><span class="markor"></span><span class="plasshaldar">Søk i Helsebiblioteket</span></span>
+       <svg viewBox="0 0 24 24" fill="none" stroke="#1f2a30" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></div>
+     <div class="under"><div class="knappar">${knappar.map(([t, ikon]) => `<span>${ikon}${t}</span>`).join("")}</div>
+     <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+       <span><b>Oppslagsverk, retningslinjer og tidsskrift</b>Gratis for helsepersonell og studentar</span></div></div>`;
+  const felt = boks.querySelector(".hb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
+  const svar = boks.querySelector(".svar"), knapprad = boks.querySelector(".knappar");
+  const vent = ms => new Promise(r => setTimeout(r, ms));
+  (async () => {
+    for (let n = 0; ; n++) {
+      const ord = liste[n % liste.length];
+      await vent(900);
+      felt.classList.add("aktiv"); skrive.classList.remove("tom");
+      for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
+      await vent(600);
+      felt.classList.remove("aktiv");
+      knapprad.style.opacity = 0;
+      await vent(350);
+      svar.classList.add("synleg");
+      await vent(3000);
+      svar.classList.remove("synleg");
+      await vent(400);
+      knapprad.style.opacity = 1;
+      while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
+      skrive.classList.add("tom");
+    }
+  })();
+  return boks;
+}
+
 // =====================================================================
 // PLAKATEN
 // =====================================================================
@@ -521,6 +594,7 @@ function visPlakat(cfg) {
   } else if (cfg.bilete && cfg.bilete.startsWith("anim:")) {
     if (cfg.bilete === "anim:biblioteksok") midt.append(biblioteksøkAnimasjon(cfg.anim));
     if (cfg.bilete === "anim:nettbiblioteket") midt.append(nettbibliotekAnimasjon(cfg.anim));
+    if (cfg.bilete === "anim:helsebiblioteket") midt.append(helsebibliotekAnimasjon(cfg.anim));
     // Får ikkje animasjonen plass i høgda (t.d. i eit breitt vindauge), blir han skalert ned
     // i staden for å bli kutta
     const anim = midt.firstElementChild;
