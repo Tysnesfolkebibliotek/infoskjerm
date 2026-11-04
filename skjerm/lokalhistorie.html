@@ -40,13 +40,20 @@
                box-shadow: 0 2vh 5vh rgba(0,0,0,.45); }
   .synleg .ramme img { animation: zoom 40s ease-out both; }
   @keyframes zoom { from { transform: scale(1); } to { transform: scale(1.04); } }
-  .tekst { position: absolute; top: 68vh; left: 7vw; right: 7vw; bottom: 8vh; overflow: hidden; text-align: center; }
+  .tekst { position: absolute; top: 68vh; left: 7vw; right: 7vw; bottom: 11vh; overflow: hidden; text-align: center; }
   h1 { font-family: var(--skrift-tittel, var(--skrift)); font-weight: var(--vekt-tittel, 700); font-size: calc(4.6vw * var(--skala-tittel, 1));
        line-height: 1.2; }
   .meta { font-size: 3vw; margin-top: 1.4vh; opacity: .92; }
   .skildring { font-size: 2.8vw; line-height: 1.5; color: var(--dempa); margin: 2.4vh auto 0; max-width: 82vw;
                display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-  footer { position: absolute; bottom: 3.5vh; left: 7vw; right: 7vw; text-align: center; font-size: 2vw; color: var(--dempa); }
+  /* Botnen som på karusellane: biblioteknamnet til venstre, nedteljingshjulet til høgre */
+  footer { position: absolute; bottom: 4vh; left: 7vw; right: 7vw; display: flex; align-items: center; justify-content: space-between; z-index: 2; }
+  .botnnamn { font-size: 2.8vw; color: var(--tekst); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+  .botnnamn b { font-weight: 700; }
+  .hjul { display: block; width: 4.6vh; height: 4.6vh; flex: none; transform: rotate(-90deg); }
+  .hjul circle { fill: none; stroke-width: 3.5; }
+  .hjul .hjul-spor { stroke: var(--spor, rgba(255,255,255,.12)); }
+  #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 0px; }
   #melding { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
              text-align: center; font-size: 3vw; color: var(--dempa); padding: 10vw; }
 </style>
@@ -56,7 +63,10 @@
 <body>
 <header><div class="avdeling">Lokalhistorisk arkiv i Tysnes</div><div class="overskrift" id="overskrift">Dagens bilete</div></header>
 <span class="beta">BETA</span>
-<footer>Frå bildesamlinga til Tysnes folkebibliotek</footer>
+<footer>
+  <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
+  <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="hjul-spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
+</footer>
 <div id="melding"></div>
 <script>
 const P = new URLSearchParams(location.search);
@@ -156,6 +166,17 @@ function lesData() {
 const lag = (tag, kl, tekst) => { const e = document.createElement(tag); if (kl) e.className = kl; if (tekst) e.textContent = tekst; return e; };
 let nr = 0, tidtakar = null, aktiv = null;
 
+// Nedteljingshjulet byrjar fullt og tømmer seg, som på karusellane.
+// Karusell: éin runde per bilete. Dagens bilete: tida sida står på skjermen
+// (rotasjon.html sender ho med «vis»); utan rotasjon 45 sekund om att og om att.
+let hjulAnim = null, sideMs = 0;
+function teljNed(ms) {
+  if (hjulAnim) hjulAnim.cancel();
+  hjulAnim = document.getElementById("hjul").animate(
+    [{ strokeDashoffset: "0px" }, { strokeDashoffset: "94.25px" }],
+    { duration: ms, easing: "linear", fill: "forwards", iterations: MODUS === "dagens" && !sideMs ? Infinity : 1 });
+}
+
 function last(p) {
   return new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = p.bilete; });
 }
@@ -186,6 +207,7 @@ async function neste() {
     const i = MODUS === "dagens" ? (dagnummer() + prøv) % LISTE.length : nr++ % LISTE.length;
     if (await visBilete(LISTE[i])) { melde("har"); break; }
   }
+  teljNed(MODUS === "karusell" ? SEK * 1000 : (sideMs || 45000));
   if (MODUS === "karusell") tidtakar = setTimeout(neste, SEK * 1000);
 }
 
@@ -194,7 +216,7 @@ const iRotasjon = window.parent !== window && !P.has("forhand");   // forhand=1:
 function melde(b) { if (iRotasjon) parent.postMessage({ nyheiter: b }, "*"); }
 window.addEventListener("message", async e => {
   if (!e.data || !e.data.nyheiter) return;
-  if (e.data.nyheiter === "vis") { await lesData(); neste(); }
+  if (e.data.nyheiter === "vis") { sideMs = Number(e.data.att) || 0; await lesData(); neste(); }
   if (e.data.nyheiter === "skjul") clearTimeout(tidtakar);
 });
 lesData().then(() => { if (!iRotasjon) neste(); melde(LISTE.length ? "har" : "tom"); melde("klar"); });
