@@ -171,6 +171,16 @@ function aktuelle(sider) {
   return faste.length ? faste : sider;
 }
 
+// Sider med «mellom»: true (plakatkarusellar) blir viste etter kvar av dei
+// andre sidene i staden for på sin eigen plass. Er det fleire, vekslar dei.
+function flett(sider) {
+  const mellom = sider.filter(s => s.mellom), andre = sider.filter(s => !s.mellom);
+  if (!mellom.length || !andre.length) return sider;
+  const ut = [];
+  andre.forEach((s, k) => ut.push(s, mellom[k % mellom.length]));
+  return ut;
+}
+
 // ---- Sidene ---------------------------------------------------------------
 
 const adresse = s => s.lokal || s.url;
@@ -190,8 +200,13 @@ let ALLE = null;   // heile oppsettet for skjermen, før tidsstyringa er brukt
 let nyHenta = false;
 
 function byggRammer(sider) {
+  // Ei side som står fleire gonger (plakatkarusell «mellom kvar side»), får
+  // same ramme kvar gong, så ho held fram der ho slapp.
+  const sett = new Map();
   return sider.map(side => {
+    if (sett.has(side)) return sett.get(side);
     const f = document.createElement("iframe");
+    sett.set(side, f);
     // Lokale sider blir lasta med ein gong. Nettsider blir lasta når dei skal
     // visast første gong, så vi kan sjekke at nettet er oppe først.
     f.src = side.lokal ? side.lokal : "about:blank";
@@ -261,7 +276,7 @@ async function vis(n) {
   if (n === 0) {
     // På reserven (ingen sider svarte) blir vi verande til nettet er tilbake
     if (ALLE && (aktivJSON !== "reserve" || nyHenta)) {
-      const sider = aktuelle(ALLE), json = JSON.stringify(sider);
+      const sider = flett(aktuelle(ALLE)), json = JSON.stringify(sider);
       if (json !== aktivJSON) bytOppsett(sider, json);
     }
     nyHenta = false;
@@ -330,7 +345,7 @@ async function vis(n) {
   const fersk = await hentOppsett();
   if (fersk) skrivMinne(fersk);
   ALLE = fersk || lesMinne();
-  if (ALLE) { const sider = aktuelle(ALLE); bytOppsett(sider, JSON.stringify(sider)); }
+  if (ALLE) { const sider = flett(aktuelle(ALLE)); bytOppsett(sider, JSON.stringify(sider)); }
   else bytOppsett(RESERVE[NAMN] || RESERVE.skjerm2, "reserve");
   vis(0);
 })();

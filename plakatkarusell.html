@@ -13,7 +13,8 @@
 
   «p» er alt etter # i lenkja til ein plakat frå plakatbyggjaren (plakat.html),
   utan «vis=1». Rekkjefølgja i lenkja er rekkjefølgja på skjermen. «sek» er kor
-  lenge kvar plakat står (standard 20). Valfritt per plakat: legg «til=ÅÅÅÅ-MM-DD»
+  lenge kvar plakat står (standard 20). «kvar» er kor mange plakatar som blir
+  viste kvar gong karusellen kjem på skjermen (tomt = alle). Valfritt per plakat: legg «til=ÅÅÅÅ-MM-DD»
   inn i plakatlenkja, så blir plakaten ikkje vist etter den datoen.
 
   Plakatar lagde rett frå ein mal står berre som «p=mal%3Dbiblio%26folg%3D1»
@@ -46,6 +47,7 @@
 const OVERTONING_MS = 1000;      // må passe med «transition» i stilen over
 const p = new URLSearchParams(location.hash.slice(1));
 const SEK = Math.max(5, Number(p.get("sek")) || 20);
+const KVAR = Math.max(0, Math.floor(Number(p.get("kvar")) || 0));   // plakatar per gong (0 = alle)
 const FORHAND = p.has("forhand");
 const I_ROTASJON = window.parent !== window && !FORHAND;
 if (I_ROTASJON) document.body.classList.add("skjerm");
@@ -141,7 +143,8 @@ function visNeste() {
   // vidare med ein gong (t.d. når ein plakat har gått ut på dato sidan
   // sekunda i oppsettet vart rekna ut). Neste gong held vi fram med neste plakat.
   tidtakar = setTimeout(() => {
-    if (I_ROTASJON && vistIRunden >= aktuelle().length) sei("ferdig");
+    const mål = KVAR ? Math.min(KVAR, aktuelle().length) : aktuelle().length;
+    if (I_ROTASJON && vistIRunden >= mål) sei("ferdig");
     else visNeste();
   }, SEK * 1000);
 }

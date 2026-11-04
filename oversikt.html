@@ -330,7 +330,7 @@ function typeTekst(s) {
   if (erPlakatkarusell(s)) {
     const pk = lesPk(s.url), n = pk.plakatar.length;
     const ute = pk.plakatar.filter(h => tilDatoAv(h) && tilDatoAv(h) < idagTekst()).length;
-    return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""} · ${pk.sek} sek kvar`;
+    return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""}${pk.kvar ? ` · ${pk.kvar} per gong` : ""} · ${pk.sek} sek kvar${s.mellom ? " · mellom kvar side" : ""}`;
   }
   if (erPlakat(s)) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
@@ -359,11 +359,12 @@ const PK_ADRESSE = "https://tysnesfolkebibliotek.github.io/infoskjerm/plakatkaru
 const erPlakatkarusell = s => !s.lokal && /github\.io\/infoskjerm\/plakatkarusell\.html#vis=1/.test(s.url || "");
 function lesPk(url) {
   const p = new URLSearchParams(String(url || "").split("#")[1] || "");
-  return { sek: Number(p.get("sek")) || 20, plakatar: p.getAll("p").filter(Boolean) };
+  return { sek: Number(p.get("sek")) || 20, kvar: Math.max(0, Math.floor(Number(p.get("kvar")) || 0)), plakatar: p.getAll("p").filter(Boolean) };
 }
 function lagPk(pk) {
   const p = new URLSearchParams();
   p.set("vis", "1"); p.set("sek", String(pk.sek));
+  if (pk.kvar) p.set("kvar", String(pk.kvar));
   for (const h of pk.plakatar) p.append("p", h);
   return PK_ADRESSE + "#" + p.toString();
 }
@@ -381,7 +382,10 @@ const tenesterLasting = fetch("tenester.json?t=" + Date.now(), { cache: "no-stor
   .then(r => r.ok ? r.json() : null).then(d => (tenesteData = d)).catch(() => null);
 const løys = h => løysPlakat(tenesteData, h);
 // Sekund på skjermen for ein plakatkarusell: tal plakatar som ikkje er ute på dato × sekund per plakat
-const pkSekund = pk => Math.max(5, pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= idagTekst()).length * pk.sek);
+// Med «plakatar per gong» (kvar): så mange plakatar, men ikkje fleire enn det finst
+const pkAktive = pk => pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= idagTekst()).length;
+const pkPerGong = pk => pk.kvar ? Math.min(pk.kvar, pkAktive(pk)) : pkAktive(pk);
+const pkSekund = pk => Math.max(5, pkPerGong(pk) * pk.sek);
 // Alle plakatane som finst i oppsettet: eigne linjer og plakatar i karusellar
 function allePlakatar() {
   const ut = [], sett = new Set();
@@ -706,6 +710,9 @@ function pkBoks(s, lk, i) {
   const velliste = el("div", { class: "velliste" });
   const sek = el("input", { type: "number", id: "pk-sek", min: 5, max: 600, value: pk.sek });
   const runde = el("p", { class: "hjelp" });
+  const kvar = el("select", { id: "pk-kvar" }, new Option("Alle", "0"), ...[1, 2, 3, 4, 5].map(k => new Option(String(k), String(k))));
+  kvar.value = String(pk.kvar || 0);
+  kvar.addEventListener("change", () => endre(() => { pk.kvar = Number(kvar.value) || 0; }));
   const vel = el("details", {}, el("summary", {}, "+ Legg til plakatar"), velliste,
     el("button", { type: "button", onclick: () => {
       const valde = [...velliste.querySelectorAll("input:checked")].map(c => c.value);
@@ -729,7 +736,10 @@ function pkBoks(s, lk, i) {
     el("div", {}, nyKnapp, el("span", { class: "hjelp" }, lagret ? " Arrangement eller ein plakat du vil endre på først." : " Lagre oppsettet først for å lage ein ny plakat i plakatbyggjaren.")),
     el("div", { class: "rad" },
       el("div", {}, el("label", { for: "pk-sek" }, "Sekund per plakat"), sek),
-      el("div", {}, el("label", {}, " "), runde)));
+      el("div", {}, el("label", { for: "pk-kvar" }, "Plakatar per gong"), kvar)),
+    el("label", { class: "val" }, el("input", { type: "checkbox", id: "pk-mellom", checked: !!s.mellom }),
+      "Vis mellom kvar side (i staden for på sin plass i lista)"),
+    runde);
 
   let skjemaRot = null;
   const finnSkjema = () => skjemaRot || (skjemaRot = boks.closest(".skjema"));
@@ -781,9 +791,11 @@ function pkBoks(s, lk, i) {
       ...(andre.length ? [el("b", { class: "hjelp" }, "Plakatar du har laga"), ...andre.map(x => rad(x.hash, x.namn))] : []));
     if (!pk.plakatar.length) vel.open = true;
     const n = pk.plakatar.length;
-    // Sekunda på skjermen blir alltid rekna ut, så alle plakatane blir viste éin gong per runde
-    const aktive = pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= no).length;
-    runde.textContent = aktive ? `${aktive} ${aktive === 1 ? "plakat" : "plakatar"} × ${pk.sek} sekund = ${aktive * pk.sek} sekund på skjermen.${aktive < n ? " Plakatar som er ute på dato, er ikkje rekna med." : ""}` : "";
+    // Sekunda på skjermen blir alltid rekna ut: plakatar per gong (eller alle) × sekund per plakat
+    const aktive = pkAktive(pk), gong = pkPerGong(pk);
+    runde.textContent = aktive ? `${gong} ${gong === 1 ? "plakat" : "plakatar"} × ${pk.sek} sekund = ${gong * pk.sek} sekund på skjermen kvar gong.`
+      + (pk.kvar && gong < aktive ? ` Neste gong held han fram med neste plakat.` : "")
+      + (aktive < n ? " Plakatar som er ute på dato, er ikkje rekna med." : "") : "";
     if (f) { const sf = f.querySelector("#f-sek"); sf.value = pkSekund(pk); sf.readOnly = true; sf.title = "Blir rekna ut: tal plakatar × sekund per plakat"; }
   }
   // Skjemaet finst først når boksen er sett inn i det
@@ -804,6 +816,7 @@ function brukSkjema(f, gammal, lk, i) {
   else return feil("Lenkja må byrje med https://");
   ny.sekund = sek;
   if (f.querySelector("#f-frisk").checked) ny.frisk = true;
+  { const m = f.querySelector("#pk-mellom"); if (m && m.checked) ny.mellom = true; }
   // Periode
   const frå = v("f-fra"), til = v("f-til"), kvartÅr = f.querySelector("#f-kvartar").checked;
   if (frå || til) {
@@ -864,7 +877,7 @@ function tilJson(o) {
     if (Array.isArray(o[k])) {
       linjer.push(`  ${JSON.stringify(k)}: [`);
       o[k].forEach((s, si) => {
-        const rekkje = ["namn", "url", "lokal", "sekund", "frisk", "periode", "dagar", "tid"];
+        const rekkje = ["namn", "url", "lokal", "sekund", "frisk", "mellom", "periode", "dagar", "tid"];
         const ordna = {};
         for (const n of rekkje) if (s[n] !== undefined) ordna[n] = s[n];
         for (const n of Object.keys(s)) if (!(n in ordna)) ordna[n] = s[n];

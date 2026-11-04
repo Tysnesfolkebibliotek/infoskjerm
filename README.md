@@ -137,6 +137,15 @@ klikk **+ Lag plakatkarusell** øvst på oversikta. Det blir éi linje i oppsett
   plakatane er viste éin gong, går rotasjonen vidare, så ein plakat som går ut på
   dato seinare, gjer ikkje at dei andre blir viste to gonger.
 
+- **Plakatar per gong** (standard Alle): kor mange plakatar som blir viste kvar
+  gong karusellen kjem på skjermen. Neste gong held han fram med neste plakat.
+  Sekund på skjermen blir då plakatar per gong × sekund per plakat.
+- **Vis mellom kvar side**: skjermen viser karusellen etter kvar av dei andre
+  sidene i staden for på sin plass i lista (`"mellom": true` i `oppsett.json`).
+  Med 1 plakat per gong kjem det éin ny plakat mellom kvar bokkarusell. Har
+  fleire karusellar dette valet, vekslar dei. Krev `rotasjon.html` frå 4.11.2026;
+  med ei eldre fil står karusellen på sin plass i lista.
+
 Kvar plakat får si eiga nedteljingslinje. Plakatane står i lenkja til karusellen
 (`p=…`, alt etter `#` i plakatlenkja), så éin plakat i karusellen er uavhengig av
 plakatlinjer med same innhald. Treng ingen ny `rotasjon.html` på skjermane.
