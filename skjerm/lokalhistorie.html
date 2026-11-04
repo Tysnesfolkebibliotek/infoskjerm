@@ -66,8 +66,8 @@ function marcFelt(m) {
     if (Array.isArray(n)) return n.forEach(x => gå(x, tag));
     if (!n || typeof n !== "object") return;
     const t = n.tag ?? n.felt ?? n.field ?? n.t;
-    if (t != null && /^\d{3}$/.test(String(t))) tag = String(t);
-    const kode = n.code ?? n.kode ?? n.subfield;
+    if (t != null && /^\d{1,3}$/.test(String(t))) tag = String(t).padStart(3, "0");
+    const kode = n.delfelt ?? n.code ?? n.kode ?? n.subfield;
     const verdi = n.value ?? n.data ?? n.verdi ?? n.tekst;
     if (tag && kode != null && typeof verdi === "string") { ut.push([tag, String(kode), verdi.trim()]); return; }
     for (const [k, v] of Object.entries(n)) {
@@ -83,7 +83,8 @@ const hent = (felt, tag, kode = "a") => felt.filter(f => f[0] === tag && f[1] ==
 // Fjern registreringsnotat o.l. på slutten av skildringa, og kort ned.
 function vask(s) {
   if (!s) return "";
-  s = s.replace(/\s*(\b(Reg\.?|Registrert|Informant|Gard\.? og ætt|Kjelde|Kilde)\b[\s\S]*)$/i, "").trim();
+  // Bibliofil-format: { tag: 505, verdi: [{ delfelt: "a", verdi: "…" }] }
+  s = s.replace(/(^|[\s.,;])\s*(Reg\.?\s|Registrert|Informant|Gard\.? og ætt|Ættesoga|Kjelde|Kilde)[\s\S]*$/i, "$1").trim();
   if (s.length > 320) {
     const k = s.slice(0, 320), punktum = k.lastIndexOf(". ");
     s = punktum > 150 ? k.slice(0, punktum + 1) : k.slice(0, k.lastIndexOf(" ")) + " …";
@@ -104,7 +105,7 @@ function postar(d) {
     const f = marcFelt(p.marcpost);
     const bilete = String(Array.isArray(p.stit_bilde) ? p.stit_bilde[0] : p.stit_bilde).replace(".str1.", ".str4.");
     const stad = [...new Set(hent(f, "651"))].join(", ");
-    const år = hent(f, "260", "c")[0] || "";
+    const år = hent(f, "260", "c")[0] || (p.stit_utgaar > 0 ? String(p.stit_utgaar) : "");
     const foto = hent(f, "100")[0] || "";
     return { titnr: p.titnr, tittel: String(p.stit_tittel || "").replace(/\s*[\/:;]\s*$/, ""), bilete,
              meta: [stad, år.replace(/[.,;]$/, ""), foto && "Foto: " + foto.replace(/[.,;]$/, "")].filter(Boolean).join(" · "),
