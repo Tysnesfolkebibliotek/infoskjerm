@@ -16,6 +16,12 @@
   lenge kvar plakat står (standard 20). Valfritt per plakat: legg «til=ÅÅÅÅ-MM-DD»
   inn i plakatlenkja, så blir plakaten ikkje vist etter den datoen.
 
+  Plakatar lagde rett frå ein mal står berre som «p=mal%3Dbiblio%26folg%3D1»
+  og blir fylte ut frå tenester.json (sjå plakatmal.js). Fila blir henta på nytt
+  når karusellen kjem på skjermen (høgst kvart tiande minutt), så endringar i
+  malane kjem med av seg sjølv. Sist henta versjon blir teken vare på i
+  nettlesaren, så plakatane kan visast sjølv om fila ikkje kan hentast.
+
   Karusellen blir laga og endra på oversikta (oversikt.html). Han snakkar med
   rotasjon.html på same måte som karusellane: «vis» startar han, «skjul» set
   han på pause, og neste gong held han fram med neste plakat. Kvar plakat får
@@ -34,6 +40,7 @@
 </style>
 </head>
 <body>
+<script src="plakatmal.js"></script>
 <script>
 const OVERTONING_MS = 1000;      // må passe med «transition» i stilen over
 const p = new URLSearchParams(location.hash.slice(1));
@@ -49,19 +56,47 @@ const ALLE = p.getAll("p").filter(Boolean);
 
 let rammer = [], n = -1, tidtakar = null, køyrer = false;
 
+// ---- Malane (tenester.json) for plakatar som følgjer malen -----------------
+const MAL_LAGER = "infoskjerm-tenester";
+const MAL_KVART_MS = 10 * 60000;
+let malData = null, malHenta = 0;
+try { malData = JSON.parse(localStorage.getItem(MAL_LAGER) || "null"); } catch (e) {}
+async function hentMalar() {
+  if (!ALLE.some(følgjerMal) || Date.now() - malHenta < MAL_KVART_MS) return;
+  malHenta = Date.now();
+  try {
+    const svar = await fetch("tenester.json?t=" + Date.now(), { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (!svar.ok) throw new Error("HTTP " + svar.status);
+    const d = await svar.json();
+    if (!d || !Array.isArray(d.tenester)) throw new Error("ugyldig fil");
+    malData = d;
+    try { localStorage.setItem(MAL_LAGER, JSON.stringify(d)); } catch (e) {}
+  } catch (e) { console.warn("Fekk ikkje henta tenester.json:", e.message); }
+}
+// Fyller ut plakatane frå malane. Den som blir vist no, blir ikkje rørt.
+function brukMalar() {
+  for (const r of rammer) {
+    const h = løysPlakat(malData, r.dataset.hash);
+    r.dataset.borte = h ? "" : "1";             // malen finst ikkje (lenger)
+    if (!h || r.classList.contains("synleg")) continue;
+    const src = "plakat.html#vis=1&" + h;
+    if (r.dataset.src !== src) { r.dataset.src = src; r.src = src; }
+  }
+}
+
 function sei(beskjed) { if (I_ROTASJON) try { parent.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {} }
 function send(r, beskjed, meir) { try { r.contentWindow.postMessage({ nyheiter: beskjed, ...meir }, "*"); } catch (e) {} }
 
 function bygg() {
   rammer = ALLE.map(h => {
     const f = document.createElement("iframe");
-    f.src = "plakat.html#vis=1&" + h;
     f.dataset.hash = h;
     document.body.append(f);
     return f;
   });
+  brukMalar();
 }
-const aktuelle = () => rammer.filter(r => gjeld(r.dataset.hash));
+const aktuelle = () => rammer.filter(r => gjeld(r.dataset.hash) && !r.dataset.borte);
 
 // Plakatane seier «klar» når dei er lasta. Er det den som skal visast, får
 // han «vis» med tida, så nedteljingslinja startar rett.
@@ -101,9 +136,13 @@ function visNeste() {
   clearTimeout(tidtakar);
   tidtakar = setTimeout(visNeste, SEK * 1000);
 }
-function start() {
+async function start() {
   if (køyrer) return;
   køyrer = true;
+  // Hent malane på nytt (høgst kvart tiande minutt), men vent ikkje meir enn 2 sekund
+  await Promise.race([hentMalar(), new Promise(ok => setTimeout(ok, 2000))]);
+  if (!køyrer) return;
+  brukMalar();
   // Held fram med neste plakat, ikkje den som stod sist
   const vist = rammer.find(r => r.classList.contains("synleg"));
   if (vist) { vist.classList.remove("synleg"); send(vist, "skjul"); n = rammer.indexOf(vist); }
@@ -118,17 +157,19 @@ function pause() {
 if (!ALLE.length) {
   document.body.append(Object.assign(document.createElement("div"), { className: "melding", textContent: "Plakatkarusellen har ingen plakatar enno. Legg dei til på oversikta." }));
   sei("klar"); sei("tom");
-} else {
+} else (async () => {
+  await hentMalar();
   bygg();
   sei("klar");
   sei(aktuelle().length ? "har" : "tom");
   // Utanfor rotasjonen (førehandsvising eller opna direkte) går han av seg sjølv
   if (!I_ROTASJON) start();
   else {
-    // Ein plakat kan gå ut på dato medan karusellen står og ventar
-    setInterval(() => sei(aktuelle().length ? "har" : "tom"), 3600000);
+    // Ein plakat kan gå ut på dato medan karusellen står og ventar.
+    // Får han ikkje henta malane ved oppstart, prøver han igjen
+    setInterval(async () => { await hentMalar(); brukMalar(); sei(aktuelle().length ? "har" : "tom"); }, MAL_KVART_MS);
   }
-}
+})();
 window.addEventListener("hashchange", () => location.reload());
 </script>
 </body>

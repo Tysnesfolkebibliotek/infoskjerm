@@ -224,6 +224,7 @@
   <div class="ramme" id="forevisramme"><iframe id="forevisvindauge" title="Førehandsvising"></iframe></div>
 </dialog>
 
+<script src="plakatmal.js"></script>
 <script>
 // =========================================================================
 // oversikt.html — viser og endrar oppsett.json for infoskjermane.
@@ -371,38 +372,14 @@ const plakatHash = url => { const p = new URLSearchParams(String(url).split("#")
 const utanTil = h => { const p = new URLSearchParams(h); p.delete("til"); return p.toString(); };
 const medTil = (h, til) => { const p = new URLSearchParams(h); if (til) p.set("til", til); else p.delete("til"); return p.toString(); };
 const tilDatoAv = h => new URLSearchParams(h).get("til") || "";
-const plakatNamn = h => { const p = new URLSearchParams(h); return p.get("overskrift") || p.get("overlinje") || "(plakat utan overskrift)"; };
-const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html#vis=1&" + utanTil(h);
-// Malane i plakatbyggjaren (tenester.json). Ein plakat laga rett frå ein mal blir
-// den same som når du vel malen i plakatbyggjaren utan å endre noko
-// (sjå brukMal og lesSkjema i plakat.html – endrar du dei, må dette følgje med).
+const plakatNamn = h => { const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
+const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html#vis=1&" + utanTil(løys(h));
+// Malane i plakatbyggjaren (tenester.json). Plakatar som blir lagde til frå ein
+// mal, følgjer malen («mal=<id>&folg=1», sjå plakatmal.js).
 let tenesteData = null;
 const tenesterLasting = fetch("tenester.json?t=" + Date.now(), { cache: "no-store" })
   .then(r => r.ok ? r.json() : null).then(d => (tenesteData = d)).catch(() => null);
-function plakatFråMal(tn) {
-  const d = tenesteData || {};
-  const sel = tn.standardbilete || (tn.bilete && tn.bilete[0] ? tn.bilete[0].fil : "ikon");
-  const b = (tn.bilete || []).find(x => x.fil === sel);
-  const eige = !b && sel !== "ikon" && !sel.startsWith("anim:");
-  const cfg = {
-    mal: tn.id,
-    overlinje: tn.overlinje ?? "Digitalt bibliotek",
-    overskrift: tn.overskrift || tn.namn,
-    logo: tn.logo && tn.brukLogo !== false ? tn.logo : "",
-    avsendar: tn.avsendarlogo && tn.brukAvsendar !== false ? tn.avsendarlogo : "",
-    tekst: tn.tekst || "", merkelapp: tn.merkelapp || "",
-    bilete: sel === "ingen" ? "" : sel,
-    biletform: b && b.form === "foto" ? "foto" : eige ? (tn.standardbiletform || "") : "",
-    ikon: tn.ikon || "",
-    lenkje: tn.lenkje || d.standardlenkje || "",
-    qrtekst: tn.qrtekst ?? "Skann for å kome i gang",
-    tema: tn.tema || "lys",
-    skrift: tn.skrift && tn.skrift !== "standard" ? tn.skrift : "",
-  };
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(cfg)) if (v) p.set(k, v);
-  return p.toString();
-}
+const løys = h => løysPlakat(tenesteData, h);
 // Alle plakatane som finst i oppsettet: eigne linjer og plakatar i karusellar
 function allePlakatar() {
   const ut = [], sett = new Set();
@@ -774,14 +751,15 @@ function pkBoks(s, lk, i) {
       const til = tilDatoAv(h), ute = til && til < no;
       const lagra = i >= 0 && !endra();
       return el("li", { class: ute ? "ute" : "" },
-        el("span", { class: "pnamn", title: plakatNamn(h) }, plakatNamn(h) + (ute ? " (ute på dato)" : "")),
+        el("span", { class: "pnamn", title: følgjerMal(h) ? "Teksten blir henta frå malen kvar gong, så endringar i malen kjem med av seg sjølv. Endrar du plakaten i byggjaren, følgjer han ikkje malen lenger." : "Eigen plakat: teksten står i lenkja og blir ikkje endra om malen blir endra." },
+          plakatNamn(h) + (ute ? " (ute på dato)" : ""), el("span", { class: "hjelp" }, følgjerMal(h) ? "  · følgjer malen" : "  · eigen plakat")),
         el("div", { class: "pknappar" },
           el("button", { type: "button", title: "Flytt opp", disabled: k === 0, onclick: () => endre(() => pk.plakatar.splice(k - 1, 0, ...pk.plakatar.splice(k, 1))) }, "↑"),
           el("button", { type: "button", title: "Flytt ned", disabled: k === pk.plakatar.length - 1, onclick: () => endre(() => pk.plakatar.splice(k + 1, 0, ...pk.plakatar.splice(k, 1))) }, "↓"),
           el("button", { type: "button", onclick: () => førehandsvis({ namn: plakatNamn(h), url: plakatUrl(h) }) }, "Førehandsvis"),
           el("button", { type: "button", disabled: !lagra,
-            title: lagra ? "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå." : "Lagre oppsettet først, så du ikkje mistar endringane",
-            onclick: () => { location.href = "plakat.html#" + utanTil(h) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
+            title: lagra ? (følgjerMal(h) ? "Opne plakaten i plakatbyggjaren. Etterpå følgjer han ikkje malen lenger." : "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå.") : "Lagre oppsettet først, så du ikkje mistar endringane",
+            onclick: () => { location.href = "plakat.html#" + utanTil(løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
           el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
             el("input", { type: "date", value: til, onchange: e => endre(() => { pk.plakatar[k] = medTil(h, e.target.value); }) })),
           el("button", { type: "button", class: "fare", onclick: () => endre(() => pk.plakatar.splice(k, 1)) }, "Fjern")));
@@ -799,7 +777,7 @@ function pkBoks(s, lk, i) {
     velliste.replaceChildren(
       ...(tenesteData ? [] : [el("span", { class: "hjelp" }, "Hentar malane …")]),
       ...Object.entries(grupper).flatMap(([g, l]) => [el("b", { class: "hjelp" }, g),
-        ...l.map(tn => rad(plakatFråMal(tn), tn.namn, malMed.has(tn.id) ? "(er med)" : ""))]),
+        ...l.map(tn => rad(new URLSearchParams({ mal: tn.id, folg: "1" }).toString(), tn.namn, malMed.has(tn.id) ? "(er med)" : ""))]),
       ...(andre.length ? [el("b", { class: "hjelp" }, "Plakatar du har laga"), ...andre.map(x => rad(x.hash, x.namn))] : []));
     if (!pk.plakatar.length) vel.open = true;
     const n = pk.plakatar.length;

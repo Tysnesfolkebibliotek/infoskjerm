@@ -9,6 +9,7 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | `index.html` | Karusellbyggjaren, og sjølve karusellen når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
 | `plakat.html` | Plakatbyggjaren for digitale tenester og arrangement, og sjølve plakaten når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html> |
 | `plakatkarusell.html` | Fleire plakatar etter tur på éi linje i oppsettet. Blir laga og endra på oversikta med **+ Lag plakatkarusell** |
+| `plakatmal.js` | Lagar ein plakat rett frå ein mal i `tenester.json`. Blir brukt av oversikta og plakatkarusellen |
 | `tenester.json` | Dei digitale tenestene i plakatbyggjaren: namn, tekst, merkelapp, lenkje, ikon, logo og bilete |
 | `skrifter.js` | Skriftene (Google Fonts) som karusellane og plakatane deler |
 | `qrcode.js` | Lagar QR-kodane på plakatane (Kazuhiko Arase, MIT-lisens) |
@@ -117,11 +118,16 @@ Vil du ha fleire plakatar på skjermen, slepp du å leggje dei inn éin og éin:
 klikk **+ Lag plakatkarusell** øvst på oversikta. Det blir éi linje i oppsettet
 (`plakatkarusell.html`) som viser plakatane etter tur.
 
-- **+ Legg til plakatar:** hak av dei digitale tenestene du vil ha med. Plakaten
-  blir laga rett frå malen i `tenester.json`, akkurat som om du valde malen i
-  plakatbyggjaren utan å endre noko (med standardane frå «Lagre som standard»).
-  Under står òg plakatar du har laga sjølv (eigne linjer i oppsettet og plakatar i
-  andre karusellar). Dei blir kopierte inn.
+- **+ Legg til plakatar:** hak av dei digitale tenestene du vil ha med. Desse
+  plakatane **følgjer malen**: teksten blir henta frå `tenester.json` kvar gong
+  karusellen kjem på skjermen (høgst kvart tiande minutt), så endrar du malen
+  (t.d. med «Lagre som standard»), blir plakatane på skjermane oppdaterte av seg
+  sjølv. Plakaten ser ut som når du vel malen i plakatbyggjaren utan å endre noko.
+  Blir ein mal sletta, blir plakaten hoppa over.
+- Under står òg plakatar du har laga sjølv (eigne linjer i oppsettet og plakatar i
+  andre karusellar). Dei blir kopierte inn som **eigen plakat**: teksten står i
+  lenkja og blir ikkje endra når malen blir endra. Ein plakat som følgjer malen, blir
+  òg ein eigen plakat om du endrar han med **Endre i byggjaren**.
 - **+ Lag ny plakat:** opnar plakatbyggjaren. Klikk **Legg til i «…»** nedst der,
   så kjem plakaten inn i karusellen. Krev at oppsettet er lagra først.
 - **↑ ↓** endrar rekkjefølgja, **Endre i byggjaren** endrar éin plakat, **Fjern** tek han ut.
