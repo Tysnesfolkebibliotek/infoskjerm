@@ -24,8 +24,9 @@
 
   Karusellen blir laga og endra på oversikta (oversikt.html). Han snakkar med
   rotasjon.html på same måte som karusellane: «vis» startar han, «skjul» set
-  han på pause, og neste gong held han fram med neste plakat. Kvar plakat får
-  si eiga nedteljingslinje.
+  han på pause, og neste gong held han fram med neste plakat. Når alle
+  plakatane er viste éin gong, seier han «ferdig». Kvar plakat får si eiga
+  nedteljingslinje.
 -->
 <style>
   html, body { margin: 0; width: 100%; height: 100%; background: #14110f; overflow: hidden; }
@@ -55,6 +56,7 @@ const gjeld = h => { const til = new URLSearchParams(h).get("til"); return !til 
 const ALLE = p.getAll("p").filter(Boolean);
 
 let rammer = [], n = -1, tidtakar = null, køyrer = false;
+let vistIRunden = 0;   // kor mange plakatar som er viste sidan rotasjonen sende «vis»
 
 // ---- Malane (tenester.json) for plakatar som følgjer malen -----------------
 const MAL_LAGER = "infoskjerm-tenester";
@@ -133,8 +135,15 @@ function visNeste() {
     førre.classList.remove("synleg");
     setTimeout(() => send(førre, "skjul"), OVERTONING_MS);
   }
+  vistIRunden++;
   clearTimeout(tidtakar);
-  tidtakar = setTimeout(visNeste, SEK * 1000);
+  // Når alle plakatane er viste éin gong, seier vi «ferdig», så rotasjonen går
+  // vidare med ein gong (t.d. når ein plakat har gått ut på dato sidan
+  // sekunda i oppsettet vart rekna ut). Neste gong held vi fram med neste plakat.
+  tidtakar = setTimeout(() => {
+    if (I_ROTASJON && vistIRunden >= aktuelle().length) sei("ferdig");
+    else visNeste();
+  }, SEK * 1000);
 }
 async function start() {
   if (køyrer) return;
@@ -142,6 +151,7 @@ async function start() {
   // Hent malane på nytt (høgst kvart tiande minutt), men vent ikkje meir enn 2 sekund
   await Promise.race([hentMalar(), new Promise(ok => setTimeout(ok, 2000))]);
   if (!køyrer) return;
+  vistIRunden = 0;
   brukMalar();
   // Held fram med neste plakat, ikkje den som stod sist
   const vist = rammer.find(r => r.classList.contains("synleg"));

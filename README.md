@@ -132,10 +132,10 @@ klikk **+ Lag plakatkarusell** øvst på oversikta. Det blir éi linje i oppsett
   så kjem plakaten inn i karusellen. Krev at oppsettet er lagra først.
 - **↑ ↓** endrar rekkjefølgja, **Endre i byggjaren** endrar éin plakat, **Fjern** tek han ut.
 - **Vis til:** plakaten blir ikkje vist etter denne datoen (fint for arrangement).
-- **Sekund per plakat** (standard 20) og **sekund på skjermen** for heile karusellen.
-  Står sekunda på skjermen til éin heil runde, følgjer dei med når du legg til
-  eller tek bort plakatar. Er dei færre, held karusellen fram med neste plakat
-  neste gong han kjem på skjermen.
+- **Sekund per plakat** (standard 20). **Sekund på skjermen** blir rekna ut av seg
+  sjølv: tal plakatar (som ikkje er ute på dato) × sekund per plakat. Når alle
+  plakatane er viste éin gong, går rotasjonen vidare, så ein plakat som går ut på
+  dato seinare, gjer ikkje at dei andre blir viste to gonger.
 
 Kvar plakat får si eiga nedteljingslinje. Plakatane står i lenkja til karusellen
 (`p=…`, alt etter `#` i plakatlenkja), så éin plakat i karusellen er uavhengig av

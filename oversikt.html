@@ -380,6 +380,8 @@ let tenesteData = null;
 const tenesterLasting = fetch("tenester.json?t=" + Date.now(), { cache: "no-store" })
   .then(r => r.ok ? r.json() : null).then(d => (tenesteData = d)).catch(() => null);
 const løys = h => løysPlakat(tenesteData, h);
+// Sekund på skjermen for ein plakatkarusell: tal plakatar som ikkje er ute på dato × sekund per plakat
+const pkSekund = pk => Math.max(5, pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= idagTekst()).length * pk.sek);
 // Alle plakatane som finst i oppsettet: eigne linjer og plakatar i karusellar
 function allePlakatar() {
   const ut = [], sett = new Set();
@@ -432,11 +434,10 @@ function fråByggjaren() {
     const j = l[i] && (!namn || l[i].namn === namn) ? i : l.findIndex(x => x.namn === namn);
     if (j >= 0 && p.has("plakat") && erPlakatkarusell(l[j])) {
       const pk = lesPk(l[j].url), k = p.get("plakat"), h = plakatHash(url);
-      const heilRunde = l[j].sekund === pk.plakatar.length * pk.sek;
       if (k === "ny") pk.plakatar.push(h);
       else if (pk.plakatar[Number(k)] !== undefined) pk.plakatar[Number(k)] = medTil(h, tilDatoAv(pk.plakatar[Number(k)]));
       l[j].url = lagPk(pk);
-      if (heilRunde) l[j].sekund = pk.plakatar.length * pk.sek;
+      l[j].sekund = pkSekund(pk);
       open = { lk: skjerm, i: j }; teikn();
       oppdaterStatus(k === "ny" ? `Den nye plakaten er lagd til nedst i «${l[j].namn}». Sjå over og klikk Lagre.`
         : `Plakaten i «${l[j].namn}» er oppdatert frå plakatbyggjaren. Sjå over og klikk Lagre.`);
@@ -675,7 +676,7 @@ function skjema(s, lk, i) {
     el("div", { hidden: erPlakatkarusell(s) }, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
-      el("div", {}, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (heile karusellen)" : "Sekund på skjermen"),
+      el("div", {}, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
         el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: s.sekund || 180 })),
       el("div", { hidden: erPlakatkarusell(s) }, el("label", {}, " "),
         el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
@@ -735,10 +736,9 @@ function pkBoks(s, lk, i) {
   function endre(fn) {
     const f = finnSkjema();
     const sekFelt = f && f.querySelector("#f-sek");
-    const varRunde = sekFelt && (Number(sekFelt.value) === pk.plakatar.length * pk.sek || !pk.plakatar.length);
     fn();
     // Stod sekunda på skjermen til éin heil runde, følgjer dei med
-    if (sekFelt && (varRunde || !Number(sekFelt.value))) sekFelt.value = Math.max(5, pk.plakatar.length * pk.sek);
+    if (sekFelt) sekFelt.value = pkSekund(pk);
     teiknPk();
   }
   sek.addEventListener("change", () => endre(() => { pk.sek = Math.max(5, Number(sek.value) || 20); }));
@@ -781,7 +781,10 @@ function pkBoks(s, lk, i) {
       ...(andre.length ? [el("b", { class: "hjelp" }, "Plakatar du har laga"), ...andre.map(x => rad(x.hash, x.namn))] : []));
     if (!pk.plakatar.length) vel.open = true;
     const n = pk.plakatar.length;
-    runde.textContent = n ? `Ein heil runde med ${n} ${n === 1 ? "plakat" : "plakatar"} tek ${n * pk.sek} sekund. Er sekunda på skjermen færre, held karusellen fram der han slapp neste gong.` : "";
+    // Sekunda på skjermen blir alltid rekna ut, så alle plakatane blir viste éin gong per runde
+    const aktive = pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= no).length;
+    runde.textContent = aktive ? `${aktive} ${aktive === 1 ? "plakat" : "plakatar"} × ${pk.sek} sekund = ${aktive * pk.sek} sekund på skjermen.${aktive < n ? " Plakatar som er ute på dato, er ikkje rekna med." : ""}` : "";
+    if (f) { const sf = f.querySelector("#f-sek"); sf.value = pkSekund(pk); sf.readOnly = true; sf.title = "Blir rekna ut: tal plakatar × sekund per plakat"; }
   }
   // Skjemaet finst først når boksen er sett inn i det
   setTimeout(teiknPk, 0);
