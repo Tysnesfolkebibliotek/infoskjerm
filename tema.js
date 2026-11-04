@@ -605,7 +605,7 @@ const TEMA_LISTE = [
     pynt({ pynt, stigande }) {
       // Brageprisen-logoen øvst til høgre
       const logo = document.createElement("img");
-      logo.src = "brage.png"; logo.alt = "Brageprisen";
+      logo.src = "bilete/brage-logo.svg"; logo.alt = "Brageprisen";
       logo.style.cssText = "position:absolute; right:6vw; top:3.5vh; width:18vw; height:auto;";
       pynt.append(logo);
       // Nokre få gnistar i same farge som logoen, som stig sakte
