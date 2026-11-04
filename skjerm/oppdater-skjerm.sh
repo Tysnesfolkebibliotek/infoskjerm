@@ -1,5 +1,6 @@
 #!/bin/bash
-# Hentar rotasjon.html frå greina «stabil» på GitHub og legg ho inn på skjermen.
+# Hentar rotasjon.html frå greina «stabil» på GitHub og legg ho inn på
+# skjermen. (Lokalhistorie Beta er lagt på is – sjå linjene under.)
 #
 # - Endrar ingenting om nettet er nede eller fila ser øydelagd ut.
 # - Byter berre ut fila når ho faktisk er endra.
@@ -10,40 +11,56 @@
 # (omstarten kl. 15 eller neste oppstart om morgonen).
 #
 # Køyrt av systemd-timeren infoskjerm-oppdater.timer.
+# Skriptet oppdaterer seg sjølv frå stabil-greina til slutt.
 
 set -u
 
-URL="https://raw.githubusercontent.com/Tysnesfolkebibliotek/infoskjerm/stabil/skjerm/rotasjon.html"
+BASE="https://raw.githubusercontent.com/Tysnesfolkebibliotek/infoskjerm/stabil/skjerm"
 MAPPE="/home/tysnes-folkebibliotek/nytt-paa-hylla"
-FIL="$MAPPE/rotasjon.html"
-NY="$MAPPE/rotasjon.html.ny"
 LOGG="$MAPPE/oppdatering.log"
 
 logg() {
   echo "$(date '+%F %T') $*" >> "$LOGG"
 }
 
-# 1. Hent fila til ei mellombels fil
-if ! curl -fsS --max-time 60 -o "$NY" "$URL?t=$(date +%s)"; then
-  logg "Fekk ikkje henta fila (nettet nede?). Endra ingenting."
-  rm -f "$NY"
-  exit 0
-fi
+# hent <filnamn> <tekst fila må slutte med>
+hent() {
+  local NAMN="$1" SLUTT="$2"
+  local FIL="$MAPPE/$NAMN" NY="$MAPPE/$NAMN.ny"
 
-# 2. Kontroller at fila ikkje er tom og sluttar med </html>
-if [ ! -s "$NY" ] || ! tail -c 100 "$NY" | grep -q '</html>'; then
-  logg "Den henta fila ser øydelagd ut. Endra ingenting."
-  rm -f "$NY"
-  exit 0
-fi
+  # 1. Hent fila til ei mellombels fil
+  if ! curl -fsS --max-time 60 -o "$NY" "$BASE/$NAMN?t=$(date +%s)"; then
+    logg "Fekk ikkje henta $NAMN (nettet nede?). Endra ingenting."
+    rm -f "$NY"; return
+  fi
 
-# 3. Er fila lik den vi har? Då er det ingenting å gjere.
-if cmp -s "$NY" "$FIL"; then
-  rm -f "$NY"
-  exit 0
-fi
+  # 2. Kontroller at fila ikkje er tom og sluttar slik ho skal
+  if [ ! -s "$NY" ] || ! tail -c 100 "$NY" | grep -q -- "$SLUTT"; then
+    logg "Den henta $NAMN ser øydelagd ut. Endra ingenting."
+    rm -f "$NY"; return
+  fi
 
-# 4. Ta vare på den gamle og legg inn den nye
-cp -p "$FIL" "$FIL.gammal" 2>/dev/null
-mv "$NY" "$FIL"
-logg "La inn ny rotasjon.html ($(wc -c < "$FIL") byte). Gamal fil: rotasjon.html.gammal"
+  # 3. Er fila lik den vi har? Då er det ingenting å gjere.
+  if cmp -s "$NY" "$FIL"; then
+    rm -f "$NY"; return
+  fi
+
+  # 4. Ta vare på den gamle og legg inn den nye
+  cp -p "$FIL" "$FIL.gammal" 2>/dev/null
+  mv "$NY" "$FIL"
+  case "$NAMN" in *.sh) chmod +x "$FIL" ;; esac
+  logg "La inn ny $NAMN ($(wc -c < "$FIL") byte). Gamal fil: $NAMN.gammal"
+}
+
+hent rotasjon.html          '</html>'
+# Lokalhistorie (Beta) er lagt på is 4.11.2026. Ta bort # for å slå på att:
+# hent lokalhistorie.html     '</html>'
+# hent hent-lokalhistorie.sh  '# --- slutt ---'
+# [ -x "$MAPPE/hent-lokalhistorie.sh" ] && "$MAPPE/hent-lokalhistorie.sh" "$MAPPE"
+
+# Til slutt: oppdater dette skriptet sjølv, så nye filer i framtida kan
+# leggjast til utan SSH. Trygt fordi mv lagar ei ny fil; bash held fram
+# med å lese den gamle til han er ferdig, og neste køyring brukar den nye.
+hent oppdater-skjerm.sh     '# --- slutt ---'
+exit 0
+# --- slutt ---
