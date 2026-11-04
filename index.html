@@ -1059,7 +1059,10 @@ function startVisning(cfg) {
   // Utan eige val (eller med eit ukjent) blir bakgrunnen flat farge i alle tema.
   const BAKGRUNN = ["uskarp", "svak", "zoom", "farge", "flat"].includes(temaVal("bakgrunn")) ? temaVal("bakgrunn") : "flat";
   document.documentElement.dataset.bakgrunn = BAKGRUNN;
-  const OVERGANG = ["kryss", "glid", "zoom", "vend", "bla", "ingen"].includes(temaVal("overgang")) ? temaVal("overgang") : "";
+  // Vifta har si eiga rørsle: overgangen til temaet (t.d. «glid» i Spel og Manga) skal ikkje gjelde der,
+  // elles blir boka i midten liggjande forskyvd til sides (bøkene i vifta får aldri klassen «synleg»).
+  const VIFTE_VAL = cfg.visning === "vifte" && !erKalenderCfg(cfg);
+  const OVERGANG = VIFTE_VAL ? "" : ["kryss", "glid", "zoom", "vend", "bla", "ingen"].includes(temaVal("overgang")) ? temaVal("overgang") : "";
   if (OVERGANG) document.documentElement.dataset.overgang = OVERGANG;
   const OPPDATER_MIN = Math.max(15, Number(cfg.oppdater) || 120);
   const nøkkel = "karusell3:" + datanøkkel(cfg);   // auk talet når lagra lister må hentast på nytt (3: mest reservert med 1500 kandidatar)
