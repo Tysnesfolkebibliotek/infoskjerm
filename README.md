@@ -256,7 +256,7 @@ skjermbilete 2
 ssh skjerm2 "python3 ~/nytt-paa-hylla/skjermbilete.py" > skjerm2.png
 ```
 
-## Lokalhistorie (Beta)
+## Lokalhistorie (Beta) – lagt på is 4.11.2026
 
 `skjerm/lokalhistorie.html` viser bilete frå den lokalhistoriske bildesamlinga i Bibliofil:
 `lokalhistorie.html?modus=dagens` (Dagens bilete, same heile dagen) eller

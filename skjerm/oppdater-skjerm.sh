@@ -54,11 +54,10 @@ hent() {
 }
 
 hent rotasjon.html          '</html>'
-hent lokalhistorie.html     '</html>'
-hent hent-lokalhistorie.sh  '# --- slutt ---'
-
-# Bilete frå den lokalhistoriske samlinga (berre éin gong per dag)
-[ -x "$MAPPE/hent-lokalhistorie.sh" ] && "$MAPPE/hent-lokalhistorie.sh" "$MAPPE"
+# Lokalhistorie (Beta) er lagt på is 4.11.2026. Ta bort # for å slå på att:
+# hent lokalhistorie.html     '</html>'
+# hent hent-lokalhistorie.sh  '# --- slutt ---'
+# [ -x "$MAPPE/hent-lokalhistorie.sh" ] && "$MAPPE/hent-lokalhistorie.sh" "$MAPPE"
 
 # Til slutt: oppdater dette skriptet sjølv, så nye filer i framtida kan
 # leggjast til utan SSH. Trygt fordi mv lagar ei ny fil; bash held fram
