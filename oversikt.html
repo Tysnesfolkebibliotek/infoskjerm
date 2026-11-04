@@ -410,6 +410,14 @@ function fråByggjaren() {
   history.replaceState(null, "", location.pathname + location.search);
   const skjerm = p.get("skjerm"), url = p.get("url");
   if (!oppsett[skjerm]) return;
+  // Første plakat i ein ny plakatkarusell
+  if (p.get("endre") === "ny" && p.get("plakat") === "ny") {
+    const namn = p.get("namn") || "Plakatar";
+    oppsett[skjerm].push({ namn, url: lagPk({ sek: 20, plakatar: [plakatHash(url)] }), sekund: 20 });
+    open = { lk: skjerm, i: oppsett[skjerm].length - 1 }; teikn();
+    oppdaterStatus(`Plakatkarusellen «${namn}» er lagd til nedst med den nye plakaten. Klikk Lagre, så kan du leggje til fleire.`);
+    return;
+  }
   if (p.has("endre")) {
     const l = oppsett[skjerm], i = Number(p.get("endre")), namn = p.get("namn") || "";
     // Har lista endra seg sidan byggjaren vart opna, finn vi sida på namnet
@@ -696,10 +704,16 @@ function pkBoks(s, lk, i) {
       endre(() => pk.plakatar.push(...valde));
       vel.open = false;
     } }, "Legg til dei valde"));
-  const lagret = i >= 0 && !endra();
+  // Ein ny karusell blir oppretta når plakaten kjem tilbake frå byggjaren («…:ny:ny»)
+  const lagret = !endra();
   const nyKnapp = el("button", { type: "button", disabled: !lagret,
     title: lagret ? "Opne plakatbyggjaren. Plakaten blir lagd til i denne karusellen når du kjem tilbake." : "Lagre oppsettet først, så du ikkje mistar endringane",
-    onclick: () => { location.href = "plakat.html#" + new URLSearchParams({ retur: `${lk}:${i}:ny`, returnamn: s.namn || "" }); } }, "+ Lag ny plakat");
+    onclick: () => {
+      const f = finnSkjema();
+      const namn = (f && f.querySelector("#f-namn").value.trim()) || s.namn || "Plakatar";
+      const skjerm = i >= 0 ? lk : (f ? f.querySelector("#f-skjerm").value : lk);
+      location.href = "plakat.html#" + new URLSearchParams({ retur: `${skjerm}:${i >= 0 ? i : "ny"}:ny`, returnamn: namn });
+    } }, "+ Lag ny plakat");
   const boks = el("div", { class: "pk" },
     el("label", {}, "Plakatar i karusellen (i den rekkjefølgja dei blir viste)"),
     liste, vel,
@@ -761,7 +775,7 @@ function brukSkjema(f, gammal, lk, i) {
   const feil = t => { f.querySelector("#f-feil").textContent = t; f.querySelector("#f-feil").style.color = "var(--åtvar)"; };
   const url = v("f-url"), sek = Number(v("f-sek"));
   if (!url) return feil("Lenkja manglar.");
-  if (/plakatkarusell\.html#/.test(url) && !lesPk(url).plakatar.length) return feil("Legg til minst éin plakat i karusellen.");
+  if (/plakatkarusell\.html#/.test(url) && !lesPk(url).plakatar.length) return feil("Legg til minst éin plakat: vel ein som finst frå før, eller klikk «+ Lag ny plakat».");
   if (!(sek >= 5)) return feil("Sekund må vere minst 5.");
   const ny = { namn: v("f-namn") || "Utan namn" };
   if (gammal.lokal && url === gammal.lokal) ny.lokal = url; else if (/^https?:\/\//.test(url)) ny.url = url;

@@ -867,7 +867,7 @@ async function startByggjar() {
       const nr = (sk.match(/skjerm(\d)/) || [])[1] || "";
       const stad = sk.includes("avpublisert") ? `(avpublisert, skjerm ${nr})` : `på skjerm ${nr}`;
       const namn = returInfo.namn || "sida";
-      const tekst = plakat === "ny" ? `Legg til i «${namn}» ${stad}` : plakat !== undefined ? `Oppdater plakaten i «${namn}» ${stad}` : `Oppdater «${namn}» ${stad}`;
+      const tekst = plakat === "ny" ? `Legg til i ${i === "ny" ? "ny plakatkarusell " : ""}«${namn}» ${stad}` : plakat !== undefined ? `Oppdater plakaten i «${namn}» ${stad}` : `Oppdater «${namn}» ${stad}`;
       const k = a(tekst, til({ skjerm: sk, endre: i, namn: returInfo.namn, url: lenkje, ...(plakat !== undefined ? { plakat } : {}) }), true);
       k.addEventListener("click", () => { try { sessionStorage.removeItem("infoskjerm-retur"); } catch (e) {} });
       knappar.push(k);
