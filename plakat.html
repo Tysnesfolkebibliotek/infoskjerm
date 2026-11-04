@@ -137,6 +137,13 @@
   .hbsok .svar b { display: block; font-size: 3.8vw; }
   .hbsok .svar .hake { width: 6.4vw; height: 6.4vw; flex: none; border-radius: 50%; background: #c41d4f; display: grid; place-items: center; }
   .hbsok .svar .hake svg { width: 3.8vw; height: 3.8vw; }
+  /* ---- Animasjon: lysbilete med sakte zoom og glid (bilete=anim:lysbilete) ---- */
+  .lysbilete { position: relative; height: 100%; max-width: 100%; aspect-ratio: 4 / 5; flex: none; border-radius: 3vw; overflow: hidden;
+               background: #111; box-shadow: 0 2vh 5vh rgba(0,0,0,.3); }
+  .lysbilete img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0;
+                   transition: opacity 1.8s ease-in-out; will-change: transform, opacity; }
+  .lysbilete img.synleg { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .lysbilete img { transition: opacity .6s; } }
   /* Utan bilete og ikon får teksten heile plassen */
   .midt.tom { flex: .6; }
   /* Kjelda til biletet (t.d. lokalhistoriske foto), lita og dempa under biletet */
@@ -539,6 +546,54 @@ function helsebibliotekAnimasjon(eigne) {
   return boks;
 }
 
+// ---- Animasjon: lysbilete med sakte zoom og glid ----------------------
+// Viser fotoa til malen (dei med form «foto» i tenester.json) etter kvarandre,
+// kvart med ein sakte zoom og glid, og ei mjuk overtoning. Nye foto i malen
+// kjem med av seg sjølv. Kjelda til biletet som syner, står under.
+const LYSBILETE_SEK = 7;
+function lysbileteAnimasjon(cfg) {
+  const boks = document.createElement("div");
+  boks.className = "lysbilete"; boks.setAttribute("aria-hidden", "true");
+  const kjelde = $("kjelde");
+  fetch("tenester.json", { cache: "no-cache" }).then(r => r.json()).then(data => {
+    const tn = (data.tenester || []).find(t => t.id === cfg.mal);
+    const liste = ((tn && tn.bilete) || []).filter(b => b.form === "foto");
+    if (!liste.length) return;
+    // Byrjar på eit tilfeldig bilete, så ikkje alle plakatane viser same bilete først
+    let n = Math.floor(Math.random() * liste.length);
+    const roleg = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const lag = b => Object.assign(document.createElement("img"), { src: b.fil, alt: "" });
+    const vis = () => {
+      const b = liste[n % liste.length];
+      const img = lag(b); boks.append(img);
+      // Last neste bilete på førehand
+      new Image().src = liste[(n + 1) % liste.length].fil;
+      const start = () => {
+        if (!roleg) {
+          // Tilfeldig retning: zoom inn eller ut, og glid litt sidelengs/opp
+          const inn = Math.random() < .6, dx = (Math.random() * 2 - 1) * 4, dy = (Math.random() * 2 - 1) * 3;
+          const a = `scale(${inn ? 1.02 : 1.16}) translate(${inn ? 0 : dx}%, ${inn ? 0 : dy}%)`;
+          const z = `scale(${inn ? 1.16 : 1.02}) translate(${inn ? dx : 0}%, ${inn ? dy : 0}%)`;
+          img.animate([{ transform: a }, { transform: z }], { duration: (LYSBILETE_SEK + 2) * 1000, easing: "linear", fill: "forwards" });
+        }
+        requestAnimationFrame(() => img.classList.add("synleg"));
+        if (kjelde) {
+          kjelde.textContent = b.kjelde ? "Foto: " + b.kjelde : "";
+          kjelde.hidden = !b.kjelde || boks.clientHeight < 40;
+        }
+        // Ta bort det førre biletet når overtoninga er ferdig
+        const førre = [...boks.querySelectorAll("img")].filter(x => x !== img);
+        setTimeout(() => førre.forEach(x => x.remove()), 2000);
+        n++;
+        if (liste.length > 1) setTimeout(vis, LYSBILETE_SEK * 1000);
+      };
+      if (img.complete) start(); else { img.onload = start; img.onerror = () => { img.remove(); n++; setTimeout(vis, 500); }; }
+    };
+    vis();
+  }).catch(() => {});
+  return boks;
+}
+
 // =====================================================================
 // PLAKATEN
 // =====================================================================
@@ -598,6 +653,7 @@ function visPlakat(cfg) {
     if (cfg.bilete === "anim:biblioteksok") midt.append(biblioteksøkAnimasjon(cfg.anim));
     if (cfg.bilete === "anim:nettbiblioteket") midt.append(nettbibliotekAnimasjon(cfg.anim));
     if (cfg.bilete === "anim:helsebiblioteket") midt.append(helsebibliotekAnimasjon(cfg.anim));
+    if (cfg.bilete === "anim:lysbilete") midt.append(lysbileteAnimasjon(cfg));
     // Får ikkje animasjonen plass i høgda (t.d. i eit breitt vindauge), blir han skalert ned
     // i staden for å bli kutta
     const anim = midt.firstElementChild;
@@ -753,7 +809,7 @@ async function startByggjar() {
     $("eigebilete").hidden = v !== "eige";
     $("opplastval").hidden = v !== "last";
     $("formval").hidden = !["eige", "last"].includes(v);
-    $("animval").hidden = !v.startsWith("anim:");
+    $("animval").hidden = !v.startsWith("anim:") || v === "anim:lysbilete";   // lysbileta har ingen søkjeord
 
   }
 
