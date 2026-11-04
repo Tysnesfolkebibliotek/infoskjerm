@@ -215,3 +215,11 @@ skjermbilete 2
 ```bash
 ssh skjerm2 "python3 ~/nytt-paa-hylla/skjermbilete.py" > skjerm2.png
 ```
+
+## Lokalhistorie (Beta)
+
+`skjerm/lokalhistorie.html` viser bilete frå den lokalhistoriske bildesamlinga i Bibliofil:
+`lokalhistorie.html?modus=dagens` (Dagens bilete, same heile dagen) eller
+`lokalhistorie.html?modus=karusell&sek=20`. Bibliofil-tenesta har ikkje CORS, så
+`skjerm/hent-lokalhistorie.sh` hentar 40 tilfeldige bilete éin gong per dag med curl og skriv
+`lokalhistorie.js`. `oppdater-skjerm.sh` hentar begge filene frå stabil-greina og køyrer skriptet.

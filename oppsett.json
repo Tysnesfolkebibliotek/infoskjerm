@@ -32,10 +32,14 @@
   ],
 
   "skjerm1_avpublisert": [
-    { "namn": "Biografiar", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv&lf=0&sjanger=Biografiar&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=1&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&alder=&spraak=&alle=0&titlar=&tittel=Biografiar&tema=kveld&skrift=standard&bakgrunn=zoom&overgang=&visning=&fart=&namn=&sek=20&oppdater=360&omtale=1", "sekund": 180 }
+    { "namn": "Biografiar", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv&lf=0&sjanger=Biografiar&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=1&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&alder=&spraak=&alle=0&titlar=&tittel=Biografiar&tema=kveld&skrift=standard&bakgrunn=zoom&overgang=&visning=&fart=&namn=&sek=20&oppdater=360&omtale=1", "sekund": 180 },
+    { "namn": "Dagens bilete (Beta)", "lokal": "lokalhistorie.html?modus=dagens", "sekund": 45 },
+    { "namn": "Lokalhistorie-karusell (Beta)", "lokal": "lokalhistorie.html?modus=karusell&sek=20", "sekund": 120 }
   ],
 
   "skjerm2_avpublisert": [
-    { "namn": "Ny manga", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/index.html#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=&sjanger=Manga&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=0&utan=&antal=40&aarfra=&aartil=&aarsiste=1&alder=&spraak=&alle=0&titlar=&kulturfond=0&tittel=Ny+manga%21&tema=manga&skrift=standard&bakgrunn=&overgang=&visning=vifte&fart=&namn=&sek=20&oppdater=360&omtale=1&likte=&liktenamn=&liktebilete=&appell=&appellmodus=alle&merkelapp=0", "sekund": 180, "dagar": "man-fre", "tid": "09:00-13:45" }
+    { "namn": "Ny manga", "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/index.html#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=&sjanger=Manga&plass=&emne=&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=0&utan=&antal=40&aarfra=&aartil=&aarsiste=1&alder=&spraak=&alle=0&titlar=&kulturfond=0&tittel=Ny+manga%21&tema=manga&skrift=standard&bakgrunn=&overgang=&visning=vifte&fart=&namn=&sek=20&oppdater=360&omtale=1&likte=&liktenamn=&liktebilete=&appell=&appellmodus=alle&merkelapp=0", "sekund": 180, "dagar": "man-fre", "tid": "09:00-13:45" },
+    { "namn": "Dagens bilete (Beta)", "lokal": "lokalhistorie.html?modus=dagens", "sekund": 45 },
+    { "namn": "Lokalhistorie-karusell (Beta)", "lokal": "lokalhistorie.html?modus=karusell&sek=20", "sekund": 120 }
   ]
 }

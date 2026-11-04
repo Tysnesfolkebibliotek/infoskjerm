@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<title>Lokalhistorisk arkiv i Tysnes (Beta)</title>
+<!--
+  lokalhistorie.html — bilete frå den lokalhistoriske bildesamlinga.  (BETA)
+
+  Ligg lokalt på skjermen (~/nytt-paa-hylla/) og les lokalhistorie.js,
+  som hent-lokalhistorie.sh lagar éin gong per dag.
+
+  Modusar:
+    lokalhistorie.html?modus=dagens          → «Dagens bilete» (det same heile dagen)
+    lokalhistorie.html?modus=karusell&sek=20 → fleire bilete som vekslar (sek = sekund per bilete)
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1b1a18; color: #f1ece2;
+               font-family: "Inter", "Helvetica Neue", Arial, sans-serif; }
+  #topp { position: absolute; top: 4vh; left: 6vw; right: 6vw; display: flex; justify-content: space-between;
+          align-items: baseline; font-size: 1.9vh; letter-spacing: .25em; text-transform: uppercase; color: #c9b98f; }
+  #topp b { font-weight: 600; }
+  .beta { font-size: 1.3vh; letter-spacing: .15em; border: 1px solid #c9b98f66; border-radius: 99px; padding: .3vh 1vh; }
+  .bilete { position: absolute; inset: 0; opacity: 0; transition: opacity 1.8s ease; }
+  .bilete.synleg { opacity: 1; }
+  .ramme { position: absolute; top: 10vh; left: 5vw; right: 5vw; height: 52vh; display: flex;
+           align-items: center; justify-content: center; }
+  .ramme img { max-width: 100%; max-height: 100%; object-fit: contain; border: 1.2vh solid #f4efe4;
+               box-shadow: 0 2vh 6vh rgba(0,0,0,.6); filter: sepia(.15); }
+  .synleg .ramme img { animation: zoom 40s ease-out both; }
+  @keyframes zoom { from { transform: scale(1); } to { transform: scale(1.04); } }
+  .tekst { position: absolute; top: 66vh; left: 8vw; right: 8vw; bottom: 9vh; overflow: hidden; }
+  h1 { font-family: "Lora", Georgia, serif; font-weight: 600; font-size: 3.6vh; line-height: 1.2; margin-bottom: 1.6vh; }
+  .meta { font-size: 1.9vh; color: #c9b98f; margin-bottom: 2.2vh; }
+  .skildring { font-family: "Lora", Georgia, serif; font-style: italic; font-size: 2.1vh; line-height: 1.5; color: #ddd5c6; }
+  #botn { position: absolute; bottom: 4vh; left: 6vw; right: 6vw; font-size: 1.6vh; color: #8e846f;
+          display: flex; justify-content: space-between; }
+  #melding { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+             text-align: center; font-size: 2.4vh; color: #8e846f; padding: 10vw; }
+</style>
+</head>
+<body>
+<div id="topp"><b id="overskrift">Frå det lokalhistoriske arkivet</b><span class="beta">Beta</span></div>
+<div id="botn"><span>Lokalhistorisk arkiv i Tysnes</span><span>Tysnes folkebibliotek</span></div>
+<div id="melding"></div>
+<script>
+const P = new URLSearchParams(location.search);
+const MODUS = P.get("modus") === "karusell" ? "karusell" : "dagens";
+const SEK = Math.max(5, Number(P.get("sek")) || 20);
+document.getElementById("overskrift").textContent = MODUS === "dagens" ? "Dagens bilete frå arkivet" : "Frå det lokalhistoriske arkivet";
+
+// ---- Lese MARC-felta. Formatet er ikkje dokumentert, så vi les romsleg:
+// både tekst («*505  $a…»), MARC-in-JSON og objekt med tag/kode-felt.
+function marcFelt(m) {
+  const ut = [];   // [tag, delfelt, verdi]
+  if (!m) return ut;
+  if (typeof m === "string") {
+    for (const linje of m.split(/\r?\n/)) {
+      const t = linje.match(/^\s*\*?(\d{3})(.*)$/); if (!t) continue;
+      for (const d of t[2].split(/[$‡\u001f]/).slice(1)) if (d.length > 1) ut.push([t[1], d[0], d.slice(1).trim()]);
+    }
+    return ut;
+  }
+  (function gå(n, tag) {
+    if (Array.isArray(n)) return n.forEach(x => gå(x, tag));
+    if (!n || typeof n !== "object") return;
+    const t = n.tag ?? n.felt ?? n.field ?? n.t;
+    if (t != null && /^\d{3}$/.test(String(t))) tag = String(t);
+    const kode = n.code ?? n.kode ?? n.subfield;
+    const verdi = n.value ?? n.data ?? n.verdi ?? n.tekst;
+    if (tag && kode != null && typeof verdi === "string") { ut.push([tag, String(kode), verdi.trim()]); return; }
+    for (const [k, v] of Object.entries(n)) {
+      if (/^\d{3}$/.test(k)) gå(v, k);
+      else if (tag && /^[a-z0-9]$/.test(k) && typeof v === "string") ut.push([tag, k, v.trim()]);
+      else if (typeof v === "object") gå(v, tag);
+    }
+  })(m, null);
+  return ut;
+}
+const hent = (felt, tag, kode = "a") => felt.filter(f => f[0] === tag && f[1] === kode).map(f => f[2]).filter(Boolean);
+
+// Fjern registreringsnotat o.l. på slutten av skildringa, og kort ned.
+function vask(s) {
+  if (!s) return "";
+  s = s.replace(/\s*(\b(Reg\.?|Registrert|Informant|Gard\.? og ætt|Kjelde|Kilde)\b[\s\S]*)$/i, "").trim();
+  if (s.length > 320) {
+    const k = s.slice(0, 320), punktum = k.lastIndexOf(". ");
+    s = punktum > 150 ? k.slice(0, punktum + 1) : k.slice(0, k.lastIndexOf(" ")) + " …";
+  }
+  return s;
+}
+
+// Finn postane i svaret, kvar dei enn ligg.
+function postar(d) {
+  const ut = [];
+  (function gå(n) {
+    if (Array.isArray(n)) return n.forEach(gå);
+    if (!n || typeof n !== "object") return;
+    if (n.stit_bilde) { ut.push(n); return; }
+    Object.values(n).forEach(gå);
+  })(d);
+  return ut.map(p => {
+    const f = marcFelt(p.marcpost);
+    const bilete = String(Array.isArray(p.stit_bilde) ? p.stit_bilde[0] : p.stit_bilde).replace(".str1.", ".str4.");
+    const stad = [...new Set(hent(f, "651"))].join(", ");
+    const år = hent(f, "260", "c")[0] || "";
+    const foto = hent(f, "100")[0] || "";
+    return { titnr: p.titnr, tittel: String(p.stit_tittel || "").replace(/\s*[\/:;]\s*$/, ""), bilete,
+             meta: [stad, år.replace(/[.,;]$/, ""), foto && "Foto: " + foto.replace(/[.,;]$/, "")].filter(Boolean).join(" · "),
+             skildring: vask(hent(f, "505").join(" ")) };
+  }).filter(p => /^https?:/.test(p.bilete));
+}
+
+// ---- Data: les lokalhistorie.js på nytt kvar gong sida blir vist,
+// så nye bilete kjem med utan at Chromium må starte på nytt.
+let LISTE = [], DATO = "";
+function lesData() {
+  return new Promise(ok => {
+    const s = document.createElement("script");
+    s.src = "lokalhistorie.js?t=" + Date.now();
+    s.onload = s.onerror = () => { s.remove(); ok(); };
+    document.head.append(s);
+  }).then(() => {
+    if (window.LOKALHISTORIE_DATO && window.LOKALHISTORIE_DATO !== DATO) {
+      try { LISTE = postar(window.LOKALHISTORIE); DATO = window.LOKALHISTORIE_DATO; } catch (e) { console.error(e); }
+    }
+  });
+}
+
+// ---- Vising
+const lag = (tag, kl, tekst) => { const e = document.createElement(tag); if (kl) e.className = kl; if (tekst) e.textContent = tekst; return e; };
+let nr = 0, tidtakar = null, aktiv = null;
+
+function last(p) {
+  return new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = p.bilete; });
+}
+async function visBilete(p) {
+  const img = await last(p);
+  if (!img) return false;
+  const b = lag("div", "bilete"), r = lag("div", "ramme"), t = lag("div", "tekst");
+  r.append(img);
+  t.append(lag("h1", "", p.tittel));
+  if (p.meta) t.append(lag("div", "meta", p.meta));
+  if (p.skildring) t.append(lag("div", "skildring", p.skildring));
+  b.append(r, t);
+  document.body.append(b);
+  b.offsetWidth;
+  b.classList.add("synleg");
+  const gamal = aktiv; aktiv = b;
+  if (gamal) { gamal.classList.remove("synleg"); setTimeout(() => gamal.remove(), 2000); }
+  document.getElementById("melding").textContent = "";
+  return true;
+}
+// Same bilete heile dagen: vel ut frå datoen.
+const dagnummer = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 864e5);
+
+async function neste() {
+  clearTimeout(tidtakar);
+  if (!LISTE.length) { document.getElementById("melding").textContent = "Ingen bilete henta enno."; return melde("tom"); }
+  for (let prøv = 0; prøv < Math.min(5, LISTE.length); prøv++) {
+    const i = MODUS === "dagens" ? (dagnummer() + prøv) % LISTE.length : nr++ % LISTE.length;
+    if (await visBilete(LISTE[i])) { melde("har"); break; }
+  }
+  if (MODUS === "karusell") tidtakar = setTimeout(neste, SEK * 1000);
+}
+
+// ---- Samspel med rotasjon.html
+const iRotasjon = window.parent !== window;
+function melde(b) { if (iRotasjon) parent.postMessage({ nyheiter: b }, "*"); }
+window.addEventListener("message", async e => {
+  if (!e.data || !e.data.nyheiter) return;
+  if (e.data.nyheiter === "vis") { await lesData(); neste(); }
+  if (e.data.nyheiter === "skjul") clearTimeout(tidtakar);
+});
+lesData().then(() => { if (!iRotasjon) neste(); melde(LISTE.length ? "har" : "tom"); melde("klar"); });
+</script>
+</body>
+</html>
