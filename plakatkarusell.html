@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Plakatkarusell</title>
+<!--
+  Plakatkarusell for Tysnes folkebibliotek: fleire plakatar etter tur, som éi
+  side i oppsett.json.
+
+    plakatkarusell.html#vis=1&sek=20&p=<plakat>&p=<plakat>…
+
+  «p» er alt etter # i lenkja til ein plakat frå plakatbyggjaren (plakat.html),
+  utan «vis=1». Rekkjefølgja i lenkja er rekkjefølgja på skjermen. «sek» er kor
+  lenge kvar plakat står (standard 20). Valfritt per plakat: legg «til=ÅÅÅÅ-MM-DD»
+  inn i plakatlenkja, så blir plakaten ikkje vist etter den datoen.
+
+  Karusellen blir laga og endra på oversikta (oversikt.html). Han snakkar med
+  rotasjon.html på same måte som karusellane: «vis» startar han, «skjul» set
+  han på pause, og neste gong held han fram med neste plakat. Kvar plakat får
+  si eiga nedteljingslinje.
+-->
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; background: #14110f; overflow: hidden; }
+  body.skjerm { cursor: none; }
+  iframe {
+    position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
+    opacity: 0; transition: opacity 1s ease-in-out; pointer-events: none;
+  }
+  iframe.synleg { opacity: 1; }
+  .melding { position: fixed; inset: 0; display: grid; place-items: center; color: #b8ab98;
+    font: 3vh/1.4 "Ubuntu", "DejaVu Sans", system-ui, sans-serif; text-align: center; padding: 5vh; }
+</style>
+</head>
+<body>
+<script>
+const OVERTONING_MS = 1000;      // må passe med «transition» i stilen over
+const p = new URLSearchParams(location.hash.slice(1));
+const SEK = Math.max(5, Number(p.get("sek")) || 20);
+const FORHAND = p.has("forhand");
+const I_ROTASJON = window.parent !== window && !FORHAND;
+if (I_ROTASJON) document.body.classList.add("skjerm");
+
+// Plakatar med «til=» blir hoppa over etter den datoen
+const idag = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+const gjeld = h => { const til = new URLSearchParams(h).get("til"); return !til || idag() <= til; };
+const ALLE = p.getAll("p").filter(Boolean);
+
+let rammer = [], n = -1, tidtakar = null, køyrer = false;
+
+function sei(beskjed) { if (I_ROTASJON) try { parent.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {} }
+function send(r, beskjed, meir) { try { r.contentWindow.postMessage({ nyheiter: beskjed, ...meir }, "*"); } catch (e) {} }
+
+function bygg() {
+  rammer = ALLE.map(h => {
+    const f = document.createElement("iframe");
+    f.src = "plakat.html#vis=1&" + h;
+    f.dataset.hash = h;
+    document.body.append(f);
+    return f;
+  });
+}
+const aktuelle = () => rammer.filter(r => gjeld(r.dataset.hash));
+
+// Plakatane seier «klar» når dei er lasta. Er det den som skal visast, får
+// han «vis» med tida, så nedteljingslinja startar rett.
+window.addEventListener("message", e => {
+  if (!e.data || !e.data.nyheiter) return;
+  const r = rammer.find(r => r.contentWindow === e.source);
+  if (r) {
+    if (e.data.nyheiter === "klar" && r.classList.contains("synleg") && køyrer)
+      send(r, "vis", { sekund: SEK, att: Math.max(0, Number(r.dataset.slutt) - Date.now()) });
+    return;
+  }
+  // Beskjedar frå rotasjonen
+  if (e.source !== window.parent) return;
+  if (e.data.nyheiter === "vis") start();
+  if (e.data.nyheiter === "skjul") pause();
+});
+
+function visNeste() {
+  const l = aktuelle();
+  if (!l.length) { pause(); sei("tom"); return; }
+  const førre = rammer.find(r => r.classList.contains("synleg"));
+  // Neste plakat etter den førre i lista (ikkje same plakat to gonger på rad om det finst fleire)
+  const start = førre ? rammer.indexOf(førre) : n;
+  let neste = null;
+  for (let k = 1; k <= rammer.length; k++) {
+    const r = rammer[(start + k + rammer.length) % rammer.length];
+    if (l.includes(r)) { neste = r; break; }
+  }
+  n = rammer.indexOf(neste);
+  neste.dataset.slutt = Date.now() + SEK * 1000;
+  neste.classList.add("synleg");
+  send(neste, "vis", { sekund: SEK, att: SEK * 1000 });
+  if (førre && førre !== neste) {
+    førre.classList.remove("synleg");
+    setTimeout(() => send(førre, "skjul"), OVERTONING_MS);
+  }
+  clearTimeout(tidtakar);
+  tidtakar = setTimeout(visNeste, SEK * 1000);
+}
+function start() {
+  if (køyrer) return;
+  køyrer = true;
+  // Held fram med neste plakat, ikkje den som stod sist
+  const vist = rammer.find(r => r.classList.contains("synleg"));
+  if (vist) { vist.classList.remove("synleg"); send(vist, "skjul"); n = rammer.indexOf(vist); }
+  visNeste();
+}
+function pause() {
+  køyrer = false;
+  clearTimeout(tidtakar);
+  for (const r of rammer) if (r.classList.contains("synleg")) send(r, "skjul");
+}
+
+if (!ALLE.length) {
+  document.body.append(Object.assign(document.createElement("div"), { className: "melding", textContent: "Plakatkarusellen har ingen plakatar enno. Legg dei til på oversikta." }));
+  sei("klar"); sei("tom");
+} else {
+  bygg();
+  sei("klar");
+  sei(aktuelle().length ? "har" : "tom");
+  // Utanfor rotasjonen (førehandsvising eller opna direkte) går han av seg sjølv
+  if (!I_ROTASJON) start();
+  else {
+    // Ein plakat kan gå ut på dato medan karusellen står og ventar
+    setInterval(() => sei(aktuelle().length ? "har" : "tom"), 3600000);
+  }
+}
+window.addEventListener("hashchange", () => location.reload());
+</script>
+</body>
+</html>

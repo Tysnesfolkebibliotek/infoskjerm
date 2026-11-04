@@ -8,6 +8,7 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 |---|---|
 | `index.html` | Karusellbyggjaren, og sjølve karusellen når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
 | `plakat.html` | Plakatbyggjaren for digitale tenester og arrangement, og sjølve plakaten når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html> |
+| `plakatkarusell.html` | Fleire plakatar etter tur på éi linje i oppsettet. Blir laga og endra på oversikta med **+ Lag plakatkarusell** |
 | `tenester.json` | Dei digitale tenestene i plakatbyggjaren: namn, tekst, merkelapp, lenkje, ikon, logo og bilete |
 | `skrifter.js` | Skriftene (Google Fonts) som karusellane og plakatane deler |
 | `qrcode.js` | Lagar QR-kodane på plakatane (Kazuhiko Arase, MIT-lisens) |
@@ -109,6 +110,28 @@ på oversikta (sekund): rotasjonssida sender ho med til plakaten når han blir v
 All teksten står i lenkja til plakaten. Endrar du `tenester.json`, gjeld det nye
 plakatar, ikkje dei som alt er på skjermen. Ny teneste: legg til ei linje i
 `tenester.json`, og logo og bilete i `bilete/tenester/`.
+
+### Plakatkarusell
+
+Vil du ha fleire plakatar på skjermen, slepp du å leggje dei inn éin og éin:
+klikk **+ Lag plakatkarusell** øvst på oversikta. Det blir éi linje i oppsettet
+(`plakatkarusell.html`) som viser plakatane etter tur.
+
+- **Legg til plakatar som finst frå før:** alle plakatane i oppsettet (på begge
+  skjermane, òg avpubliserte og dei i andre plakatkarusellar) kan hakast av.
+  Dei blir kopierte inn, så du kan avpublisere eller slette dei gamle linjene etterpå.
+- **+ Lag ny plakat:** opnar plakatbyggjaren. Klikk **Legg til i «…»** nedst der,
+  så kjem plakaten inn i karusellen. Krev at oppsettet er lagra først.
+- **↑ ↓** endrar rekkjefølgja, **Endre i byggjaren** endrar éin plakat, **Fjern** tek han ut.
+- **Vis til:** plakaten blir ikkje vist etter denne datoen (fint for arrangement).
+- **Sekund per plakat** (standard 20) og **sekund på skjermen** for heile karusellen.
+  Står sekunda på skjermen til éin heil runde, følgjer dei med når du legg til
+  eller tek bort plakatar. Er dei færre, held karusellen fram med neste plakat
+  neste gong han kjem på skjermen.
+
+Kvar plakat får si eiga nedteljingslinje. Plakatane står i lenkja til karusellen
+(`p=…`, alt etter `#` i plakatlenkja), så éin plakat i karusellen er uavhengig av
+plakatlinjer med same innhald. Treng ingen ny `rotasjon.html` på skjermane.
 
 ## Karusellane
 
