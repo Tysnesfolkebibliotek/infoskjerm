@@ -117,9 +117,11 @@ Vil du ha fleire plakatar på skjermen, slepp du å leggje dei inn éin og éin:
 klikk **+ Lag plakatkarusell** øvst på oversikta. Det blir éi linje i oppsettet
 (`plakatkarusell.html`) som viser plakatane etter tur.
 
-- **Legg til plakatar som finst frå før:** alle plakatane i oppsettet (på begge
-  skjermane, òg avpubliserte og dei i andre plakatkarusellar) kan hakast av.
-  Dei blir kopierte inn, så du kan avpublisere eller slette dei gamle linjene etterpå.
+- **+ Legg til plakatar:** hak av dei digitale tenestene du vil ha med. Plakaten
+  blir laga rett frå malen i `tenester.json`, akkurat som om du valde malen i
+  plakatbyggjaren utan å endre noko (med standardane frå «Lagre som standard»).
+  Under står òg plakatar du har laga sjølv (eigne linjer i oppsettet og plakatar i
+  andre karusellar). Dei blir kopierte inn.
 - **+ Lag ny plakat:** opnar plakatbyggjaren. Klikk **Legg til i «…»** nedst der,
   så kjem plakaten inn i karusellen. Krev at oppsettet er lagra først.
 - **↑ ↓** endrar rekkjefølgja, **Endre i byggjaren** endrar éin plakat, **Fjern** tek han ut.

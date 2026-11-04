@@ -110,6 +110,7 @@
   .pk .tom { color: var(--dempa); font-size: 13px; font-style: italic; }
   .pk details summary { cursor: pointer; font-size: 13.5px; font-weight: 650; }
   .pk .velliste { display: grid; gap: 2px; margin: 6px 0; max-height: 260px; overflow: auto; }
+  .pk .velliste b { margin-top: 6px; }
   .pk .velliste label { font-weight: 400; display: flex; gap: 6px; align-items: center; font-size: 14px; margin: 0; }
   /* Botnlinje for lagring */
   .lagrelinje { position: sticky; bottom: 0; margin-top: 24px; background: var(--flate); border: 1px solid var(--strek);
@@ -372,6 +373,36 @@ const medTil = (h, til) => { const p = new URLSearchParams(h); if (til) p.set("t
 const tilDatoAv = h => new URLSearchParams(h).get("til") || "";
 const plakatNamn = h => { const p = new URLSearchParams(h); return p.get("overskrift") || p.get("overlinje") || "(plakat utan overskrift)"; };
 const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html#vis=1&" + utanTil(h);
+// Malane i plakatbyggjaren (tenester.json). Ein plakat laga rett frå ein mal blir
+// den same som når du vel malen i plakatbyggjaren utan å endre noko
+// (sjå brukMal og lesSkjema i plakat.html – endrar du dei, må dette følgje med).
+let tenesteData = null;
+const tenesterLasting = fetch("tenester.json?t=" + Date.now(), { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).then(d => (tenesteData = d)).catch(() => null);
+function plakatFråMal(tn) {
+  const d = tenesteData || {};
+  const sel = tn.standardbilete || (tn.bilete && tn.bilete[0] ? tn.bilete[0].fil : "ikon");
+  const b = (tn.bilete || []).find(x => x.fil === sel);
+  const eige = !b && sel !== "ikon" && !sel.startsWith("anim:");
+  const cfg = {
+    mal: tn.id,
+    overlinje: tn.overlinje ?? "Digitalt bibliotek",
+    overskrift: tn.overskrift || tn.namn,
+    logo: tn.logo && tn.brukLogo !== false ? tn.logo : "",
+    avsendar: tn.avsendarlogo && tn.brukAvsendar !== false ? tn.avsendarlogo : "",
+    tekst: tn.tekst || "", merkelapp: tn.merkelapp || "",
+    bilete: sel === "ingen" ? "" : sel,
+    biletform: b && b.form === "foto" ? "foto" : eige ? (tn.standardbiletform || "") : "",
+    ikon: tn.ikon || "",
+    lenkje: tn.lenkje || d.standardlenkje || "",
+    qrtekst: tn.qrtekst ?? "Skann for å kome i gang",
+    tema: tn.tema || "lys",
+    skrift: tn.skrift && tn.skrift !== "standard" ? tn.skrift : "",
+  };
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(cfg)) if (v) p.set(k, v);
+  return p.toString();
+}
 // Alle plakatane som finst i oppsettet: eigne linjer og plakatar i karusellar
 function allePlakatar() {
   const ut = [], sett = new Set();
@@ -697,7 +728,7 @@ function pkBoks(s, lk, i) {
   const velliste = el("div", { class: "velliste" });
   const sek = el("input", { type: "number", id: "pk-sek", min: 5, max: 600, value: pk.sek });
   const runde = el("p", { class: "hjelp" });
-  const vel = el("details", {}, el("summary", {}, "+ Legg til plakatar som finst frå før"), velliste,
+  const vel = el("details", {}, el("summary", {}, "+ Legg til plakatar"), velliste,
     el("button", { type: "button", onclick: () => {
       const valde = [...velliste.querySelectorAll("input:checked")].map(c => c.value);
       if (!valde.length) return;
@@ -717,7 +748,7 @@ function pkBoks(s, lk, i) {
   const boks = el("div", { class: "pk" },
     el("label", {}, "Plakatar i karusellen (i den rekkjefølgja dei blir viste)"),
     liste, vel,
-    el("div", {}, nyKnapp, lagret ? null : el("span", { class: "hjelp" }, " Lagre oppsettet først for å lage ein ny plakat herifrå.")),
+    el("div", {}, nyKnapp, el("span", { class: "hjelp" }, lagret ? " Arrangement eller ein plakat du vil endre på først." : " Lagre oppsettet først for å lage ein ny plakat i plakatbyggjaren.")),
     el("div", { class: "rad" },
       el("div", {}, el("label", { for: "pk-sek" }, "Sekund per plakat"), sek),
       el("div", {}, el("label", {}, " "), runde)));
@@ -759,14 +790,24 @@ function pkBoks(s, lk, i) {
     // Plakatar som finst i oppsettet, men ikkje er med her
     const med = new Set(pk.plakatar.map(utanTil));
     const andre = allePlakatar().filter(x => !med.has(x.hash));
-    velliste.replaceChildren(...(andre.length ? andre.map(x => el("label", {}, el("input", { type: "checkbox", value: x.hash }), x.namn))
-      : [el("span", { class: "hjelp" }, "Ingen andre plakatar i oppsettet. Lag ein ny med knappen nedanfor, eller i plakatbyggjaren med «Legg på skjerm».")]));
-    if (!pk.plakatar.length && andre.length) vel.open = true;
+    // Malane frå plakatbyggjaren, gruppert som der, og så plakatar du har laga
+    const malMed = new Set(pk.plakatar.map(h => new URLSearchParams(h).get("mal")));
+    const grupper = {};
+    for (const tn of (tenesteData && tenesteData.tenester) || []) (grupper[tn.kategori || "Andre"] ||= []).push(tn);
+    const rad = (verdi, namn, merknad) => el("label", {}, el("input", { type: "checkbox", value: verdi }), namn,
+      merknad ? el("span", { class: "hjelp" }, merknad) : null);
+    velliste.replaceChildren(
+      ...(tenesteData ? [] : [el("span", { class: "hjelp" }, "Hentar malane …")]),
+      ...Object.entries(grupper).flatMap(([g, l]) => [el("b", { class: "hjelp" }, g),
+        ...l.map(tn => rad(plakatFråMal(tn), tn.namn, malMed.has(tn.id) ? "(er med)" : ""))]),
+      ...(andre.length ? [el("b", { class: "hjelp" }, "Plakatar du har laga"), ...andre.map(x => rad(x.hash, x.namn))] : []));
+    if (!pk.plakatar.length) vel.open = true;
     const n = pk.plakatar.length;
     runde.textContent = n ? `Ein heil runde med ${n} ${n === 1 ? "plakat" : "plakatar"} tek ${n * pk.sek} sekund. Er sekunda på skjermen færre, held karusellen fram der han slapp neste gong.` : "";
   }
   // Skjemaet finst først når boksen er sett inn i det
   setTimeout(teiknPk, 0);
+  if (!tenesteData) tenesterLasting.then(() => { if (boks.isConnected) teiknPk(); });
   return boks;
 }
 
@@ -1422,7 +1463,7 @@ $("nypk").addEventListener("click", () => {
   if (!oppsett) return;
   nyFørehand = { namn: "Plakatar", url: lagPk({ sek: 20, plakatar: [] }), sekund: 60 };
   open = { lk: "skjerm1", i: -1 }; teikn();
-  oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Vel plakatar, klikk «Legg til» og så Lagre.");
+  oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Hak av tenestene du vil ha med, klikk «Legg til dei valde», så «Legg til» og Lagre.");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.select(); } }, 50);
 });
 $("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; namnOpen = null; teikn(); });
