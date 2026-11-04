@@ -12,6 +12,7 @@
 # (omstarten kl. 15 eller neste oppstart om morgonen).
 #
 # Køyrt av systemd-timeren infoskjerm-oppdater.timer.
+# Skriptet oppdaterer seg sjølv frå stabil-greina til slutt.
 
 set -u
 
@@ -58,4 +59,10 @@ hent hent-lokalhistorie.sh  '# --- slutt ---'
 
 # Bilete frå den lokalhistoriske samlinga (berre éin gong per dag)
 [ -x "$MAPPE/hent-lokalhistorie.sh" ] && "$MAPPE/hent-lokalhistorie.sh" "$MAPPE"
+
+# Til slutt: oppdater dette skriptet sjølv, så nye filer i framtida kan
+# leggjast til utan SSH. Trygt fordi mv lagar ei ny fil; bash held fram
+# med å lese den gamle til han er ferdig, og neste køyring brukar den nye.
+hent oppdater-skjerm.sh     '# --- slutt ---'
 exit 0
+# --- slutt ---
