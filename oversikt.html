@@ -323,7 +323,9 @@ function typeTekst(s) {
   }
   return "Nettside";
 }
-const adresse = s => s.lokal ? null : s.url;
+// Lokale sider finst ikkje på nettet, unnateke lokalhistorie-sida (Beta),
+// som kan førehandsvisast med testdataa i skjerm/lokalhistorie.js.
+const adresse = s => s.lokal ? (/^lokalhistorie\.html/.test(s.lokal) ? "skjerm/" + s.lokal + "&forhand=1" : null) : s.url;
 
 // ---- Samspel med karusellbyggjaren ---------------------------------------
 const erKarusell = s => !s.lokal && /github\.io\/infoskjerm\/(index\.html)?#vis=1/.test(s.url || "");
@@ -788,9 +790,10 @@ function tilpassForevising() {
 }
 function førehandsvis(s) {
   $("forevisnamn").textContent = s.namn || "";
-  $("forevisfane").href = s.url;
+  const url = adresse(s);
+  $("forevisfane").href = url;
   // Karusellar inni ei ramme ventar elles på startbeskjed frå rotasjonen
-  $("forevisvindauge").src = s.url.includes("#vis=1") ? s.url + "&forhand=1" : s.url;
+  $("forevisvindauge").src = url.includes("#vis=1") ? url + "&forhand=1" : url;
   tilpassForevising();
   $("forevis").showModal();
 }

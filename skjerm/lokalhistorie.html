@@ -167,7 +167,7 @@ async function neste() {
 }
 
 // ---- Samspel med rotasjon.html
-const iRotasjon = window.parent !== window;
+const iRotasjon = window.parent !== window && !P.has("forhand");   // forhand=1: førehandsvising på oversikta
 function melde(b) { if (iRotasjon) parent.postMessage({ nyheiter: b }, "*"); }
 window.addEventListener("message", async e => {
   if (!e.data || !e.data.nyheiter) return;
