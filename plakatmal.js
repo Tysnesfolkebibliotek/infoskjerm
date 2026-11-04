@@ -25,6 +25,7 @@ function plakatFråMal(data, id) {
     tekst: tn.tekst || "", merkelapp: tn.merkelapp || "",
     bilete: sel === "ingen" ? "" : sel,
     biletform: b && b.form === "foto" ? "foto" : eige ? (tn.standardbiletform || "") : "",
+    kjelde: b && b.kjelde ? b.kjelde : "",
     ikon: tn.ikon || "",
     lenkje: tn.lenkje || data.standardlenkje || "",
     qrtekst: tn.qrtekst ?? "Skann for å kome i gang",

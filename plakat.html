@@ -139,6 +139,8 @@
   .hbsok .svar .hake svg { width: 3.8vw; height: 3.8vw; }
   /* Utan bilete og ikon får teksten heile plassen */
   .midt.tom { flex: .6; }
+  /* Kjelda til biletet (t.d. lokalhistoriske foto), lita og dempa under biletet */
+  .kjelde { margin: -2vh 0 2vh; text-align: center; font-size: 1.9vw; opacity: .7; letter-spacing: .02em; }
 
   .brodtekst { font-size: 5vw; line-height: 1.32; font-weight: 500; }
   .brikker { display: flex; flex-wrap: wrap; gap: 1.4vw; margin-top: 2.6vh; }
@@ -231,6 +233,7 @@
       <h1 class="overskrift inn" id="overskrift" style="--n:1"></h1>
     </header>
     <div class="midt inn" id="midt" style="--n:2"></div>
+    <div class="kjelde inn" id="kjelde" style="--n:2" hidden></div>
     <section>
       <p class="brodtekst inn" id="brodtekst" style="--n:3"></p>
       <div class="brikker inn" id="brikker" style="--n:4"></div>
@@ -324,7 +327,7 @@
 // Nøklane i lenkja. Alt innhaldet står i lenkja, så ein plakat er uendra sjølv
 // om tenester.json blir endra seinare.
 const NØKLAR = ["mal", "overlinje", "overskrift", "logo", "avsendar", "anim", "tekst", "merkelapp", "bilete", "biletform", "ikon",
-                "dato", "tid", "stad", "lenkje", "qrtekst", "tema", "skrift"];
+                "kjelde", "dato", "tid", "stad", "lenkje", "qrtekst", "tema", "skrift"];
 const TEMA = typeof TEMA_ETTER_ID !== "undefined" ? TEMA_ETTER_ID : {};
 const $ = id => document.getElementById(id);
 const lesHash = () => Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
@@ -610,6 +613,13 @@ function visPlakat(cfg) {
     const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : ""), alt: "", src: cfg.bilete });
     prøvIgjen(img, () => { midt.innerHTML = cfg.ikon ? `<div class="ikonsirkel">${ikonSvg(cfg.ikon)}</div>` : ""; });
     midt.append(img);
+    if (cfg.kjelde) {
+      // Kjelda syner berre når biletet får plass (i eit lågt vindauge kan midt bli 0 høgt)
+      $("kjelde").textContent = "Foto: " + cfg.kjelde;
+      const sjekk = () => { $("kjelde").hidden = !img.complete || img.clientHeight < 40; };
+      img.addEventListener("load", sjekk);
+      new ResizeObserver(sjekk).observe(img);
+    }
   } else if (cfg.bilete === "ikon" || (!cfg.bilete && cfg.ikon)) {
     midt.innerHTML = `<div class="ikonsirkel">${ikonSvg(cfg.ikon || "stjerne")}</div>`;
   } else midt.classList.add("tom");
@@ -781,12 +791,13 @@ async function startByggjar() {
   function lesSkjema() {
     const id = mal.value, t = teneste(id);
     const sel = $("bileteval").value;
-    let bilete = "", biletform = "";
+    let bilete = "", biletform = "", kjelde = "";
     if (sel === "eige" || sel === "last") { bilete = sel === "eige" ? $("eigeadresse").value.trim() : ""; biletform = bilete ? $("biletform").value : ""; }
     else if (sel !== "ingen") {
       bilete = sel;
       const b = ((t && t.bilete) || []).find(b => b.fil === sel);
       if (b && b.form === "foto") biletform = "foto";
+      if (b && b.kjelde) kjelde = b.kjelde;
     }
     return {
       mal: id,
@@ -796,7 +807,7 @@ async function startByggjar() {
       avsendar: t && t.avsendarlogo && $("brukAvsendar").checked ? t.avsendarlogo : "",
       tekst: felt("tekst").value.trim(),
       merkelapp: felt("merkelapp").value.trim(),
-      bilete, biletform,
+      bilete, biletform, kjelde,
       ikon: t ? t.ikon : id === "arrangement" ? "kalender" : "",
       dato: felt("dato").value.trim(), tid: felt("tid").value.trim(), stad: felt("stad").value.trim(),
       anim: sel.startsWith("anim:") ? felt("anim").value.split("|").map(x => x.trim()).filter(Boolean).join("|") : "",
