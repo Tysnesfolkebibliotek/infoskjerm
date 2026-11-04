@@ -111,6 +111,10 @@
   .pk details summary { cursor: pointer; font-size: 13.5px; font-weight: 650; }
   .pk .velliste { display: grid; gap: 2px; margin: 6px 0; max-height: 260px; overflow: auto; }
   .pk .velliste b { margin-top: 6px; }
+  .pk .visval { display: grid; gap: 6px; }
+  .pk .visval label { align-items: flex-start; }
+  .pk .visval input { margin-top: 3px; }
+  .pk .døme { margin: 0; padding: 6px 8px; border-radius: 7px; background: var(--seinare-bg); }
   .pk .velliste label { font-weight: 400; display: flex; gap: 6px; align-items: center; font-size: 14px; margin: 0; }
   /* Botnlinje for lagring */
   .lagrelinje { position: sticky; bottom: 0; margin-top: 24px; background: var(--flate); border: 1px solid var(--strek);
@@ -330,7 +334,7 @@ function typeTekst(s) {
   if (erPlakatkarusell(s)) {
     const pk = lesPk(s.url), n = pk.plakatar.length;
     const ute = pk.plakatar.filter(h => tilDatoAv(h) && tilDatoAv(h) < idagTekst()).length;
-    return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""}${pk.kvar ? ` · ${pk.kvar} per gong` : ""} · ${pk.sek} sek kvar${s.mellom ? " · mellom kvar side" : ""}`;
+    return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""}${s.mellom ? ` · ${pk.kvar === 2 ? "to" : "éin"} mellom kvar side` : " · alle samla"} · ${pk.sek} sek kvar`;
   }
   if (erPlakat(s)) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
@@ -710,9 +714,22 @@ function pkBoks(s, lk, i) {
   const velliste = el("div", { class: "velliste" });
   const sek = el("input", { type: "number", id: "pk-sek", min: 5, max: 600, value: pk.sek });
   const runde = el("p", { class: "hjelp" });
-  const kvar = el("select", { id: "pk-kvar" }, new Option("Alle", "0"), ...[1, 2, 3, 4, 5].map(k => new Option(String(k), String(k))));
-  kvar.value = String(pk.kvar || 0);
-  kvar.addEventListener("change", () => endre(() => { pk.kvar = Number(kvar.value) || 0; }));
+  // Éitt val for når plakatane blir viste. Bak kulissene: «mellom» på linja og «kvar» i lenkja.
+  //   samla → på plassen sin i lista, alle plakatane     (mellom: nei, kvar: 0)
+  //   1 / 2 → mellom kvar side, 1 eller 2 plakatar kvar gong (mellom: ja, kvar: 1/2)
+  let visVal = s.mellom ? (pk.kvar === 2 ? "2" : "1") : "samla";
+  pk.kvar = visVal === "samla" ? 0 : Number(visVal);
+  const VISVAL = [
+    ["1", "Éin plakat mellom kvar side", "Tilrådd. Plakatane kjem jamt, og det er ein ny plakat kvar gong."],
+    ["2", "To plakatar mellom kvar side", "Som over, men to plakatar etter kvarandre kvar gong."],
+    ["samla", "Alle plakatane samla, på plassen sin i lista", "Éin gong per runde, på den plassen karusellen har i lista til skjermen."],
+  ];
+  const visboks = el("div", { class: "visval" }, ...VISVAL.map(([v, tittel, forklaring]) =>
+    el("label", { class: "val" },
+      el("input", { type: "radio", name: "pk-vis", value: v, checked: v === visVal,
+        onchange: () => endre(() => { visVal = v; pk.kvar = v === "samla" ? 0 : Number(v); }) }),
+      el("span", {}, el("b", {}, tittel), el("br"), el("span", { class: "hjelp" }, forklaring)))));
+  const døme = el("p", { class: "hjelp døme" });
   const vel = el("details", {}, el("summary", {}, "+ Legg til plakatar"), velliste,
     el("button", { type: "button", onclick: () => {
       const valde = [...velliste.querySelectorAll("input:checked")].map(c => c.value);
@@ -734,12 +751,11 @@ function pkBoks(s, lk, i) {
     el("label", {}, "Plakatar i karusellen (i den rekkjefølgja dei blir viste)"),
     liste, vel,
     el("div", {}, nyKnapp, el("span", { class: "hjelp" }, lagret ? " Arrangement eller ein plakat du vil endre på først." : " Lagre oppsettet først for å lage ein ny plakat i plakatbyggjaren.")),
+    el("label", {}, "Når skal plakatane visast?"),
+    visboks, døme,
     el("div", { class: "rad" },
       el("div", {}, el("label", { for: "pk-sek" }, "Sekund per plakat"), sek),
-      el("div", {}, el("label", { for: "pk-kvar" }, "Plakatar per gong"), kvar)),
-    el("label", { class: "val" }, el("input", { type: "checkbox", id: "pk-mellom", checked: !!s.mellom }),
-      "Vis mellom kvar side (i staden for på sin plass i lista)"),
-    runde);
+      el("div", {}, el("label", {}, " "), runde)));
 
   let skjemaRot = null;
   const finnSkjema = () => skjemaRot || (skjemaRot = boks.closest(".skjema"));
@@ -794,8 +810,25 @@ function pkBoks(s, lk, i) {
     // Sekunda på skjermen blir alltid rekna ut: plakatar per gong (eller alle) × sekund per plakat
     const aktive = pkAktive(pk), gong = pkPerGong(pk);
     runde.textContent = aktive ? `${gong} ${gong === 1 ? "plakat" : "plakatar"} × ${pk.sek} sekund = ${gong * pk.sek} sekund på skjermen kvar gong.`
-      + (pk.kvar && gong < aktive ? ` Neste gong held han fram med neste plakat.` : "")
       + (aktive < n ? " Plakatar som er ute på dato, er ikkje rekna med." : "") : "";
+    // Døme med dei ekte sidene på skjermen, så det er lett å sjå kva valet gjer
+    if (f && !f.dataset.pkLytt) { f.dataset.pkLytt = "1"; f.querySelector("#f-skjerm").addEventListener("change", teiknPk); }
+    const skjermLk = f ? f.querySelector("#f-skjerm").value : skjermFor(lk);
+    const sider = aktuelle((oppsett[skjermLk] || []).filter(x => x !== s && !x.mellom)).map(x => x.namn || "side");
+    const plak = pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= no).map(plakatNamn);
+    if (!plak.length) døme.textContent = "";
+    else if (visVal === "samla") døme.textContent = `Slik blir det: ${[...sider.slice(-2), `alle ${plak.length} plakatane`, sider[0] || ""].filter(Boolean).join(" → ")} → …`;
+    else {
+      const ut = [];
+      let k = 0;
+      for (const namn of (sider.length ? sider : ["(neste side)"]).slice(0, 3)) {
+        ut.push(namn);
+        const del = [];
+        for (let j = 0; j < Number(visVal); j++) del.push(plak[k++ % plak.length]);
+        ut.push(del.join(" + "));
+      }
+      døme.textContent = `Slik blir det: ${ut.join(" → ")} → …`;
+    }
     if (f) { const sf = f.querySelector("#f-sek"); sf.value = pkSekund(pk); sf.readOnly = true; sf.title = "Blir rekna ut: tal plakatar × sekund per plakat"; }
   }
   // Skjemaet finst først når boksen er sett inn i det
@@ -816,7 +849,7 @@ function brukSkjema(f, gammal, lk, i) {
   else return feil("Lenkja må byrje med https://");
   ny.sekund = sek;
   if (f.querySelector("#f-frisk").checked) ny.frisk = true;
-  { const m = f.querySelector("#pk-mellom"); if (m && m.checked) ny.mellom = true; }
+  { const v = f.querySelector('input[name="pk-vis"]:checked'); if (v && v.value !== "samla") ny.mellom = true; }
   // Periode
   const frå = v("f-fra"), til = v("f-til"), kvartÅr = f.querySelector("#f-kvartar").checked;
   if (frå || til) {
