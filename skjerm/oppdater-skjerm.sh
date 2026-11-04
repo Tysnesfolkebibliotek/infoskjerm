@@ -1,7 +1,6 @@
 #!/bin/bash
-# Hentar rotasjon.html (og lokalhistorie-sida, Beta) frå greina «stabil» på
-# GitHub og legg dei inn på skjermen. Til slutt hentar han dagens bilete frå
-# den lokalhistoriske bildesamlinga (hent-lokalhistorie.sh).
+# Hentar rotasjon.html frå greina «stabil» på GitHub og legg ho inn på
+# skjermen. (Lokalhistorie Beta er lagt på is – sjå linjene under.)
 #
 # - Endrar ingenting om nettet er nede eller fila ser øydelagd ut.
 # - Byter berre ut fila når ho faktisk er endra.
