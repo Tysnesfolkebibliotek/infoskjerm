@@ -359,8 +359,15 @@ const TEMA_LISTE = [
       :root[data-tema="barnebok"] { --symbol-plass: 26vw; }
       :root[data-tema="barnebok"] .beskow-putte { position: absolute; right: 3.5vw; top: 1vh; width: 22vw; height: auto; }
       :root[data-tema="barnebok"] .vandrar img { display: block; width: 100%; height: auto; }
+      /* Skogbiletet ligg bak omtalen og botnlinja: papirfarga «glød» rundt teksten og nesten tette
+         brikker held teksten lett å lese. */
+      :root[data-tema="barnebok"] .tittel, :root[data-tema="barnebok"] .undertittel, :root[data-tema="barnebok"] .forfattar,
+      :root[data-tema="barnebok"] .omtale, :root[data-tema="barnebok"] #visning footer {
+        text-shadow: 0 0 .5vw #f6efe2, 0 0 1vw #f6efe2, 0 0 1.6vw #f6efe2, 0 0 2.4vw #f6efe2; }
+      :root[data-tema="barnebok"] .omtale { color: #4d4030; }
+      :root[data-tema="barnebok"] .brikke:not(.hylle) { background: rgba(246,239,226,.92); box-shadow: inset 0 0 0 .2vw rgba(59,47,34,.18); }
       :root[data-tema="barnebok"] .beskow-skog { position: absolute; left: 0; bottom: 0; width: 100vw; height: 57vw; max-height: 36vh;
-        object-fit: cover; object-position: 70% 100%; opacity: .85;
+        object-fit: cover; object-position: 70% 100%; opacity: .55;
         -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 50%, #000 72%, rgba(0,0,0,.12) 100%);
         mask-image: linear-gradient(to bottom, transparent 0%, #000 50%, #000 72%, rgba(0,0,0,.12) 100%); }
 `,
