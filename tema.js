@@ -304,40 +304,37 @@ const TEMA_LISTE = [
   },
   {
     // Den internasjonale barnebokdagen, 2. april (H.C. Andersen sin fødselsdag, IBBY).
-    // Lyst og leikent: open bok med stjerner øvst til høgre, papirbåtar som glir nedst.
-    // IBBY-plakaten for året er betre som eigen plakat enn i temaet (han skiftar kvart år).
+    // Varm papirfarge og ekte illustrasjonar av Elsa Beskow (1874–1953, fri sidan 2024) frå
+    // «Puttes äfventyr i blåbärsskogen» (1901): blåbærguten som veiver med lua øvst til høgre,
+    // og ein snigel som krabbar sakte over skjermen nedst. Skanning: Kungl. biblioteket /
+    // Litteraturbanken.se (fri frå kjende opphavsrettslege avgrensingar). Bakgrunnen er gjord
+    // gjennomsiktig (bilete/beskow-blabaergut.png, bilete/beskow-snigel.png).
     id: "barnebok", namn: "Barnebokdagen", gruppe: "Høgtider og merkedagar", overgang: "bla",
     dato: "2. april", aktuell: "03-22/04-02",
-    skrift: "par-leiken",
+    skrift: "par-klassisk",
     css: `
-      :root[data-tema="barnebok"] { --symbol-plass: 19vw; }`,
-    fargar: { bakgrunn: "#e6f2fa", tekst: "#1d3557", dempa: "#4f6584", aksent: "#e76f51", "aksent-tekst": "#ffffff", brikke: "rgba(29,53,87,.08)", skugge: "230,242,250", spor: "rgba(29,53,87,.12)", "reserve-a": "#a8dadc", "reserve-b": "#f4a261", "bakteppe-lys": "1.15" },
-    pynt({ pynt, svg, tilf, stigande }) {
-      const STJERNE = "M12 2.5l2.8 6 6.6.7-4.9 4.5 1.4 6.5L12 16.9l-5.9 3.3 1.4-6.5-4.9-4.5 6.6-.7z";
-      const stjerne = (x, y, s, f) => `<path fill="${f}" transform="translate(${x} ${y}) scale(${s})" d="${STJERNE}"/>`;
-      const MØRK = "#1d3557";
-      // Open bok med stjerner som kjem ut av ho
-      pynt.append(svg("0 0 100 92", "right:5vw; top:2.5vh; width:16vw; overflow:visible;",
-        stjerne(14, 4, 0.9, "#f4a261") + stjerne(40, -6, 1.1, "#e76f51") + stjerne(66, 6, 0.8, "#2a9d8f") +
-        `<path d="M50 44 C38 36 20 36 8 40 L8 84 C20 80 38 80 50 88 Z" fill="#ffffff" stroke="${MØRK}" stroke-width="2.2" stroke-linejoin="round"/>` +
-        `<path d="M50 44 C62 36 80 36 92 40 L92 84 C80 80 62 80 50 88 Z" fill="#ffffff" stroke="${MØRK}" stroke-width="2.2" stroke-linejoin="round"/>` +
-        `<g stroke="#a8b6c8" stroke-width="1.4" stroke-linecap="round" fill="none">` +
-          `<path d="M16 52 C26 49 36 50 43 53"/><path d="M16 60 C26 57 36 58 43 61"/><path d="M16 68 C26 65 36 66 43 69"/>` +
-          `<path d="M57 53 C64 50 74 49 84 52"/><path d="M57 61 C64 58 74 57 84 60"/><path d="M57 69 C64 66 74 65 84 68"/></g>`));
-      // Papirbåtar (som i «Den standhaftige tinnsoldaten») som glir sakte nedst
-      const BÅT = (f) => `<path d="M2 16 L38 16 L31 26 L9 26 Z" fill="${f}" stroke="${MØRK}" stroke-width="1.2" stroke-linejoin="round"/>` +
-        `<path d="M12 16 L20 2 L28 16 Z" fill="#ffffff" stroke="${MØRK}" stroke-width="1.2" stroke-linejoin="round"/>`;
-      ["#ffffff", "#f4a261", "#a8dadc"].forEach((f, i) => {
+      :root[data-tema="barnebok"] { --symbol-plass: 23vw; }
+      :root[data-tema="barnebok"] .beskow-gut { position: absolute; right: 4vw; top: 1.5vh; width: 19vw; height: auto;
+        transform-origin: 20% 95%; animation: beskowVai 5s ease-in-out infinite alternate; }
+      @keyframes beskowVai { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+      :root[data-tema="barnebok"] .vandrar img { display: block; width: 100%; height: auto; }
+      @media (prefers-reduced-motion: reduce) { :root[data-tema="barnebok"] .beskow-gut { animation: none; } }`,
+    fargar: { bakgrunn: "#f6efe2", tekst: "#3b2f22", dempa: "#6e604c", aksent: "#c4472d", "aksent-tekst": "#ffffff", brikke: "rgba(59,47,34,.08)", skugge: "246,239,226", spor: "rgba(59,47,34,.12)", "reserve-a": "#e8dcc4", "reserve-b": "#c9b48f", "bakteppe-lys": "1.15" },
+    pynt({ pynt, tilf }) {
+      // Blåbærguten øvst til høgre. Han vaggar litt på greina.
+      const gut = document.createElement("img");
+      gut.src = "bilete/beskow-blabaergut.png"; gut.alt = ""; gut.className = "beskow-gut";
+      pynt.append(gut);
+      // To sniglar som krabbar svært sakte frå høgre mot venstre, eitt par minutt over skjermen
+      for (let i = 0; i < 2; i++) {
         const el = document.createElement("div");
         el.className = "vandrar";
-        el.style.cssText = `top:${79 + i * 2.5 + tilf(0, 2)}vh; width:${tilf(7.5, 10)}vw; opacity:${tilf(0.4, 0.55)};` +
-          `animation-duration:${tilf(80, 120)}s; animation-delay:${-tilf(0, 120)}s;`;
-        el.append(svg("0 0 40 28", "", BÅT(f)));
-        pynt.append(el);
-      });
-      // Nokre små fargerike stjerner som stig sakte
-      const FARGAR = ["#e76f51", "#f4a261", "#2a9d8f", "#e9c46a"];
-      stigande(12, "0 0 24 24", i => `<path fill="${FARGAR[i % FARGAR.length]}" d="${STJERNE}"/>`, [1.6, 2.8], [0.22, 0.4]);
+        el.style.cssText = `top:${80 + i * 4}vh; width:${i ? 13 : 17}vw; opacity:${i ? 0.8 : 0.95};` +
+          `animation-duration:${tilf(220, 280)}s; animation-delay:${-(i * 130 + tilf(0, 40))}s;`;
+        const snigel = document.createElement("img");
+        snigel.src = "bilete/beskow-snigel.png"; snigel.alt = "";
+        el.append(snigel); pynt.append(el);
+      }
     },
   },
   {
