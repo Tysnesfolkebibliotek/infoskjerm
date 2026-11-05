@@ -512,6 +512,11 @@
           <option value="born_nn">Barnebøker på nynorsk</option>
           <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
         </optgroup>
+        <optgroup label="Merkedagar">
+          <option value="morsmal">Morsmålsdagen – bøker på mange språk (21. februar)</option>
+          <option value="poesi">Verdsdagen for poesi – dikt (21. mars)</option>
+          <option value="barnebok">Barnebokdagen (2. april)</option>
+        </optgroup>
         <optgroup label="Jul">
           <option value="jul">Julebøker</option>
           <option value="julekalender">Julekalender</option>
@@ -927,6 +932,18 @@ const MALAR = {
   biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker|Bildebøker|Biletbok|Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
   born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar|Romaner|Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
   ungdom_nn:   { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb,tyfv", lf: "1", sjanger: "Romanar|Romaner|Roman", alder: "u,mu,vu", tittel: "Ungdomsbøker på nynorsk" },
+  // Morsmålsdagen: bøker på andre språk enn norsk og engelsk. Utlånte er med, sidan samlinga er lita.
+  morsmal: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+             omslag: "0", hylla: "0", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "sme,ukr,pol,ara,lit,rus,ger,fre,spa,som,tir", alle: "1",
+             tittel: "Bøker på mange språk", namn: "Den internasjonale morsmålsdagen", sek: "20", oppdater: "360", omtale: "1" },
+  // Verdsdagen for poesi: dikt for vaksne, og rim og reglar for born
+  poesi: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "Dikt,Rim og regler|Rim og reglar", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+           omslag: "0", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
+           tittel: "Dikt", namn: "Verdsdagen for poesi", sek: "20", oppdater: "360", omtale: "1" },
+  // Barnebokdagen: skjønnlitteratur i barneavdelinga, biletbøker og romanar
+  barnebok: { kjelde: "sok", avd: "tyfb", lf: "1", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+              omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
+              tittel: "Gode barnebøker", namn: "Den internasjonale barnebokdagen", sek: "20", oppdater: "360", omtale: "1" },
   // Blankt skjema: begge avdelingane, ingen avgrensingar og ingen krav
   blank: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
            omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
@@ -958,6 +975,7 @@ const MALTEMA = {
   sakprosa: "kveld", krim: "krim", biografi: "kveld", lokal: "fjord", natur: "skog", klima: "klima", handarbeid: "hobby",
   fantasy: "fantasy", fotball: "sport", teikne: "manga", biletbok_nn: "biletbok", born_nn: "lys", ungdom_nn: "natt",
   jul: "jul", julekalender: "advent", brageprisen: "brage", nobel: "nobel",
+  morsmal: "morsmal", poesi: "poesi", barnebok: "barnebok",
 };
 for (const [mal, tema] of Object.entries(MALTEMA)) if (MALAR[mal]) MALAR[mal] = { ...MALAR[mal], tema };
 
@@ -3841,7 +3859,8 @@ function startByggjar(startCfg) {
 
   // ---- Språk: brikker, som sjanger og emne -----------------------------
   const SPRÅK = [["nob", "Bokmål"], ["nno", "Nynorsk"], ["eng", "Engelsk"], ["swe", "Svensk"], ["dan", "Dansk"],
-    ["ger", "Tysk"], ["ukr", "Ukrainsk"], ["pol", "Polsk"], ["ara", "Arabisk"], ["sme", "Samisk"]];
+    ["ger", "Tysk"], ["ukr", "Ukrainsk"], ["pol", "Polsk"], ["ara", "Arabisk"], ["sme", "Samisk"],
+    ["lit", "Litauisk"], ["rus", "Russisk"], ["fre", "Fransk"], ["spa", "Spansk"], ["som", "Somali"], ["tir", "Tigrinja"]];
   $("spraakliste").replaceChildren(...SPRÅK.map(([, namn]) => new Option(namn)));
   const språkDelar = () => $("spraak").value.split(",").map(x => x.trim()).filter(Boolean);
   function teiknSpråk() {

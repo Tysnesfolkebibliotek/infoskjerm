@@ -190,6 +190,42 @@ const TEMA_LISTE = [
     },
   },
   {
+    // Morsmålsdagen (UNESCO). Ingen UNESCO-logo (krev løyve). Symbolet er tre snakkebobler,
+    // og «hei» på mange språk glir sakte over skjermen.
+    id: "morsmal", namn: "Morsmålsdagen", gruppe: "Høgtider og merkedagar", overgang: "kryss",
+    dato: "21. februar", aktuell: "02-07/02-21",
+    skrift: "par-venleg",
+    fargar: { bakgrunn: "#14213d", tekst: "#f6f2ea", dempa: "#b9c0d4", aksent: "#f4a259", "aksent-tekst": "#14213d", skugge: "20,33,61", "reserve-a": "#3d5a80", "reserve-b": "#1b2a4a" },
+    css: `
+      :root[data-tema="morsmal"] { --symbol-plass: 19vw; }
+      :root[data-tema="morsmal"] .helsing { position: absolute; left: 0; white-space: nowrap; font-weight: 700; line-height: 1;
+        font-family: "Nunito", "Noto Sans", "Noto Sans Arabic", "Noto Sans CJK SC", "DejaVu Sans", sans-serif; animation: vandre linear infinite; }`,
+    pynt({ pynt, svg, tilf, vel }) {
+      // Tre snakkebobler øvst til høgre, med «Hei» og «Bures» (nordsamisk)
+      const MØRK = "#14213d";
+      pynt.append(svg("0 0 100 92", "right:5vw; top:3vh; width:16vw; overflow:visible;",
+        `<rect x="58" y="2" width="34" height="22" rx="9" fill="#e07a9b"/><path d="M84 22 L90 32 L76 23 Z" fill="#e07a9b"/>` +
+        `<circle cx="67" cy="13" r="2.2" fill="${MØRK}"/><circle cx="75" cy="13" r="2.2" fill="${MØRK}"/><circle cx="83" cy="13" r="2.2" fill="${MØRK}"/>` +
+        `<rect x="2" y="14" width="60" height="38" rx="13" fill="#f4a259"/><path d="M14 50 L10 64 L28 51 Z" fill="#f4a259"/>` +
+        `<text x="32" y="40" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="19" fill="${MØRK}">Hei</text>` +
+        `<rect x="36" y="44" width="62" height="36" rx="13" fill="#5bc0be"/><path d="M86 78 L92 91 L74 79 Z" fill="#5bc0be"/>` +
+        `<text x="67" y="69" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="17" fill="${MØRK}">Bures</text>`));
+      // «Hei» på mange språk, svakt, i ulike fargar og storleikar
+      const HELSINGAR = ["Hei", "Bures", "Привіт", "Cześć", "مرحبا", "Labas", "Hola", "Bonjour", "Hallo", "Merhaba",
+                         "Xin chào", "你好", "Hello", "Hej", "Привет", "Ciao", "Olá", "Salam"];
+      const FARGAR = ["#f4a259", "#5bc0be", "#e07a9b", "#f6f2ea"];
+      const blanda = [...HELSINGAR].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < 10; i++) {
+        const el = document.createElement("div");
+        el.className = "helsing";
+        el.textContent = blanda[i];
+        el.style.cssText = `top:${6 + i * 9 + tilf(0, 4)}vh; font-size:${tilf(2.6, 5.2)}vw; color:${vel(FARGAR)}; opacity:${tilf(0.07, 0.14)};` +
+          `animation-duration:${tilf(90, 150)}s; animation-delay:${-tilf(0, 150)}s;`;
+        pynt.append(el);
+      }
+    },
+  },
+  {
     id: "kvinnedagen", namn: "Kvinnedagen", gruppe: "Høgtider og merkedagar",
     dato: "8. mars",
     aktuell: "02-20/03-08",
@@ -202,6 +238,66 @@ const TEMA_LISTE = [
       logo.src = "bilete/kvinnedagen.png"; logo.alt = "";
       logo.style.cssText = "position:absolute; right:6vw; top:4vh; width:14vw; height:auto;";
       pynt.append(logo);
+    },
+  },
+  {
+    // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. Fjørpenn øvst til høgre og
+    // nokre få bokstavar som dalar sakte. Ingen UNESCO-logo (krev løyve).
+    id: "poesi", namn: "Verdsdagen for poesi", gruppe: "Høgtider og merkedagar", overgang: "kryss",
+    dato: "21. mars", aktuell: "03-09/03-21",
+    skrift: "par-elegant",
+    css: `
+      :root[data-tema="poesi"] { --symbol-plass: 17vw; }`,
+    fargar: { bakgrunn: "#efeaf4", tekst: "#231c33", dempa: "#5d5470", aksent: "#6b3fa0", "aksent-tekst": "#ffffff", brikke: "rgba(35,28,51,.07)", skugge: "239,234,244", spor: "rgba(35,28,51,.10)", "reserve-a": "#dccfe8", "reserve-b": "#c4b2d8", "bakteppe-lys": "1.15" },
+    pynt({ pynt, svg, dalande }) {
+      // Fjørpenn med ein liten blekkstrek under
+      pynt.append(svg("0 0 100 100", "right:5vw; top:2.5vh; width:13vw; overflow:visible;",
+        `<path d="M90 4 C62 8 36 28 24 60 C32 56 40 54 48 54 C42 58 36 62 32 68 C48 68 64 58 74 42 C66 44 60 44 54 44 C66 38 78 26 90 4 Z" fill="#8a63b8"/>` +
+        `<path d="M90 4 C66 28 42 54 16 90" stroke="#3d2466" stroke-width="1.8" fill="none" stroke-linecap="round"/>` +
+        `<path d="M6 96 C18 89 28 98 42 91 C50 87 56 92 62 90" stroke="#6b3fa0" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".7"/>`));
+      // Bokstavar og teikn som dalar som lauv
+      const FARGAR = ["#6b3fa0", "#8a63b8", "#3d2466"];
+      for (const t of ["a", "ø", "å", "&", "?", "e", "—", "o"])
+        dalande(1, "0 0 20 20", `<text x="10" y="16" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="18" fill="FARGE">${t}</text>`,
+          FARGAR, [3.4, 5.6], [0.14, 0.26]);
+    },
+  },
+  {
+    // Den internasjonale barnebokdagen, 2. april (H.C. Andersen sin fødselsdag, IBBY).
+    // Lyst og leikent: open bok med stjerner øvst til høgre, papirbåtar som glir nedst.
+    // IBBY-plakaten for året er betre som eigen plakat enn i temaet (han skiftar kvart år).
+    id: "barnebok", namn: "Barnebokdagen", gruppe: "Høgtider og merkedagar", overgang: "bla",
+    dato: "2. april", aktuell: "03-22/04-02",
+    skrift: "par-leiken",
+    css: `
+      :root[data-tema="barnebok"] { --symbol-plass: 19vw; }`,
+    fargar: { bakgrunn: "#e6f2fa", tekst: "#1d3557", dempa: "#4f6584", aksent: "#e76f51", "aksent-tekst": "#ffffff", brikke: "rgba(29,53,87,.08)", skugge: "230,242,250", spor: "rgba(29,53,87,.12)", "reserve-a": "#a8dadc", "reserve-b": "#f4a261", "bakteppe-lys": "1.15" },
+    pynt({ pynt, svg, tilf, stigande }) {
+      const STJERNE = "M12 2.5l2.8 6 6.6.7-4.9 4.5 1.4 6.5L12 16.9l-5.9 3.3 1.4-6.5-4.9-4.5 6.6-.7z";
+      const stjerne = (x, y, s, f) => `<path fill="${f}" transform="translate(${x} ${y}) scale(${s})" d="${STJERNE}"/>`;
+      const MØRK = "#1d3557";
+      // Open bok med stjerner som kjem ut av ho
+      pynt.append(svg("0 0 100 92", "right:5vw; top:2.5vh; width:16vw; overflow:visible;",
+        stjerne(14, 4, 0.9, "#f4a261") + stjerne(40, -6, 1.1, "#e76f51") + stjerne(66, 6, 0.8, "#2a9d8f") +
+        `<path d="M50 44 C38 36 20 36 8 40 L8 84 C20 80 38 80 50 88 Z" fill="#ffffff" stroke="${MØRK}" stroke-width="2.2" stroke-linejoin="round"/>` +
+        `<path d="M50 44 C62 36 80 36 92 40 L92 84 C80 80 62 80 50 88 Z" fill="#ffffff" stroke="${MØRK}" stroke-width="2.2" stroke-linejoin="round"/>` +
+        `<g stroke="#a8b6c8" stroke-width="1.4" stroke-linecap="round" fill="none">` +
+          `<path d="M16 52 C26 49 36 50 43 53"/><path d="M16 60 C26 57 36 58 43 61"/><path d="M16 68 C26 65 36 66 43 69"/>` +
+          `<path d="M57 53 C64 50 74 49 84 52"/><path d="M57 61 C64 58 74 57 84 60"/><path d="M57 69 C64 66 74 65 84 68"/></g>`));
+      // Papirbåtar (som i «Den standhaftige tinnsoldaten») som glir sakte nedst
+      const BÅT = (f) => `<path d="M2 16 L38 16 L31 26 L9 26 Z" fill="${f}" stroke="${MØRK}" stroke-width="1.2" stroke-linejoin="round"/>` +
+        `<path d="M12 16 L20 2 L28 16 Z" fill="#ffffff" stroke="${MØRK}" stroke-width="1.2" stroke-linejoin="round"/>`;
+      ["#ffffff", "#f4a261", "#a8dadc"].forEach((f, i) => {
+        const el = document.createElement("div");
+        el.className = "vandrar";
+        el.style.cssText = `top:${79 + i * 2.5 + tilf(0, 2)}vh; width:${tilf(7.5, 10)}vw; opacity:${tilf(0.4, 0.55)};` +
+          `animation-duration:${tilf(80, 120)}s; animation-delay:${-tilf(0, 120)}s;`;
+        el.append(svg("0 0 40 28", "", BÅT(f)));
+        pynt.append(el);
+      });
+      // Nokre små fargerike stjerner som stig sakte
+      const FARGAR = ["#e76f51", "#f4a261", "#2a9d8f", "#e9c46a"];
+      stigande(12, "0 0 24 24", i => `<path fill="${FARGAR[i % FARGAR.length]}" d="${STJERNE}"/>`, [1.6, 2.8], [0.22, 0.4]);
     },
   },
   {
