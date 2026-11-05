@@ -356,7 +356,7 @@
                  color: var(--b-dempa); font: inherit; font-size: 12.5px; cursor: pointer; }
   span.koplingsord { cursor: default; border-style: solid; border-color: transparent; padding: 2px 4px; }
   .koplingsord:hover { color: var(--b-tekst); border-color: var(--b-tekst); }
-  .malrad select { flex: 1; min-width: 0; }
+  .malrad select, .malrad .temaval { flex: 1; min-width: 0; }
   .malrad .knapp { flex: none; white-space: nowrap; }
   .val, .felt > label.val { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; margin-bottom: 0; font-size: 14px; font-weight: 400; cursor: pointer; }
   .val input { margin-top: 3px; accent-color: var(--b-aksent); }
@@ -482,45 +482,14 @@
     <p class="ingress">Lag ein karusell, sjå han med ekte bøker, og kopier lenkja til skjermen.</p>
 
     <div class="felt">
-      <label for="mal">Start frå ein mal</label>
+      <label for="malknapp">Start frå ein mal</label>
       <div class="malrad">
-      <select id="mal">
-        <option value="">Vel mal …</option>
-        <optgroup label="Aktuelt">
-          <option value="nyheiter">Nyheiter</option>
-          <option value="reservert">Mest reservert akkurat no</option>
-          <option value="kulturfond">Ny norsk litteratur (Kulturfondet)</option>
-        </optgroup>
-        <optgroup label="Prisar">
-          <option value="brageprisen">Brageprisen (nominerte og vinnarar)</option>
-          <option value="nobel">Nobelprisen i litteratur (alle vinnarane)</option>
-        </optgroup>
-        <optgroup label="For vaksne">
-          <option value="sakprosa">Frå hylla (sakprosa)</option>
-          <option value="krim">Krim</option>
-          <option value="biografi">Biografiar</option>
-          <option value="lokal">Lokalhistorie</option>
-          <option value="natur">Natur og friluftsliv</option>
-          <option value="klima">Klima og miljø</option>
-          <option value="handarbeid">Sy og strikk</option>
-        </optgroup>
-        <optgroup label="For born og unge">
-          <option value="fantasy">Fantasy</option>
-          <option value="fotball">Fotball</option>
-          <option value="teikne">Teikneseriar</option>
-          <option value="biletbok_nn">Biletbøker på nynorsk</option>
-          <option value="born_nn">Barnebøker på nynorsk</option>
-          <option value="ungdom_nn">Ungdomsbøker på nynorsk</option>
-        </optgroup>
-        <optgroup label="Merkedagar">
-          <option value="morsmal">Morsmålsdagen – bøker på mange språk (21. februar)</option>
-          <option value="barnebok">Barnebokdagen (2. april)</option>
-        </optgroup>
-        <optgroup label="Jul">
-          <option value="jul">Julebøker</option>
-          <option value="julekalender">Julekalender</option>
-        </optgroup>
-      </select>
+      <div class="temaval" id="malval">
+        <button type="button" class="temaknapp" id="malknapp" aria-haspopup="true" aria-expanded="false">
+          <span class="temanamn">Vel mal …</span>
+        </button>
+        <div class="temameny" id="malmeny" hidden></div>
+      </div>
         <button type="button" class="knapp sekundær" id="tom">Tøm skjema</button>
       </div>
     </div>
@@ -3337,7 +3306,6 @@ function startByggjar(startCfg) {
   skjema.addEventListener("change", () => oppdater(false));
   skjema.addEventListener("submit", e => e.preventDefault());
 
-  const malval = document.getElementById("mal");
   function brukMal(namn) {
     const mal = MALAR[namn];
     if (!mal) return;
@@ -3345,9 +3313,75 @@ function startByggjar(startCfg) {
     // Malen tek med seg temaet sitt (MALTEMA). Skrifta blir behalden.
     fyllInn({ ...STANDARD, ...mal, tema: mal.tema || no.tema, skrift: no.skrift });
     oppdater(true);
-    malval.value = "";
   }
-  malval.addEventListener("change", () => brukMal(malval.value));
+
+  // ---- Malvalet -------------------------------------------------------
+  // Same meny som temavalet: grupper som kan faldast saman, og «Aktuelt no»
+  // øvst. Ein mal er aktuell når temaet som følgjer med han er aktuelt
+  // (sjå «aktuell» i tema.js). Prikken viser fargane til temaet.
+  // Ny mal: legg han inn i MALAR (og MALTEMA) og i ei gruppe her.
+  const MALGRUPPER = [
+    ["Nytt og populært", [["nyheiter", "Nyheiter"], ["reservert", "Mest reservert akkurat no"], ["kulturfond", "Ny norsk litteratur", "Kulturfondet"]]],
+    ["Prisar", [["brageprisen", "Brageprisen", "nominerte og vinnarar"], ["nobel", "Nobelprisen i litteratur", "alle vinnarane"]]],
+    ["For vaksne", [["sakprosa", "Frå hylla", "sakprosa"], ["krim", "Krim"], ["biografi", "Biografiar"], ["lokal", "Lokalhistorie"],
+                    ["natur", "Natur og friluftsliv"], ["klima", "Klima og miljø"], ["handarbeid", "Sy og strikk"]]],
+    ["For born og unge", [["fantasy", "Fantasy"], ["fotball", "Fotball"], ["teikne", "Teikneseriar"]]],
+    ["På nynorsk", [["biletbok_nn", "Biletbøker"], ["born_nn", "Barnebøker"], ["ungdom_nn", "Ungdomsbøker"]]],
+    ["Høgtider og merkedagar", [["morsmal", "Morsmålsdagen", "21. februar"], ["barnebok", "Barnebokdagen", "2. april"],
+                                ["jul", "Julebøker", "desember"], ["julekalender", "Julekalender", "1.–24. desember"]]],
+  ];
+  const malknapp = document.getElementById("malknapp");
+  const malmeny = document.getElementById("malmeny");
+  const opneMalgrupper = new Set();
+  const malTema = id => TEMALISTE.find(t => t.id === (MALAR[id] && MALAR[id].tema)) || TEMALISTE[0];
+  function teiknMalmeny() {
+    const alle = MALGRUPPER.flatMap(([, liste]) => liste).filter(([id]) => MALAR[id]);
+    const aktuelle = typeof erAktuell === "function" ? alle.filter(([id]) => erAktuell(malTema(id))) : [];
+    const grupper = [["Aktuelt no", aktuelle], ...MALGRUPPER.map(([g, liste]) => [g, liste.filter(([id]) => MALAR[id])])]
+      .filter(([, liste]) => liste.length);
+    malmeny.replaceChildren();
+    for (const [namn, liste] of grupper) {
+      const open = opneMalgrupper.has(namn);
+      const gr = document.createElement("div");
+      gr.className = "temagruppe";
+      const hovud = document.createElement("button");
+      hovud.type = "button"; hovud.className = "gruppehovud";
+      hovud.setAttribute("aria-expanded", open);
+      hovud.innerHTML = `<span class="ikon pil fald" aria-hidden="true"></span><span></span><span class="tal">${liste.length}</span>`;
+      hovud.children[1].textContent = namn;
+      // Berre éi gruppe open om gongen (i tillegg til «Aktuelt no»), så lista held seg kort
+      hovud.addEventListener("click", () => {
+        if (open) opneMalgrupper.delete(namn);
+        else { for (const g of [...opneMalgrupper]) if (g !== "Aktuelt no") opneMalgrupper.delete(g); opneMalgrupper.add(namn); }
+        teiknMalmeny();
+      });
+      gr.append(hovud);
+      if (open) for (const [id, malnamn, dato] of liste) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "temaalternativ";
+        b.setAttribute("role", "menuitem");
+        b.innerHTML = `<span class="temaprikk" style="${temaprikk(malTema(id))}"></span><span></span><span class="temadato"></span>`;
+        b.children[1].textContent = malnamn;
+        b.children[2].textContent = dato || "";
+        b.addEventListener("click", () => { lukkMalmeny(); brukMal(id); malknapp.focus(); });
+        gr.append(b);
+      }
+      malmeny.append(gr);
+    }
+  }
+  function opneMalmeny() {
+    opneMalgrupper.clear();
+    opneMalgrupper.add("Aktuelt no");
+    teiknMalmeny();
+    malmeny.hidden = false;
+    malknapp.setAttribute("aria-expanded", "true");
+  }
+  function lukkMalmeny() { malmeny.hidden = true; malknapp.setAttribute("aria-expanded", "false"); }
+  malknapp.addEventListener("click", () => { if (malmeny.hidden) opneMalmeny(); else lukkMalmeny(); });
+  // Klikk utanfor lukkar lista. Lytt i fangstfasen, så ho òg lukkar seg når tema- eller skriftvalet blir opna.
+  const malvalBoks = document.getElementById("malval");
+  document.addEventListener("click", e => { if (!malmeny.hidden && !malvalBoks.contains(e.target)) lukkMalmeny(); }, true);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !malmeny.hidden) { lukkMalmeny(); malknapp.focus(); } });
 
   // ---- Handplukka bøker ---------------------------------------------
   // Funksjonane under kan bli kalla før denne delen har køyrt (når skjemaet
