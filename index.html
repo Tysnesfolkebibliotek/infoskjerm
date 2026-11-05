@@ -1813,7 +1813,14 @@ function startVisning(cfg) {
   // ---- start ----------------------------------------------------------
   const lagra = lesLager();
   if (lagra && lagra.titlar && lagra.titlar.length) brukListe(lagra.titlar);
-  else visMelding("Hentar bøker frå biblioteket …", "", true);
+  else {
+    visMelding("Hentar bøker frå biblioteket …", "", true);
+    // Første henting (ingen lagra liste) kan ta eit par minutt, til dømes for Nobel.
+    // Sei frå til rotasjonen at vi ikkje har bøker enno, så skjermen hoppar over
+    // karusellen i staden for å vise «Hentar bøker». Hentinga held fram i bakgrunnen,
+    // og når ho er ferdig, seier oppdater() «har», så karusellen er med att neste runde.
+    meldTilRotasjon();
+  }
 
   const forGammal = !lagra || Date.now() - lagra.tid > OPPDATER_MIN * 60000;
   if (forGammal) oppdater();
