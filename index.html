@@ -2190,8 +2190,19 @@ function vurder(post, avd, eks, cfg) {
     ledig: påHylla(e), bestilt,
     // Berre den lange omtalen blir lagra. Den korte blir laga ved visning.
     omtaleHeil: kortOmtale(d.bsdc_description || "", 4000),
-    etikett: cfg.namn || AVD_NAMN[avd] || avd,
+    etikett: cfg.namn || AVD_NAMN[bestilt ? avdFråAlder(d, avd) : avd] || avd,
   };
+}
+
+// Bestilte bøker (Brageprisen) har inga avdeling å gå etter, så etiketten
+// (For vaksne / For born og unge) blir gjetta frå aldersgruppa i katalogposten:
+// barne- og ungdomskodar utan «v» → born og unge, «v» eller berre «vu» → vaksne.
+// Utan aldersgruppe blir avdelinga brukt som før.
+const BARNEKODAR = ["aa", "a", "b", "bu", "u", "mu"];
+function avdFråAlder(d, avd) {
+  const kodar = (d.bs_aldersgruppe || "").split(",").map(k => k.trim()).filter(Boolean);
+  if (!kodar.length) return avd;
+  return kodar.some(k => BARNEKODAR.includes(k)) && !kodar.includes("v") ? "tyfb" : "tyfv";
 }
 
 function stokk(a) {

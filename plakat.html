@@ -193,7 +193,7 @@
   .felt { display: flex; flex-direction: column; gap: 5px; margin-top: 14px; }
   .felt > span { font-weight: 600; font-size: 14px; }
   .felt small, .hjelp { color: var(--b-dempa); font-size: 12.5px; line-height: 1.4; }
-  input[type=text], input[type=url], textarea, select {
+  input[type=text], input[type=url], input[type=date], input[type=time], textarea, select {
     font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--b-strek); border-radius: 8px;
     background: var(--b-bg); color: var(--b-tekst); width: 100%; }
   textarea { resize: vertical; min-height: 70px; line-height: 1.4; }
@@ -292,11 +292,15 @@
 
     <div class="del" id="arrdel"><h2>Arrangement</h2>
       <p class="hjelp">Fyll ut det som passar. Det som står tomt, blir ikkje vist.</p>
-      <label class="felt"><span>Dato</span><input type="text" name="dato" placeholder="Torsdag 12. november"></label>
       <div class="rad">
-        <label class="felt"><span>Klokkeslett</span><input type="text" name="tid" placeholder="18.00"></label>
+        <label class="felt"><span>Dato</span><input type="date" name="dato"></label>
         <label class="felt"><span>Stad</span><input type="text" name="stad" placeholder="Biblioteket"></label>
       </div>
+      <div class="rad">
+        <label class="felt"><span>Byrjar kl.</span><input type="time" name="tid"></label>
+        <label class="felt"><span>Sluttar kl. (valfritt)</span><input type="time" name="tidtil"></label>
+      </div>
+      <p class="hjelp" id="tidfeil" hidden></p>
       <p class="hjelp" style="margin-top:10px">Tips: gje plakaten ein periode på oversikta, så forsvinn han av seg sjølv etter arrangementet.</p>
     </div>
 
@@ -343,6 +347,41 @@ function lagHash(cfg, vis) {
   if (vis) p.set("vis", "1");
   for (const k of NØKLAR) if (cfg[k]) p.set(k, cfg[k]);
   return p.toString();
+}
+
+// ---- Dato og klokkeslett for arrangement ----------------------------
+// Lagra som 2026-11-12 og 18:00 eller 18:00-20:00 (same form som tid i oppsett.json).
+// Eldre plakatar med fritekst blir viste som dei er.
+const MÅNAD = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
+const VEKEDAG = ["Søndag", "Måndag", "Tysdag", "Onsdag", "Torsdag", "Fredag", "Laurdag"];
+const ISODATO = /^(\d{4})-(\d{2})-(\d{2})$/, ISOTID = /^(\d{2}):(\d{2})(?:-(\d{2}):(\d{2}))?$/;
+function visDato(v) {
+  const m = String(v || "").match(ISODATO);
+  if (!m) return v || "";
+  const d = new Date(+m[1], m[2] - 1, +m[3]);
+  // Året blir berre vist når det ikkje er i år
+  return `${VEKEDAG[d.getDay()]} ${d.getDate()}. ${MÅNAD[d.getMonth()]}` + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "");
+}
+function visTid(v) {
+  const m = String(v || "").match(ISOTID);
+  if (!m) return v || "";
+  return `kl. ${m[1]}.${m[2]}` + (m[3] ? `–${m[3]}.${m[4]}` : "");
+}
+// Prøv å lese ein eldre fritekst-dato («Torsdag 12. november») eller -tid («18.00–20.00»)
+function tolkDato(v) {
+  v = String(v || "").trim();
+  if (ISODATO.test(v)) return v;
+  const m = v.toLowerCase().match(/(\d{1,2})\.\s*([a-zæøå]+)(?:\s+(\d{4}))?/);
+  const mnd = m ? MÅNAD.indexOf(m[2]) : -1;
+  if (mnd < 0) return "";
+  const no = new Date();
+  let år = m[3] ? +m[3] : no.getFullYear();
+  if (!m[3] && new Date(år, mnd, +m[1]) < new Date(no.getFullYear(), no.getMonth(), no.getDate() - 7)) år++;
+  return `${år}-${String(mnd + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+}
+function tolkTid(v) {
+  const t = [...String(v || "").matchAll(/(\d{1,2})[.:](\d{2})/g)].map(m => m[1].padStart(2, "0") + ":" + m[2]);
+  return t.length ? [t[0], t[1] || ""] : ["", ""];
 }
 
 // ---- Ikon (enkle strekteikningar, fargen kjem frå temaet) ---------------
@@ -683,7 +722,7 @@ function visPlakat(cfg) {
   $("brodtekst").textContent = cfg.tekst || "";
   if (cfg.merkelapp) $("brikker").append(Object.assign(document.createElement("span"), { className: "brikke hylle", textContent: cfg.merkelapp }));
 
-  const arr = [["kalender", cfg.dato], ["klokke", cfg.tid], ["stad", cfg.stad]].filter(([, v]) => v);
+  const arr = [["kalender", visDato(cfg.dato)], ["klokke", visTid(cfg.tid)], ["stad", cfg.stad]].filter(([, v]) => v);
   if (arr.length) {
     $("arr").hidden = false;
     for (const [ikon, v] of arr) {
@@ -837,11 +876,23 @@ async function startByggjar() {
     } else {
       logoFor = ""; $("brukLogo").checked = false;
       if (id === "arrangement") { felt("overlinje").value = "Arrangement"; felt("qrtekst").value = "Les meir"; }
-      for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "lenkje", "qrtekst", "stad", "tid"]) if (m[k] != null) felt(k).value = m[k];
+      for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "lenkje", "qrtekst", "stad"]) if (m[k] != null) felt(k).value = m[k];
+      if (m.tid) [felt("tid").value, felt("tidtil").value] = tolkTid(m.tid);
       teiknBileteval(null, m.standardbilete || (id === "arrangement" ? "ikon" : "ingen"));
       $("biletform").value = m.standardbiletform || "";
     }
     oppdater();
+  }
+
+  // Sluttid utan byrjing, eller slutt før byrjing, blir ikkje teke med (og gir ei melding)
+  function lesTid() {
+    const frå = felt("tid").value, til = felt("tidtil").value, feil = $("tidfeil");
+    let melding = "";
+    if (til && !frå) melding = "Fyll ut når arrangementet byrjar.";
+    else if (til && til <= frå) melding = "Sluttida må vere etter byrjinga.";
+    feil.textContent = melding; feil.hidden = !melding; feil.style.color = melding ? "#c0392b" : "";
+    if (!frå) return "";
+    return til && !melding ? `${frå}-${til}` : frå;
   }
 
   function lesSkjema() {
@@ -865,7 +916,7 @@ async function startByggjar() {
       merkelapp: felt("merkelapp").value.trim(),
       bilete, biletform, kjelde,
       ikon: t ? t.ikon : id === "arrangement" ? "kalender" : "",
-      dato: felt("dato").value.trim(), tid: felt("tid").value.trim(), stad: felt("stad").value.trim(),
+      dato: felt("dato").value, tid: lesTid(), stad: felt("stad").value.trim(),
       anim: sel.startsWith("anim:") ? felt("anim").value.split("|").map(x => x.trim()).filter(Boolean).join("|") : "",
       lenkje: felt("lenkje").value.trim(),
       qrtekst: felt("qrtekst").value.trim(),
@@ -877,7 +928,9 @@ async function startByggjar() {
   // Fyll ut skjemaet frå ei lenkje (t.d. «Endre i byggjaren» på oversikta)
   function fyllFrå(cfg) {
     mal.value = teneste(cfg.mal) || ["arrangement", "tom"].includes(cfg.mal) ? cfg.mal : "tom";
-    for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "dato", "tid", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
+    for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
+    felt("dato").value = tolkDato(cfg.dato);
+    [felt("tid").value, felt("tidtil").value] = tolkTid(cfg.tid);
     felt("anim").value = (cfg.anim || "").split("|").join(" | ");
     // Ein eldre plakat kan ha eit tema som er skjult no: ta det med i lista, så det ikkje blir bytt ut
     if (cfg.tema && TEMA[cfg.tema] && ![...felt("tema").options].some(o => o.value === cfg.tema))
