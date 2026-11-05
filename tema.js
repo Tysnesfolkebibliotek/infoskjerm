@@ -281,84 +281,177 @@ const TEMA_LISTE = [
     },
   },
   {
-    // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. «Lyrikk» blir skrive for hand øvst til
-    // høgre. Ingen UNESCO-logo (krev løyve).
+    // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. «Lyrikk» blir skrive fram med pennestrok i
+    // handskrifta Homemade Apple øvst til høgre. Ingen UNESCO-logo (krev løyve).
     id: "poesi", namn: "Verdsdagen for poesi", gruppe: "Høgtider og merkedagar", overgang: "kryss",
     dato: "21. mars", aktuell: "03-09/03-21",
     skrift: "par-elegant",
     css: `
       :root[data-tema="poesi"] { --symbol-plass: 26vw; }
-      :root[data-tema="poesi"] .lyrikk-skrift { position: absolute; right: 4vw; top: 2vh; width: 24vw; aspect-ratio: 320 / 185; }`,
+      :root[data-tema="poesi"] .lyrikk-skrift { position: absolute; right: 4vw; top: 2.5vh; width: 25vw; height: auto; }`,
     fargar: { bakgrunn: "#efeaf4", tekst: "#231c33", dempa: "#5d5470", aksent: "#6b3fa0", "aksent-tekst": "#ffffff", brikke: "rgba(35,28,51,.07)", skugge: "239,234,244", spor: "rgba(35,28,51,.10)", "reserve-a": "#dccfe8", "reserve-b": "#c4b2d8", "bakteppe-lys": "1.15" },
     pynt({ pynt }) {
-      // «Lyrikk» blir skrive for hand øvst til høgre, pennestrok for pennestrok, med prikken over i
-      // til slutt. Står ei stund, tonar ut og blir skrive på nytt. Strekdata: bilete/lyrikk-strek.js.
-      const FARGE = "#6b3fa0";
+      // «Lyrikk» i handskrifta Homemade Apple, skrive fram med eit ekte pennestrok øvst til høgre.
+      // Nettlesaren teiknar ordet, finn midtlinja i bokstavane (tynning), følgjer ho frå venstre mot
+      // høgre og lèt ein «penn» avdekkje skrifta langs linja. Prikken over i kjem til slutt.
+      // Står ei stund, tonar ut og blir skrive på nytt.
+      const FARGE = "#6b3fa0", ORD = "Lyrikk", SKRIFT = "Homemade Apple", PX = 120;
+      if (!document.getElementById("poesi-skrift")) {
+        const l = document.createElement("link");
+        l.id = "poesi-skrift"; l.rel = "stylesheet";
+        l.href = "https://fonts.googleapis.com/css2?family=Homemade+Apple&text=" + encodeURIComponent(ORD) + "&display=block";
+        document.head.append(l);
+      }
       const c = document.createElement("canvas");
       c.className = "lyrikk-skrift";
       pynt.append(c);
-      const start = () => {
-        const G = window.LYRIKK_STREK; if (!G || !c.isConnected) return;
-        const L = G.L, R = G.R, n = L.length, x = c.getContext("2d"), PRIKK = [219, 88];
-        const D = [0];
-        for (let i = 1; i < n; i++) {
-          const a = [(L[i-1][0] + R[i-1][0]) / 2, (L[i-1][1] + R[i-1][1]) / 2], b = [(L[i][0] + R[i][0]) / 2, (L[i][1] + R[i][1]) / 2];
-          D.push(D[i-1] + Math.hypot(b[0] - a[0], b[1] - a[1]));
-        }
-        const tot = D[n-1];
-        const storleik = () => {
-          const r = c.getBoundingClientRect(), d = devicePixelRatio || 1;
-          c.width = r.width * d; c.height = r.height * d;
-          x.setTransform(c.width / 320, 0, 0, c.height / 185, -30 * c.width / 320, -20 * c.height / 185);
-        };
-        storleik(); addEventListener("resize", storleik);
-        const teikn = (len, prikk, alfa) => {
-          x.clearRect(30, 20, 320, 185); x.globalAlpha = alfa; x.fillStyle = FARGE; x.beginPath();
-          for (let i = 0; i < n - 1 && D[i] < len; i++) {
-            let f = 1; if (D[i+1] > len) f = (len - D[i]) / (D[i+1] - D[i]);
-            const l2 = [L[i][0] + (L[i+1][0] - L[i][0]) * f, L[i][1] + (L[i+1][1] - L[i][1]) * f];
-            const r2 = [R[i][0] + (R[i+1][0] - R[i][0]) * f, R[i][1] + (R[i+1][1] - R[i][1]) * f];
-            x.moveTo(L[i][0], L[i][1]); x.lineTo(l2[0], l2[1]); x.lineTo(r2[0], r2[1]); x.lineTo(R[i][0], R[i][1]); x.closePath();
+
+      // Zhang–Suen-tynning: gjer bokstavane om til éin piksel breie midtliner
+      const tynn = (B, W, H) => {
+        const S = B.slice(); let endra = true;
+        const nb = i => [S[i-W], S[i-W+1], S[i+1], S[i+W+1], S[i+W], S[i+W-1], S[i-1], S[i-W-1]];
+        while (endra) {
+          endra = false;
+          for (let steg = 0; steg < 2; steg++) {
+            const fjern = [];
+            for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+              const i = y * W + x; if (!S[i]) continue;
+              const p = nb(i), b = p.reduce((a, v) => a + v, 0);
+              if (b < 2 || b > 6) continue;
+              let a = 0; for (let k = 0; k < 8; k++) if (!p[k] && p[(k + 1) % 8]) a++;
+              if (a !== 1) continue;
+              if (steg === 0 ? (p[0] * p[2] * p[4] || p[2] * p[4] * p[6]) : (p[0] * p[2] * p[6] || p[0] * p[4] * p[6])) continue;
+              fjern.push(i);
+            }
+            for (const i of fjern) S[i] = 0;
+            if (fjern.length) endra = true;
           }
-          x.fill("nonzero");
-          if (prikk > 0) { x.beginPath(); x.ellipse(PRIKK[0], PRIKK[1], 2.8 * prikk, 2.2 * prikk, -0.6, 0, 7); x.fill(); }
+        }
+        return S;
+      };
+      // Følg midtlinjene i skriveretning: store delar frå venstre mot høgre, små (prikkar) til slutt.
+      // Pennen går alltid vidare i den retninga som bøyer minst. Når ei line tek slutt, hoppar han
+      // tilbake til siste forgreining som har ei ubesøkt grein.
+      const spor = (S, W, H) => {
+        const N8 = [-W-1, -W, -W+1, -1, 1, W-1, W, W+1];
+        const nabo = i => N8.map(d => i + d).filter(j => S[j]);
+        const xy = i => [i % W, Math.floor(i / W)];
+        const sett = new Uint8Array(W * H), komp = [];
+        for (let i = 0; i < W * H; i++) if (S[i] && !sett[i]) {
+          const k = [], kø = [i]; sett[i] = 1;
+          while (kø.length) { const j = kø.pop(); k.push(j); for (const n of nabo(j)) if (!sett[n]) { sett[n] = 1; kø.push(n); } }
+          komp.push(k);
+        }
+        const total = komp.reduce((a, k) => a + k.length, 0);
+        const minX = k => k.reduce((m, i) => Math.min(m, i % W), W);
+        const grense = total * 0.04;
+        const rekkje = [...komp.filter(k => k.length >= grense).sort((a, b) => minX(a) - minX(b)),
+                        ...komp.filter(k => k.length < grense && k.length > 2).sort((a, b) => minX(a) - minX(b))];
+        const besøkt = new Uint8Array(W * H), strok = [];
+        for (const k of rekkje) {
+          const ende = k.filter(i => nabo(i).length === 1);
+          const start = (ende.length ? ende : k).reduce((a, b) => (a % W) <= (b % W) ? a : b);
+          const historikk = [];
+          const gå = (frå, seg) => {
+            let cur = frå; besøkt[cur] = 1; historikk.push(cur); seg.push(xy(cur));
+            for (;;) {
+              const fri = nabo(cur).filter(n => !besøkt[n]);
+              if (!fri.length) return seg;
+              let neste = fri[0];
+              if (fri.length > 1 && seg.length > 3) {
+                const p = seg[seg.length - 4], c0 = xy(cur), dx = c0[0] - p[0], dy = c0[1] - p[1];
+                let best = -Infinity;
+                for (const n of fri) {
+                  const q = xy(n), nx = q[0] - c0[0], ny = q[1] - c0[1];
+                  const v = (dx * nx + dy * ny) / ((Math.hypot(dx, dy) * Math.hypot(nx, ny)) || 1);
+                  if (v > best) { best = v; neste = n; }
+                }
+              }
+              besøkt[neste] = 1; historikk.push(neste); seg.push(xy(neste)); cur = neste;
+            }
+          };
+          strok.push(gå(start, []));
+          for (let h = historikk.length - 1; h >= 0; h--) {
+            const f = nabo(historikk[h]).filter(n => !besøkt[n]);
+            if (f.length) { strok.push(gå(f[0], [xy(historikk[h])])); h = historikk.length; }
+          }
+        }
+        return strok;
+      };
+      const køyr = async () => {
+        try { await Promise.race([document.fonts.load(`${PX}px "${SKRIFT}"`, ORD), new Promise(r => setTimeout(r, 8000))]); } catch (e) {}
+        if (!c.isConnected) return;
+        const font = `${PX}px "${SKRIFT}", cursive`;
+        const m = document.createElement("canvas").getContext("2d"); m.font = font;
+        const mt = m.measureText(ORD), pad = Math.round(PX * 0.25);
+        const W = Math.ceil(mt.actualBoundingBoxLeft + mt.actualBoundingBoxRight) + pad * 2;
+        const H = Math.ceil(mt.actualBoundingBoxAscent + mt.actualBoundingBoxDescent) + pad * 2;
+        const x0 = pad + mt.actualBoundingBoxLeft, y0 = pad + mt.actualBoundingBoxAscent;
+        c.width = W; c.height = H; c.style.aspectRatio = W + " / " + H;
+        // Bokstavane som binær maske, så midtliner
+        const t = document.createElement("canvas"); t.width = W; t.height = H;
+        const tx = t.getContext("2d"); tx.font = font; tx.fillStyle = "#000"; tx.fillText(ORD, x0, y0);
+        const px = tx.getImageData(0, 0, W, H).data, B = new Uint8Array(W * H);
+        let areal = 0;
+        for (let i = 0; i < W * H; i++) if (px[i * 4 + 3] > 100) { B[i] = 1; areal++; }
+        const S = tynn(B, W, H), strok = spor(S, W, H);
+        const lengd = strok.reduce((a, s) => a + s.length, 0) || 1;
+        const r = Math.max(2, areal / lengd * 0.9);          // pennebreidd ut frå snittbreidda på strekane
+        // Pennen avdekkjer skrifta i ei maske; skrifta blir fylt inn berre der masken er
+        const mk = document.createElement("canvas"); mk.width = W; mk.height = H;
+        const mx = mk.getContext("2d"), x = c.getContext("2d");
+        mx.lineCap = mx.lineJoin = "round"; mx.lineWidth = r * 2; mx.strokeStyle = mx.fillStyle = "#000";
+        const vis = (alfa, heil) => {
+          x.globalCompositeOperation = "source-over"; x.globalAlpha = 1; x.clearRect(0, 0, W, H);
+          if (!heil) { x.drawImage(mk, 0, 0); x.globalCompositeOperation = "source-in"; }
+          x.globalAlpha = alfa; x.fillStyle = FARGE; x.font = font; x.fillText(ORD, x0, y0);
+          x.globalCompositeOperation = "source-over"; x.globalAlpha = 1;
         };
-        if (matchMedia("(prefers-reduced-motion: reduce)").matches) { teikn(tot, 1, 1); return; }
-        const vent = ms => new Promise(r => setTimeout(r, ms));
+        // Teikn pennestroket fram til punkt nr. n (talt over alle strok)
+        let teikna = 0;
+        const penn = n => {
+          let i = 0;
+          for (const s of strok) {
+            const frå = Math.max(0, teikna - i), til = Math.min(s.length, n - i);
+            if (til > frå) {
+              mx.beginPath();
+              const st = s[Math.max(0, frå - 1)]; mx.moveTo(st[0], st[1]);
+              for (let k = frå; k < til; k++) mx.lineTo(s[k][0], s[k][1]);
+              if (til - frå === 1 && frå === 0) { mx.arc(s[0][0], s[0][1], r, 0, 7); mx.fill(); } else mx.stroke();
+            }
+            i += s.length; if (i >= n) break;
+          }
+          teikna = Math.max(teikna, n);
+        };
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) { vis(1, true); return; }
+        const vent = ms => new Promise(res => setTimeout(res, ms));
         const anim = (ms, fn) => new Promise(res => { const t0 = performance.now();
           (function steg(t) { const k = Math.min(1, (t - t0) / ms); fn(k); k < 1 ? requestAnimationFrame(steg) : res(); })(t0); });
-        const mjuk = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-        (async () => { while (c.isConnected) {
-          await anim(4200, k => teikn(tot * mjuk(k), 0, 1));
-          await vent(300);
-          await anim(200, k => teikn(tot, k, 1));
+        while (c.isConnected) {
+          mx.clearRect(0, 0, W, H); teikna = 0; vis(1);
+          await anim(4800, k => { penn(Math.round(lengd * k)); vis(1); });
+          vis(1, true);
           await vent(9000);
-          await anim(800, k => teikn(tot, 1, 1 - k));
-          await vent(600);
-        } })();
+          await anim(800, k => vis(1 - k, true));
+          await vent(700);
+        }
       };
-      if (window.LYRIKK_STREK) start();
-      else {
-        let sk = document.getElementById("lyrikk-strek");
-        if (!sk) { sk = document.createElement("script"); sk.id = "lyrikk-strek"; sk.src = "bilete/lyrikk-strek.js"; document.head.append(sk); }
-        sk.addEventListener("load", start);
-      }
+      køyr();
     },
   },
   {
     // Den internasjonale barnebokdagen, 2. april (H.C. Andersen sin fødselsdag, IBBY).
     // Varm papirfarge og ekte illustrasjonar av Elsa Beskow (1874–1953, fri sidan 2024) frå
     // «Puttes äfventyr i blåbärsskogen» (1901): Putte på stubben med bærkorgene øvst til høgre,
-    // sniglar som krabbar sakte over skjermen nedst, og Putte og gubben på veg inn i skogen. Skanning: Kungl. biblioteket /
+    // og Putte og gubben på veg inn i skogen nedst. Skanning: Kungl. biblioteket /
     // Litteraturbanken.se (fri frå kjende opphavsrettslege avgrensingar). Bakgrunnen er gjord
-    // gjennomsiktig (bilete/beskow-putte.png, bilete/beskow-snigel.png).
+    // gjennomsiktig (bilete/beskow-putte.png).
     id: "barnebok", namn: "Barnebokdagen", gruppe: "Høgtider og merkedagar", overgang: "bla",
     dato: "2. april", aktuell: "03-22/04-02",
     skrift: "par-klassisk",
     css: `
       :root[data-tema="barnebok"] { --symbol-plass: 26vw; }
       :root[data-tema="barnebok"] .beskow-putte { position: absolute; right: 3.5vw; top: 1vh; width: 22vw; height: auto; }
-      :root[data-tema="barnebok"] .vandrar img { display: block; width: 100%; height: auto; }
       /* Skogbiletet ligg bak omtalen og botnlinja: papirfarga «glød» rundt teksten og nesten tette
          brikker held teksten lett å lese. */
       :root[data-tema="barnebok"] .tittel, :root[data-tema="barnebok"] .undertittel, :root[data-tema="barnebok"] .forfattar,
@@ -372,7 +465,7 @@ const TEMA_LISTE = [
         mask-image: linear-gradient(to bottom, transparent 0%, #000 50%, #000 72%, rgba(0,0,0,.12) 100%); }
 `,
     fargar: { bakgrunn: "#f6efe2", tekst: "#3b2f22", dempa: "#6e604c", aksent: "#c4472d", "aksent-tekst": "#ffffff", brikke: "rgba(59,47,34,.08)", skugge: "246,239,226", spor: "rgba(59,47,34,.12)", "reserve-a": "#e8dcc4", "reserve-b": "#c9b48f", "bakteppe-lys": "1.15" },
-    pynt({ pynt, tilf }) {
+    pynt({ pynt }) {
       // Putte og blåbærgubben går inn i skogen: heile biletet nedst, tona ut oppover og mot botnlinja.
       // Tekstruta i originalen er gjord gjennomsiktig (bilete/beskow-skogen.webp).
       const skog = document.createElement("img");
@@ -382,16 +475,6 @@ const TEMA_LISTE = [
       const putte = document.createElement("img");
       putte.src = "bilete/beskow-putte.png"; putte.alt = ""; putte.className = "beskow-putte";
       pynt.append(putte);
-      // To sniglar som krabbar svært sakte frå høgre mot venstre, eitt par minutt over skjermen
-      for (let i = 0; i < 2; i++) {
-        const el = document.createElement("div");
-        el.className = "vandrar";
-        el.style.cssText = `top:${84 + i * 4}vh; width:${i ? 13 : 17}vw; opacity:${i ? 0.8 : 0.95};` +
-          `animation-duration:${tilf(220, 280)}s; animation-delay:${-(i * 130 + tilf(0, 40))}s;`;
-        const snigel = document.createElement("img");
-        snigel.src = "bilete/beskow-snigel.png"; snigel.alt = "";
-        el.append(snigel); pynt.append(el);
-      }
     },
   },
   {
