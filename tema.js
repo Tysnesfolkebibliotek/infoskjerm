@@ -305,24 +305,22 @@ const TEMA_LISTE = [
   {
     // Den internasjonale barnebokdagen, 2. april (H.C. Andersen sin fødselsdag, IBBY).
     // Varm papirfarge og ekte illustrasjonar av Elsa Beskow (1874–1953, fri sidan 2024) frå
-    // «Puttes äfventyr i blåbärsskogen» (1901): blåbærguten som veiver med lua øvst til høgre,
+    // «Puttes äfventyr i blåbärsskogen» (1901): Putte på stubben med bærkorgene øvst til høgre,
     // sniglar som krabbar sakte over skjermen nedst, og Putte og gubben på veg inn i skogen. Skanning: Kungl. biblioteket /
     // Litteraturbanken.se (fri frå kjende opphavsrettslege avgrensingar). Bakgrunnen er gjord
-    // gjennomsiktig (bilete/beskow-blabaergut.png, bilete/beskow-snigel.png).
+    // gjennomsiktig (bilete/beskow-putte.png, bilete/beskow-snigel.png).
     id: "barnebok", namn: "Barnebokdagen", gruppe: "Høgtider og merkedagar", overgang: "bla",
     dato: "2. april", aktuell: "03-22/04-02",
     skrift: "par-klassisk",
     css: `
-      :root[data-tema="barnebok"] { --symbol-plass: 23vw; }
-      :root[data-tema="barnebok"] .beskow-gut { position: absolute; right: 4vw; top: 1.5vh; width: 19vw; height: auto;
-        transform-origin: 20% 95%; animation: beskowVai 5s ease-in-out infinite alternate; }
-      @keyframes beskowVai { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+      :root[data-tema="barnebok"] { --symbol-plass: 26vw; }
+      :root[data-tema="barnebok"] .beskow-putte { position: absolute; right: 3.5vw; top: 1vh; width: 22vw; height: auto; }
       :root[data-tema="barnebok"] .vandrar img { display: block; width: 100%; height: auto; }
       :root[data-tema="barnebok"] .beskow-skog { position: absolute; left: 0; bottom: 0; width: 100vw; height: 57vw; max-height: 36vh;
         object-fit: cover; object-position: 70% 100%; opacity: .85;
         -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 50%, #000 72%, rgba(0,0,0,.12) 100%);
         mask-image: linear-gradient(to bottom, transparent 0%, #000 50%, #000 72%, rgba(0,0,0,.12) 100%); }
-      @media (prefers-reduced-motion: reduce) { :root[data-tema="barnebok"] .beskow-gut { animation: none; } }`,
+`,
     fargar: { bakgrunn: "#f6efe2", tekst: "#3b2f22", dempa: "#6e604c", aksent: "#c4472d", "aksent-tekst": "#ffffff", brikke: "rgba(59,47,34,.08)", skugge: "246,239,226", spor: "rgba(59,47,34,.12)", "reserve-a": "#e8dcc4", "reserve-b": "#c9b48f", "bakteppe-lys": "1.15" },
     pynt({ pynt, tilf }) {
       // Putte og blåbærgubben går inn i skogen: heile biletet nedst, tona ut oppover og mot botnlinja.
@@ -330,10 +328,10 @@ const TEMA_LISTE = [
       const skog = document.createElement("img");
       skog.src = "bilete/beskow-skogen.webp"; skog.alt = ""; skog.className = "beskow-skog";
       pynt.append(skog);
-      // Blåbærguten øvst til høgre. Han vaggar litt på greina.
-      const gut = document.createElement("img");
-      gut.src = "bilete/beskow-blabaergut.png"; gut.alt = ""; gut.className = "beskow-gut";
-      pynt.append(gut);
+      // Putte på stubben med bærkorgene øvst til høgre
+      const putte = document.createElement("img");
+      putte.src = "bilete/beskow-putte.png"; putte.alt = ""; putte.className = "beskow-putte";
+      pynt.append(putte);
       // To sniglar som krabbar svært sakte frå høgre mot venstre, eitt par minutt over skjermen
       for (let i = 0; i < 2; i++) {
         const el = document.createElement("div");
