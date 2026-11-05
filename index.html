@@ -514,7 +514,6 @@
         </optgroup>
         <optgroup label="Merkedagar">
           <option value="morsmal">Morsmålsdagen – bøker på mange språk (21. februar)</option>
-          <option value="poesi">Verdsdagen for poesi – dikt (21. mars)</option>
           <option value="barnebok">Barnebokdagen (2. april)</option>
         </optgroup>
         <optgroup label="Jul">
@@ -936,10 +935,6 @@ const MALAR = {
   morsmal: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
              omslag: "0", hylla: "0", perforf: "1", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "sme,ukr,pol,ara,lit,rus,ger,fre,spa,som,tir", alle: "1",
              tittel: "Bøker på mange språk", namn: "Den internasjonale morsmålsdagen", sek: "20", oppdater: "360", omtale: "1" },
-  // Verdsdagen for poesi: dikt for vaksne, og rim og reglar for born
-  poesi: { kjelde: "sok", avd: "tyfv,tyfb", lf: "", sjanger: "Dikt,Rim og regler|Rim og reglar", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
-           omslag: "0", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "1",
-           tittel: "Dikt", namn: "Verdsdagen for poesi", sek: "20", oppdater: "360", omtale: "1" },
   // Barnebokdagen: skjønnlitteratur for born (0–11 år) i barneavdelinga, biletbøker og romanar. Ungdomsbøker er ikkje med.
   barnebok: { kjelde: "sok", avd: "tyfb", lf: "1", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
               omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", alder: "aa,a,b,bu", spraak: "", alle: "0",
@@ -975,7 +970,7 @@ const MALTEMA = {
   sakprosa: "kveld", krim: "krim", biografi: "kveld", lokal: "fjord", natur: "skog", klima: "klima", handarbeid: "hobby",
   fantasy: "fantasy", fotball: "sport", teikne: "manga", biletbok_nn: "biletbok", born_nn: "lys", ungdom_nn: "natt",
   jul: "jul", julekalender: "advent", brageprisen: "brage", nobel: "nobel",
-  morsmal: "morsmal", poesi: "poesi", barnebok: "barnebok",
+  morsmal: "morsmal", barnebok: "barnebok",
 };
 for (const [mal, tema] of Object.entries(MALTEMA)) if (MALAR[mal]) MALAR[mal] = { ...MALAR[mal], tema };
 

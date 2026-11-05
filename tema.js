@@ -281,41 +281,6 @@ const TEMA_LISTE = [
     },
   },
   {
-    // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. «Lyrikk» i handskrifta Homemade Apple
-    // blir avdekt frå venstre mot høgre øvst til høgre. Ingen UNESCO-logo (krev løyve).
-    id: "poesi", namn: "Verdsdagen for poesi", gruppe: "Høgtider og merkedagar", overgang: "kryss",
-    dato: "21. mars", aktuell: "03-09/03-21",
-    skrift: "par-elegant",
-    css: `
-      :root[data-tema="poesi"] { --symbol-plass: 26vw; }
-      :root[data-tema="poesi"] .lyrikk-skrift { position: absolute; right: 4vw; top: 1.5vh; font-family: "Homemade Apple", cursive;
-        font-size: 4.6vw; line-height: 1.9; color: #6b3fa0; white-space: nowrap;
-        -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%); mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
-        -webkit-mask-size: 230% 100%; mask-size: 230% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-        animation: lyrikkSkriv 14s ease-in-out infinite; }
-      @keyframes lyrikkSkriv {
-        0%   { -webkit-mask-position: 100% 0; mask-position: 100% 0; opacity: 1; }
-        25%  { -webkit-mask-position: 0% 0;   mask-position: 0% 0;   opacity: 1; }
-        90%  { -webkit-mask-position: 0% 0;   mask-position: 0% 0;   opacity: 1; }
-        96%  { -webkit-mask-position: 0% 0;   mask-position: 0% 0;   opacity: 0; }
-        100% { -webkit-mask-position: 100% 0; mask-position: 100% 0; opacity: 0; } }
-      @media (prefers-reduced-motion: reduce) { :root[data-tema="poesi"] .lyrikk-skrift { animation: none; -webkit-mask-image: none; mask-image: none; } }`,
-    fargar: { bakgrunn: "#efeaf4", tekst: "#231c33", dempa: "#5d5470", aksent: "#6b3fa0", "aksent-tekst": "#ffffff", brikke: "rgba(35,28,51,.07)", skugge: "239,234,244", spor: "rgba(35,28,51,.10)", "reserve-a": "#dccfe8", "reserve-b": "#c4b2d8", "bakteppe-lys": "1.15" },
-    pynt({ pynt }) {
-      // «Lyrikk» i handskrifta Homemade Apple, avdekt frå venstre mot høgre som om det blir skrive.
-      // Står ei stund, tonar ut og startar på nytt (same animasjon som på skjerm/lyrikk-skrifter.html).
-      if (!document.getElementById("poesi-skrift")) {
-        const l = document.createElement("link");
-        l.id = "poesi-skrift"; l.rel = "stylesheet";
-        l.href = "https://fonts.googleapis.com/css2?family=Homemade+Apple&text=Lyrikk&display=block";
-        document.head.append(l);
-      }
-      const ord = document.createElement("div");
-      ord.className = "lyrikk-skrift"; ord.textContent = "Lyrikk";
-      pynt.append(ord);
-    },
-  },
-  {
     // Den internasjonale barnebokdagen, 2. april (H.C. Andersen sin fødselsdag, IBBY).
     // Varm papirfarge og ekte illustrasjonar av Elsa Beskow (1874–1953, fri sidan 2024) frå
     // «Puttes äfventyr i blåbärsskogen» (1901): Putte på stubben med bærkorgene øvst til høgre,
