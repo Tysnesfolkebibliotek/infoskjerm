@@ -190,36 +190,76 @@ const TEMA_LISTE = [
     },
   },
   {
-    // Morsmålsdagen (UNESCO). Ingen UNESCO-logo (krev løyve). Symbolet er tre snakkebobler,
-    // og «hei» på mange språk glir sakte over skjermen.
+    // Morsmålsdagen (UNESCO). Ingen logo: øvst til høgre skiftar «hei» mellom språk og
+    // skriftsystem, med namnet på språket under. Svake helsingar glir òg over skjermen.
+    // Skriftene for alle skriftsystema kjem frå Google Fonts (Noto), berre med teikna vi treng.
     id: "morsmal", namn: "Morsmålsdagen", gruppe: "Høgtider og merkedagar", overgang: "kryss",
     dato: "21. februar", aktuell: "02-07/02-21",
     skrift: "par-venleg",
     fargar: { bakgrunn: "#14213d", tekst: "#f6f2ea", dempa: "#b9c0d4", aksent: "#f4a259", "aksent-tekst": "#14213d", skugge: "20,33,61", "reserve-a": "#3d5a80", "reserve-b": "#1b2a4a" },
     css: `
-      :root[data-tema="morsmal"] { --symbol-plass: 19vw; }
+      :root[data-tema="morsmal"] { --symbol-plass: 21vw;
+        --helsing-skrift: "Noto Sans", "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans Ethiopic", "Noto Sans Devanagari",
+          "Noto Sans Georgian", "Noto Sans Armenian", "Noto Sans Thai", "Noto Sans KR", "Noto Sans JP", "Noto Sans SC", sans-serif; }
       :root[data-tema="morsmal"] .helsing { position: absolute; left: 0; white-space: nowrap; font-weight: 700; line-height: 1;
-        font-family: "Nunito", "Noto Sans", "Noto Sans Arabic", "Noto Sans CJK SC", "DejaVu Sans", sans-serif; animation: vandre linear infinite; }`,
-    pynt({ pynt, svg, tilf, vel }) {
-      // Tre snakkebobler øvst til høgre, med «Hei» og «Bures» (nordsamisk)
-      const MØRK = "#14213d";
-      pynt.append(svg("0 0 100 92", "right:5vw; top:3vh; width:16vw; overflow:visible;",
-        `<rect x="58" y="2" width="34" height="22" rx="9" fill="#e07a9b"/><path d="M84 22 L90 32 L76 23 Z" fill="#e07a9b"/>` +
-        `<circle cx="67" cy="13" r="2.2" fill="${MØRK}"/><circle cx="75" cy="13" r="2.2" fill="${MØRK}"/><circle cx="83" cy="13" r="2.2" fill="${MØRK}"/>` +
-        `<rect x="2" y="14" width="60" height="38" rx="13" fill="#f4a259"/><path d="M14 50 L10 64 L28 51 Z" fill="#f4a259"/>` +
-        `<text x="32" y="40" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="19" fill="${MØRK}">Hei</text>` +
-        `<rect x="36" y="44" width="62" height="36" rx="13" fill="#5bc0be"/><path d="M86 78 L92 91 L74 79 Z" fill="#5bc0be"/>` +
-        `<text x="67" y="69" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="17" fill="${MØRK}">Bures</text>`));
-      // «Hei» på mange språk, svakt, i ulike fargar og storleikar
-      const HELSINGAR = ["Hei", "Bures", "Привіт", "Cześć", "مرحبا", "Labas", "Hola", "Bonjour", "Hallo", "Merhaba",
-                         "Xin chào", "你好", "Hello", "Hej", "Привет", "Ciao", "Olá", "Salam"];
+        font-family: var(--helsing-skrift); animation: vandre linear infinite; }
+      :root[data-tema="morsmal"] .hei-boks { position: absolute; right: 5vw; top: 3vh; width: 18vw; height: 11vh; text-align: center; }
+      :root[data-tema="morsmal"] .hei-ord { display: block; font-family: var(--helsing-skrift); font-weight: 700; line-height: 1.25;
+        white-space: nowrap; color: #f4a259; transition: opacity .7s ease, transform .7s ease; }
+      :root[data-tema="morsmal"] .hei-spraak { display: block; margin-top: .6vh; font-size: 1.8vw; letter-spacing: .08em;
+        text-transform: uppercase; color: #b9c0d4; transition: opacity .7s ease; }
+      :root[data-tema="morsmal"] .hei-boks.byter .hei-ord { opacity: 0; transform: translateY(-1.2vh) scale(.94); }
+      :root[data-tema="morsmal"] .hei-boks.byter .hei-spraak { opacity: 0; }
+      @media (prefers-reduced-motion: reduce) { :root[data-tema="morsmal"] .hei-ord, :root[data-tema="morsmal"] .hei-spraak { transition: none; } }`,
+    pynt({ pynt, tilf, vel }) {
+      // [helsing, språk] – skriftsystema skal veksle, så latinske ord står ikkje etter kvarandre
+      const HEI = [
+        ["Hei", "norsk"], ["مرحبا", "arabisk"], ["Bures", "nordsamisk"], ["Привіт", "ukrainsk"], ["ሰላም", "tigrinja"],
+        ["Cześć", "polsk"], ["你好", "kinesisk"], ["Labas", "litauisk"], ["नमस्ते", "hindi"], ["Γεια σου", "gresk"],
+        ["Merhaba", "tyrkisk"], ["שלום", "hebraisk"], ["Hola", "spansk"], ["안녕하세요", "koreansk"], ["Jambo", "swahili"],
+        ["გამარჯობა", "georgisk"], ["Bonjour", "fransk"], ["สวัสดี", "thai"], ["Terve", "finsk"], ["Привет", "russisk"],
+        ["Xin chào", "vietnamesisk"], ["Բարև", "armensk"], ["Hallo", "tysk"], ["こんにちは", "japansk"], ["سلام", "persisk"],
+        ["Hello", "engelsk"], ["Halló", "islandsk"], ["Hej", "svensk"],
+      ];
+      // Hent berre dei teikna vi brukar frå Google Fonts (text=…), så nedlastinga blir lita
+      if (!document.getElementById("morsmal-skrifter")) {
+        const familiar = ["Noto Sans", "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans Ethiopic", "Noto Sans Devanagari",
+          "Noto Sans Georgian", "Noto Sans Armenian", "Noto Sans Thai", "Noto Sans KR", "Noto Sans JP", "Noto Sans SC"];
+        const teikn = [...new Set(HEI.map(h => h[0]).join(""))].join("");
+        const lenkje = document.createElement("link");
+        lenkje.id = "morsmal-skrifter"; lenkje.rel = "stylesheet";
+        lenkje.href = "https://fonts.googleapis.com/css2?" + familiar.map(f => "family=" + f.replace(/ /g, "+") + ":wght@700").join("&") +
+          "&text=" + encodeURIComponent(teikn) + "&display=swap";
+        document.head.append(lenkje);
+      }
+      // Ordet øvst til høgre: tonar ut, byter språk, tonar inn. Langt ord → mindre skrift.
+      const boks = document.createElement("div");
+      boks.className = "hei-boks";
+      const ord = document.createElement("span"), språk = document.createElement("span");
+      ord.className = "hei-ord"; språk.className = "hei-spraak";
+      boks.append(ord, språk); pynt.append(boks);
+      let n = 0;
+      const vis = () => {
+        const [h, s] = HEI[n % HEI.length];
+        ord.textContent = h; språk.textContent = s;
+        const breidd = [...h].reduce((sum, t) => sum + (/[ᄀ-￿]/.test(t) && !/[֐-ۿ]/.test(t) ? 1.6 : 1), 0);
+        ord.style.fontSize = Math.min(5.5, 26 / Math.max(breidd, 4)) + "vw";
+      };
+      vis();
+      clearInterval(window.morsmalTimar);
+      window.morsmalTimar = setInterval(() => {
+        if (!boks.isConnected) return clearInterval(window.morsmalTimar);
+        boks.classList.add("byter");
+        setTimeout(() => { n++; vis(); boks.classList.remove("byter"); }, 750);
+      }, 3500);
+      // Svake helsingar som glir sakte over skjermen
       const FARGAR = ["#f4a259", "#5bc0be", "#e07a9b", "#f6f2ea"];
-      const blanda = [...HELSINGAR].sort(() => Math.random() - 0.5);
+      const blanda = HEI.map(h => h[0]).sort(() => Math.random() - 0.5);
       for (let i = 0; i < 10; i++) {
         const el = document.createElement("div");
         el.className = "helsing";
         el.textContent = blanda[i];
-        el.style.cssText = `top:${6 + i * 9 + tilf(0, 4)}vh; font-size:${tilf(2.6, 5.2)}vw; color:${vel(FARGAR)}; opacity:${tilf(0.07, 0.14)};` +
+        el.style.cssText = `top:${16 + i * 8 + tilf(0, 3)}vh; font-size:${tilf(2.6, 5)}vw; color:${vel(FARGAR)}; opacity:${tilf(0.06, 0.12)};` +
           `animation-duration:${tilf(90, 150)}s; animation-delay:${-tilf(0, 150)}s;`;
         pynt.append(el);
       }
