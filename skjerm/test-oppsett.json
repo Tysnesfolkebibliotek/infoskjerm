@@ -1,5 +1,5 @@
 {
-  "_forklaring": "Testoppsett for rotasjon.html: to plakatar og ein karusell med kort tid, så ein ser nedteljinga utan å vente. Opne skjerm/rotasjon.html?oppsett=skjerm1&kjelde=https://tysnesfolkebibliotek.github.io/infoskjerm/skjerm/test-oppsett.json. Skjermane les ikkje denne fila.",
+  "_forklaring": "Testoppsett for rotasjon.html. skjerm1: plakatar og ein karusell med kort tid, så ein ser nedteljinga utan å vente. plakatmellom: tre bokkarusellar à 20 sek og plakatkarusellen «to mellom kvar side» (10 sek per plakat), som på skjermane. Opne skjerm/rotasjon.html?oppsett=plakatmellom&kjelde=https://tysnesfolkebibliotek.github.io/infoskjerm/skjerm/test-oppsett.json. Skjermane les ikkje denne fila.",
   "skjerm1": [
     {
       "namn": "Test: Biblio",
@@ -15,6 +15,31 @@
       "namn": "Test: Nettbiblioteket",
       "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html#vis=1&mal=nettbiblioteket&overlinje=Digitalt+bibliotek&overskrift=Nasjonalbibliotekets+nettbibliotek&avsendar=bilete%2Ftenester%2Fnasjonalbiblioteket-logo.svg&tekst=S%C3%B8k+i+ei+stor+samling+digitaliserte+b%C3%B8ker%2C+aviser%2C+bilete%2C+kart+og+mykje+meir.&bilete=anim%3Anettbiblioteket&ikon=skjerm&lenkje=https%3A%2F%2Fwww.tysnesbibliotek.no%2Fnn%2Fdigitalt-bibliotek%2Fnasjonalbibliotekets-nettbibliotek&qrtekst=Skann+for+%C3%A5+kome+i+gang&tema=fjord",
       "sekund": 20
+    }
+  ],
+  "plakatmellom": [
+    {
+      "namn": "Test: Klima (bøker)",
+      "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/index.html#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=0&sjanger=&sjangermodus=eitt&plass=&emne=klima%2C+milj%C3%B8&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=0&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&aarsiste=&alder=&spraak=&alle=0&titlar=&kulturfond=0&tittel=Klima+og+milj%C3%B8&tema=klima&skrift=standard&bakgrunn=&overgang=&visning=&fart=&teljar=&namn=&sek=20&oppdater=360&omtale=1&likte=&liktenamn=&liktebilete=&appell=&appellmodus=eitt&merkelapp=0&omtalelengd=&aldermodus=",
+      "sekund": 20
+    },
+    {
+      "namn": "Test: Plakatar (to mellom kvar side)",
+      "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/plakatkarusell.html#vis=1&sek=10&kvar=2&p=mal%3Dbiblio%26folg%3D1&p=mal%3Dcineast%26folg%3D1&p=mal%3Dfilmoteket%26folg%3D1&p=mal%3Dpressreader%26folg%3D1&p=mal%3Dbibliotekkortet%26folg%3D1&p=mal%3Dbiblioteksok%26folg%3D1&p=mal%3Dnettbiblioteket%26folg%3D1&p=mal%3Dlokalhistorisk%26folg%3D1",
+      "sekund": 20,
+      "mellom": true
+    },
+    {
+      "namn": "Test: Hobby (bøker)",
+      "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&kjelde=sok&avd=tyfv%2Ctyfb&lf=0&sjanger=&plass=&emne=s%C3%B8m%2C+saum%2C+snekring%2C+hage%2C+Perler%2C+Lego%2C+Matlaging&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=1&utan=&antal=40&aarfra=&aartil=&aarsiste=&alder=&spraak=&alle=0&titlar=&kulturfond=0&tittel=Hobbyb%C3%B8ker&tema=hobby&skrift=par-retro&bakgrunn=flat&overgang=&visning=&fart=&namn=&sek=20&oppdater=360&omtale=1&likte=&liktenamn=&liktebilete=&appell=&appellmodus=alle&merkelapp=0",
+      "sekund": 20
+    },
+    {
+      "namn": "Test: Reise (bøker)",
+      "url": "https://tysnesfolkebibliotek.github.io/infoskjerm/index.html#vis=1&kjelde=sok&avd=tyfv&lf=&sjanger=&sjangermodus=eitt&plass=&emne=reiser&emnemodus=eitt&dewey=&serie=&ccl=&rekkje=tilfeldig&omslag=1&hylla=1&perforf=1&utan=magasin%2C+n%C3%A6rmag&antal=40&aarfra=&aartil=&aarsiste=&alder=&spraak=&alle=0&titlar=&kulturfond=0&tittel=Dr%C3%B8ym+deg+bort&tema=sommar&skrift=standard&bakgrunn=&overgang=&visning=&fart=&teljar=&namn=B%C3%B8ker+om+reiser&sek=20&oppdater=360&omtale=1&likte=&liktenamn=&liktebilete=&appell=&appellmodus=alle&merkelapp=1&omtalelengd=&aldermodus=",
+      "sekund": 20,
+      "periode": "2026-11-01/2026-12-31",
+      "tid": "16:00-22:00"
     }
   ]
 }
