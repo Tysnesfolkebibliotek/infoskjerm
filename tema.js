@@ -613,6 +613,45 @@ const TEMA_LISTE = [
     },
   },
   {
+    // Nobelprisen i litteratur: gull på nesten svart, utan logo og medalje (dei er verna).
+    // Laurbærkransen er teikna her og er ein vanleg pris-symbol, ikkje Nobel sin.
+    id: "nobel", namn: "Nobelprisen", gruppe: "Bibliotek", overgang: "kryss",
+    dato: "kunngjering i oktober, utdeling 10. desember", aktuell: "10-01/12-15",
+    skrift: "par-elegant",
+    css: `
+      :root[data-tema="nobel"] { --symbol-plass: 20vw; }`,
+    fargar: { bakgrunn: "#0d0c0a", tekst: "#f5efe1", dempa: "#c2b59a", aksent: "#d4af5f", "aksent-tekst": "#0d0c0a", skugge: "13,12,10", "reserve-a": "#4a3c22", "reserve-b": "#1a1610" },
+    pynt({ pynt, svg, stigande }) {
+      // Laurbærkrans øvst til høgre: to greiner langs ein sirkelboge, opne i toppen.
+      // Blada står parvis (innsida og utsida av bogen) og peikar mot toppen av greina.
+      const blad = [], stilk = [];
+      const R = 34, CX = 50, CY = 54, rad = g => g * Math.PI / 180;
+      for (const retning of [1, -1]) {                       // 1: venstre grein, -1: høgre grein
+        const frå = 90 + retning * 12, til = 90 + retning * 150, steg = 11;
+        const punkt = g => [CX + R * Math.cos(rad(g)), CY + R * Math.sin(rad(g))];
+        const [sx, sy] = punkt(frå), [tx, ty] = punkt(til);
+        stilk.push(`<path d="M${sx},${sy} A${R},${R} 0 0 ${retning > 0 ? 1 : 0} ${tx},${ty}"/>`);
+        for (let i = 0; i < steg; i++) {
+          const g = frå + (til - frå) * (i + 0.5) / steg;
+          const [x, y] = punkt(g);
+          // Retninga greina går (tangenten), i grader
+          const tang = Math.atan2(retning * Math.cos(rad(g)), -retning * Math.sin(rad(g))) * 180 / Math.PI;
+          const str = 1 - i * 0.035;
+          for (const ut of [-1, 1]) {
+            const vinkel = tang + ut * 38;                    // bladet skrår ut frå greina
+            const bx = x + Math.cos(rad(vinkel)) * 4.2 * str, by = y + Math.sin(rad(vinkel)) * 4.2 * str;
+            blad.push(`<ellipse cx="${bx.toFixed(2)}" cy="${by.toFixed(2)}" rx="${(5 * str).toFixed(2)}" ry="${(2.1 * str).toFixed(2)}" transform="rotate(${vinkel.toFixed(1)} ${bx.toFixed(2)} ${by.toFixed(2)})"/>`);
+          }
+        }
+      }
+      const krans = svg("0 0 100 100", "position:absolute; right:5vw; top:2.5vh; width:15vw; height:auto; opacity:.75;",
+        `<g fill="none" stroke="#d4af5f" stroke-width="1.2">${stilk.join("")}</g><g fill="#d4af5f">${blad.join("")}</g>`);
+      pynt.append(krans);
+      // Nokre få gullgnistar som stig sakte
+      stigande(10, "0 0 10 10", `<path fill="#e7cf8f" d="M5,0 L5.8,4.2 L10,5 L5.8,5.8 L5,10 L4.2,5.8 L0,5 L4.2,4.2 Z"/>`, [0.8, 1.6], [0.15, 0.4]);
+    },
+  },
+  {
     id: "spel", namn: "Spel", gruppe: "Bibliotek", overgang: "glid",
     dato: "pikselstil, t.d. Bibliobattles",
     skrift: "par-spel",

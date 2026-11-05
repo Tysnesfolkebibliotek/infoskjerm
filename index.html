@@ -194,6 +194,7 @@
   .brikker { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4vw; margin-top: 2.6vh; }
   .brikke { background: var(--brikke); border-radius: 99px; padding: .9vh 2.4vw; font-size: 2.5vw; }
   .brikke.hylle { background: var(--aksent); color: var(--aksent-tekst); font-weight: 700; }
+  .brikke.pris { background: transparent; box-shadow: inset 0 0 0 .3vw var(--aksent); color: var(--aksent); font-weight: 700; }
   .brikke.appell { background: transparent; box-shadow: inset 0 0 0 .3vw var(--brikke); font-style: italic; }
   .omtale { font-size: 2.8vw; line-height: 1.5; color: var(--dempa); margin: 2.8vh auto 0; max-width: 82vw; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
   #visning footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2vh 3vw; margin-top: 3vh; flex: none; }
@@ -489,7 +490,10 @@
           <option value="nyheiter">Nyheiter</option>
           <option value="reservert">Mest reservert akkurat no</option>
           <option value="kulturfond">Ny norsk litteratur (Kulturfondet)</option>
+        </optgroup>
+        <optgroup label="Prisar">
           <option value="brageprisen">Brageprisen (nominerte og vinnarar)</option>
+          <option value="nobel">Nobelprisen i litteratur (alle vinnarane)</option>
         </optgroup>
         <optgroup label="For vaksne">
           <option value="sakprosa">Frå hylla (sakprosa)</option>
@@ -555,6 +559,8 @@
           <option value="1">Skjønnlitteratur</option>
         </select>
       </div>
+      <input type="hidden" id="nobel" name="nobel">
+      <p class="hjelp" id="nobelhjelp" hidden><b>Nobelprisen i litteratur:</b> Vinnarane blir henta frå Nobel sitt eige nettstad kvar gong lista blir oppdatert, så neste års vinnar kjem med av seg sjølv. Karusellen søkjer etter bøkene deira i avdelingane som er kryssa av, og viser to bøker per forfattar (trekte på nytt kvar gong), med årets vinnar først. Utlånte bøker er med. Vinnarar biblioteket ikkje har bøker av, blir hoppa over. Vel ein annan kjelde eller mal for å lage ein vanleg karusell.</p>
       <div id="sokefelt">
         <div class="felt" id="sjangerfelt">
           <label for="sjangersok">Sjanger</label>
@@ -885,6 +891,7 @@ const STANDARD = {
   omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40",
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   brage: "0", vinnarar: "",   // Brageprisen-merke på omslaga, og tittelnummera til vinnarane
+  nobel: "0",                 // Nobelprisen i litteratur: vinnarane blir henta frå Nobel (sjå hentNobel)
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "eitt", merkelapp: "0",
   omtalelengd: "",  // tal teikn i omtalen; tomt = standard (220). Brukt av skule.html
@@ -911,6 +918,11 @@ const MALAR = {
   brageprisen: { kjelde: "utval", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
                  omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
                  tittel: "Nominert til Brageprisen", namn: "", sek: "20", oppdater: "360", omtale: "1", brage: "1" },
+  // Nobelprisen i litteratur: alle vinnarane frå Nobel sitt API, to bøker per forfattar.
+  // Utlånte bøker er med. Neste års vinnar kjem med av seg sjølv.
+  nobel: { kjelde: "sok", nobel: "1", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+           omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0",
+           tittel: "Nobelprisen i litteratur", namn: "", sek: "20", oppdater: "1440", omtale: "1" },
   // Nynorsk for born og unge. Biletbøker blir funne på sjanger, dei andre på aldersgruppe.
   biletbok_nn: { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", sjanger: "Biletbøker|Bildebøker|Biletbok|Bildebok", alder: "", tittel: "Biletbøker på nynorsk" },
   born_nn:     { kjelde: "sok", lf: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig", omslag: "1", hylla: "1", perforf: "1", utan: "magasin, nærmag", antal: "40", aarfra: "", aartil: "", spraak: "nno", alle: "0", namn: "", sek: "20", oppdater: "360", omtale: "1", avd: "tyfb", lf: "1", sjanger: "Romanar|Romaner|Roman", alder: "a,b,bu", tittel: "Barnebøker på nynorsk" },
@@ -945,7 +957,7 @@ const MALTEMA = {
   nyheiter: "lys", reservert: "natt", kulturfond: "kveld",
   sakprosa: "kveld", krim: "krim", biografi: "kveld", lokal: "fjord", natur: "skog", klima: "klima", handarbeid: "hobby",
   fantasy: "fantasy", fotball: "sport", teikne: "manga", biletbok_nn: "biletbok", born_nn: "lys", ungdom_nn: "natt",
-  jul: "jul", julekalender: "advent", brageprisen: "brage",
+  jul: "jul", julekalender: "advent", brageprisen: "brage", nobel: "nobel",
 };
 for (const [mal, tema] of Object.entries(MALTEMA)) if (MALAR[mal]) MALAR[mal] = { ...MALAR[mal], tema };
 
@@ -1146,9 +1158,10 @@ function startVisning(cfg) {
     if (t.undertittel) info.append(el("div", "undertittel", t.undertittel));
     if (t.forfattar) info.append(el("div", "forfattar", t.forfattar));
     const brikker = el("div", "brikker");
+    if (t.nobel) brikker.append(el("span", "brikke pris", `Nobelprisen ${t.nobel}`));
     if (cfg.rekkje === "reservert" && t.kø) brikker.append(el("span", "brikke", `${t.kø} i kø`));
     if (t.bestilt) brikker.append(el("span", "brikke", "Bestilt – kan reserverast"));
-    else if ((KALENDER || cfg.brage === "1") && t.ledig === false) brikker.append(el("span", "brikke", "Utlånt – kan reserverast"));
+    else if ((KALENDER || cfg.brage === "1" || cfg.nobel === "1") && t.ledig === false) brikker.append(el("span", "brikke", "Utlånt – kan reserverast"));
     if (t.hylle) brikker.append(el("span", "brikke hylle", t.hylle));
     if (t.alder) brikker.append(el("span", "brikke", t.alder));
     const appell = cfg.merkelapp === "1" ? (t.appell || []) : [];
@@ -1757,7 +1770,7 @@ function startVisning(cfg) {
       else if (!titlar.length) visMelding("Fann ingen bøker som passar.", "Prøv å slakke på krava.");
       meldTilByggjar({ status: "ferdig", tal: nye.length, utelatne, nåddeGrense, alle: cfg.alle === "1" || (!!cfg.appell && cfg.kjelde === "sok"), appell: !!cfg.appell && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"), appellalle: cfg.appellmodus !== "eitt" && (cfg.appell || "").includes(",") && (cfg.kjelde === "sok" || cfg.kjelde === "nyaste"), sek: Math.round((Date.now() - t0) / 1000) });
     } catch (e) {
-      if (!titlar.length) visMelding("Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
+      if (!titlar.length) visMelding(e && e.nobel ? "Fekk ikkje kontakt med Nobel." : "Fekk ikkje kontakt med biblioteksystemet.", "Prøver igjen om fem minutt.");
       meldTilByggjar({ status: "feil", melding: e.message });
       prøvIgjen = setTimeout(oppdater, 5 * 60 * 1000);
     } finally { hentar = false; meldTilRotasjon(); }
@@ -1844,7 +1857,7 @@ function ryddLager(behald, alt = false) {
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","sjangermodus","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
-    .concat(["likte", "appell", "merkelapp", "aldermodus", "brage"].filter(k => cfg[k] && cfg[k] !== "0"))
+    .concat(["likte", "appell", "merkelapp", "aldermodus", "brage", "nobel"].filter(k => cfg[k] && cfg[k] !== "0"))
     .concat(cfg.appell ? ["appellmodus"] : [])
     .concat(erKalenderCfg(cfg) ? ["visning"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
@@ -2177,6 +2190,7 @@ async function hentBøker(cfg, framdrift) {
   if (cfg.kjelde === "nyaste" && cfg.appell) cfg = { ...cfg, appell: "" };
   await lastSvarteliste(60 * 1000);
   const avdar = (cfg.avd || "").split(",").filter(Boolean);
+  if (cfg.nobel === "1") return forrigebokBerik(await hentNobel(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), { ...cfg, appell: "" });
   if (erKalenderCfg(cfg)) return forrigebokBerik(await hentKalender(cfg, framdrift), cfg);
   if (cfg.kjelde === "utval") return forrigebokBerik(await hentUtval(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
   if (cfg.kjelde === "likte") return forrigebokBerik(await hentLikte(cfg, avdar.length ? avdar : ["tyfv", "tyfb"], framdrift), cfg);
@@ -2531,6 +2545,170 @@ async function hentKalender(cfg, meld) {
   const idar = (cfg.titlar || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 24);
   const ut = await hentUtval({ ...cfg, titlar: idar.join(","), hylla: "0" }, ["tyfv", "tyfb"], meld);
   for (const t of ut) t.luke = idar.indexOf(String(t.id)) + 1;
+  return ut;
+}
+
+// ---- Nobelprisen i litteratur ----------------------------------------------
+// Vinnarane kjem frå Nobel sitt opne API (api.nobelprize.org), som nettlesaren
+// får lese direkte (CORS, testa 5.11.2026). Lista blir hugsa i nettlesaren, så
+// karusellen fungerer òg når Nobel er nede. Neste års vinnar kjem med av seg sjølv.
+const NOBEL_API = "https://api.nobelprize.org/2.1/nobelPrizes?nobelPrizeCategory=lit&sort=desc&limit=200";
+const NOBEL_LAGER = "infoskjerm-nobel-litteratur";
+const NOBEL_PER_FORFATTAR = 2;
+
+// Rettingsliste: namn som står annleis i Bibliofil enn hos Nobel.
+// Venstre side: namnet slik Nobel skriv det (kolonnen «kjentNamn» i testen).
+// Høgre side: slik det står i Bibliofil, «Etternamn, Fornamn».
+// Dei fleste namna treng ikkje dette: rekkjefølgje, aksentar og mellomnamn blir ordna automatisk.
+const NOBEL_NAMN = {
+  // Døme: "Kjent Namn": "Etternamn, Fornamn",
+};
+
+async function nobelVinnarar() {
+  try {
+    const svar = await fetch(NOBEL_API, { signal: AbortSignal.timeout(20000) });
+    if (!svar.ok) throw new Error("Nobel svarte HTTP " + svar.status);
+    const d = await svar.json();
+    const liste = [];
+    for (const p of d.nobelPrizes || []) for (const l of p.laureates || []) {
+      const namn = (l.knownName && l.knownName.en) || (l.fullName && l.fullName.en) || "";
+      if (namn && Number(p.awardYear)) liste.push({ år: Number(p.awardYear), namn });
+    }
+    if (!liste.length) throw new Error("Nobel sende ei tom vinnarliste");
+    try { localStorage.setItem(NOBEL_LAGER, JSON.stringify(liste)); } catch (e) {}
+    return liste;
+  } catch (e) {
+    // Nobel er nede eller svarer rart: bruk siste lista vi fekk
+    let lagra = null;
+    try { lagra = JSON.parse(localStorage.getItem(NOBEL_LAGER) || "null"); } catch (e2) {}
+    if (lagra && lagra.length) { console.warn("Brukar lagra Nobel-liste:", e.message); return lagra; }
+    throw Object.assign(new Error("Fekk ikkje vinnarlista frå Nobel: " + e.message), { nobel: true });
+  }
+}
+
+// Namn som ord utan aksentar og teiknsetjing: «Lagerlöf, Selma, 1858-1940» → [lagerlof, selma, 1858, 1940]
+const nobelOrd = s => (s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+  .replace(/[^\p{L}\p{N}]+/gu, " ").trim().split(" ").filter(Boolean);
+
+// Er forfattaren av boka denne vinnaren? Alle namneledda til vinnaren må finnast
+// i forfattarnamnet, i kva rekkjefølgje som helst («Han Kang» = «Han, Kang»,
+// «Gabriel García Márquez» = «García Márquez, Gabriel»). Initialar («T.S.») held
+// at forfattaren har eit namneledd som byrjar på same bokstav.
+function nobelTreff(v, forfattar) {
+  const har = nobelOrd(forfattar);
+  if (!har.length) return false;
+  return v.ord.every(o => o.length === 1 ? har.some(h => h[0] === o) : har.includes(o));
+}
+
+// Søkjeord for vinnaren: etternamnet (siste ordet før komma i rettingslista, elles siste ordet i namnet)
+function nobelEtternamn(v) {
+  const rett = NOBEL_NAMN[v.namn];
+  const del = rett ? rett.split(",")[0] : v.namn;
+  const ord = del.trim().split(/\s+/);
+  return ord[ord.length - 1].toLowerCase().replace(/["\\]/g, "");
+}
+
+// Kva forfattarindeks Bibliofil har. Vi prøver med Hamsun og brukar den første som gir treff.
+// Fritekst er siste utveg: då kjem òg bøker OM forfattaren, men dei blir sorterte bort etterpå.
+const NOBEL_INDEKSAR = [w => `bibliofil.ccl="fo=${w}"`, w => `dc.creator="${w}"`, w => `"${w}"`];
+let nobelIndeks = null;
+async function finnNobelIndeks() {
+  if (nobelIndeks) return nobelIndeks;
+  for (const ix of NOBEL_INDEKSAR) {
+    try {
+      const d = await sru({ query: `${ix("hamsun")} and norzig.materialType=l`, startRecord: 1, maximumRecords: 1 });
+      if (Number((d && d.feed && d.feed.sru_numberOfRecords) || 0) > 0) return (nobelIndeks = ix);
+    } catch (e) {}
+  }
+  return (nobelIndeks = NOBEL_INDEKSAR[NOBEL_INDEKSAR.length - 1]);
+}
+
+async function hentNobel(cfg, avdar, meld) {
+  // Filtera i skjemaet er gøymde for denne kjelda. Berre avdeling og «står på hylla» gjeld.
+  cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", aarsiste: "", omslag: "0", plass: "", utan: "", appell: "" };
+  meld(0);
+  const vinnarar = (await nobelVinnarar()).map(v => {
+    const rett = NOBEL_NAMN[v.namn];
+    return { ...v, ord: nobelOrd(rett || v.namn).filter(o => o !== "sir"), søk: nobelEtternamn(v) };
+  });
+  const ix = await finnNobelIndeks();
+
+  // Søk etter mange vinnarar om gongen: (fo=hamsun or fo=undset or …)
+  const søkjeord = [...new Set(vinnarar.flatMap(v => {
+    const utan = nobelOrd(v.søk).join(" ");
+    return utan && utan !== v.søk ? [v.søk, utan] : [v.søk];   // med og utan aksentar
+  }))].filter(Boolean);
+  const BUNK = 12, SIDE = 200, MAKS_SIDER = 5;
+  const vinnarFor = new Map();   // tittelnummer → vinnar
+  const poster = [];
+  let feil = null;
+  for (let n = 0; n < søkjeord.length; n += BUNK) {
+    const ord = søkjeord.slice(n, n + BUNK);
+    const query = `(${ord.map(ix).join(" or ")}) and ${avdFilter(avdar)} and norzig.materialType=l`;
+    for (let side = 0; side < MAKS_SIDER; side++) {
+      let d;
+      try { d = await sru({ query, startRecord: side * SIDE + 1, maximumRecords: SIDE }, 90000); }
+      catch (e) { feil = e; break; }      // prøv dei andre bunkane likevel
+      const treff = (d && d.feed && d.feed.entry) || [];
+      for (const p of treff) {
+        const id = String(p.id);
+        if (vinnarFor.has(id) || !førehand(p, cfg)) continue;
+        const d2 = p.sru_recordData || {};
+        const forfattarar = [].concat(d2.bsdc_creator || []).map(c => (c && c.name) || "").filter(Boolean);
+        const v = vinnarar.find(v => forfattarar.some(f => nobelTreff(v, f)));
+        if (!v) continue;      // bok om forfattaren, eller ein annan med same etternamn
+        vinnarFor.set(id, v); poster.push(p);
+      }
+      meld(poster.length, 0);
+      const totalt = Number((d && d.feed && d.feed.sru_numberOfRecords) || 0);
+      if ((side + 1) * SIDE >= totalt) break;
+    }
+  }
+  if (!poster.length) { if (feil) throw feil; return []; }
+
+  // Eksemplarinfo, og ei rydda bok per post (første avdeling som har boka, helst ledig)
+  const eks = await hentEksemplar(poster.map(p => String(p.id)));
+  const perVinnar = new Map();
+  for (const p of poster) {
+    let t = null;
+    for (const avd of avdar) {
+      const ny = vurder(p, avd, eks, cfg);
+      if (ny && (!t || (ny.ledig && !t.ledig))) t = ny;
+      if (t && t.ledig) break;
+    }
+    if (!t) continue;
+    const v = vinnarFor.get(String(p.id));
+    t.nobel = v.år;
+    const nøkkel = v.år + "|" + v.namn;
+    if (!perVinnar.has(nøkkel)) perVinnar.set(nøkkel, { v, bøker: [] });
+    perVinnar.get(nøkkel).bøker.push(t);
+  }
+
+  // To ulike titlar per forfattar, trekte tilfeldig. Fleire utgåver av same
+  // tittel tel som éin; vi tek då den som har omslag og helst står på hylla.
+  const reinTittel = t => nobelOrd(t.tittel).join(" ");
+  const poeng = t => (t.omslag ? 2 : 0) + (t.ledig ? 1 : 0);
+  const grupper = [];
+  for (const { v, bøker } of perVinnar.values()) {
+    const best = new Map();
+    for (const t of stokk(bøker)) {
+      const k = reinTittel(t);
+      if (!best.has(k) || poeng(t) > poeng(best.get(k))) best.set(k, t);
+    }
+    // Bøker med omslag først, elles tilfeldig
+    const valde = stokk([...best.values()]).sort((a, b) => (b.omslag ? 1 : 0) - (a.omslag ? 1 : 0)).slice(0, NOBEL_PER_FORFATTAR);
+    grupper.push({ v, valde });
+  }
+
+  // Årets vinnar (det nyaste året) først, resten i tilfeldig rekkjefølgje.
+  // Første boka til kvar forfattar kjem i første runde, den andre i neste,
+  // så same forfattar ikkje står to gonger på rad.
+  const nyast = Math.max(...vinnarar.map(v => v.år));
+  const først = grupper.filter(g => g.v.år === nyast);
+  const resten = stokk(grupper.filter(g => g.v.år !== nyast));
+  const ut = først.flatMap(g => g.valde);
+  for (let r = 0; r < NOBEL_PER_FORFATTAR; r++) for (const g of resten) if (g.valde[r]) ut.push(g.valde[r]);
+  meld(ut.length, 0);
   return ut;
 }
 
@@ -2994,13 +3172,17 @@ function startByggjar(startCfg) {
 
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
-    document.getElementById("sokefelt").hidden = kjelde !== "sok";
+    // Nobel-malen brukar kjelda Søk. Byter ein kjelde, er det ikkje lenger ein Nobel-karusell.
+    if (kjelde !== "sok" && skjema.elements.nobel.value === "1") skjema.elements.nobel.value = "0";
+    const nobel = skjema.elements.nobel.value === "1";
+    document.getElementById("nobelhjelp").hidden = !nobel;
+    document.getElementById("sokefelt").hidden = kjelde !== "sok" || nobel;
     // Julekalender er berre mogleg med handplukka bøker
     const kalOpt = skjema.elements.visning.querySelector('option[value="kalender"]');
     kalOpt.disabled = kjelde !== "utval";
     if (kjelde !== "utval" && skjema.elements.visning.value === "kalender") skjema.elements.visning.value = "";
     const kalender = kjelde === "utval" && skjema.elements.visning.value === "kalender";
-    const fast = kjelde === "utval" || kjelde === "likte";     // bøkene er valde på førehand
+    const fast = kjelde === "utval" || kjelde === "likte" || nobel;     // bøkene er valde på førehand (Nobel: av vinnarlista)
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     const brage = kjelde === "utval" && skjema.elements.brage.value === "1";
     document.getElementById("bragehjelp").hidden = !brage;
@@ -3014,17 +3196,17 @@ function startByggjar(startCfg) {
     document.getElementById("appellfelt").hidden = fast || kjelde === "nyaste";
     document.getElementById("lffelt").hidden = fast;
     document.getElementById("antalfelt").hidden = fast;
-    document.getElementById("rekkjefelt").hidden = kjelde !== "sok";
+    document.getElementById("rekkjefelt").hidden = kjelde !== "sok" || nobel;
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
       if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
     document.getElementById("hyllarad").hidden = kalender;     // utlånte bøker er med i kalenderen
-    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok";   // Nyheiter har si eiga liste frå Bibliofil
+    document.getElementById("kulturfondfelt").hidden = kjelde !== "sok" || nobel;   // Nyheiter har si eiga liste frå Bibliofil
     // Frå/til år syner berre med «Eige spenn» i årsmenyen
     document.getElementById("aarspenn").hidden = fast || document.getElementById("aarval").value !== "eige";
     teiknUtval();
     const alle = skjema.elements.alle;
-    document.getElementById("allerad").hidden = kjelde !== "sok";
+    document.getElementById("allerad").hidden = kjelde !== "sok" || nobel;
     skjema.elements.antal.disabled = kjelde === "sok" && alle.checked;
     // Val som ikkje har nokon effekt med den valde visingsmåten, blir grå
     const rull = skjema.elements.visning.value === "rull" && !kalender;
