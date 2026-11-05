@@ -2700,10 +2700,11 @@ async function hentNobel(cfg, avdar, meld) {
     grupper.push({ v, valde });
   }
 
-  // Årets vinnar (det nyaste året) først, resten i tilfeldig rekkjefølgje.
+  // Årets vinnar (det nyaste året med bøker) først, resten i tilfeldig rekkjefølgje.
   // Første boka til kvar forfattar kjem i første runde, den andre i neste,
   // så same forfattar ikkje står to gonger på rad.
-  const nyast = Math.max(...vinnarar.map(v => v.år));
+  // Har biblioteket ingenting av årets vinnar, kjem den nyaste vinnaren vi har bøker av, først.
+  const nyast = Math.max(...grupper.map(g => g.v.år));
   const først = grupper.filter(g => g.v.år === nyast);
   const resten = stokk(grupper.filter(g => g.v.år !== nyast));
   const ut = først.flatMap(g => g.valde);
