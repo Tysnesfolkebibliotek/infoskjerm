@@ -613,14 +613,14 @@ const TEMA_LISTE = [
     },
   },
   {
-    // Nobelprisen i litteratur: gull på nesten svart, utan logo og medalje (dei er verna).
+    // Nobelprisen i litteratur: lyst, med gull på elfenbein, utan logo og medalje (dei er verna).
     // Laurbærkransen er teikna her og er ein vanleg pris-symbol, ikkje Nobel sin.
     id: "nobel", namn: "Nobelprisen", gruppe: "Bibliotek", overgang: "kryss",
     dato: "kunngjering i oktober, utdeling 10. desember", aktuell: "10-01/12-15",
     skrift: "par-elegant",
     css: `
       :root[data-tema="nobel"] { --symbol-plass: 20vw; }`,
-    fargar: { bakgrunn: "#0d0c0a", tekst: "#f5efe1", dempa: "#c2b59a", aksent: "#d4af5f", "aksent-tekst": "#0d0c0a", skugge: "13,12,10", "reserve-a": "#4a3c22", "reserve-b": "#1a1610" },
+    fargar: { bakgrunn: "#f7f2e7", tekst: "#1c1810", dempa: "#5f5442", aksent: "#94701f", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "247,242,231", spor: "rgba(0,0,0,.10)", "reserve-a": "#e8dcc0", "reserve-b": "#d6c49c", "bakteppe-lys": "1.15" },
     pynt({ pynt, svg, stigande }) {
       // Laurbærkrans øvst til høgre: to greiner langs ein sirkelboge, opne i toppen.
       // Blada står parvis (innsida og utsida av bogen) og peikar mot toppen av greina.
@@ -644,11 +644,11 @@ const TEMA_LISTE = [
           }
         }
       }
-      const krans = svg("0 0 100 100", "position:absolute; right:5vw; top:2.5vh; width:15vw; height:auto; opacity:.75;",
-        `<g fill="none" stroke="#d4af5f" stroke-width="1.2">${stilk.join("")}</g><g fill="#d4af5f">${blad.join("")}</g>`);
+      const krans = svg("0 0 100 100", "position:absolute; right:5vw; top:2.5vh; width:15vw; height:auto; opacity:.85;",
+        `<g fill="none" stroke="#a8822e" stroke-width="1.2">${stilk.join("")}</g><g fill="#b38b35">${blad.join("")}</g>`);
       pynt.append(krans);
       // Nokre få gullgnistar som stig sakte
-      stigande(10, "0 0 10 10", `<path fill="#e7cf8f" d="M5,0 L5.8,4.2 L10,5 L5.8,5.8 L5,10 L4.2,5.8 L0,5 L4.2,4.2 Z"/>`, [0.8, 1.6], [0.15, 0.4]);
+      stigande(10, "0 0 10 10", `<path fill="#b38b35" d="M5,0 L5.8,4.2 L10,5 L5.8,5.8 L5,10 L4.2,5.8 L0,5 L4.2,4.2 Z"/>`, [0.8, 1.6], [0.15, 0.4]);
     },
   },
   {

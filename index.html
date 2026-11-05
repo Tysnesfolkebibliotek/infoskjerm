@@ -1325,16 +1325,34 @@ function startVisning(cfg) {
   };
 
   let ventarPåBilete = false, gjeldandeIdx = 0;
+  // Nobel: opningsbøkene (årets vinnar) som skal visast før karusellen held fram der han slapp
+  let introKø = [], introVent = 0;
+  const startIntro = () => { introVent = 0; introKø = cfg.nobel === "1" && !KALENDER && !RULL ? titlar.filter(t => t.først) : []; };
 
   function neste() {
     if (!titlar.length) return;
     if (KALENDER) return kalenderSteg();
     if (RULL) return startRull();
     titlar.forEach(t => forlast(t.omslag));          // nye forsøk på omslag som feila for lenge sidan
-    // Finn neste bok som er klar, frå der vi er
+    // Nobel: bøkene til årets vinnar kjem alltid først kvar gong karusellen kjem fram.
+    // Vi ventar inntil 8 sekund på omslaget, så dei ikkje blir hoppa over fordi biletet er treigt.
+    if (introKø.length) {
+      const kand = introKø[0];
+      if (!klar(kand) && introVent++ < 8) {
+        if (!førre) visMelding("Hentar omslag …", "", true);
+        tidtakar = setTimeout(() => { tidtakar = null; neste(); }, 1000);
+        return;
+      }
+      introKø.shift(); introVent = 0;
+      return visBok(kand, Math.max(0, titlar.indexOf(kand)), true);
+    }
+    // Finn neste bok som er klar, frå der vi er. Bøkene til årets vinnar
+    // (Nobel) er alt viste i opninga og blir hoppa over her.
+    const hopp = t => t.først && titlar.some(x => !x.først);
     let funnen = -1;
     for (let n = 0; n < titlar.length; n++) {
-      if (klar(titlar[(i + n) % titlar.length])) { funnen = (i + n) % titlar.length; break; }
+      const kand = titlar[(i + n) % titlar.length];
+      if (!hopp(kand) && klar(kand)) { funnen = (i + n) % titlar.length; break; }
     }
     if (funnen < 0) {
       // Ingen omslag er klare enno. Vent, og prøv igjen om litt.
@@ -1344,9 +1362,13 @@ function startVisning(cfg) {
       return;
     }
     i = funnen;
-    gjeldandeIdx = funnen;
-    const t = titlar[funnen];
-    gjeldande = t;
+    visBok(titlar[funnen], funnen, false);
+  }
+
+  // Vis éi bok. «intro»: ei av opningsbøkene til Nobel, som ikkje flyttar
+  // på kvar karusellen er i lista (i) og ikkje blir hugsa som sist vist.
+  function visBok(t, funnen, intro) {
+    if (!intro) { gjeldandeIdx = funnen; gjeldande = t; } else gjeldande = null;
     if (VIFTE) visVifte(funnen);
     else {
       const bok = lagBok(t);
@@ -1359,8 +1381,8 @@ function startVisning(cfg) {
     avdelingFelt.textContent = t.etikett || "";
     visBakteppe(t.omslag);
     startFramdrift();
-    i++;
-    tidtakar = setTimeout(() => { lagreSist(String(t.id)); neste(); }, SEK * 1000);
+    if (!intro) i++;
+    tidtakar = setTimeout(() => { if (!intro) lagreSist(String(t.id)); neste(); }, SEK * 1000);
   }
 
   // ---- vifte -----------------------------------------------------------
@@ -1738,6 +1760,7 @@ function startVisning(cfg) {
     }
     const sist = titlar.findIndex(t => String(t.id) === lesSist());
     i = sist >= 0 ? sist + 1 : 0;
+    if (varTom) startIntro();
     if (varTom && køyrer) fortset();
   }
 
@@ -1811,6 +1834,7 @@ function startVisning(cfg) {
       if (e.data && e.data.nyheiter === "vis") {
         // Julekalender: dagens luke blir pakka inn att og opna først kvar gong karusellen kjem fram
         if (KALENDER && titlar.length) { dagensOpna = false; runde = null; byggKalender(); }
+        startIntro();
         køyrer = true; fortset(); sjekkSvarteliste(5 * 60 * 1000); }
       if (e.data && e.data.nyheiter === "skjul") {
         køyrer = false; pause();
@@ -2707,7 +2731,7 @@ async function hentNobel(cfg, avdar, meld) {
   const nyast = Math.max(...grupper.map(g => g.v.år));
   const først = grupper.filter(g => g.v.år === nyast);
   const resten = stokk(grupper.filter(g => g.v.år !== nyast));
-  const ut = først.flatMap(g => g.valde);
+  const ut = først.flatMap(g => g.valde.map(t => Object.assign(t, { først: true })));
   for (let r = 0; r < NOBEL_PER_FORFATTAR; r++) for (const g of resten) if (g.valde[r]) ut.push(g.valde[r]);
   meld(ut.length, 0);
   return ut;
