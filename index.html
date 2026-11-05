@@ -560,7 +560,7 @@
         </select>
       </div>
       <input type="hidden" id="nobel" name="nobel">
-      <p class="hjelp" id="nobelhjelp" hidden><b>Nobelprisen i litteratur:</b> Vinnarane blir henta frå Nobel sitt eige nettstad kvar gong lista blir oppdatert, så neste års vinnar kjem med av seg sjølv. Karusellen søkjer etter bøkene deira i avdelingane som er kryssa av, og viser to bøker per forfattar (trekte på nytt kvar gong), med årets vinnar først. Utlånte bøker er med. Vinnarar biblioteket ikkje har bøker av, blir hoppa over. Vel ein annan kjelde eller mal for å lage ein vanleg karusell.</p>
+      <p class="hjelp" id="nobelhjelp" hidden><b>Nobelprisen i litteratur:</b> Vinnarane blir henta frå Nobel sitt eige nettstad kvar gong lista blir oppdatert, så neste års vinnar kjem med av seg sjølv. Karusellen søkjer etter bøkene deira i avdelingane som er kryssa av, og viser to bøker per forfattar (trekte på nytt kvar gong), med årets vinnar først. Utlånte bøker er med. Vinnarar biblioteket ikkje har bøker av, blir hoppa over. Under Filter kan du velje berre bøker med omslag. Vel ein annan kjelde eller mal for å lage ein vanleg karusell.</p>
       <div id="sokefelt">
         <div class="felt" id="sjangerfelt">
           <label for="sjangersok">Sjanger</label>
@@ -671,7 +671,7 @@
 
     <details class="del" id="del-krav" data-felt="omslag,hylla,perforf,kulturfond,aarfra,aartil,aarsiste,alder,spraak">
       <summary>Filter <span class="merke" hidden>endra</span></summary>
-      <label class="val"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
+      <label class="val" id="omslagrad"><input type="checkbox" name="omslag" value="1"> Berre bøker med omslagsbilete</label>
       <label class="val" id="hyllarad"><input type="checkbox" name="hylla" value="1"> Berre bøker som står på hylla</label>
       <label class="val"><input type="checkbox" name="perforf" value="1"> Maks éi bok per forfattar</label>
       <div class="felt" id="kulturfondfelt">
@@ -2648,8 +2648,9 @@ async function finnNobelIndeks() {
 }
 
 async function hentNobel(cfg, avdar, meld) {
-  // Filtera i skjemaet er gøymde for denne kjelda. Berre avdeling og «står på hylla» gjeld.
-  cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", aarsiste: "", omslag: "0", plass: "", utan: "", appell: "" };
+  // Filtera i skjemaet er gøymde for denne kjelda. Berre avdeling, omslag og «står på hylla» gjeld.
+  // Med «Berre bøker med omslagsbilete» fell vinnarar som berre har bøker utan omslag, bort.
+  cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", aarsiste: "", plass: "", utan: "", appell: "" };
   meld(0);
   const vinnarar = (await nobelVinnarar()).map(v => {
     const rett = NOBEL_NAMN[v.namn];
@@ -3224,7 +3225,7 @@ function startByggjar(startCfg) {
     document.getElementById("rekkjefelt").hidden = kjelde !== "sok" || nobel;
     // Handplukka: berre «står på hylla» gjeld, dei andre krava blir gøymde
     for (const el of document.getElementById("del-krav").children)
-      if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast;
+      if (el.tagName !== "SUMMARY" && el.id !== "hyllarad") el.hidden = fast && !(nobel && el.id === "omslagrad");
     document.getElementById("hyllarad").hidden = kalender;     // utlånte bøker er med i kalenderen
     document.getElementById("kulturfondfelt").hidden = kjelde !== "sok" || nobel;   // Nyheiter har si eiga liste frå Bibliofil
     // Frå/til år syner berre med «Eige spenn» i årsmenyen
