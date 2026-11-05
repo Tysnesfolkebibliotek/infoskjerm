@@ -282,7 +282,7 @@ const TEMA_LISTE = [
   },
   {
     // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. «Lyrikk» blir skrive for hand øvst til
-    // høgre, og nokre få bokstavar dalar sakte. Ingen UNESCO-logo (krev løyve).
+    // høgre. Ingen UNESCO-logo (krev løyve).
     id: "poesi", namn: "Verdsdagen for poesi", gruppe: "Høgtider og merkedagar", overgang: "kryss",
     dato: "21. mars", aktuell: "03-09/03-21",
     skrift: "par-elegant",
@@ -290,7 +290,7 @@ const TEMA_LISTE = [
       :root[data-tema="poesi"] { --symbol-plass: 26vw; }
       :root[data-tema="poesi"] .lyrikk-skrift { position: absolute; right: 4vw; top: 2vh; width: 24vw; aspect-ratio: 320 / 185; }`,
     fargar: { bakgrunn: "#efeaf4", tekst: "#231c33", dempa: "#5d5470", aksent: "#6b3fa0", "aksent-tekst": "#ffffff", brikke: "rgba(35,28,51,.07)", skugge: "239,234,244", spor: "rgba(35,28,51,.10)", "reserve-a": "#dccfe8", "reserve-b": "#c4b2d8", "bakteppe-lys": "1.15" },
-    pynt({ pynt, dalande }) {
+    pynt({ pynt }) {
       // «Lyrikk» blir skrive for hand øvst til høgre, pennestrok for pennestrok, med prikken over i
       // til slutt. Står ei stund, tonar ut og blir skrive på nytt. Strekdata: bilete/lyrikk-strek.js.
       const FARGE = "#6b3fa0";
@@ -343,11 +343,6 @@ const TEMA_LISTE = [
         if (!sk) { sk = document.createElement("script"); sk.id = "lyrikk-strek"; sk.src = "bilete/lyrikk-strek.js"; document.head.append(sk); }
         sk.addEventListener("load", start);
       }
-      // Bokstavar og teikn som dalar som lauv
-      const FARGAR = ["#6b3fa0", "#8a63b8", "#3d2466"];
-      for (const t of ["a", "ø", "å", "&", "?", "e", "—", "o"])
-        dalande(1, "0 0 20 20", `<text x="10" y="16" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="18" fill="FARGE">${t}</text>`,
-          FARGAR, [3.4, 5.6], [0.14, 0.26]);
     },
   },
   {
