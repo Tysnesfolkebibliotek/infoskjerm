@@ -281,20 +281,68 @@ const TEMA_LISTE = [
     },
   },
   {
-    // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. Fjørpenn øvst til høgre og
-    // nokre få bokstavar som dalar sakte. Ingen UNESCO-logo (krev løyve).
+    // Verdsdagen for poesi (UNESCO). Lyst, som eit ark. «Lyrikk» blir skrive for hand øvst til
+    // høgre, og nokre få bokstavar dalar sakte. Ingen UNESCO-logo (krev løyve).
     id: "poesi", namn: "Verdsdagen for poesi", gruppe: "Høgtider og merkedagar", overgang: "kryss",
     dato: "21. mars", aktuell: "03-09/03-21",
     skrift: "par-elegant",
     css: `
-      :root[data-tema="poesi"] { --symbol-plass: 17vw; }`,
+      :root[data-tema="poesi"] { --symbol-plass: 26vw; }
+      :root[data-tema="poesi"] .lyrikk-skrift { position: absolute; right: 4vw; top: 2vh; width: 24vw; aspect-ratio: 320 / 185; }`,
     fargar: { bakgrunn: "#efeaf4", tekst: "#231c33", dempa: "#5d5470", aksent: "#6b3fa0", "aksent-tekst": "#ffffff", brikke: "rgba(35,28,51,.07)", skugge: "239,234,244", spor: "rgba(35,28,51,.10)", "reserve-a": "#dccfe8", "reserve-b": "#c4b2d8", "bakteppe-lys": "1.15" },
-    pynt({ pynt, svg, dalande }) {
-      // Fjørpenn med ein liten blekkstrek under
-      pynt.append(svg("0 0 100 100", "right:5vw; top:2.5vh; width:13vw; overflow:visible;",
-        `<path d="M90 4 C62 8 36 28 24 60 C32 56 40 54 48 54 C42 58 36 62 32 68 C48 68 64 58 74 42 C66 44 60 44 54 44 C66 38 78 26 90 4 Z" fill="#8a63b8"/>` +
-        `<path d="M90 4 C66 28 42 54 16 90" stroke="#3d2466" stroke-width="1.8" fill="none" stroke-linecap="round"/>` +
-        `<path d="M6 96 C18 89 28 98 42 91 C50 87 56 92 62 90" stroke="#6b3fa0" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".7"/>`));
+    pynt({ pynt, dalande }) {
+      // «Lyrikk» blir skrive for hand øvst til høgre, pennestrok for pennestrok, med prikken over i
+      // til slutt. Står ei stund, tonar ut og blir skrive på nytt. Strekdata: bilete/lyrikk-strek.js.
+      const FARGE = "#6b3fa0";
+      const c = document.createElement("canvas");
+      c.className = "lyrikk-skrift";
+      pynt.append(c);
+      const start = () => {
+        const G = window.LYRIKK_STREK; if (!G || !c.isConnected) return;
+        const L = G.L, R = G.R, n = L.length, x = c.getContext("2d"), PRIKK = [219, 88];
+        const D = [0];
+        for (let i = 1; i < n; i++) {
+          const a = [(L[i-1][0] + R[i-1][0]) / 2, (L[i-1][1] + R[i-1][1]) / 2], b = [(L[i][0] + R[i][0]) / 2, (L[i][1] + R[i][1]) / 2];
+          D.push(D[i-1] + Math.hypot(b[0] - a[0], b[1] - a[1]));
+        }
+        const tot = D[n-1];
+        const storleik = () => {
+          const r = c.getBoundingClientRect(), d = devicePixelRatio || 1;
+          c.width = r.width * d; c.height = r.height * d;
+          x.setTransform(c.width / 320, 0, 0, c.height / 185, -30 * c.width / 320, -20 * c.height / 185);
+        };
+        storleik(); addEventListener("resize", storleik);
+        const teikn = (len, prikk, alfa) => {
+          x.clearRect(30, 20, 320, 185); x.globalAlpha = alfa; x.fillStyle = FARGE; x.beginPath();
+          for (let i = 0; i < n - 1 && D[i] < len; i++) {
+            let f = 1; if (D[i+1] > len) f = (len - D[i]) / (D[i+1] - D[i]);
+            const l2 = [L[i][0] + (L[i+1][0] - L[i][0]) * f, L[i][1] + (L[i+1][1] - L[i][1]) * f];
+            const r2 = [R[i][0] + (R[i+1][0] - R[i][0]) * f, R[i][1] + (R[i+1][1] - R[i][1]) * f];
+            x.moveTo(L[i][0], L[i][1]); x.lineTo(l2[0], l2[1]); x.lineTo(r2[0], r2[1]); x.lineTo(R[i][0], R[i][1]); x.closePath();
+          }
+          x.fill("nonzero");
+          if (prikk > 0) { x.beginPath(); x.ellipse(PRIKK[0], PRIKK[1], 2.8 * prikk, 2.2 * prikk, -0.6, 0, 7); x.fill(); }
+        };
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) { teikn(tot, 1, 1); return; }
+        const vent = ms => new Promise(r => setTimeout(r, ms));
+        const anim = (ms, fn) => new Promise(res => { const t0 = performance.now();
+          (function steg(t) { const k = Math.min(1, (t - t0) / ms); fn(k); k < 1 ? requestAnimationFrame(steg) : res(); })(t0); });
+        const mjuk = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        (async () => { while (c.isConnected) {
+          await anim(4200, k => teikn(tot * mjuk(k), 0, 1));
+          await vent(300);
+          await anim(200, k => teikn(tot, k, 1));
+          await vent(9000);
+          await anim(800, k => teikn(tot, 1, 1 - k));
+          await vent(600);
+        } })();
+      };
+      if (window.LYRIKK_STREK) start();
+      else {
+        let sk = document.getElementById("lyrikk-strek");
+        if (!sk) { sk = document.createElement("script"); sk.id = "lyrikk-strek"; sk.src = "bilete/lyrikk-strek.js"; document.head.append(sk); }
+        sk.addEventListener("load", start);
+      }
       // Bokstavar og teikn som dalar som lauv
       const FARGAR = ["#6b3fa0", "#8a63b8", "#3d2466"];
       for (const t of ["a", "ø", "å", "&", "?", "e", "—", "o"])
