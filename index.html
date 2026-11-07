@@ -539,7 +539,7 @@
           <label for="sjangersok">Sjanger</label>
           <input type="hidden" id="sjanger" name="sjanger">
           <input type="hidden" id="sjangermodus" name="sjangermodus">
-          <input type="text" id="sjangersok" list="sjangrar" placeholder="Tomt = alle. Klikk for forslag">
+          <input type="text" id="sjangersok" list="sjangrar" enterkeyhint="done" placeholder="Tomt = alle. Klikk for forslag">
           <datalist id="sjangrar">
             <option value="Fantasy"><option value="Krim"><option value="Spenning"><option value="Humor">
             <option value="Teikneseriar"><option value="Manga"><option value="Biografiar"><option value="Kokebøker">
@@ -552,7 +552,7 @@
           <input type="hidden" id="emnemodus" name="emnemodus">
           <input type="hidden" id="dewey" name="dewey">
           <input type="hidden" id="serie" name="serie">
-          <input type="text" id="emnesok" list="emneliste" placeholder="Emneord eller deweynummer">
+          <input type="text" id="emnesok" list="emneliste" enterkeyhint="done" placeholder="Emneord eller deweynummer">
           <datalist id="emneliste"></datalist>
           <div class="vallinje brikkerad" id="emnevalde"></div>
           <p class="hjelp" id="forslagstatus"></p>
@@ -691,7 +691,7 @@
       <div class="felt">
         <label for="spraaksok">Språk i boka</label>
         <input type="hidden" id="spraak" name="spraak">
-        <input type="text" id="spraaksok" list="spraakliste" placeholder="Tomt = alle. Klikk for forslag">
+        <input type="text" id="spraaksok" list="spraakliste" enterkeyhint="done" placeholder="Tomt = alle. Klikk for forslag">
         <datalist id="spraakliste"></datalist>
         <div class="vallinje brikkerad" id="spraakvalde"></div>
       </div>
@@ -3762,7 +3762,7 @@ function startByggjar(startCfg) {
     if (emneord && v && emneord.sjanger.some(r => r[0].toLowerCase() === v)) leggTilSjanger($("sjangersok").value);
   });
   $("sjangersok").addEventListener("keydown", e => {
-    if (e.key === "Enter") { e.preventDefault(); $("sjangersok").value.split(",").forEach(leggTilSjanger); }
+    if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); $("sjangersok").value.split(",").forEach(leggTilSjanger); }
   });
   // Legg til eit emne. Står det i lista, kjem alle formene med; elles det som er skrive.
   function leggTilEmne(tekst) {
@@ -3806,9 +3806,9 @@ function startByggjar(startCfg) {
     if (emneord && v && emneord.emne.some(r => r[0].toLowerCase() === v)) leggTilEmne($("emnesok").value);
   });
   $("emnesok").addEventListener("keydown", e => {
-    if (e.key === "Enter") { e.preventDefault(); $("emnesok").value.split(",").forEach(leggTilEmne); }
+    if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); $("emnesok").value.split(",").forEach(leggTilEmne); }
   });
-  $("emnesok").addEventListener("blur", () => { if ($("emnesok").value.trim()) $("forslagstatus").textContent = "Trykk Enter for å leggje til emneordet du har skrive."; });
+  $("emnesok").addEventListener("blur", () => { if ($("emnesok").value.trim()) $("forslagstatus").textContent = "Trykk Enter (Ferdig på mobil) for å leggje til emneordet du har skrive."; });
   for (const felt of [$("emnesok"), $("sjangersok")]) felt.addEventListener("focus", lastEmneord);
   skjema.addEventListener("change", e => { if (e.target.name === "avd") { teiknForslag(); teiknAlder(); } });
 
@@ -3906,7 +3906,7 @@ function startByggjar(startCfg) {
     teiknSpråk(); oppdater(false);
   }
   $("spraaksok").addEventListener("input", e => { if (!e.inputType || e.inputType === "insertReplacementText") velSpråk(); });
-  $("spraaksok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); velSpråk(); } });
+  $("spraaksok").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); velSpråk(); } });
   fyllInn(startCfg);
   skaler();
   oppdater(true);
