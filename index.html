@@ -3086,14 +3086,22 @@ function startByggjar(startCfg) {
   }
   function standardSkriftval() {
     const ts = temaSkrift();
-    return ["standard", "Som temaet", ts ? ts[1] : "skrifta på skjermen", ts ? ts[3] : null, ts ? ts[4] : null];
+    // Skildringa er namnet på skrifta, så ho står i den skrifta som har bokstavane i namnet lasta
+    return ["standard", "Som temaet", ts ? ts[1] : "skrifta på skjermen", null, ts ? ts[3] : null];
   }
   function teiknSkriftknapp() {
-    let [id, namn, , fNamn] = SKRIFTVAL.find(x => x[0] === skriftSelect.value) || SKRIFTVAL[0];
-    if (id === "standard") { const ts = temaSkrift(); namn = `Som temaet (${ts ? ts[1] : "skrifta på skjermen"})`; fNamn = ts ? ts[3] : null; }
+    const [id, namn, , fNamn] = SKRIFTVAL.find(x => x[0] === skriftSelect.value) || SKRIFTVAL[0];
     const n = skriftknapp.querySelector(".temanamn");
-    n.textContent = namn; n.style.fontFamily = skriftstil(fNamn);
-    if (fNamn) lastSkriftprøver();
+    // Berre bokstavane i skriftnamnet er lasta, så «Som temaet (…)» står i vanleg skrift
+    // og berre namnet i parentesen i skrifta til temaet
+    const ts = id === "standard" ? temaSkrift() : null;
+    const visNamn = id !== "standard" ? namn : ts ? ts[1] : "skrifta på skjermen";
+    const visFont = id !== "standard" ? fNamn : ts ? ts[3] : null;
+    const del = document.createElement("span");
+    del.textContent = visNamn; del.style.fontFamily = skriftstil(visFont);
+    n.style.fontFamily = "";
+    if (id === "standard") n.replaceChildren("Som temaet (", del, ")"); else n.replaceChildren(del);
+    if (visFont) lastSkriftprøver();
   }
   // «Som temaet» står øvst; skriftene og skriftpara ligg i kvar si gruppe som kan faldast saman
   const opneSkriftgrupper = new Set();
