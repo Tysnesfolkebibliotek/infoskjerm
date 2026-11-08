@@ -1221,7 +1221,7 @@ function startVisning(cfg) {
     const m = document.createElement("div");
     m.className = "terning-merke";
     m.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">
-      <rect x="2" y="2" width="96" height="96" rx="12" fill="#fffdf8"/>
+      <rect x="2" y="2" width="96" height="96" rx="12" fill="var(--terning-farge, #fffdf8)"/>
       ${AUGE[n].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="var(--terning-auge, #1c1810)"/>`).join("")}</svg>`;
     m.setAttribute("role", "img"); m.setAttribute("aria-label", `Terningkast ${n}`);
     festMerke(ramme, m, 0.26, 0.75, 0.25);
