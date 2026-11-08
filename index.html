@@ -1195,7 +1195,8 @@ function startVisning(cfg) {
     // omtalelengd (brukt av skule.html): lengre omtale enn standard, til liggjande skjermar med meir plass
     const lengd = Number(cfg.omtalelengd) || 0;
     const omtale = heil ? (t.omtaleHeil || t.omtale) : lengd ? setningsOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
-    const kritikk = OMTALAR[String(t.id)] || null;
+    const k0 = OMTALAR[String(t.id)];
+    const kritikk = k0 ? { s: String(k0.s || "").trim(), t: k0.t, m: String(k0.m || "").trim() } : null;
     if (kritikk && kritikk.s) {
       // Sitat frå meldinga, med mediet under. Kjem i staden for omtalen frå katalogen.
       const sitat = el("blockquote", "sitat");
@@ -3506,7 +3507,9 @@ function startByggjar(startCfg) {
   const opneOmtalar = new Set();
   function setjOmtale(id, felt, verdi) {
     const o = omtalar(), r = { ...(o[id] || {}) };
-    if (verdi === "" || verdi == null) delete r[felt]; else r[felt] = verdi;
+    // Teksten blir lagra som han er skriven (med mellomrom), og rydda først på skjermen.
+    // Lista kan bli teikna på nytt frå det lagra, så trimma tekst ville ete mellomromet ein nett skreiv.
+    if (verdi == null || String(verdi).trim() === "") delete r[felt]; else r[felt] = verdi;
     if (Object.keys(r).length) o[id] = r; else delete o[id];
     lagreOmtalar(o);
     // Lista treng ikkje teiknast på nytt medan ein skriv (då ville feltet miste fokus på mobilen)
@@ -3520,7 +3523,7 @@ function startByggjar(startCfg) {
     const sitat = document.createElement("textarea");
     sitat.rows = 2; sitat.maxLength = 140; sitat.value = o.s || ""; sitat.dataset.omtalefelt = id + ":s";
     sitat.placeholder = "Nokre få ord frå meldinga";
-    sitat.addEventListener("input", () => setjOmtale(id, "s", sitat.value.trim()));
+    sitat.addEventListener("input", () => setjOmtale(id, "s", sitat.value));
     sitatL.append(sitat);
     const tL = document.createElement("div"); tL.innerHTML = "<label>Terningkast</label>";
     const rad = document.createElement("div"); rad.className = "terningval";
@@ -3539,7 +3542,7 @@ function startByggjar(startCfg) {
     const medium = document.createElement("input");
     medium.type = "text"; medium.value = o.m || ""; medium.dataset.omtalefelt = id + ":m";
     medium.setAttribute("list", "medieliste"); medium.placeholder = "Avis, tidsskrift eller NRK"; medium.enterKeyHint = "done";
-    medium.addEventListener("input", () => setjOmtale(id, "m", medium.value.trim()));
+    medium.addEventListener("input", () => setjOmtale(id, "m", medium.value));
     mL.append(medium);
     boks.append(sitatL, tL, mL);
     return boks;
