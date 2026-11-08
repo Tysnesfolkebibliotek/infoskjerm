@@ -1205,7 +1205,7 @@ function startVisning(cfg) {
       if (kritikk.m) sitat.append(el("cite", "sitat-kjelde", kritikk.m));
       info.append(sitat);
     } else {
-      if (kritikk && kritikk.t && kritikk.m) info.append(el("p", "sitat-kjelde terning-linje", `Terningkast ${kritikk.t} i ${kritikk.m}`));
+      if (kritikk && kritikk.t && kritikk.m) info.append(el("p", "sitat-kjelde terning-linje", `Terningkast ${kritikk.t} · ${kritikk.m}`));
       if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
     }
     bok.append(ramme, info);
