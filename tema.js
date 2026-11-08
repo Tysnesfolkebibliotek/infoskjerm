@@ -767,7 +767,7 @@ const TEMA_LISTE = [
   },
   {
     // Kritikarfavorittar: avispapir, svart trykk og raud aksent. Overskrifta står over ein
-    // dobbel strek som i eit avishovud, og terningauga er raude (sjå terningMerke i index.html).
+    // dobbel strek som i eit avishovud, og terningen tek aksentfargen (raud).
     id: "kritikar", namn: "Kritikarfavorittar", gruppe: "Bibliotek", overgang: "kryss",
     dato: "sitat og terningkast",
     skrift: "par-elegant",
