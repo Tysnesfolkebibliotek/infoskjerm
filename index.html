@@ -591,7 +591,6 @@
         <input type="hidden" id="brage" name="brage">
         <input type="hidden" id="vinnarar" name="vinnarar">
         <input type="hidden" id="omtalar" name="omtalar">
-        <p class="hjelp" id="kritikkhjelp" hidden><b>Sitat og terningkast:</b> Trykk «+ Sitat» på ei bok for å gje ho eit sitat frå ei bokmelding, eit terningkast eller begge. Skriv kvar det kjem frå (avis, NRK – eller «Biblioteket» når det er vår eiga bokmelding), så står det under sitatet. Hald sitatet kort. Bøker utan sitat blir viste som vanleg.</p>
         <datalist id="medieliste"><option value="Aftenposten"><option value="Bergens Tidende"><option value="Dagbladet"><option value="Dag og Tid"><option value="Dagens Næringsliv"><option value="Klassekampen"><option value="Morgenbladet"><option value="NRK"><option value="Stavanger Aftenblad"><option value="Adresseavisen"><option value="Fædrelandsvennen"><option value="Vårt Land"><option value="VG"><option value="Sunnhordland"><option value="Bok365"><option value="Biblioteket"></datalist>
         <p class="hjelp" id="bragehjelp" hidden><b>Brageprisen:</b> Legg til dei nominerte bøkene. Søket leitar i heile basen, så bøker som berre er bestilte, kjem òg med – dei får lappen «Bestilt – kan reserverast». Alle får merket «Nominert» med årstalet. Når vinnarane er kåra, trykkjer du «Vinnar» på dei, så får dei merket «Vinner».</p>
         <div class="felt">
@@ -608,7 +607,7 @@
         </div>
         <div class="felt">
           <span class="etikett"><span id="utvaletikett">Valde bøker</span> (<span id="utvaltal">0</span>)</span>
-          <label class="val" id="kritikkrad"><input type="checkbox" id="kritikk" name="kritikk" value="1"> Sitat og terningkast på bøkene</label>
+          <details class="hjelpknapp" id="kritikkrad"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp"><b>Sitat og terningkast:</b> Trykk «+ Sitat» på ei bok for å gje ho eit sitat frå ei bokmelding, eit terningkast eller begge. Skriv kvar det kjem frå (avis, NRK – eller «Biblioteket» når det er vår eiga bokmelding), så står det under sitatet. Hald sitatet kort. Bøker utan sitat blir viste som vanleg.</p></details>
           <ol class="utvalliste" id="utvalliste"></ol>
           <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
         </div>
@@ -894,7 +893,7 @@ const STANDARD = {
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   brage: "0", vinnarar: "",   // Brageprisen-merke på omslaga, og tittelnummera til vinnarane
   nobel: "0",                 // Nobelprisen i litteratur: vinnarane blir henta frå Nobel (sjå hentNobel)
-  kritikk: "0", omtalar: "",  // Kritikarfavorittar: sitat, terningkast og medium per bok, som JSON {tittelnr: {s, t, m}}
+  omtalar: "",  // Handplukka: sitat, terningkast og kjelde per bok, som JSON {tittelnr: {s, t, m}}
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "eitt", merkelapp: "0",
   omtalelengd: "",  // tal teikn i omtalen; tomt = standard (220). Brukt av skule.html
@@ -925,7 +924,7 @@ const MALAR = {
   // Omtalen frå katalogen blir berre vist på bøker utan sitat.
   kritikar: { kjelde: "utval", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
               omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
-              tittel: "Kritikarfavorittar", namn: "", sek: "20", oppdater: "360", omtale: "1", kritikk: "1" },
+              tittel: "Kritikarfavorittar", namn: "", sek: "20", oppdater: "360", omtale: "1" },
   // Nobelprisen i litteratur: alle vinnarane frå Nobel sitt API, to bøker per forfattar.
   // Utlånte bøker er med. Neste års vinnar kjem med av seg sjølv.
   nobel: { kjelde: "sok", nobel: "1", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
@@ -1127,7 +1126,7 @@ function startVisning(cfg) {
   // Julekalender: eiga visning med pakkar i staden for éi bok om gongen
   const KALENDER = erKalenderCfg(cfg);
   const VINNARAR = new Set((cfg.vinnarar || "").split(",").map(x => x.trim()).filter(Boolean));
-  const OMTALAR = cfg.kritikk === "1" ? lesOmtalar(cfg.omtalar) : {};
+  const OMTALAR = KALENDER ? {} : lesOmtalar(cfg.omtalar);
   if (cfg.brage === "1") {
     // Skrifta på Brageprisen-merket
     const l = document.createElement("link"); l.rel = "stylesheet";
@@ -3296,7 +3295,6 @@ function startByggjar(startCfg) {
     const brage = kjelde === "utval" && skjema.elements.brage.value === "1";
     document.getElementById("bragehjelp").hidden = !brage;
     document.getElementById("kritikkrad").hidden = kalender;
-    document.getElementById("kritikkhjelp").hidden = !(kjelde === "utval" && !kalender && skjema.elements.kritikk.checked);
     const st = document.getElementById("utvalstatus");
     if (/^Søkjer i (avdelingane|heile basen)/.test(st.textContent))
       st.textContent = brage ? "Søkjer i heile basen, òg bøker som berre er bestilte." : "Søkjer i avdelingane som er kryssa av ovanfor.";
@@ -3502,7 +3500,7 @@ function startByggjar(startCfg) {
     } catch (e) {}
   }
   // Kritikarfavorittar-malen: sitat, terningkast og medium per bok, bak knappen «+ Omtale»
-  function erKritikk() { return $("kritikk").checked && !erKalender(); }
+  function erKritikk() { return !erKalender(); }   // «+ Sitat» på alle handplukka bøker, utanom i julekalenderen
   function omtalar() { return lesOmtalar($("omtalar").value); }
   function lagreOmtalar(o) { $("omtalar").value = Object.keys(o).length ? JSON.stringify(o) : ""; }
   const opneOmtalar = new Set();
