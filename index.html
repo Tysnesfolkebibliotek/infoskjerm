@@ -177,6 +177,14 @@
   .omslag-ramme.med-merke { position: relative; }
   .brage-merke { position: absolute; z-index: 2; transform: rotate(12deg); filter: drop-shadow(0 .6vh 1.2vh rgba(0,0,0,.45)); pointer-events: none; }
   .brage-merke svg { width: 100%; height: 100%; display: block; }
+  /* Kritikarfavorittar: terning på omslaget og sitat frå meldinga (sjå terningMerke) */
+  .terning-merke { position: absolute; z-index: 2; transform: rotate(-9deg); filter: drop-shadow(0 .6vh 1.2vh rgba(0,0,0,.4)); pointer-events: none; }
+  .terning-merke svg { width: 100%; height: 100%; display: block; }
+  .sitat { position: relative; margin: 3.2vh auto 0; max-width: 80vw; font-family: var(--skrift-tittel, var(--skrift)); font-style: italic;
+           font-size: 3.7vw; line-height: 1.4; color: var(--tekst); }
+  .sitat::before { content: "\201C"; display: block; font-style: normal; font-size: 13vw; line-height: 1; height: 3.6vh; color: var(--aksent); }
+  .sitat-tekst { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .sitat-kjelde { display: block; margin-top: 1.6vh; font-family: var(--skrift); font-style: normal; font-size: 2.5vw; letter-spacing: .08em; text-transform: uppercase; color: var(--dempa); }
   .omslag-ramme { flex: 1 1 auto; min-height: 0; max-height: 50vh; width: 100%; display: flex; align-items: center; justify-content: center; }
   .omslag { max-height: 100%; max-width: 80vw; border-radius: .6vw; box-shadow: 0 3vh 6vh rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); }
   .reserve {
@@ -324,7 +332,7 @@
   .hjelpknapp > summary::marker { content: ""; }
   .hjelpknapp > summary:hover, .hjelpknapp[open] > summary { color: var(--b-aksent); border-color: var(--b-aksent); }
   .hjelpknapp > .hjelp { margin-top: 4px; }
-  input[type=text], input[type=search], input[type=number], select {
+  input[type=text], textarea, input[type=search], input[type=number], select {
     width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
     border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst);
   }
@@ -352,6 +360,14 @@
   .utval-tekst { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.3; }
   .utval-tekst b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .utval-tekst span { color: var(--b-dempa); }
+  /* Kritikarfavorittar: omtalefelta under boka i lista */
+  .utvalliste li.med-omtale { flex-wrap: wrap; }
+  .omtaleboks { flex-basis: 100%; display: grid; gap: 10px; padding: 10px 4px 4px; border-top: 1px solid var(--b-strek); }
+  .omtaleboks label { font-size: 13px; font-weight: 600; }
+  .omtaleboks textarea, .omtaleboks input { width: 100%; margin-top: 4px; font: inherit; font-weight: 400; }
+  .omtaleboks textarea { resize: vertical; min-height: 3.4em; }
+  .terningval { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .terningval button { min-width: 38px; }
   .knapp.liten { padding: 4px 9px; font-size: 13px; }
   .appellbrikke { display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; padding: 3px 4px 3px 10px; border-radius: 99px;
                   background: var(--b-aksent); color: var(--b-aksent-tekst); font-size: 13px; font-weight: 600; border: 0; cursor: pointer; }
@@ -574,6 +590,10 @@
         <input type="hidden" id="titlar" name="titlar">
         <input type="hidden" id="brage" name="brage">
         <input type="hidden" id="vinnarar" name="vinnarar">
+        <input type="hidden" id="kritikk" name="kritikk">
+        <input type="hidden" id="omtalar" name="omtalar">
+        <p class="hjelp" id="kritikkhjelp" hidden><b>Kritikarfavorittar:</b> Legg til bøkene, og trykk «+ Omtale» på dei som skal ha sitat, terningkast eller begge. Hugs kvar sitatet kjem frå – mediet står alltid under sitatet. Hald sitatet kort (nokre ord frå meldinga). Bøker utan omtale blir viste som vanleg.</p>
+        <datalist id="medieliste"><option value="Aftenposten"><option value="Bergens Tidende"><option value="Dagbladet"><option value="Dag og Tid"><option value="Dagens Næringsliv"><option value="Klassekampen"><option value="Morgenbladet"><option value="NRK"><option value="Stavanger Aftenblad"><option value="Adresseavisen"><option value="Fædrelandsvennen"><option value="Vårt Land"><option value="VG"><option value="Sunnhordland"><option value="Bok365"></datalist>
         <p class="hjelp" id="bragehjelp" hidden><b>Brageprisen:</b> Legg til dei nominerte bøkene. Søket leitar i heile basen, så bøker som berre er bestilte, kjem òg med – dei får lappen «Bestilt – kan reserverast». Alle får merket «Nominert» med årstalet. Når vinnarane er kåra, trykkjer du «Vinnar» på dei, så får dei merket «Vinner».</p>
         <div class="felt">
           <label for="utvalsok">Finn bøker</label>
@@ -874,6 +894,7 @@ const STANDARD = {
   aarfra: "", aartil: "", aarsiste: "", alder: "", spraak: "", alle: "0", titlar: "", kulturfond: "0",
   brage: "0", vinnarar: "",   // Brageprisen-merke på omslaga, og tittelnummera til vinnarane
   nobel: "0",                 // Nobelprisen i litteratur: vinnarane blir henta frå Nobel (sjå hentNobel)
+  kritikk: "0", omtalar: "",  // Kritikarfavorittar: sitat, terningkast og medium per bok, som JSON {tittelnr: {s, t, m}}
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "eitt", merkelapp: "0",
   omtalelengd: "",  // tal teikn i omtalen; tomt = standard (220). Brukt av skule.html
@@ -900,6 +921,11 @@ const MALAR = {
   brageprisen: { kjelde: "utval", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
                  omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
                  tittel: "Nominert til Brageprisen", namn: "", sek: "20", oppdater: "360", omtale: "1", brage: "1" },
+  // Kritikarfavorittar: handplukka bøker med sitat frå meldinga, terningkast og medium.
+  // Omtalen frå katalogen blir berre vist på bøker utan sitat.
+  kritikar: { kjelde: "utval", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
+              omslag: "0", hylla: "0", perforf: "0", utan: "", antal: "40", aarfra: "", aartil: "", alder: "", spraak: "", alle: "0",
+              tittel: "Kritikarfavorittar", namn: "", sek: "20", oppdater: "360", omtale: "1", kritikk: "1" },
   // Nobelprisen i litteratur: alle vinnarane frå Nobel sitt API, to bøker per forfattar.
   // Utlånte bøker er med. Neste års vinnar kjem med av seg sjølv.
   nobel: { kjelde: "sok", nobel: "1", avd: "tyfv,tyfb", lf: "", sjanger: "", plass: "", emne: "", emnemodus: "eitt", dewey: "", serie: "", ccl: "", rekkje: "tilfeldig",
@@ -947,7 +973,7 @@ const MALTEMA = {
   nyheiter: "lys", reservert: "natt", kulturfond: "kveld",
   sakprosa: "kveld", krim: "krim", biografi: "kveld", lokal: "fjord", natur: "skog", klima: "klima", handarbeid: "hobby",
   fantasy: "fantasy", fotball: "sport", teikne: "manga", biletbok_nn: "biletbok", born_nn: "lys", ungdom_nn: "natt",
-  jul: "jul", julekalender: "advent", brageprisen: "brage", nobel: "nobel",
+  jul: "jul", julekalender: "advent", brageprisen: "brage", nobel: "nobel", kritikar: "kritikar",
   morsmal: "morsmal", barnebok: "barnebok",
 };
 for (const [mal, tema] of Object.entries(MALTEMA)) if (MALAR[mal]) MALAR[mal] = { ...MALAR[mal], tema };
@@ -975,6 +1001,12 @@ function lagHash(cfg, vis) {
   if (vis) p.set("vis", "1");
   for (const k of NØKLAR) p.set(k, cfg[k] ?? "");
   return p.toString();
+}
+
+// Kritikarfavorittar: omtalane står som JSON i «omtalar=»: {"tittelnr": {s: sitat, t: terningkast, m: medium}}
+function lesOmtalar(tekst) {
+  try { const o = JSON.parse(tekst || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; }
+  catch (e) { return {}; }
 }
 
 
@@ -1095,6 +1127,7 @@ function startVisning(cfg) {
   // Julekalender: eiga visning med pakkar i staden for éi bok om gongen
   const KALENDER = erKalenderCfg(cfg);
   const VINNARAR = new Set((cfg.vinnarar || "").split(",").map(x => x.trim()).filter(Boolean));
+  const OMTALAR = cfg.kritikk === "1" ? lesOmtalar(cfg.omtalar) : {};
   if (cfg.brage === "1") {
     // Skrifta på Brageprisen-merket
     const l = document.createElement("link"); l.rel = "stylesheet";
@@ -1162,10 +1195,35 @@ function startVisning(cfg) {
     // omtalelengd (brukt av skule.html): lengre omtale enn standard, til liggjande skjermar med meir plass
     const lengd = Number(cfg.omtalelengd) || 0;
     const omtale = heil ? (t.omtaleHeil || t.omtale) : lengd ? setningsOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
-    if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
+    const kritikk = OMTALAR[String(t.id)] || null;
+    if (kritikk && kritikk.s) {
+      // Sitat frå meldinga, med mediet under. Kjem i staden for omtalen frå katalogen.
+      const sitat = el("blockquote", "sitat");
+      sitat.append(el("span", "sitat-tekst", kritikk.s));
+      if (kritikk.m) sitat.append(el("cite", "sitat-kjelde", kritikk.m));
+      info.append(sitat);
+    } else {
+      if (kritikk && kritikk.t && kritikk.m) info.append(el("p", "sitat-kjelde", `Terningkast ${kritikk.t} i ${kritikk.m}`));
+      if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
+    }
     bok.append(ramme, info);
     if (cfg.brage === "1") brageMerke(ramme, VINNARAR.has(String(t.id)));
+    if (kritikk && kritikk.t) terningMerke(ramme, kritikk.t);
     return bok;
+  }
+
+  // Terningen øvst til høgre på omslaget, med auga i aksentfargen til temaet
+  function terningMerke(ramme, verdi) {
+    const n = Math.min(6, Math.max(1, Number(verdi) || 0));
+    const AUGE = { 1: [[50, 50]], 2: [[27, 27], [73, 73]], 3: [[27, 27], [50, 50], [73, 73]], 4: [[27, 27], [73, 27], [27, 73], [73, 73]],
+                   5: [[27, 27], [73, 27], [50, 50], [27, 73], [73, 73]], 6: [[27, 25], [73, 25], [27, 50], [73, 50], [27, 75], [73, 75]] };
+    const m = document.createElement("div");
+    m.className = "terning-merke";
+    m.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="3" y="3" width="94" height="94" rx="18" fill="#fffdf8" stroke="rgba(0,0,0,.18)" stroke-width="1.5"/>
+      ${AUGE[n].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="9.5" fill="var(--terning-auge, #1c1810)"/>`).join("")}</svg>`;
+    m.setAttribute("role", "img"); m.setAttribute("aria-label", `Terningkast ${n}`);
+    festMerke(ramme, m, 0.34, 0.68, 0.16);
   }
 
   // Brageprisen-merket øvst til høgre på omslaget: «Nominert <år>», eller
@@ -1184,16 +1242,23 @@ function startVisning(cfg) {
       <text fill="#fff" font-family="Montserrat, 'Ubuntu', sans-serif" font-weight="600" font-size="${vinnar ? 135 : 125}" letter-spacing="6" text-anchor="middle">
         <textPath href="#brage-boge" startOffset="50%">${tekst}</textPath></text></svg>`;
     m.setAttribute("role", "img"); m.setAttribute("aria-label", vinnar ? `Vinnar av Brageprisen ${år}` : `Nominert til Brageprisen ${år}`);
+    festMerke(ramme, m, 0.42, 0.72, 0.22);
+  }
+
+  // Set eit merke på hjørnet øvst til høgre på omslaget (Brageprisen, terningkast).
+  // del: storleiken som del av omslagsbreidda; inn/opp: kor mykje av merket som går
+  // inn over omslaget og opp over kanten, som del av merket.
+  function festMerke(ramme, m, del, inn, opp) {
     ramme.classList.add("med-merke");
     ramme.append(m);
     // Merket følgjer hjørnet på omslaget (eller tittelkortet), same kor stort det blir
     const plasser = () => {
       const o = ramme.querySelector(".omslag, .reserve");
       if (!o || !o.offsetWidth) return;
-      const str = Math.max(o.offsetWidth * 0.42, 60);
+      const str = Math.max(o.offsetWidth * del, 60);
       m.style.width = m.style.height = str + "px";
-      m.style.left = (o.offsetLeft + o.offsetWidth - str * 0.72) + "px";
-      m.style.top = (o.offsetTop - str * 0.22) + "px";
+      m.style.left = (o.offsetLeft + o.offsetWidth - str * inn) + "px";
+      m.style.top = (o.offsetTop - str * opp) + "px";
       m.hidden = false;
     };
     m.hidden = true;
@@ -3229,6 +3294,7 @@ function startByggjar(startCfg) {
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     const brage = kjelde === "utval" && skjema.elements.brage.value === "1";
     document.getElementById("bragehjelp").hidden = !brage;
+    document.getElementById("kritikkhjelp").hidden = !(kjelde === "utval" && skjema.elements.kritikk.value === "1");
     const st = document.getElementById("utvalstatus");
     if (/^Søkjer i (avdelingane|heile basen)/.test(st.textContent))
       st.textContent = brage ? "Søkjer i heile basen, òg bøker som berre er bestilte." : "Søkjer i avdelingane som er kryssa av ovanfor.";
@@ -3339,7 +3405,8 @@ function startByggjar(startCfg) {
   // Ny mal: legg han inn i MALAR (og MALTEMA) og i ei gruppe her.
   const MALGRUPPER = [
     ["Nytt og populært", [["nyheiter", "Nyheiter"], ["reservert", "Mest reservert akkurat no"], ["kulturfond", "Ny norsk litteratur", "Kulturfondet"]]],
-    ["Prisar", [["brageprisen", "Brageprisen", "nominerte og vinnarar"], ["nobel", "Nobelprisen i litteratur", "alle vinnarane"]]],
+    ["Prisar og kritikk", [["brageprisen", "Brageprisen", "nominerte og vinnarar"], ["nobel", "Nobelprisen i litteratur", "alle vinnarane"],
+                ["kritikar", "Kritikarfavorittar", "sitat og terningkast"]]],
     ["For vaksne", [["sakprosa", "Frå hylla", "sakprosa"], ["krim", "Krim"], ["biografi", "Biografiar"], ["lokal", "Lokalhistorie"],
                     ["natur", "Natur og friluftsliv"], ["klima", "Klima og miljø"], ["handarbeid", "Sy og strikk"]]],
     ["For born og unge", [["fantasy", "Fantasy"], ["fotball", "Fotball"], ["teikne", "Teikneseriar"]]],
@@ -3432,8 +3499,57 @@ function startByggjar(startCfg) {
       }
     } catch (e) {}
   }
+  // Kritikarfavorittar-malen: sitat, terningkast og medium per bok, bak knappen «+ Omtale»
+  function erKritikk() { return $("kritikk").value === "1"; }
+  function omtalar() { return lesOmtalar($("omtalar").value); }
+  function lagreOmtalar(o) { $("omtalar").value = Object.keys(o).length ? JSON.stringify(o) : ""; }
+  const opneOmtalar = new Set();
+  function setjOmtale(id, felt, verdi) {
+    const o = omtalar(), r = { ...(o[id] || {}) };
+    if (verdi === "" || verdi == null) delete r[felt]; else r[felt] = verdi;
+    if (Object.keys(r).length) o[id] = r; else delete o[id];
+    lagreOmtalar(o);
+    // Lista treng ikkje teiknast på nytt medan ein skriv (då ville feltet miste fokus på mobilen)
+    utvalRo = true;
+    try { oppdater(false); } finally { utvalRo = false; }
+  }
+  function omtaleSkjema(id) {
+    const o = omtalar()[id] || {};
+    const boks = document.createElement("div"); boks.className = "omtaleboks";
+    const sitatL = document.createElement("label"); sitatL.textContent = "Sitat frå meldinga";
+    const sitat = document.createElement("textarea");
+    sitat.rows = 2; sitat.maxLength = 140; sitat.value = o.s || ""; sitat.dataset.omtalefelt = id + ":s";
+    sitat.placeholder = "Nokre få ord frå meldinga";
+    sitat.addEventListener("input", () => setjOmtale(id, "s", sitat.value.trim()));
+    sitatL.append(sitat);
+    const tL = document.createElement("div"); tL.innerHTML = "<label>Terningkast</label>";
+    const rad = document.createElement("div"); rad.className = "terningval";
+    for (const v of ["", "1", "2", "3", "4", "5", "6"]) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = v || "–"; b.title = v ? `Terningkast ${v}` : "Ingen terning";
+      b.className = "knapp liten" + ((o.t || "") === v ? "" : " sekundær");
+      b.addEventListener("click", () => {
+        setjOmtale(id, "t", v);
+        for (const k of rad.children) k.classList.toggle("sekundær", k !== b);
+      });
+      rad.append(b);
+    }
+    tL.append(rad);
+    const mL = document.createElement("label"); mL.textContent = "Medium";
+    const medium = document.createElement("input");
+    medium.type = "text"; medium.value = o.m || ""; medium.dataset.omtalefelt = id + ":m";
+    medium.setAttribute("list", "medieliste"); medium.placeholder = "Avis, tidsskrift eller NRK"; medium.enterKeyHint = "done";
+    medium.addEventListener("input", () => setjOmtale(id, "m", medium.value.trim()));
+    mL.append(medium);
+    boks.append(sitatL, tL, mL);
+    return boks;
+  }
   function setjValde(idar) {
     $("titlar").value = idar.join(",");
+    // Omtalar til bøker som er tekne bort, blir sletta
+    const o = omtalar();
+    for (const k of Object.keys(o)) if (!idar.includes(k)) delete o[k];
+    lagreOmtalar(o);
     teiknUtval();
     oppdater(false);
   }
@@ -3456,8 +3572,9 @@ function startByggjar(startCfg) {
     b.type = "button"; b.className = "knapp sekundær liten"; b.textContent = tekst; b.title = tittel;
     b.addEventListener("click", fn); return b;
   }
-  var teikneNr = 0;
+  var teikneNr = 0, utvalRo = false;
   async function teiknUtval() {
+    if (utvalRo) return;
     const idar = valde(), nr = ++teikneNr;
     document.getElementById("utvaltal").textContent = erKalender() ? `${Math.min(idar.length, 24)} av 24` : idar.length;
     document.getElementById("utvaltom").hidden = idar.length > 0;
@@ -3475,6 +3592,17 @@ function startByggjar(startCfg) {
         if (vinn) v.classList.remove("sekundær");
         rad.insertBefore(v, rad.querySelector("button"));
       }
+      if (erKritikk()) {
+        const o = omtalar()[id], open = opneOmtalar.has(id);
+        const b = knapp(open ? "Lukk" : o ? "✎ Omtale" : "+ Omtale", open ? "Lukk omtalefelta" : "Sitat, terningkast og medium",
+          () => { if (open) opneOmtalar.delete(id); else opneOmtalar.add(id); teiknUtval(); });
+        rad.insertBefore(b, rad.querySelector("button"));
+        if (o && !open) {
+          const u = rad.querySelector(".utval-tekst span");
+          u.textContent += " · " + [o.t ? `Terningkast ${o.t}` : "", o.s ? "sitat" : "", o.m || ""].filter(Boolean).join(", ");
+        }
+        if (open) { rad.classList.add("med-omtale"); rad.append(omtaleSkjema(id)); }
+      }
       // Julekalender: lukenummeret framfor tittelen. Bøker etter nr. 24 blir ikkje viste.
       if (erKalender()) {
         const b = rad.querySelector(".utval-tekst b");
@@ -3482,7 +3610,14 @@ function startByggjar(startCfg) {
       }
       rader.push(rad);
     }
+    // Teikninga skjer på nytt for kvar endring: hald fram i omtalefeltet ein skriv i
+    const fokus = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.omtalefelt : null;
+    const merka = fokus ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
     $("utvalliste").replaceChildren(...rader);
+    if (fokus) {
+      const f = $("utvalliste").querySelector(`[data-omtalefelt="${fokus}"]`);
+      if (f) { f.focus(); try { f.setSelectionRange(...merka); } catch (e) {} }
+    }
     if (erBrage()) merkBestilte(idar.map((id, i) => [id, rader[i]]).filter(([id]) => postCache.has(id)));
     // Hent titlar vi ikkje har sett før (til dømes frå ei lenkje), og teikn på nytt
     const manglar = idar.filter(id => !postCache.has(id));

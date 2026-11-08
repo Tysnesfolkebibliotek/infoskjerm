@@ -766,6 +766,17 @@ const TEMA_LISTE = [
     },
   },
   {
+    // Kritikarfavorittar: avispapir, svart trykk og raud aksent. Overskrifta står over ein
+    // dobbel strek som i eit avishovud, og terningauga er raude (sjå terningMerke i index.html).
+    id: "kritikar", namn: "Kritikarfavorittar", gruppe: "Bibliotek", overgang: "kryss",
+    dato: "sitat og terningkast",
+    skrift: "par-elegant",
+    css: `
+      :root[data-tema="kritikar"] { --terning-auge: #b3261e; }
+      :root[data-tema="kritikar"] #visning header { border-bottom: .7vh double var(--tekst); padding-bottom: 1.4vh; }`,
+    fargar: { bakgrunn: "#f3eee4", tekst: "#1b1916", dempa: "#5a544b", aksent: "#b3261e", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "243,238,228", spor: "rgba(0,0,0,.10)", "reserve-a": "#e0d6c3", "reserve-b": "#cbbda2", "bakteppe-lys": "1.15" },
+  },
+  {
     id: "spel", namn: "Spel", gruppe: "Bibliotek", overgang: "glid",
     dato: "pikselstil, t.d. Bibliobattles",
     skrift: "par-spel",
