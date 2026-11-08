@@ -183,7 +183,7 @@
   .sitat { position: relative; margin: 3.2vh auto 0; max-width: 80vw; font-family: var(--skrift-tittel, var(--skrift)); font-style: italic;
            font-size: 3.7vw; line-height: 1.4; color: var(--tekst); }
   .sitat::before { content: "\201C"; display: block; font-style: normal; font-size: 13vw; line-height: 1; height: 3.6vh; color: var(--aksent); }
-  .sitat-tekst { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .sitat-tekst { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
   .sitat-kjelde { display: block; margin-top: 1.6vh; font-family: var(--skrift); font-style: normal; font-size: 2.5vw; letter-spacing: .08em; text-transform: uppercase; color: var(--dempa); }
   .omslag-ramme { flex: 1 1 auto; min-height: 0; max-height: 50vh; width: 100%; display: flex; align-items: center; justify-content: center; }
   .omslag { max-height: 100%; max-width: 80vw; border-radius: .6vw; box-shadow: 0 3vh 6vh rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06); }
@@ -590,10 +590,9 @@
         <input type="hidden" id="titlar" name="titlar">
         <input type="hidden" id="brage" name="brage">
         <input type="hidden" id="vinnarar" name="vinnarar">
-        <input type="hidden" id="kritikk" name="kritikk">
         <input type="hidden" id="omtalar" name="omtalar">
-        <p class="hjelp" id="kritikkhjelp" hidden><b>Kritikarfavorittar:</b> Legg til bøkene, og trykk «+ Omtale» på dei som skal ha sitat, terningkast eller begge. Hugs kvar sitatet kjem frå – mediet står alltid under sitatet. Hald sitatet kort (nokre ord frå meldinga). Bøker utan omtale blir viste som vanleg.</p>
-        <datalist id="medieliste"><option value="Aftenposten"><option value="Bergens Tidende"><option value="Dagbladet"><option value="Dag og Tid"><option value="Dagens Næringsliv"><option value="Klassekampen"><option value="Morgenbladet"><option value="NRK"><option value="Stavanger Aftenblad"><option value="Adresseavisen"><option value="Fædrelandsvennen"><option value="Vårt Land"><option value="VG"><option value="Sunnhordland"><option value="Bok365"></datalist>
+        <p class="hjelp" id="kritikkhjelp" hidden><b>Sitat og terningkast:</b> Trykk «+ Sitat» på ei bok for å gje ho eit sitat frå ei bokmelding, eit terningkast eller begge. Skriv kvar det kjem frå (avis, NRK – eller «Biblioteket» når det er vår eiga bokmelding), så står det under sitatet. Hald sitatet kort. Bøker utan sitat blir viste som vanleg.</p>
+        <datalist id="medieliste"><option value="Aftenposten"><option value="Bergens Tidende"><option value="Dagbladet"><option value="Dag og Tid"><option value="Dagens Næringsliv"><option value="Klassekampen"><option value="Morgenbladet"><option value="NRK"><option value="Stavanger Aftenblad"><option value="Adresseavisen"><option value="Fædrelandsvennen"><option value="Vårt Land"><option value="VG"><option value="Sunnhordland"><option value="Bok365"><option value="Biblioteket"></datalist>
         <p class="hjelp" id="bragehjelp" hidden><b>Brageprisen:</b> Legg til dei nominerte bøkene. Søket leitar i heile basen, så bøker som berre er bestilte, kjem òg med – dei får lappen «Bestilt – kan reserverast». Alle får merket «Nominert» med årstalet. Når vinnarane er kåra, trykkjer du «Vinnar» på dei, så får dei merket «Vinner».</p>
         <div class="felt">
           <label for="utvalsok">Finn bøker</label>
@@ -609,6 +608,7 @@
         </div>
         <div class="felt">
           <span class="etikett"><span id="utvaletikett">Valde bøker</span> (<span id="utvaltal">0</span>)</span>
+          <label class="val" id="kritikkrad"><input type="checkbox" id="kritikk" name="kritikk" value="1"> Sitat og terningkast på bøkene</label>
           <ol class="utvalliste" id="utvalliste"></ol>
           <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
         </div>
@@ -3295,7 +3295,8 @@ function startByggjar(startCfg) {
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     const brage = kjelde === "utval" && skjema.elements.brage.value === "1";
     document.getElementById("bragehjelp").hidden = !brage;
-    document.getElementById("kritikkhjelp").hidden = !(kjelde === "utval" && skjema.elements.kritikk.value === "1");
+    document.getElementById("kritikkrad").hidden = kalender;
+    document.getElementById("kritikkhjelp").hidden = !(kjelde === "utval" && !kalender && skjema.elements.kritikk.checked);
     const st = document.getElementById("utvalstatus");
     if (/^Søkjer i (avdelingane|heile basen)/.test(st.textContent))
       st.textContent = brage ? "Søkjer i heile basen, òg bøker som berre er bestilte." : "Søkjer i avdelingane som er kryssa av ovanfor.";
@@ -3501,7 +3502,7 @@ function startByggjar(startCfg) {
     } catch (e) {}
   }
   // Kritikarfavorittar-malen: sitat, terningkast og medium per bok, bak knappen «+ Omtale»
-  function erKritikk() { return $("kritikk").value === "1"; }
+  function erKritikk() { return $("kritikk").checked && !erKalender(); }
   function omtalar() { return lesOmtalar($("omtalar").value); }
   function lagreOmtalar(o) { $("omtalar").value = Object.keys(o).length ? JSON.stringify(o) : ""; }
   const opneOmtalar = new Set();
@@ -3521,7 +3522,7 @@ function startByggjar(startCfg) {
     const boks = document.createElement("div"); boks.className = "omtaleboks";
     const sitatL = document.createElement("label"); sitatL.textContent = "Sitat frå meldinga";
     const sitat = document.createElement("textarea");
-    sitat.rows = 2; sitat.maxLength = 140; sitat.value = o.s || ""; sitat.dataset.omtalefelt = id + ":s";
+    sitat.rows = 3; sitat.maxLength = 160; sitat.value = o.s || ""; sitat.dataset.omtalefelt = id + ":s";
     sitat.placeholder = "Nokre få ord frå meldinga";
     sitat.addEventListener("input", () => setjOmtale(id, "s", sitat.value));
     sitatL.append(sitat);
@@ -3538,13 +3539,15 @@ function startByggjar(startCfg) {
       rad.append(b);
     }
     tL.append(rad);
-    const mL = document.createElement("label"); mL.textContent = "Medium";
+    const mL = document.createElement("label"); mL.textContent = "Kjelde";
     const medium = document.createElement("input");
     medium.type = "text"; medium.value = o.m || ""; medium.dataset.omtalefelt = id + ":m";
-    medium.setAttribute("list", "medieliste"); medium.placeholder = "Avis, tidsskrift eller NRK"; medium.enterKeyHint = "done";
+    medium.setAttribute("list", "medieliste"); medium.placeholder = "Avis, NRK eller Biblioteket"; medium.enterKeyHint = "done";
     medium.addEventListener("input", () => setjOmtale(id, "m", medium.value));
     mL.append(medium);
     boks.append(sitatL, tL, mL);
+    // Skjemaet elles teiknar lista på nytt ved kvar endring; det skal ikkje skje medan ein skriv her
+    for (const ev of ["input", "change"]) boks.addEventListener(ev, e => e.stopPropagation());
     return boks;
   }
   function setjValde(idar) {
@@ -3597,7 +3600,7 @@ function startByggjar(startCfg) {
       }
       if (erKritikk()) {
         const o = omtalar()[id], open = opneOmtalar.has(id);
-        const b = knapp(open ? "Lukk" : o ? "✎ Omtale" : "+ Omtale", open ? "Lukk omtalefelta" : "Sitat, terningkast og medium",
+        const b = knapp(open ? "Lukk" : o ? "✎ Sitat" : "+ Sitat", open ? "Lukk sitatfelta" : "Sitat, terningkast og kvar det kjem frå",
           () => { if (open) opneOmtalar.delete(id); else opneOmtalar.add(id); teiknUtval(); });
         rad.insertBefore(b, rad.querySelector("button"));
         if (o && !open) {
