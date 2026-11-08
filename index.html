@@ -315,6 +315,15 @@
   .felt { margin-top: 12px; }
   .felt > label, .felt > .etikett { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
   .hjelp { color: var(--b-dempa); font-size: 12.5px; margin-top: 3px; }
+  /* Hjelpetekst bak eit «?»: trykk for å vise, trykk igjen for å lukke */
+  .hjelpknapp { margin-top: 4px; }
+  .hjelpknapp > summary { list-style: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--b-strek); color: var(--b-dempa);
+    font-size: 12.5px; font-weight: 700; line-height: 1; cursor: pointer; user-select: none; }
+  .hjelpknapp > summary::-webkit-details-marker { display: none; }
+  .hjelpknapp > summary::marker { content: ""; }
+  .hjelpknapp > summary:hover, .hjelpknapp[open] > summary { color: var(--b-aksent); border-color: var(--b-aksent); }
+  .hjelpknapp > .hjelp { margin-top: 4px; }
   input[type=text], input[type=search], input[type=number], select {
     width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
     border: 1px solid var(--b-strek); background: var(--b-bg); color: var(--b-tekst);
@@ -588,7 +597,7 @@
           <p class="hjelp">Den første boka i lista er luke 1, den andre luke 2, og så vidare. Ei ny luke opnar seg kvar dag frå 1. desember. Før det står alle pakkane attlatne. Utlånte bøker er med.</p>
           <label for="testdato" style="margin-top:10px">Test: sjå kalenderen som om det var</label>
           <input type="date" id="testdato">
-          <p class="hjelp">Gjeld berre førehandsvisinga og «Opne». Lenkja til skjermane brukar alltid dagens dato.</p>
+          <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Gjeld berre førehandsvisinga og «Opne». Lenkja til skjermane brukar alltid dagens dato.</p></details>
         </div>
       </div>
 
@@ -649,7 +658,7 @@
       <label class="val"><input type="checkbox" name="perforf" value="1"> Maks éi bok per forfattar</label>
       <div class="felt" id="kulturfondfelt">
         <label class="val"><input type="checkbox" name="kulturfond" value="1"> Berre bøker frå Kulturfondet</label>
-        <p class="hjelp">Bøker som biblioteket har fått gjennom innkjøpsordningane til Norsk kulturfond (pre=kulturfond i Bibliofil).</p>
+        <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Bøker som biblioteket har fått gjennom innkjøpsordningane til Norsk kulturfond (pre=kulturfond i Bibliofil).</p></details>
       </div>
       <div class="felt">
         <label for="aarval">Utgjeve</label>
@@ -790,7 +799,7 @@
       </div>
       <label class="val"><input type="checkbox" name="omtale" value="1"> Vis omtale</label>
       <label class="val"><input type="checkbox" name="merkelapp" value="1"> Merkelappar frå Forrige bok (til dømes «Lett» og «Godt driv»)</label>
-      <p class="hjelp">Vifte viser førre og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p>
+      <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Vifte viser førre og neste bok dempa bak boka i midten. Rulletekst viser alle bøkene etter kvarandre med heile omtalen. Julekalender opnar éi luke om dagen i desember (vel malen «Julekalender» for å kome i gang).</p></details>
     </details>
 
     <details class="del" id="del-avansert" data-felt="plass,utan,oppdater,ccl">
@@ -805,7 +814,7 @@
           <option value="1440">Ein gong i døgnet</option>
         </select>
         <input type="hidden" id="oppdater" name="oppdater">
-        <p class="hjelp">Kor ofte skjermen spør Bibliofil om bøkene på nytt, til dømes for å fjerne bøker som er lånte ut. Sjeldnare henting skåner biblioteksystemet.</p>
+        <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Kor ofte skjermen spør Bibliofil om bøkene på nytt, til dømes for å fjerne bøker som er lånte ut. Sjeldnare henting skåner biblioteksystemet.</p></details>
       </div>
       <div id="plassfelt">
         <div class="felt">
@@ -816,14 +825,14 @@
           <label for="utan">Hopp over plasseringar som inneheld</label>
           <input type="text" id="utan" name="utan" placeholder="magasin, nærmag">
         </div>
-        <p class="hjelp">Skil fleire ord med komma. Orda blir samanlikna med plasseringa i Bibliofil, til dømes «Krim» eller «Nærmagasin».</p>
+        <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Skil fleire ord med komma. Orda blir samanlikna med plasseringa i Bibliofil, til dømes «Krim» eller «Nærmagasin».</p></details>
       </div>
       <!-- Eige CCL-krav frå eldre lenkjer. Blir vist når det finst, så ingen krav er usynlege. -->
       <div class="felt" id="cclfelt" hidden>
         <span class="etikett">Ekstra søkjekrav (Bibliofil-CCL)</span>
         <input type="hidden" id="ccl" name="ccl">
         <div class="vallinje brikkerad" id="cclvalde"></div>
-        <p class="hjelp">Kjem frå ei eldre lenkje og gjeld i tillegg til alt anna i skjemaet. Klikk for å fjerne.</p>
+        <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Kjem frå ei eldre lenkje og gjeld i tillegg til alt anna i skjemaet. Klikk for å fjerne.</p></details>
       </div>
     </details>
 
@@ -838,7 +847,7 @@
       <div class="tilskjerm" id="tilskjerm" hidden>
         <div class="etikett">Til skjermane</div>
         <div class="knappar" id="tilskjermknappar"></div>
-        <p class="hjelp">Opnar oversikta med karusellen fylt ut. Ingenting blir endra på skjermane før du klikkar Lagre der.</p>
+        <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Opnar oversikta med karusellen fylt ut. Ingenting blir endra på skjermane før du klikkar Lagre der.</p></details>
       </div>
     </div>
   </form>

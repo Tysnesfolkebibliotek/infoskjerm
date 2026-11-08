@@ -193,6 +193,15 @@
   .felt { display: flex; flex-direction: column; gap: 5px; margin-top: 14px; }
   .felt > span { font-weight: 600; font-size: 14px; }
   .felt small, .hjelp { color: var(--b-dempa); font-size: 12.5px; line-height: 1.4; }
+  /* Hjelpetekst bak eit «?»: trykk for å vise, trykk igjen for å lukke */
+  .hjelpknapp { margin-top: 4px; }
+  .hjelpknapp > summary { list-style: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--b-strek); color: var(--b-dempa);
+    font-size: 12.5px; font-weight: 700; line-height: 1; cursor: pointer; user-select: none; }
+  .hjelpknapp > summary::-webkit-details-marker { display: none; }
+  .hjelpknapp > summary::marker { content: ""; }
+  .hjelpknapp > summary:hover, .hjelpknapp[open] > summary { color: var(--b-aksent); border-color: var(--b-aksent); }
+  .hjelpknapp > .hjelp { margin-top: 4px; }
   input[type=text], input[type=url], input[type=date], input[type=time], textarea, select {
     font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--b-strek); border-radius: 8px;
     background: var(--b-bg); color: var(--b-tekst); width: 100%; }
@@ -291,7 +300,7 @@
     </div>
 
     <div class="del" id="arrdel"><h2>Arrangement</h2>
-      <p class="hjelp">Fyll ut det som passar. Det som står tomt, blir ikkje vist.</p>
+      <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Fyll ut det som passar. Det som står tomt, blir ikkje vist.</p><p class="hjelp" style="margin-top:6px">Tips: gje plakaten ein periode på oversikta, så forsvinn han av seg sjølv etter arrangementet.</p></details>
       <div class="rad">
         <label class="felt"><span>Dato</span><input type="date" name="dato"></label>
         <label class="felt"><span>Stad</span><input type="text" name="stad" placeholder="Biblioteket"></label>
@@ -301,7 +310,6 @@
         <label class="felt"><span>Sluttar kl. (valfritt)</span><input type="time" name="tidtil"></label>
       </div>
       <p class="hjelp" id="tidfeil" hidden></p>
-      <p class="hjelp" style="margin-top:10px">Tips: gje plakaten ein periode på oversikta, så forsvinn han av seg sjølv etter arrangementet.</p>
     </div>
 
     <div class="del"><h2>QR-kode</h2>

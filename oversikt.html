@@ -96,6 +96,15 @@
   .dagar { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; }
   .dagar label { font-weight: 400; display: inline-flex; gap: 4px; align-items: center; margin: 0; }
   .hjelp { font-size: 12.5px; color: var(--dempa); }
+  /* Hjelpetekst bak eit «?»: trykk for å vise, trykk igjen for å lukke */
+  .hjelpknapp { margin-top: 4px; }
+  .hjelpknapp > summary { list-style: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--strek); color: var(--dempa);
+    font-size: 12.5px; font-weight: 700; line-height: 1; cursor: pointer; user-select: none; }
+  .hjelpknapp > summary::-webkit-details-marker { display: none; }
+  .hjelpknapp > summary::marker { content: ""; }
+  .hjelpknapp > summary:hover, .hjelpknapp[open] > summary { color: var(--aksent); border-color: var(--aksent); }
+  .hjelpknapp > .hjelp { margin-top: 4px; }
   .val { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; font-weight: 400 !important; }
   /* Plakatkarusell: lista over plakatane i skjemaet */
   .pk { border: 1px solid var(--strek); border-radius: 10px; padding: 10px; background: var(--flate); display: grid; gap: 8px; }
@@ -166,7 +175,7 @@
 
   <details class="nokkel svart" id="svartboks">
     <summary>Svartelista bøker <span class="merke ikkje" id="svarttal" hidden></span></summary>
-    <p class="hjelp">Bøker på denne lista blir aldri viste på skjermane, til dømes fordi omslaget kan verke støytande. Kvar endring blir lagra med ein gong og kjem fram på skjermane innan om lag ein halvtime, ofte raskare. Krev nøkkelen nedanfor.</p>
+    <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Bøker på denne lista blir aldri viste på skjermane, til dømes fordi omslaget kan verke støytande. Kvar endring blir lagra med ein gong og kjem fram på skjermane innan om lag ein halvtime, ofte raskare. Krev nøkkelen nedanfor.</p></details>
     <div class="svartsok">
       <input type="search" id="svartsok" placeholder="Søk på tittel, forfattar eller tittelnummer" autocomplete="off">
       <button type="button" id="svartknapp">Søk</button>
@@ -182,7 +191,7 @@
 
   <details class="nokkel" id="emneboks">
     <summary>Emneordlista og Forrige bok-indeksen</summary>
-    <p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord og sjangrar som er i bruk i avdelingane Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong iblant. Er listene meir enn to månader gamle, får du ei påminning når du opnar sida. Det tek nokre minutt og krev nøkkelen nedanfor.</p>
+    <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Forslaga i emne- og sjangerfelta i byggjaren kjem frå ei liste over alle emneord og sjangrar som er i bruk i avdelingane Vaksen og Born og unge. Appellfaktorar og merkelappar på karusellane kjem frå ein indeks over kva bøker hos oss som er skildra i Forrige bok. Knappen lagar begge på nytt. Gjer det ein gong iblant. Er listene meir enn to månader gamle, får du ei påminning når du opnar sida. Det tek nokre minutt og krev nøkkelen nedanfor.</p></details>
     <p id="emneinfo">Hentar informasjon om lista …</p>
     <p id="fbinfo"></p>
     <button type="button" id="emneknapp">Oppdater emneordlista og Forrige bok-indeksen</button>
@@ -191,10 +200,10 @@
 
   <details class="nokkel" id="nokkelboks">
     <summary>Tilgangsnøkkel for å lagre</summary>
-    <p class="hjelp">Alle kan sjå sida, men berre den som har ein tilgangsnøkkel kan lagre endringar. Nøkkelen blir lagra i denne nettlesaren.</p>
     <input type="password" id="nokkel" placeholder="github_pat_…" autocomplete="off">
     <button type="button" id="nokkellagre">Lagre nøkkel i nettlesaren</button>
     <button type="button" id="nokkelfjern">Gløym nøkkelen</button>
+    <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Alle kan sjå sida, men berre den som har ein tilgangsnøkkel kan lagre endringar. Nøkkelen blir lagra i denne nettlesaren.</p>
     <p class="hjelp">Slik lagar du ein nøkkel:</p>
     <ol class="hjelp">
       <li>Logg inn på GitHub som Tysnesfolkebibliotek og gå til <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
@@ -202,7 +211,7 @@
       <li>Under <b>Repository access</b>: vel <b>Only select repositories</b> og <b>infoskjerm</b>.</li>
       <li>Under <b>Permissions → Repository permissions</b>: set <b>Contents</b> til <b>Read and write</b>.</li>
       <li>Klikk <b>Generate token</b>, kopier nøkkelen og lim han inn i feltet ovanfor.</li>
-    </ol>
+    </ol></details>
   </details>
 
   <div class="lagrelinje">
@@ -565,7 +574,7 @@ function skjermHovud(lk) {
       el("input", { type: "text", id: "n-namn", value: info.namn, placeholder: std.namn, onkeydown: tast })),
     el("div", {}, el("label", { for: "n-kva" }, "Skildring"),
       el("input", { type: "text", id: "n-kva", value: info.kva, placeholder: "Til dømes kvar skjermen står", onkeydown: tast })),
-    el("p", { class: "hjelp" }, `Berre for denne oversikta. Skjermen heiter framleis «${std.maskin}» på nettverket og «${std.nøkkel}» i oppsettet, så SSH, Tailscale og det skjermen viser blir ikkje påverka.`),
+    el("details", { class: "hjelpknapp" }, el("summary", { title: "Forklaring", "aria-label": "Forklaring" }, "?"), el("p", { class: "hjelp" }, `Berre for denne oversikta. Skjermen heiter framleis «${std.maskin}» på nettverket og «${std.nøkkel}» i oppsettet, så SSH, Tailscale og det skjermen viser blir ikkje påverka.`)),
     el("div", { class: "knappar" },
       el("button", { type: "button", class: "publiser", onclick: bruk }, "Bruk"),
       el("button", { type: "button", onclick: () => { namnOpen = null; teikn(); } }, "Avbryt"),
