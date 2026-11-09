@@ -698,27 +698,32 @@ async function hentFødd() {
   if (FØDD && FØDD.dato === dato) return teiknFødd();
   try {
     // Spørjinga må vere rask: Wikidata avbryt etter 60 sekund, og då kjem eit svar utan
-    // CORS-hovud, som nettlesaren berre kallar «NetworkError». Difor:
-    // 1) optimizer "None": Wikidata køyrer linjene i den rekkjefølgja dei står,
-    // 2) wdt:P569 (berre verdien) i staden for den tunge vegen om presisjonen,
-    // 3) berre forfattarar med minst 15 Wikipedia-artiklar eller nordisk statsborgarskap.
+    // CORS-hovud, som nettlesaren berre kallar «NetworkError». Å gå gjennom alle forfattarar
+    // og sjekke fødselsdagen tok for lang tid. I staden listar vi opp dagens dato for kvart
+    // år frå 1600 (1818-11-09, 1819-11-09 …) og slår opp kven som er fødde akkurat då. Det er
+    // eit raskt oppslag. optimizer "None" gjer at linjene blir køyrde i den rekkjefølgja dei står.
     // Fødselsdatoar med berre årstal står som 1. januar i Wikidata, så 1.1. blir hoppa over.
+    if (d.getMonth() === 0 && d.getDate() === 1) throw new Error("1. januar blir hoppa over");
+    const md = p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+    const datoar = [];
+    for (let år = 1600; år <= d.getFullYear() - 10; år++) datoar.push(`"${år}-${md}T00:00:00Z"^^xsd:dateTime`);
     const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?sl ?norsk ?nordisk WHERE {
       hint:Query hint:optimizer "None" .
+      VALUES ?f { ${datoar.join(" ")} }
+      ?p wdt:P569 ?f .
       VALUES ?yrke { wd:Q36180 wd:Q6625963 wd:Q49757 wd:Q4853732 wd:Q214917 wd:Q482980 }
       ?p wdt:P106 ?yrke .
-      ?p wdt:P569 ?f .
-      FILTER(MONTH(?f) = ${d.getMonth() + 1} && DAY(?f) = ${d.getDate()})
+      ?a schema:about ?p ; schema:isPartOf <https://no.wikipedia.org/> .
       ?p wikibase:sitelinks ?sl .
+      BIND(YEAR(?f) AS ?aar)
       BIND(EXISTS { ?p wdt:P27 wd:Q20 } AS ?norsk)
       BIND(EXISTS { VALUES ?l { wd:Q20 wd:Q34 wd:Q35 wd:Q189 wd:Q33 wd:Q4628 } ?p wdt:P27 ?l } AS ?nordisk)
-      FILTER(?nordisk || ?sl >= 15)
-      ?a schema:about ?p ; schema:isPartOf <https://no.wikipedia.org/> .
-      BIND(YEAR(?f) AS ?aar)
       SERVICE wikibase:label { bd:serviceParam wikibase:language "nn,nb,no,en". }
     }`;
-    if (d.getMonth() === 0 && d.getDate() === 1) throw new Error("1. januar blir hoppa over");
-    const r = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), { headers: { Accept: "application/sparql-results+json" } });
+    // POST, fordi lista over datoar gjer adressa for lang for GET (skjemaformat = ingen CORS-førespurnad på førehand)
+    const r = await fetch("https://query.wikidata.org/sparql", { method: "POST",
+      headers: { Accept: "application/sparql-results+json", "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ query: q, format: "json" }) });
     if (!r.ok) throw new Error("Wikidata " + r.status);
     const ja = v => v && (v.value === "true" || v.value === "1");
     const alle = (await r.json()).results.bindings
