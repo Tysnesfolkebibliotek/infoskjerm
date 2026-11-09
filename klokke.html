@@ -735,9 +735,9 @@ async function hentFødd() {
                    sl: Number(b.sl?.value) || 0, norsk: ja(b.norsk), nordisk: ja(b.nordisk) }))
       .filter(x => x.namn && !/^Q\d+$/.test(x.namn))
       .sort((a, b) => b.norsk - a.norsk || b.nordisk - a.nordisk || b.sl - a.sl);
-    // Nordiske først (opptil 30), så dei mest kjende andre, til saman opptil 45.
+    // Opptil 30 nordiske og 30 utanlandske (dei mest kjende, flest Wikipedia-artiklar).
     // Bibliofil blir spurd om éin og éin; boksen blir vist så snart den første er funnen.
-    const kandidatar = [...alle.filter(x => x.nordisk).slice(0, 30), ...alle.filter(x => !x.nordisk)].slice(0, 45)
+    const kandidatar = [...alle.filter(x => x.nordisk).slice(0, 30), ...alle.filter(x => !x.nordisk).slice(0, 30)]
       .filter((x, i, l) => l.findIndex(y => y.namn === x.namn) === i);
     let liste = [], svar = 0;
     const ix = await finnIndeks();
