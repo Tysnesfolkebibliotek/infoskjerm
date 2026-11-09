@@ -790,6 +790,9 @@ window.addEventListener("message", e => {
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
 // blir ho tettare i to steg. Får det framleis ikkje plass, fell Fødd i dag bort.
 function tilpass() {
+  // Vent til sida (og skrifta/temaet) er ferdig lasta, elles må nettlesaren rekne ut
+  // utforminga for tidleg (Firefox: «Layouten ble tvunget før siden var fullastet»)
+  if (document.readyState !== "complete") return;
   const rot = document.documentElement, side = document.querySelector(".side");
   const for_ = () => side.scrollHeight > side.clientHeight + 2;
   rot.classList.remove("tett", "tettare");
@@ -808,6 +811,7 @@ teiknAlt();
 (function tikk() { teiknKlokke(); teiknSkule(); tilpass(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
 setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }, 15e3);
 hentVer(); setInterval(hentVer, VER_KVAR_MS);
+window.addEventListener("load", tilpass);
 hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
