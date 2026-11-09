@@ -747,7 +747,8 @@ async function hentFødd() {
     for (const b of (await r.json()).results.bindings) {
       const id = b.p?.value;
       if (!id) continue;
-      const x = perP.get(id) || { namn: b.pLabel?.value || "", skild: b.pDescription?.value || "", år: Number(b.aar?.value) || null,
+      const skild = b.pDescription?.["xml:lang"] === "en" ? fråEngelsk(b.pDescription.value) : b.pDescription?.value || "";
+      const x = perP.get(id) || { namn: b.pLabel?.value || "", skild, år: Number(b.aar?.value) || null,
                                   sl: Number(b.sl?.value) || 0, norsk: false, nordisk: false };
       if (b.land) { x.nordisk = true; if (/\/Q20$/.test(b.land.value)) x.norsk = true; }
       perP.set(id, x);
@@ -782,6 +783,19 @@ async function hentFødd() {
 const NYNORSK = [[/forfatter/g, "forfattar"], [/dikter/g, "diktar"], [/lyriker/g, "lyrikar"], [/dramatiker/g, "dramatikar"],
   [/oversetter/g, "omsetjar"], [/kritiker/g, "kritikar"], [/historiker/g, "historikar"], [/politiker/g, "politikar"],
   [/musiker/g, "musikar"], [/billedkunstner/g, "biletkunstnar"], [/kunstner/g, "kunstnar"], [/tegner/g, "teiknar"]];
+// Engelske skildringar («Norwegian writer») når det ikkje finst norsk: dei vanlegaste orda
+// blir omsette. Står det att engelske ord, blir skildringa droppa (berre «fødd …» blir vist).
+const ENGELSK = { norwegian: "norsk", swedish: "svensk", danish: "dansk", finnish: "finsk", icelandic: "islandsk", faroese: "færøysk",
+  sami: "samisk", russian: "russisk", hungarian: "ungarsk", german: "tysk", french: "fransk", english: "engelsk", british: "britisk",
+  american: "amerikansk", irish: "irsk", scottish: "skotsk", italian: "italiensk", spanish: "spansk", polish: "polsk", dutch: "nederlandsk",
+  writer: "forfattar", author: "forfattar", novelist: "romanforfattar", poet: "poet", playwright: "dramatikar", journalist: "journalist",
+  historian: "historikar", translator: "omsetjar", essayist: "essayist", illustrator: "illustratør", "children's": "barnebok-",
+  "comics": "teikneserie-", artist: "kunstnar", professor: "professor", and: "og", "short": "novelle-", story: "", screenwriter: "manusforfattar" };
+function fråEngelsk(t) {
+  const ord = String(t).replace(/\s*\(.*?\)/g, "").toLowerCase().split(/\s+/).filter(Boolean);
+  if (!ord.length || ord.some(o => !(o.replace(/,$/, "") in ENGELSK))) return "";
+  return ord.map(o => ENGELSK[o.replace(/,$/, "")] + (o.endsWith(",") ? "," : "")).filter(Boolean).join(" ").replace(/- /g, "");
+}
 const nynorskYrke = t => NYNORSK.reduce((x, [a, b]) => x.replace(a, b), t);
 // Opptil FODD_MAKS forfattarar samstundes. Er det fleire, kjem dei neste fram neste gong
 // sida blir vist. Blir det for trongt (tilpass), blir det færre før boksen fell bort.
