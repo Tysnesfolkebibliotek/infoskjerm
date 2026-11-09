@@ -79,11 +79,13 @@
   .merknad { font-size: 3rem; color: var(--dempa); margin-top: -1.6rem; }
   .merknad:empty { display: none; }
 
-  footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
-  .botnnamn { font-size: 4rem; letter-spacing: .04em; white-space: nowrap; }
-  .botnnamn b { font-weight: 800; }
-  .kjelde { font-size: 2.2rem; color: var(--dempa); margin-top: .6rem; }
-  .hjul { width: 6.4rem; height: 6.4rem; transform: rotate(-90deg); }
+  /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
+  .kjelde { margin-top: auto; font-size: 2.2rem; color: var(--dempa); }
+  footer { display: flex; align-items: center; justify-content: space-between; margin-top: -2.4rem; }
+  .botnnamn { font-family: "Ubuntu", "DejaVu Sans", "Noto Sans", system-ui, sans-serif; font-size: 3.02rem;
+              text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+  .botnnamn b { font-weight: 700; }
+  .hjul { width: 8.8rem; height: 8.8rem; flex: none; transform: rotate(-90deg); }
   .hjul circle { fill: none; stroke-width: 3.5; }
   .hjul .spor { stroke: var(--strek); }
   #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 0px; }
@@ -125,11 +127,9 @@
     <div class="merknad" id="ferjemerknad"></div>
   </section>
 
+  <div class="kjelde" id="kjelde">Vêr: MET Norge · Ferje: Entur</div>
   <footer>
-    <div>
-      <div class="botnnamn"><b>TYSNES</b> folkebibliotek</div>
-      <div class="kjelde" id="kjelde">Vêr: MET Norge · Ferje: Entur</div>
-    </div>
+    <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
     <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
   </footer>
 </div>
