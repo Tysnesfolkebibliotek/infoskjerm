@@ -226,14 +226,31 @@ fetch("opningstider.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : nu
   .finally(teiknOpning);
 
 // ---- Skuletimar og friminutt --------------------------------------------------
-// Frå «skule» i opningstider.json: skuledagar, timeplanen og fridagar/feriar.
-const SKULE_RESERVE = { dagar: ["man", "tys", "ons", "tor", "fre"],
-  timar: ["08.05-08.50", "08.50-09.35", "09.45-10.30", "11.05-11.50", "12.05-12.50", "13.00-13.45"], kortdag: ["fre"], fri: [] };
+// Frå «skule» i opningstider.json: skuledagar og timeplanen. Ingenting å halde
+// ved like kvart år: raude dagar og sommarferien (20. juni–15. august) blir
+// rekna ut her. I haust-, vinter- og juleferie står boksen som vanleg – då er
+// det ingen elevar som les han. «fri» i fila kan brukast til ekstra fridagar.
+const SKULE_RESERVE = { dagar: ["man", "tys", "ons", "tor", "fre"], kortdag: ["fre"],
+  timar: ["08.05-08.50", "08.50-09.35", "09.45-10.30", "11.05-11.50", "12.05-12.50", "13.00-13.45"], fri: [] };
+const SOMMARFERIE = ["06-20", "08-15"];   // MM-DD, begge dagar med
 const omMin = m => m < 60 ? "om " + Math.max(1, m) + " min" : "om " + Math.floor(m / 60) + " t" + (m % 60 ? " " + (m % 60) + " min" : "");
+// Raude dagar i Noreg (påske etter Gauss/Meeus-algoritmen)
+function raudeDagar(år) {
+  const a = år % 19, b = Math.floor(år / 100), c = år % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+        g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+        l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+        mnd = Math.floor((h + l - 7 * m + 114) / 31), dag = ((h + l - 7 * m + 114) % 31) + 1;
+  const påske = new Date(år, mnd - 1, dag);
+  const iso = d0 => d0.getFullYear() + "-" + p2(d0.getMonth() + 1) + "-" + p2(d0.getDate());
+  const frå = n => { const x = new Date(påske); x.setDate(x.getDate() + n); return iso(x); };
+  return [`${år}-01-01`, frå(-3), frå(-2), frå(1), `${år}-05-01`, `${år}-05-17`, frå(39), frå(50), `${år}-12-25`, `${år}-12-26`];
+}
 function teiknSkule() {
   const S = OPNING.skule || SKULE_RESERVE, d = no();
   const iso = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
-  const fri = (S.fri || []).some(f => { const [a, b] = String(f).split("/"); return iso >= a && iso <= (b || a); });
+  const md = iso.slice(5);
+  const fri = raudeDagar(d.getFullYear()).includes(iso) || (md >= SOMMARFERIE[0] && md <= SOMMARFERIE[1])
+           || (S.fri || []).some(f => { const [a, b] = String(f).split("/"); return iso >= a && iso <= (b || a); });
   const timar = (S.timar || []).map(spenn).filter(Boolean).map(([a, b]) => [a * 60, b * 60]);   // minutt etter midnatt
   const t = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
   const vis = !fri && timar.length && (S.dagar || []).includes(DAGKODE[d.getDay()]) && t >= timar[0][0] - 15 && t < timar[timar.length - 1][1];
