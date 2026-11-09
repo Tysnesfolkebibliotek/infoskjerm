@@ -665,8 +665,8 @@ function jsonp(url, ms) {
     document.head.append(s);
   });
 }
-const sru = (q, maks = 100) => jsonp(SERVER + "/cgi-bin/sru?" + Object.entries({ operation: "searchRetrieve", recordSchema: "bsdc", responseType: "text/javascript",
-  query: q, startRecord: 1, maximumRecords: maks }).map(([k, v]) => k + "=" + encodeURIComponent(String(v)).replace(/%3A/gi, ":")).join("&"), 45000);
+const sru = (q, maks = 100, frå = 1) => jsonp(SERVER + "/cgi-bin/sru?" + Object.entries({ operation: "searchRetrieve", recordSchema: "bsdc", responseType: "text/javascript",
+  query: q, startRecord: frå, maximumRecords: maks }).map(([k, v]) => k + "=" + encodeURIComponent(String(v)).replace(/%3A/gi, ":")).join("&"), 45000);
 const avdFilter = "(" + AVDAR.map(a => `bibliofil.ccl="avd=${a}"`).join(" or ") + ")";
 // Same forfattarindeksar som Nobel-malen prøver (index.html)
 const INDEKSAR = [w => `bibliofil.ccl="fo=${w}"`, w => `dc.creator="${w}"`];
@@ -677,7 +677,7 @@ async function finnIndeks() {
   }
   return INDEKSAR[0];
 }
-// Tal titlar biblioteket har av kvar forfattar. Mange forfattarar i eitt søk
+// Tal titlar biblioteket har av kvar forfattar. Fleire forfattarar i eitt søk
 // (fo=fosse or fo=turgenjev or …), som Nobel-malen i index.html, så det går fort.
 // Gir ein Map namn → tal titlar. Kastar feil om Bibliofil ikkje svarar.
 async function talBøker(kandidatar, ix) {
@@ -686,8 +686,16 @@ async function talBøker(kandidatar, ix) {
   const etternamn = [...new Set(k.map(x => x.etter))];
   const titlar = new Map(k.map(x => [x.namn, new Set()]));
   if (!etternamn.length) return new Map();
-  const d = await sru(`(${etternamn.map(ix).join(" or ")}) and ${avdFilter} and norzig.materialType=l`, 500);
-  for (const p of d?.feed?.entry || []) {
+  // Bibliofil gir høgst 500 treff per side. Vanlege etternamn (Hansen, Larsen …) kan fylle
+  // opp sida, så vi hentar fleire sider om det trengst (høgst 4, som Nobel-malen).
+  const q = `(${etternamn.map(ix).join(" or ")}) and ${avdFilter} and norzig.materialType=l`;
+  const poster = [];
+  for (let side = 0; side < 4; side++) {
+    const d = await sru(q, 500, side * 500 + 1);
+    poster.push(...(d?.feed?.entry || []));
+    if ((side + 1) * 500 >= Number(d?.feed?.sru_numberOfRecords || 0)) break;
+  }
+  for (const p of poster) {
     const r = p.sru_recordData || {};
     const forf = [].concat(r.bsdc_creator || []).map(c => ordAv((c && c.name) || c));
     const tittel = ordAv([].concat(r.bsdc_title || "")[0]).join(" ");
@@ -745,9 +753,9 @@ async function hentFødd() {
       .filter((x, i, l) => l.findIndex(y => y.namn === x.namn) === i);
     let liste = [], svar = 0;
     const ix = await finnIndeks();
-    // 12 forfattarar per søk; nordiske først, så boksen kjem fort med norske namn
-    for (let i = 0; i < kandidatar.length; i += 12) {
-      const bunk = kandidatar.slice(i, i + 12);
+    // 6 forfattarar per søk; nordiske først, så boksen kjem fort med norske namn
+    for (let i = 0; i < kandidatar.length; i += 6) {
+      const bunk = kandidatar.slice(i, i + 6);
       try {
         const tal = await talBøker(bunk, ix); svar++;
         for (const k of bunk) if (tal.get(k.namn) > 0) liste.push({ ...k, bøker: tal.get(k.namn) });
