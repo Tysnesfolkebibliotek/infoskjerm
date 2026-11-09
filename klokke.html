@@ -793,9 +793,16 @@ function teiknFødd() {
   $("fodd").hidden = !liste.length;
   $("fodd").dataset.har = liste.length ? "1" : "";
   if (!liste.length) return;
+  // Miks: opptil to nordiske og éin utanlandsk (færre om det ikkje finst nok av eitt slag).
+  // Kvar gruppe rullar vidare for seg kvar gong sida blir vist.
   const n = Math.min(foddVis, liste.length);
-  const start = (foddNr * n) % liste.length;
-  const valde = Array.from({ length: n }, (_, i) => liste[(start + i) % liste.length]);
+  const nord = liste.filter(f => f.nordisk), ute = liste.filter(f => !f.nordisk);
+  let talUte = ute.length ? Math.max(1, n - Math.min(nord.length, n - 1)) : 0;
+  if (n === 1) talUte = nord.length ? 0 : 1;
+  const talNord = Math.min(nord.length, n - talUte);
+  talUte = Math.min(ute.length, n - talNord);
+  const ta = (l, k) => Array.from({ length: k }, (_, i) => l[(foddNr * k + i) % l.length]);
+  const valde = [...ta(nord, talNord), ...ta(ute, talUte)];
   $("foddListe").replaceChildren(...valde.map(f => {
     // Wikidata har ofte berre bokmålsskildring («russisk forfatter og dramatiker (1818–1883)»):
     // ta bort årstala i parentes og byt dei vanlegaste yrkesorda til nynorsk
