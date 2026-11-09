@@ -13,6 +13,7 @@
   Valfritt i lenkja (etter #):
     kveld=1 / kveld=0   tving temaet «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
     tema=fjord          bruk eit anna tema frå tema.js heile døgnet
+    teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
     tid=19:30           lat som klokka er 19.30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
 
@@ -94,6 +95,11 @@
   .hjul { width: 8.8rem; height: 8.8rem; flex: none; transform: rotate(-90deg); }
   .hjul circle { fill: none; stroke-width: 3.5; }
   .hjul .spor { stroke: var(--spor); }
+  /* Nedteljing som på plakatane: tynn linje nedst som kryp saman. Med #teljar=hjul: hjulet som på karusellane. */
+  .nedteljing { position: fixed; left: 0; right: 0; bottom: 0; height: .55vh; background: var(--aksent); transform-origin: left center;
+                transform: scaleX(0); z-index: 5; opacity: .9; }
+  :root:not(.hjul-teljar) .hjul { visibility: hidden; }
+  :root.hjul-teljar .nedteljing { display: none; }
   #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 0px; }
 </style>
 <script src="tema.js"></script>
@@ -140,6 +146,7 @@
     <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
   </footer>
 </div>
+<div class="nedteljing" id="nedteljing" aria-hidden="true"></div>
 
 <script>
 // ---- Innstillingar ---------------------------------------------------------
@@ -399,17 +406,26 @@ function teiknFerje() {
 
 // ---- Nedteljingshjulet og samspel med rotasjon.html -------------------------
 const iRotasjon = window.parent !== window && !H.has("forhand");
-let hjulAnim = null;
-function teljNed(ms, gjenta) {
-  if (hjulAnim) hjulAnim.cancel();
-  hjulAnim = $("hjul").animate([{ strokeDashoffset: "0px" }, { strokeDashoffset: "94.25px" }],
-    { duration: ms, easing: "linear", fill: "forwards", iterations: gjenta ? Infinity : 1 });
+// Nedteljing: linje som på plakatane (standard) eller hjul som på karusellane (#teljar=hjul).
+// «sekund» er heile tida sida står, «ms» er det som er att (sida kan kome inn midt i).
+const HJUL = H.get("teljar") === "hjul";
+document.documentElement.classList.toggle("hjul-teljar", HJUL);
+let teljAnim = null;
+function teljNed(ms, gjenta, sekund) {
+  if (teljAnim) teljAnim.cancel();
+  if (!(ms > 0)) return;
+  const frå = sekund > 0 ? Math.min(1, ms / (sekund * 1000)) : 1;
+  teljAnim = HJUL
+    ? $("hjul").animate([{ strokeDashoffset: (94.25 * (1 - frå)) + "px" }, { strokeDashoffset: "94.25px" }],
+        { duration: ms, easing: "linear", fill: "forwards", iterations: gjenta ? Infinity : 1 })
+    : $("nedteljing").animate([{ transform: `scaleX(${frå})` }, { transform: "scaleX(0)" }],
+        { duration: ms, easing: "linear", fill: "forwards", iterations: gjenta ? Infinity : 1 });
 }
 function melde(b) { if (iRotasjon) parent.postMessage({ nyheiter: b }, "*"); }
 let sistFerje = 0;
 window.addEventListener("message", e => {
   if (!e.data || e.data.nyheiter !== "vis") return;
-  teljNed(Number(e.data.att) || Number(e.data.sekund) * 1000 || 60000, false);
+  teljNed(Number(e.data.att) || Number(e.data.sekund) * 1000 || 60000, false, Number(e.data.sekund));
   teiknAlt();
   if (Date.now() - sistFerje > 60e3) { sistFerje = Date.now(); hentFerje(); }
 });
@@ -422,7 +438,7 @@ teiknAlt();
 setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); }, 15e3);
 hentVer(); setInterval(hentVer, VER_KVAR_MS);
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
-if (!iRotasjon) teljNed(60000, true);
+if (!iRotasjon) teljNed(20000, true, 20);
 melde("har"); melde("klar");
 </script>
 </body>
