@@ -697,6 +697,8 @@ async function hentFødd() {
   const d = new Date(), dato = isoDato(d);
   if (FØDD && FØDD.dato === dato) return teiknFødd();
   try {
+    // Yrke: forfattar, romanforfattar, poet, barnebokforfattar, dramatikar, forfattar (author), essayist,
+    // novelleforfattar, sci-fi-forfattar, omsetjar, journalist, historikar, teikneserieskapar, illustratør.
     // Spørjinga må vere rask: Wikidata avbryt etter 60 sekund, og då kjem eit svar utan
     // CORS-hovud, som nettlesaren berre kallar «NetworkError». Å gå gjennom alle forfattarar
     // og sjekke fødselsdagen tok for lang tid. I staden listar vi opp dagens dato for kvart
@@ -711,9 +713,11 @@ async function hentFødd() {
       hint:Query hint:optimizer "None" .
       VALUES ?f { ${datoar.join(" ")} }
       ?p wdt:P569 ?f .
-      VALUES ?yrke { wd:Q36180 wd:Q6625963 wd:Q49757 wd:Q4853732 wd:Q214917 wd:Q482980 }
+      VALUES ?yrke { wd:Q36180 wd:Q6625963 wd:Q49757 wd:Q4853732 wd:Q214917 wd:Q482980 wd:Q11774202 wd:Q15949613
+                     wd:Q18844224 wd:Q333634 wd:Q1930187 wd:Q201788 wd:Q715301 wd:Q644687 }
       ?p wdt:P106 ?yrke .
-      ?a schema:about ?p ; schema:isPartOf <https://no.wikipedia.org/> .
+      VALUES ?wiki { <https://no.wikipedia.org/> <https://nn.wikipedia.org/> }
+      ?a schema:about ?p ; schema:isPartOf ?wiki .
       ?p wikibase:sitelinks ?sl .
       BIND(YEAR(?f) AS ?aar)
       BIND(EXISTS { ?p wdt:P27 wd:Q20 } AS ?norsk)
@@ -731,13 +735,17 @@ async function hentFødd() {
                    sl: Number(b.sl?.value) || 0, norsk: ja(b.norsk), nordisk: ja(b.nordisk) }))
       .filter(x => x.namn && !/^Q\d+$/.test(x.namn))
       .sort((a, b) => b.norsk - a.norsk || b.nordisk - a.nordisk || b.sl - a.sl);
-    // Alle nordiske, og dei mest kjende andre, til saman 12
-    const kandidatar = [...alle.filter(x => x.nordisk).slice(0, 8), ...alle.filter(x => !x.nordisk)].slice(0, 12);
+    // Nordiske først (opptil 30), så dei mest kjende andre, til saman opptil 45.
+    // Bibliofil blir spurd om éin og éin; boksen blir vist så snart den første er funnen.
+    const kandidatar = [...alle.filter(x => x.nordisk).slice(0, 30), ...alle.filter(x => !x.nordisk)].slice(0, 45)
+      .filter((x, i, l) => l.findIndex(y => y.namn === x.namn) === i);
     let liste = [], svar = 0;
     const ix = await finnIndeks();
     for (const k of kandidatar) {
-      try { const n = await talBøker(k.namn, ix); svar++; if (n > 0) liste.push({ ...k, bøker: n }); }
-      catch (e) { console.warn("Bibliofil, " + k.namn + ":", e.message); }
+      try {
+        const n = await talBøker(k.namn, ix); svar++;
+        if (n > 0) { liste.push({ ...k, bøker: n }); FØDD = { dato, liste }; teiknFødd(); tilpass(); }
+      } catch (e) { console.warn("Bibliofil, " + k.namn + ":", e.message); }
     }
     // Svarte ikkje Bibliofil i det heile, viser vi dei tre første utan tal bøker
     if (!svar) liste = kandidatar.slice(0, 3).map(k => ({ ...k, bøker: null }));
