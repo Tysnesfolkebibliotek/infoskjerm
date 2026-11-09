@@ -144,6 +144,19 @@
                    transition: opacity 1.8s ease-in-out; will-change: transform, opacity; }
   .lysbilete img.synleg { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { .lysbilete img { transition: opacity .6s; } }
+  /* ---- Animasjon: lånekortet snur seg og viser baksida (bilete=anim:lanekort) ---- */
+  .lanekort { position: relative; width: 100%; flex: none; aspect-ratio: 1400 / 883; perspective: 400vw; }
+  .lanekort .snu { position: absolute; inset: 0; transform-style: preserve-3d; animation: lanekortSnu 12s ease-in-out infinite; }
+  .lanekort img { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+                  filter: drop-shadow(0 2vh 4vh rgba(0,0,0,.28)); }
+  .lanekort img.bak { transform: rotateY(180deg); }
+  /* Framsida i 5 sekund, snur, baksida i 4 sekund, snur tilbake (same veg rundt) */
+  @keyframes lanekortSnu {
+    0%, 40%   { transform: rotateY(0deg); }
+    48%, 82%  { transform: rotateY(180deg); }
+    90%, 100% { transform: rotateY(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .lanekort .snu { animation: none; } }
   /* Utan bilete og ikon får teksten heile plassen */
   .midt.tom { flex: .6; }
   /* Kjelda til biletet (t.d. lokalhistoriske foto), lita og dempa under biletet */
@@ -598,6 +611,14 @@ function helsebibliotekAnimasjon(eigne) {
 // kvart med ein sakte zoom og glid, og ei mjuk overtoning. Nye foto i malen
 // kjem med av seg sjølv. Kjelda til biletet som syner, står under.
 const LYSBILETE_SEK = 7;
+// Lånekortet snur seg rundt: framsida, så baksida med strekkoden
+function lånekortAnimasjon() {
+  const boks = document.createElement("div");
+  boks.className = "lanekort"; boks.setAttribute("aria-hidden", "true");
+  boks.innerHTML = `<div class="snu"><img class="fram" src="bilete/tenester/bibliotekkortet.webp" alt="">` +
+                   `<img class="bak" src="bilete/tenester/bibliotekkortet-bak.webp" alt=""></div>`;
+  return boks;
+}
 function lysbileteAnimasjon(cfg) {
   const boks = document.createElement("div");
   boks.className = "lysbilete"; boks.setAttribute("aria-hidden", "true");
@@ -701,6 +722,7 @@ function visPlakat(cfg) {
     if (cfg.bilete === "anim:nettbiblioteket") midt.append(nettbibliotekAnimasjon(cfg.anim));
     if (cfg.bilete === "anim:helsebiblioteket") midt.append(helsebibliotekAnimasjon(cfg.anim));
     if (cfg.bilete === "anim:lysbilete") midt.append(lysbileteAnimasjon(cfg));
+    if (cfg.bilete === "anim:lanekort") midt.append(lånekortAnimasjon());
     // Får ikkje animasjonen plass i høgda (t.d. i eit breitt vindauge), blir han skalert ned
     // i staden for å bli kutta
     const anim = midt.firstElementChild;
@@ -856,7 +878,7 @@ async function startByggjar() {
     $("eigebilete").hidden = v !== "eige";
     $("opplastval").hidden = v !== "last";
     $("formval").hidden = !["eige", "last"].includes(v);
-    $("animval").hidden = !v.startsWith("anim:") || v === "anim:lysbilete";   // lysbileta har ingen søkjeord
+    $("animval").hidden = !v.startsWith("anim:") || ["anim:lysbilete", "anim:lanekort"].includes(v);   // lysbileta og lånekortet har ingen søkjeord
 
   }
 
