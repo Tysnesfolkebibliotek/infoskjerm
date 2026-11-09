@@ -306,6 +306,7 @@
       <label class="avkryss"><input type="checkbox" id="kv-ferje" checked> Neste ferje Våge → Halhjem</label>
       <label class="avkryss"><input type="checkbox" id="kv-fare" checked> Farevarsel frå MET (berre når det finst)</label>
       <label class="avkryss"><input type="checkbox" id="kv-fodd"> Fødd i dag: forfattarar biblioteket har bøker av</label>
+      <label class="avkryss"><input type="checkbox" id="kv-nyhende"> Nyheitslinje nedst: toppsaker frå NRK Vestland</label>
     </div>
 
     <div class="del" id="innhalddel"><h2>Innhald</h2>
@@ -919,6 +920,7 @@ async function startByggjar() {
     $("kvariant").value = ["ver", "vertavle"].includes(cfg.variant) ? cfg.variant : "klokke";
     for (const k of KLOKKEBOKSAR) $("kv-" + k).checked = !utan.has(k);
     $("kv-fodd").checked = cfg.fodd === "1";
+    $("kv-nyhende").checked = cfg.nyhende === "1";
     autoTema(true);
     felt("tema").value = cfg.tema && TEMA[cfg.tema] ? cfg.tema : "auto";
   }
@@ -1012,7 +1014,7 @@ async function startByggjar() {
       // Vêrtavla viser alltid vêret; sola står i vêrboksen
       const utan = KLOKKEBOKSAR.filter(k => !$("kv-" + k).checked && !(k === "ver" && $("kvariant").value === "vertavle"));
       return { mal: id, side: "klokke", variant: $("kvariant").value === "klokke" ? "" : $("kvariant").value, utan: utan.join(","),
-               fodd: $("kv-fodd").checked ? "1" : "", tema: felt("tema").value === "auto" ? "" : felt("tema").value, overskrift: "Klokke" };
+               fodd: $("kv-fodd").checked ? "1" : "", nyhende: $("kv-nyhende").checked ? "1" : "", tema: felt("tema").value === "auto" ? "" : felt("tema").value, overskrift: "Klokke" };
     }
     const sel = $("bileteval").value;
     let bilete = "", biletform = "", kjelde = "";
@@ -1080,7 +1082,7 @@ async function startByggjar() {
     const p = new URLSearchParams();
     if (vis) p.set("vis", "1");
     p.set("side", "klokke");
-    for (const k of ["variant", "utan", "fodd", "tema"]) if (cfg[k]) p.set(k, cfg[k]);
+    for (const k of ["variant", "utan", "fodd", "nyhende", "tema"]) if (cfg[k]) p.set(k, cfg[k]);
     return p.toString();
   }
   function oppdater() {
