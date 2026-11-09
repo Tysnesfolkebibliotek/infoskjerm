@@ -746,6 +746,10 @@ async function hentFødd() {
   } catch (e) { console.warn("Fekk ikkje henta Fødd i dag:", e.message); }
   teiknFødd(); tilpass();
 }
+const NYNORSK = [[/forfatter/g, "forfattar"], [/dikter/g, "diktar"], [/lyriker/g, "lyrikar"], [/dramatiker/g, "dramatikar"],
+  [/oversetter/g, "omsetjar"], [/kritiker/g, "kritikar"], [/historiker/g, "historikar"], [/politiker/g, "politikar"],
+  [/musiker/g, "musikar"], [/billedkunstner/g, "biletkunstnar"], [/kunstner/g, "kunstnar"], [/tegner/g, "teiknar"]];
+const nynorskYrke = t => NYNORSK.reduce((x, [a, b]) => x.replace(a, b), t);
 function teiknFødd() {
   const liste = FODD && FØDD && FØDD.dato === isoDato(new Date()) ? FØDD.liste || [] : [];
   $("fodd").hidden = !liste.length;
@@ -753,8 +757,10 @@ function teiknFødd() {
   if (!liste.length) return;
   const f = liste[foddNr % liste.length];
   $("foddNamn").textContent = f.namn;
-  const skild = f.skild ? f.skild.charAt(0).toUpperCase() + f.skild.slice(1) : "";
-  $("foddSkild").textContent = [skild, f.år && (f.år > 0 ? "fødd " + f.år : "")].filter(Boolean).join(", ");
+  // Wikidata har ofte berre bokmålsskildring («russisk forfatter og dramatiker (1818–1883)»):
+  // ta bort årstala i parentes og byt dei vanlegaste yrkesorda til nynorsk
+  const skild = nynorskYrke(String(f.skild || "").replace(/\s*\([^)]*\d{3,4}[^)]*\)/g, "").trim());
+  $("foddSkild").textContent = [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && "fødd " + f.år].filter(Boolean).join(", ");
   $("foddBoker").hidden = !f.bøker;
   $("foddBoker").textContent = f.bøker === 1 ? "1 bok i biblioteket" : f.bøker + " bøker i biblioteket";
 }
