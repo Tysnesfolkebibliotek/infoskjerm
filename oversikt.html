@@ -386,8 +386,8 @@ const plakatHash = url => { const p = new URLSearchParams(String(url).split("#")
 const utanTil = h => { const p = new URLSearchParams(h); p.delete("til"); return p.toString(); };
 const medTil = (h, til) => { const p = new URLSearchParams(h); if (til) p.set("til", til); else p.delete("til"); return p.toString(); };
 const tilDatoAv = h => new URLSearchParams(h).get("til") || "";
-const plakatNamn = h => { const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
-const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html#vis=1&" + utanTil(løys(h));
+const plakatNamn = h => { if (plakatside(h)) return plakatside(h).namn; const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
+const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/" + plakatAdresse(tenesteData, utanTil(h));
 // Malane i plakatbyggjaren (tenester.json). Plakatar som blir lagde til frå ein
 // mal, følgjer malen («mal=<id>&folg=1», sjå plakatmal.js).
 let tenesteData = null;
@@ -789,12 +789,12 @@ function pkBoks(s, lk, i) {
       const lagra = i >= 0 && !endra();
       return el("li", { class: ute ? "ute" : "" },
         el("span", { class: "pnamn", title: følgjerMal(h) ? "Teksten blir henta frå malen kvar gong, så endringar i malen kjem med av seg sjølv. Endrar du plakaten i byggjaren, følgjer han ikkje malen lenger." : "Eigen plakat: teksten står i lenkja og blir ikkje endra om malen blir endra." },
-          plakatNamn(h) + (ute ? " (ute på dato)" : ""), el("span", { class: "hjelp" }, følgjerMal(h) ? "  · følgjer malen" : "  · eigen plakat")),
+          plakatNamn(h) + (ute ? " (ute på dato)" : ""), el("span", { class: "hjelp" }, plakatside(h) ? "  · eiga side" : følgjerMal(h) ? "  · følgjer malen" : "  · eigen plakat")),
         el("div", { class: "pknappar" },
           el("button", { type: "button", title: "Flytt opp", disabled: k === 0, onclick: () => endre(() => pk.plakatar.splice(k - 1, 0, ...pk.plakatar.splice(k, 1))) }, "↑"),
           el("button", { type: "button", title: "Flytt ned", disabled: k === pk.plakatar.length - 1, onclick: () => endre(() => pk.plakatar.splice(k + 1, 0, ...pk.plakatar.splice(k, 1))) }, "↓"),
           el("button", { type: "button", onclick: () => førehandsvis({ namn: plakatNamn(h), url: plakatUrl(h) }) }, "Førehandsvis"),
-          el("button", { type: "button", disabled: !lagra,
+          plakatside(h) ? null : el("button", { type: "button", disabled: !lagra,
             title: lagra ? (følgjerMal(h) ? "Opne plakaten i plakatbyggjaren. Etterpå følgjer han ikkje malen lenger." : "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå.") : "Lagre oppsettet først, så du ikkje mistar endringane",
             onclick: () => { location.href = "plakat.html#" + utanTil(løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
           el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
@@ -804,9 +804,10 @@ function pkBoks(s, lk, i) {
     if (!pk.plakatar.length) liste.append(el("li", { class: "tom" }, "Ingen plakatar enno. Legg til nedanfor."));
     // Plakatar som finst i oppsettet, men ikkje er med her
     const med = new Set(pk.plakatar.map(utanTil));
-    const andre = allePlakatar().filter(x => !med.has(x.hash));
+    const andre = allePlakatar().filter(x => !med.has(x.hash) && !plakatside(x.hash));
     // Malane frå plakatbyggjaren, gruppert som der, og så plakatar du har laga
     const malMed = new Set(pk.plakatar.map(h => new URLSearchParams(h).get("mal")));
+    const sideMed = new Set(pk.plakatar.map(h => new URLSearchParams(h).get("side")));
     const grupper = {};
     for (const tn of (tenesteData && tenesteData.tenester) || []) (grupper[tn.kategori || "Andre"] ||= []).push(tn);
     const rad = (verdi, namn, merknad) => el("label", {}, el("input", { type: "checkbox", value: verdi }), namn,
@@ -815,6 +816,8 @@ function pkBoks(s, lk, i) {
       ...(tenesteData ? [] : [el("span", { class: "hjelp" }, "Hentar malane …")]),
       ...Object.entries(grupper).flatMap(([g, l]) => [el("b", { class: "hjelp" }, g),
         ...l.map(tn => rad(new URLSearchParams({ mal: tn.id, folg: "1" }).toString(), tn.namn, malMed.has(tn.id) ? "(er med)" : ""))]),
+      el("b", { class: "hjelp" }, "Sider"),
+      ...Object.entries(PLAKATSIDER).map(([id, sd]) => rad(new URLSearchParams({ side: id }).toString(), sd.namn, sideMed.has(id) ? "(er med)" : "")),
       ...(andre.length ? [el("b", { class: "hjelp" }, "Plakatar du har laga"), ...andre.map(x => rad(x.hash, x.namn))] : []));
     if (!pk.plakatar.length) vel.open = true;
     const n = pk.plakatar.length;

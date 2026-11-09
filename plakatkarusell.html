@@ -82,10 +82,10 @@ async function hentMalar() {
 // Fyller ut plakatane frå malane. Den som blir vist no, blir ikkje rørt.
 function brukMalar() {
   for (const r of rammer) {
-    const h = løysPlakat(malData, r.dataset.hash);
-    r.dataset.borte = h ? "" : "1";             // malen finst ikkje (lenger)
-    if (!h || r.classList.contains("synleg")) continue;
-    const src = "plakat.html#vis=1&" + h;
+    // Plakatar frå malane, eigne plakatar, eller ei plakatside («side=klokke»)
+    const src = plakatAdresse(malData, r.dataset.hash);
+    r.dataset.borte = src ? "" : "1";           // malen finst ikkje (lenger)
+    if (!src || r.classList.contains("synleg")) continue;
     if (r.dataset.src !== src) { r.dataset.src = src; r.src = src; }
   }
 }

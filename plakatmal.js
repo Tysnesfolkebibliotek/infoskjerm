@@ -51,3 +51,17 @@ function løysPlakat(data, h) {
   if (p.get("til")) q.set("til", p.get("til"));
   return q.toString();
 }
+
+// Sider som kan stå i ein plakatkarusell som om dei var plakatar («side=klokke»).
+// Dei blir opna som eiga side i staden for plakat.html.
+const PLAKATSIDER = {
+  klokke: { namn: "Klokke, vêr og ferje", fil: "klokke.html" },
+};
+const plakatside = h => PLAKATSIDER[new URLSearchParams(h).get("side")] || null;
+// Adressa ein plakat (eller ei plakatside) blir opna med, relativt til mappa på GitHub Pages
+function plakatAdresse(data, h) {
+  const s = plakatside(h);
+  if (s) return s.fil + "#vis=1";
+  const l = løysPlakat(data, h);
+  return l ? "plakat.html#vis=1&" + l : "";
+}
