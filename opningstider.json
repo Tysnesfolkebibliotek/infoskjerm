@@ -8,13 +8,16 @@
     "tor": "12-18"
   },
   "unntak": {},
-  "_skule": "Skuletimane til klokkesida: boksen om time/friminutt blir vist på skuledagar frå 15 min før første time til siste time er slutt. «fri»: fridagar og feriar, anten éin dato («2026-11-06») eller periode («2026-12-23/2027-01-04»). Frå skuleruta 2026–2027 for Tysnes kommune. Sommarferien 2027 er sett til 31. august – rett han når skuleruta for 2027–2028 kjem.",
+  "_skule": "Skuletimane til klokkesida: boksen om time/friminutt blir vist på skuledagar frå 15 min før første time til siste time er slutt. «kortdag»: dagar der nokre trinn sluttar tidlegare (siste time står då som «Timen sluttar», ikkje «Skulen sluttar»). «fri»: fridagar og feriar, anten éin dato («2026-11-06») eller periode («2026-12-23/2027-01-04»). Frå skuleruta 2026–2027 for Tysnes kommune. Sommarferien 2027 er sett til 31. august – rett han når skuleruta for 2027–2028 kjem.",
   "skule": {
     "dagar": [
       "man",
       "tys",
       "ons",
       "tor",
+      "fre"
+    ],
+    "kortdag": [
       "fre"
     ],
     "timar": [

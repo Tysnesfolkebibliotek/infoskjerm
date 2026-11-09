@@ -215,7 +215,7 @@ fetch("opningstider.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : nu
 // ---- Skuletimar og friminutt --------------------------------------------------
 // Frå «skule» i opningstider.json: skuledagar, timeplanen og fridagar/feriar.
 const SKULE_RESERVE = { dagar: ["man", "tys", "ons", "tor", "fre"],
-  timar: ["08.05-08.50", "08.50-09.35", "09.45-10.30", "11.05-11.50", "12.05-12.50", "13.00-13.45"], fri: [] };
+  timar: ["08.05-08.50", "08.50-09.35", "09.45-10.30", "11.05-11.50", "12.05-12.50", "13.00-13.45"], kortdag: ["fre"], fri: [] };
 const omMin = m => m < 60 ? "om " + Math.max(1, m) + " min" : "om " + Math.floor(m / 60) + " t" + (m % 60 ? " " + (m % 60) + " min" : "");
 function teiknSkule() {
   const S = OPNING.skule || SKULE_RESERVE, d = no();
@@ -236,7 +236,9 @@ function teiknSkule() {
     let j = i;
     while (timar[j + 1] && timar[j + 1][0] <= timar[j][1]) j++;
     const slutt = timar[j][1], etter = timar[j + 1];
-    if (!etter) { hovud = "Skulen sluttar " + omMin(att(slutt)); meir = "Siste time sluttar kl. " + klm(slutt); }
+    // Dagar der nokre trinn sluttar tidlegare («kortdag»): ikkje skriv at skulen sluttar
+    const kort = (S.kortdag || []).includes(DAGKODE[d.getDay()]);
+    if (!etter) { hovud = (kort ? "Timen sluttar " : "Skulen sluttar ") + omMin(att(slutt)); meir = "Siste time sluttar kl. " + klm(slutt); }
     else { hovud = "Friminutt " + omMin(att(slutt)); meir = "Friminutt kl. " + klm(slutt) + "–" + klm(etter[0]); }
     if (j > i) meir = "Timeskifte kl. " + klm(timar[i][1]) + " · " + meir.charAt(0).toLowerCase() + meir.slice(1);
   } else {
