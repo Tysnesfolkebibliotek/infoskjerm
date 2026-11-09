@@ -403,7 +403,7 @@ function visDato(v) {
 function visTid(v) {
   const m = String(v || "").match(ISOTID);
   if (!m) return v || "";
-  return `kl. ${m[1]}.${m[2]}` + (m[3] ? `–${m[3]}.${m[4]}` : "");
+  return `kl. ${m[1]}:${m[2]}` + (m[3] ? `–${m[3]}:${m[4]}` : "");
 }
 // Prøv å lese ein eldre fritekst-dato («Torsdag 12. november») eller -tid («18.00–20.00»)
 function tolkDato(v) {
