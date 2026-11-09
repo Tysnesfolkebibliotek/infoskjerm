@@ -752,6 +752,7 @@ async function hentFødd() {
     const kandidatar = [...alle.filter(x => x.nordisk).slice(0, 30), ...alle.filter(x => !x.nordisk).slice(0, 30)]
       .filter((x, i, l) => l.findIndex(y => y.namn === x.namn) === i);
     let liste = [], svar = 0;
+    const namna = kandidatar.map(k => k.namn + (k.norsk ? " (norsk)" : k.nordisk ? " (nordisk)" : ""));
     const ix = await finnIndeks();
     // 6 forfattarar per søk; nordiske først, så boksen kjem fort med norske namn
     for (let i = 0; i < kandidatar.length; i += 6) {
@@ -759,12 +760,13 @@ async function hentFødd() {
       try {
         const tal = await talBøker(bunk, ix); svar++;
         for (const k of bunk) if (tal.get(k.namn) > 0) liste.push({ ...k, bøker: tal.get(k.namn) });
-        if (liste.length) { FØDD = { dato, liste }; teiknFødd(); tilpass(); }
+        if (liste.length) { FØDD = { dato, liste, kandidatar: namna }; teiknFødd(); tilpass(); }
       } catch (e) { console.warn("Bibliofil:", e.message); }
     }
     // Svarte ikkje Bibliofil i det heile, viser vi dei tre første utan tal bøker
     if (!svar) liste = kandidatar.slice(0, 3).map(k => ({ ...k, bøker: null }));
-    FØDD = { dato, liste };
+    // «kandidatar» (alle frå Wikidata, med «(norsk)» o.l.) er lagra for feilsøking i konsollen
+    FØDD = { dato, liste, kandidatar: namna };
     if (svar || !kandidatar.length) minne.skriv("fodd", FØDD);   // prøv Bibliofil på nytt neste gong om det feila
   } catch (e) { console.warn("Fekk ikkje henta Fødd i dag:", e.message); }
   teiknFødd(); tilpass();
