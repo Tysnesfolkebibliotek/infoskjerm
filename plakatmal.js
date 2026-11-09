@@ -54,14 +54,23 @@ function løysPlakat(data, h) {
 
 // Sider som kan stå i ein plakatkarusell som om dei var plakatar («side=klokke»).
 // Dei blir opna som eiga side i staden for plakat.html.
+// Vala frå plakatbyggjaren (variant=…, utan=…, fodd=1, tema=…) står i same lenkja og blir sende vidare.
 const PLAKATSIDER = {
   klokke: { namn: "Klokke, vêr og ferje", fil: "klokke.html" },
 };
+const KLOKKEVARIANTAR = { klokke: "Klokke", ver: "Klokke og meir vêr", vertavle: "Vêrtavle" };
 const plakatside = h => PLAKATSIDER[new URLSearchParams(h).get("side")] || null;
+// Namnet på ei plakatside, med varianten: «Klokke, vêr og ferje (Vêrtavle)»
+function plakatsideNamn(h) {
+  const s = plakatside(h), p = new URLSearchParams(h);
+  if (!s) return "";
+  const v = p.get("side") === "klokke" && p.get("variant") && KLOKKEVARIANTAR[p.get("variant")];
+  return s.namn + (v ? " (" + v + ")" : "") + (p.get("fodd") === "1" ? " + Fødd i dag" : "");
+}
 // Adressa ein plakat (eller ei plakatside) blir opna med, relativt til mappa på GitHub Pages
 function plakatAdresse(data, h) {
   const s = plakatside(h);
-  if (s) return s.fil + "#vis=1";
+  if (s) { const p = new URLSearchParams(h); p.delete("til"); return s.fil + "#vis=1&" + p.toString(); }
   const l = løysPlakat(data, h);
   return l ? "plakat.html#vis=1&" + l : "";
 }

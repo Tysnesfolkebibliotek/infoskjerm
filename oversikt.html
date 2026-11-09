@@ -347,6 +347,7 @@ function typeTekst(s) {
   }
   if (erPlakat(s)) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
+    if (/klokke\.html#/.test(s.url)) return plakatsideNamn("side=klokke&" + p.toString());
     return `Plakat${p.get("tema") ? ` · tema ${p.get("tema")}` : ""}`;
   }
   if (/github\.io\/infoskjerm/.test(s.url || "")) {
@@ -364,7 +365,8 @@ const adresse = s => s.lokal ? (/^lokalhistorie\.html/.test(s.lokal) ? "skjerm/"
 // ---- Samspel med karusellbyggjaren ---------------------------------------
 const erKarusell = s => !s.lokal && /github\.io\/infoskjerm\/(index\.html)?#vis=1/.test(s.url || "");
 // Plakatar frå plakatbyggjaren (plakat.html)
-const erPlakat = s => !s.lokal && /github\.io\/infoskjerm\/plakat\.html#vis=1/.test(s.url || "");
+// Klokkesida blir òg laga i plakatbyggjaren (malen «Klokke, vêr og ferje»)
+const erPlakat = s => !s.lokal && /github\.io\/infoskjerm\/(plakat|klokke)\.html#vis=1/.test(s.url || "");
 // Plakatkarusellar (plakatkarusell.html): fleire plakatar etter tur på éi linje.
 // Plakatane står i lenkja som «p=…» (alt etter # i plakatlenkja, utan vis=1).
 // «til=ÅÅÅÅ-MM-DD» i ein plakat gjer at han ikkje blir vist etter den datoen.
@@ -386,7 +388,7 @@ const plakatHash = url => { const p = new URLSearchParams(String(url).split("#")
 const utanTil = h => { const p = new URLSearchParams(h); p.delete("til"); return p.toString(); };
 const medTil = (h, til) => { const p = new URLSearchParams(h); if (til) p.set("til", til); else p.delete("til"); return p.toString(); };
 const tilDatoAv = h => new URLSearchParams(h).get("til") || "";
-const plakatNamn = h => { if (plakatside(h)) return plakatside(h).namn; const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
+const plakatNamn = h => { if (plakatside(h)) return plakatsideNamn(h); const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
 const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/" + plakatAdresse(tenesteData, utanTil(h));
 // Malane i plakatbyggjaren (tenester.json). Plakatar som blir lagde til frå ein
 // mal, følgjer malen («mal=<id>&folg=1», sjå plakatmal.js).
@@ -426,6 +428,7 @@ function tilByggjaren(s, skjerm, i) {
   const [, hash = ""] = s.url.split("#");
   const p = new URLSearchParams(hash);
   p.delete("vis");
+  if (/klokke\.html#/.test(s.url) && !p.has("side")) p.set("side", "klokke");
   p.set("retur", `${skjerm}:${i}`);
   p.set("returnamn", s.namn || "");
   return (erPlakat(s) ? "plakat.html#" : "index.html#") + p.toString();
@@ -794,9 +797,9 @@ function pkBoks(s, lk, i) {
           el("button", { type: "button", title: "Flytt opp", disabled: k === 0, onclick: () => endre(() => pk.plakatar.splice(k - 1, 0, ...pk.plakatar.splice(k, 1))) }, "↑"),
           el("button", { type: "button", title: "Flytt ned", disabled: k === pk.plakatar.length - 1, onclick: () => endre(() => pk.plakatar.splice(k + 1, 0, ...pk.plakatar.splice(k, 1))) }, "↓"),
           el("button", { type: "button", onclick: () => førehandsvis({ namn: plakatNamn(h), url: plakatUrl(h) }) }, "Førehandsvis"),
-          plakatside(h) ? null : el("button", { type: "button", disabled: !lagra,
+          plakatside(h) && new URLSearchParams(h).get("side") !== "klokke" ? null : el("button", { type: "button", disabled: !lagra,
             title: lagra ? (følgjerMal(h) ? "Opne plakaten i plakatbyggjaren. Etterpå følgjer han ikkje malen lenger." : "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå.") : "Lagre oppsettet først, så du ikkje mistar endringane",
-            onclick: () => { location.href = "plakat.html#" + utanTil(løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
+            onclick: () => { location.href = "plakat.html#" + utanTil(plakatside(h) ? h : løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
           el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
             el("input", { type: "date", value: til, onchange: e => endre(() => { pk.plakatar[k] = medTil(h, e.target.value); }) })),
           el("button", { type: "button", class: "fare", onclick: () => endre(() => pk.plakatar.splice(k, 1)) }, "Fjern")));

@@ -10,16 +10,21 @@
   Lenkje til oversikta («+ Legg til side»):
     https://tysnesfolkebibliotek.github.io/infoskjerm/klokke.html#vis=1
 
-  Valfritt i lenkja (etter #):
+  Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
+    variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
+    variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
+    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, fare (farevarsel)
+    fodd=1              «Fødd i dag»: forfattarar fødde i dag som biblioteket har bøker av
     kveld=1 / kveld=0   tving temaet «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
     tema=fjord          bruk eit anna tema frå tema.js heile døgnet
     teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
     tid=19:30           lat som klokka er 19.30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
 
-  Kjelder (begge opne og gratis):
-    Vêr og sol: MET Norge (api.met.no) — Locationforecast og Sunrise, henta kvar 30. min.
+  Kjelder (alle opne og gratis):
+    Vêr og sol: MET Norge (api.met.no) — Locationforecast, Sunrise og MetAlerts (farevarsel), henta kvar 30. min.
     Ferje:      Entur (api.entur.io) — avgangar frå Våge kai (NSR:StopPlace:58466) mot Halhjem, henta kvart 2. min.
+    Fødd i dag: Wikidata (query.wikidata.org) og Bibliofil (SRU), henta éin gong per døgn.
   Opningstidene står i opningstider.json (med ein reserve her i fila).
 
   Utan nett går klokka og opningstida som før. Vêr og ferje blir viste frå
@@ -51,6 +56,7 @@
   .ope.betjent i { background: var(--gron); }
   .ope.stengt i { background: var(--dempa); }
   .ope span { color: var(--dempa); }
+  .ope[hidden] { display: none; }
 
   .klokke { display: flex; align-items: baseline; gap: 1.2rem; line-height: .9; }
   .klokke .tid { font-size: 27rem; letter-spacing: -.03em; white-space: nowrap; }
@@ -86,6 +92,76 @@
   .merknad { font-size: 3rem; color: var(--dempa); margin-top: -1.6rem; }
   .merknad:empty { display: none; }
 
+  /* Farevarsel frå MET: berre når det finst eitt for Tysnes. Fargane er MET sine. */
+  .fare { display: flex; align-items: center; gap: 3rem; padding: 3.2rem 4.4rem; border-radius: 3.2rem;
+          background: #f2c230; color: #1b140c; }
+  .fare.oransje { background: #f08c25; }
+  .fare.raudt { background: #d7302b; color: #fff; }
+  .fare[hidden] { display: none; }
+  .fare svg { width: 7rem; height: 7rem; flex: none; }
+  .fare b { display: block; font-size: 4.4rem; font-weight: 700; }
+  .fare span { display: block; font-size: 3.2rem; margin-top: .4rem; }
+
+  /* Meir vêr (variant=ver og variant=vertavle) */
+  .vermeir { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem 3.2rem; font-size: 3.4rem;
+             padding-top: 2.8rem; border-top: .2rem solid var(--spor); }
+  .vermeir[hidden], .timar[hidden], .dagar[hidden] { display: none; }
+  .vermeir > div { display: flex; align-items: center; gap: 1.6rem; min-width: 0; }
+  .vermeir > div[hidden] { display: none; }
+  .vermeir .heil { grid-column: 1 / -1; }
+  .vermeir svg { width: 5rem; height: 5rem; flex: none; }
+  .vermeir b { font-weight: 700; }
+  .timar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.6rem; }
+  .timar > div { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2.2rem 0;
+               border: .2rem solid var(--spor); border-radius: 2.4rem; }
+  .timar span { font-size: 3rem; color: var(--dempa); }
+  .timar svg { width: 7.4rem; height: 6.6rem; }
+  .timar b { font-size: 4.4rem; font-weight: 700; }
+  .dagar { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .dagar > div { display: flex; align-items: center; gap: 2.4rem; padding: 2.6rem 3rem; border: .2rem solid var(--spor); border-radius: 2.4rem; }
+  .dagar svg { width: 9.6rem; height: 8.5rem; flex: none; }
+  .dagar span { display: block; font-size: 3rem; color: var(--dempa); }
+  .dagar b { display: block; font-size: 5rem; font-weight: 700; white-space: nowrap; }
+  /* Vêrtavla: lita klokke øvst, stort vêr */
+  :root.v-vertavle .klokke .tid { font-size: 15rem; }
+  :root.v-vertavle .klokke .sek { display: none; }
+  :root.v-vertavle .dato { margin-top: 0; }
+  :root.v-vertavle .dato b { font-size: 4.6rem; }
+  :root.v-vertavle .vernu svg { width: 21rem; height: 18.5rem; }
+  :root.v-vertavle .vernu .grad { font-size: 22rem; }
+
+  /* Når alt ikkje får plass, blir sida tettare i to steg (sjå tilpass()) */
+  :root.tett .side { gap: 2.6rem; }
+  :root.tett .kort { padding: 3.4rem 4.2rem; gap: 2.2rem; }
+  :root.tett .kort.skule { padding: 2.8rem 4.2rem; }
+  :root.tett .klokke .tid { font-size: 22rem; }
+  :root.tett .vernu .grad { font-size: 13rem; }
+  :root.tett .vernu svg { width: 12rem; height: 10.5rem; }
+  :root.tett .avgang .tal { font-size: 7.6rem; }
+  :root.tett.v-vertavle .klokke .tid { font-size: 12rem; }
+  :root.tett.v-vertavle .vernu .grad { font-size: 16rem; }
+  :root.tett.v-vertavle .vernu svg { width: 15rem; height: 13rem; }
+  :root.tettare .side { gap: 2rem; }
+  :root.tettare .klokke .tid { font-size: 17rem; }
+  :root.tettare .klokke .sek { display: none; }
+  :root.tettare .dato b { font-size: 4.6rem; }
+  :root.tettare .ferjetopp { font-size: 3.8rem; }
+  :root.tettare .avgang { padding-top: 1.6rem; }
+  :root.tettare .avgang .tal { font-size: 6.4rem; }
+  :root.tettare .fodd .rad > svg { display: none; }
+  :root.tettare .timar svg { width: 5.6rem; height: 5rem; }
+  :root.tettare .timar > div { padding: 1.4rem 0; }
+  :root.tettare .dagar > div { padding: 1.8rem 2.4rem; }
+
+  /* Fødd i dag */
+  .fodd .rad { display: flex; align-items: center; gap: 3.6rem; }
+  .fodd .rad > svg { width: 9rem; height: 9rem; flex: none; }
+  .fodd .namn { font-size: 6rem; font-weight: 700; line-height: 1.1; }
+  .fodd .skild { font-size: 3.4rem; color: var(--dempa); margin-top: .8rem; }
+  .fodd .boker { display: inline-flex; align-items: center; gap: 1.4rem; margin-top: 1.6rem; font-size: 3.4rem; font-weight: 700;
+                 padding: .9rem 2.6rem; border-radius: 99rem; background: var(--aksent); color: var(--aksent-tekst); }
+  .fodd .boker[hidden] { display: none; }
+
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
   .kjelde { margin-top: auto; font-size: 2.2rem; color: var(--dempa); }
   footer { display: flex; align-items: center; justify-content: space-between; margin-top: -2.4rem; }
@@ -106,6 +182,10 @@
 </head>
 <body>
 <div class="side">
+  <section class="fare" id="fare" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3L2 20.5h20z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>
+    <div><b id="fareHovud"></b><span id="fareMeir"></span></div>
+  </section>
   <div class="ope" id="ope"><i></i><b id="opeNo"></b><span id="opeMeir"></span></div>
 
   <div>
@@ -125,6 +205,13 @@
       <div class="grad tal" id="grad"></div>
       <div class="skildring"><b id="vertekst"></b><span id="vind"></span></div>
     </div>
+    <div class="vermeir" id="vermeir" hidden>
+      <div id="vmVind"><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g id="vindpil"><path d="M12 20V4M6 10l6-6 6 6"/></g></svg><span></span></div>
+      <div id="vmSpenn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14.5V4a2 2 0 1 1 4 0v10.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg><span></span></div>
+      <div id="vmNedbor" class="heil"><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg><span></span></div>
+    </div>
+    <div class="timar" id="timar" hidden></div>
+    <div class="dagar" id="dagar" hidden></div>
     <div class="sol" id="sol" hidden>
       <svg viewBox="0 0 28 20" fill="none" stroke="var(--aksent)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 15a8 8 0 0 1 16 0"/><path d="M2 18h24"/><path d="M14 2v3M4.5 6l2 2M23.5 6l-2 2"/></svg>
       <span id="soltekst"></span>
@@ -140,7 +227,19 @@
     <div class="merknad" id="ferjemerknad"></div>
   </section>
 
-  <div class="kjelde" id="kjelde">Vêr: MET Norge · Ferje: Entur</div>
+  <section class="kort fodd" id="fodd" hidden>
+    <div class="etikett">Fødd i dag</div>
+    <div class="rad">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V11h16v10z"/><path d="M4 15c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M8 11V8M12 11V8M16 11V8" stroke="var(--aksent)"/><path d="M8 5.5v.01M12 5.5v.01M16 5.5v.01" stroke="var(--aksent)" stroke-width="2.4"/></svg>
+      <div>
+        <div class="namn" id="foddNamn"></div>
+        <div class="skild" id="foddSkild"></div>
+        <div class="boker" id="foddBoker"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="kjelde" id="kjelde"></div>
   <footer>
     <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
     <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
@@ -170,6 +269,20 @@ const kl = d => p2(d.getHours()) + "." + p2(d.getMinutes());
 const DAGKODE = ["søn", "man", "tys", "ons", "tor", "fre", "lør"];
 const DAGNAMN = ["Sundag", "Måndag", "Tysdag", "Onsdag", "Torsdag", "Fredag", "Laurdag"];
 const MND = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
+const isoDato = d => d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+
+// Variant og boksar (frå plakatbyggjaren). Vêrtavla viser alltid vêret.
+const VARIANT = ["ver", "vertavle"].includes(H.get("variant")) ? H.get("variant") : "klokke";
+document.documentElement.classList.add("v-" + VARIANT);
+const UTAN = new Set((H.get("utan") || "").split(",").map(s => s.trim()).filter(Boolean));
+const MED = k => !UTAN.has(k) || (k === "ver" && VARIANT === "vertavle");
+const FODD = H.get("fodd") === "1";
+$("kjelde").textContent = [
+  (MED("ver") || MED("sol") || MED("fare")) && "Vêr: MET Norge",
+  MED("ferje") && "Ferje: Entur",
+  FODD && "Fødd i dag: Wikidata",
+].filter(Boolean).join(" · ");
+
 const minne = { les(k) { try { return JSON.parse(localStorage.getItem("klokke:" + k)); } catch (e) { return null; } },
                 skriv(k, v) { try { localStorage.setItem("klokke:" + k, JSON.stringify(v)); } catch (e) {} } };
 
@@ -217,6 +330,7 @@ function teiknOpning() {
   }
   if (u.tekst) meir += " · " + u.tekst;
   $("ope").className = "ope " + klasse;
+  $("ope").hidden = !MED("ope");
   $("opeNo").textContent = hovud;
   $("opeMeir").textContent = meir;
 }
@@ -253,7 +367,7 @@ function teiknSkule() {
            || (S.fri || []).some(f => { const [a, b] = String(f).split("/"); return iso >= a && iso <= (b || a); });
   const timar = (S.timar || []).map(spenn).filter(Boolean).map(([a, b]) => [a * 60, b * 60]);   // minutt etter midnatt
   const t = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
-  const vis = !fri && timar.length && (S.dagar || []).includes(DAGKODE[d.getDay()]) && t >= timar[0][0] - 15 && t < timar[timar.length - 1][1];
+  const vis = MED("skule") && !fri && timar.length && (S.dagar || []).includes(DAGKODE[d.getDay()]) && t >= timar[0][0] - 15 && t < timar[timar.length - 1][1];
   $("skule").hidden = !vis;
   if (!vis) return;
   const klm = m => klTal(m / 60), att = m => Math.ceil(m - t);
@@ -323,20 +437,23 @@ function verIkon(kode) {
 }
 const VINDRETNING = ["nord", "nordaust", "aust", "søraust", "sør", "sørvest", "vest", "nordvest"];
 
-let VER = minne.les("ver"), SOL = minne.les("sol");
+let VER = minne.les("ver"), SOL = minne.les("sol"), FARE = minne.les("fare");
 async function hentVer() {
   try {
     const r = await fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${POS.lat}&lon=${POS.lon}`);
     if (!r.ok) throw new Error("MET " + r.status);
     const j = await r.json();
-    VER = { henta: Date.now(), serie: j.properties.timeseries.slice(0, 6).map(t => ({
-      tid: t.time, temp: t.data.instant.details.air_temperature, vind: t.data.instant.details.wind_speed,
-      retning: t.data.instant.details.wind_from_direction,
-      kode: (t.data.next_1_hours || t.data.next_6_hours || {}).summary?.symbol_code })) };
+    // Timeverdiar for dei neste 2–3 døgna (til vêrtavla og høgast/lågast i morgon)
+    VER = { henta: Date.now(), serie: j.properties.timeseries.slice(0, 60).map(t => {
+      const i = t.data.instant.details, n1 = t.data.next_1_hours, n6 = t.data.next_6_hours;
+      return { tid: t.time, temp: i.air_temperature, vind: i.wind_speed, retning: i.wind_from_direction,
+               kode: (n1 || n6 || {}).summary?.symbol_code, kode6: n6?.summary?.symbol_code,
+               nedbor: n1?.details?.precipitation_amount ?? null };
+    }) };
     minne.skriv("ver", VER);
   } catch (e) { console.warn("Fekk ikkje henta vêret:", e.message); }
   try {
-    const d = new Date(), dato = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+    const d = new Date(), dato = isoDato(d);
     if (!SOL || SOL.dato !== dato) {
       const off = -d.getTimezoneOffset(), offset = (off < 0 ? "-" : "+") + p2(Math.floor(Math.abs(off) / 60)) + ":" + p2(Math.abs(off) % 60);
       const r = await fetch(`https://api.met.no/weatherapi/sunrise/3.0/sun?lat=${POS.lat}&lon=${POS.lon}&date=${dato}&offset=${encodeURIComponent(offset)}`);
@@ -346,27 +463,125 @@ async function hentVer() {
       minne.skriv("sol", SOL);
     }
   } catch (e) { console.warn("Fekk ikkje henta soltidene:", e.message); }
-  teiknVer();
+  if (MED("fare")) try {
+    // Farevarsel som gjeld punktet vårt (MetAlerts). Tom liste = ingen farevarsel.
+    const r = await fetch(`https://api.met.no/weatherapi/metalerts/2.0/current.json?lat=${POS.lat}&lon=${POS.lon}&lang=no`);
+    if (!r.ok) throw new Error("MET farevarsel " + r.status);
+    const j = await r.json();
+    FARE = { henta: Date.now(), varsel: (j.features || []).map(f => {
+      const p = f.properties || {}, iv = (f.when && f.when.interval) || [];
+      const farge = String(p.awareness_level || p.riskMatrixColor || "").toLowerCase();
+      const nivå = /red/.test(farge) ? 4 : /orange/.test(farge) ? 3 : /yellow/.test(farge) ? 2 : 0;
+      return { nivå, namn: p.eventAwarenessName || p.event || "", frå: iv[0] || null, til: iv[1] || p.eventEndingTime || null };
+    }).filter(v => v.nivå >= 2) };
+    minne.skriv("fare", FARE);
+  } catch (e) { console.warn("Fekk ikkje henta farevarsel:", e.message); }
+  teiknVer(); tilpass();
 }
+
+// «kl. 14.00», «i morgon kl. 06.00» eller «torsdag kl. 18.00»
+function dagOgKl(d) {
+  const i = no(), dagar = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(i.getFullYear(), i.getMonth(), i.getDate())) / 864e5);
+  return (dagar === 0 ? "" : dagar === 1 ? "i morgon " : DAGNAMN[d.getDay()].toLowerCase() + " ") + "kl. " + kl(d);
+}
+function teiknFare() {
+  const nu = Date.now();
+  const gjeld = MED("fare") && FARE && nu - FARE.henta < VER_GAMAL_MS
+    ? FARE.varsel.filter(v => !v.til || new Date(v.til).getTime() > nu) : [];
+  // Høgaste nivå først, så det som kjem først
+  const v = gjeld.sort((a, b) => b.nivå - a.nivå || String(a.frå).localeCompare(String(b.frå)))[0];
+  $("fare").hidden = !v;
+  if (!v) return;
+  const farge = { 2: "Gult", 3: "Oransje", 4: "Raudt" }[v.nivå];
+  $("fare").className = "fare " + { 2: "gult", 3: "oransje", 4: "raudt" }[v.nivå];
+  $("fareHovud").textContent = farge + " farevarsel" + (v.namn ? ": " + v.namn.toLowerCase() : "");
+  const frå = v.frå && new Date(v.frå), til = v.til && new Date(v.til);
+  const tilTekst = til && frå && isoDato(til) === isoDato(frå) ? "kl. " + kl(til) : til && dagOgKl(til);
+  $("fareMeir").textContent = (frå && frå > nu ? "Frå " + dagOgKl(frå) + (til ? " til " + tilTekst.replace(/^kl\. /, "") : "") : til ? "Til " + dagOgKl(til) : "")
+    + (gjeld.length > 1 ? " · " + (gjeld.length - 1) + " varsel til" : "");
+}
+
+// Kjennest som (vindavkjøling): berre når det er kaldt og blåser
+function kjennestSom(t, vind) {
+  const v = vind * 3.6;
+  if (t > 10 || v < 4.8) return null;
+  return Math.round(13.12 + 0.6215 * t - 11.37 * v ** 0.16 + 0.3965 * t * v ** 0.16);
+}
+const mm = x => String(Math.round(x * 10) / 10).replace(".", ",");
+// «1,2 mm neste time · opphald frå kl. 19.00», «Regn frå kl. 21.00» eller «Opphald dei neste timane»
+function nedborTekst(serie, d) {
+  const timar = serie.filter(t => t.nedbor != null && new Date(t.tid) > new Date(d.getTime() - 60 * 60e3)).slice(0, 13);
+  if (!timar.length) return "";
+  const vått = t => t.nedbor >= 0.1;
+  const type = t => /snow/.test(t.kode) ? "Snø" : /sleet/.test(t.kode) ? "Sludd" : "Regn";
+  if (vått(timar[0])) {
+    const opp = timar.find(t => !vått(t));
+    return mm(timar[0].nedbor) + " mm neste time" + (opp ? " · opphald frå kl. " + kl(new Date(opp.tid)) : "");
+  }
+  const kjem = timar.find(t => t.nedbor >= 0.2);
+  return kjem ? type(kjem) + " frå kl. " + kl(new Date(kjem.tid)) : "Opphald dei neste timane";
+}
+// Høgast/lågast for eit døgn, med symbolet midt på dagen
+function dagSpenn(serie, dag) {
+  const iso = isoDato(dag), l = serie.filter(t => isoDato(new Date(t.tid)) === iso);
+  if (l.length < 3) return null;
+  const temp = l.map(t => t.temp), midt = l.find(t => new Date(t.tid).getHours() >= 12) || l[l.length - 1];
+  return { min: Math.round(Math.min(...temp)), max: Math.round(Math.max(...temp)), kode: midt.kode6 || midt.kode };
+}
+
 function teiknVer() {
   const d = new Date();
   // Bruk timen som gjeld no (MET gir ein serie frå no og framover)
-  const nu = VER && Date.now() - VER.henta < VER_GAMAL_MS && VER.serie.filter(t => new Date(t.tid) <= new Date(d.getTime() + 30 * 60e3)).pop();
-  $("ver").hidden = !nu || !nu.kode;
+  const fersk = VER && Date.now() - VER.henta < VER_GAMAL_MS;
+  const nu = fersk && VER.serie.filter(t => new Date(t.tid) <= new Date(d.getTime() + 30 * 60e3)).pop();
+  $("ver").hidden = !MED("ver") || !nu || !nu.kode;
   if (nu && nu.kode) {
     $("vericon").innerHTML = verIkon(nu.kode);
     $("grad").textContent = Math.round(nu.temp) + "°";
     $("vertekst").textContent = verTekst(nu.kode);
     const v = Math.round(nu.vind);
-    $("vind").textContent = "Vind " + v + " m/s" + (v >= 4 && nu.retning != null ? " frå " + VINDRETNING[Math.round(nu.retning / 45) % 8] : "");
+    const vindTekst = (v >= 4 && nu.retning != null ? v + " m/s frå " + VINDRETNING[Math.round(nu.retning / 45) % 8] : v >= 1 ? v + " m/s" : "Stille");
+    const ks = kjennestSom(nu.temp, nu.vind);
+    if (VARIANT === "klokke") $("vind").textContent = "Vind " + vindTekst.replace("Stille", "0 m/s");
+    else $("vind").textContent = ks != null && Math.abs(ks - nu.temp) >= 2 ? "Kjennest som " + ks + "°" : "";
+    // Meir vêr: vind med pil, nedbør og (i variant=ver) høgast/lågast
+    $("vermeir").hidden = VARIANT === "klokke";
+    if (VARIANT !== "klokke") {
+      $("vmVind").querySelector("span").innerHTML = v >= 1 ? `Vind <b>${vindTekst}</b>` : "<b>Stille</b>";
+      $("vindpil").setAttribute("transform", `rotate(${((nu.retning || 0) + 180) % 360} 12 12)`);
+      $("vindpil").style.visibility = v >= 1 && nu.retning != null ? "" : "hidden";
+      const ned = nedborTekst(VER.serie, d);
+      $("vmNedbor").hidden = !ned;
+      $("vmNedbor").querySelector("span").textContent = ned;
+      // I dag (om det er att nok av dagen), elles i morgon
+      const idag = dagSpenn(VER.serie, d), imorgon = dagSpenn(VER.serie, new Date(d.getTime() + 864e5));
+      const sp = idag || imorgon;
+      $("vmSpenn").hidden = VARIANT !== "ver" || !sp;
+      if (sp) $("vmSpenn").querySelector("span").innerHTML = `${idag ? "I dag" : "I morgon"} <b>${sp.min}° til ${sp.max}°</b>`;
+      $("vmVind").classList.toggle("heil", $("vmSpenn").hidden);
+    }
+    // Vêrtavla: dei neste 6 timane, og i dag / i morgon
+    $("timar").hidden = $("dagar").hidden = VARIANT !== "vertavle";
+    if (VARIANT === "vertavle") {
+      const neste = VER.serie.filter(t => new Date(t.tid) > d && t.nedbor != null).slice(0, 6);
+      $("timar").innerHTML = neste.map(t => `<div><span>${p2(new Date(t.tid).getHours())}</span>`
+        + `<svg viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${verIkon(t.kode)}</svg>`
+        + `<b>${Math.round(t.temp)}°</b></div>`).join("");
+      $("timar").hidden = !neste.length;
+      const dagar = [["I dag", dagSpenn(VER.serie, d)], ["I morgon", dagSpenn(VER.serie, new Date(d.getTime() + 864e5))]].filter(x => x[1]);
+      $("dagar").innerHTML = dagar.map(([namn, s]) => `<div><svg viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">`
+        + `${verIkon(String(s.kode).replace(/_night$/, "_day"))}</svg><div><span>${namn}</span><b>${s.min}° / ${s.max}°</b></div></div>`).join("");
+      $("dagar").hidden = !dagar.length;
+    }
   }
-  const idag = SOL && SOL.dato === d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+  const idag = SOL && SOL.dato === isoDato(d);
   const opp = idag && SOL.opp && new Date(SOL.opp), ned = idag && SOL.ned && new Date(SOL.ned);
-  $("sol").hidden = !(opp && ned);
+  $("sol").hidden = !MED("sol") || !(opp && ned);   // sola står i vêrkortet
   if (opp && ned) {
     const t = no();
     $("soltekst").innerHTML = t < opp ? `Sola går opp <b>${kl(opp)}</b>` : t < ned ? `Sola går ned <b>${kl(ned)}</b>` : `Sola gjekk ned ${kl(ned)}`;
   }
+  teiknFare();
   // Mørke fargar når sola er nede (eller kveld=1/0 i lenkja)
   const t = no();
   const kveld = H.has("kveld") ? H.get("kveld") === "1" : (opp && ned ? (t < opp || t >= ned) : (t.getHours() < 8 || t.getHours() >= 16));
@@ -383,6 +598,7 @@ function teiknVer() {
 const STOPP = "NSR:StopPlace:58466";
 let AVGANGAR = minne.les("avgangar") || [];
 async function hentFerje() {
+  if (!MED("ferje")) return;
   try {
     const q = `{ stopPlace(id: "${STOPP}") { estimatedCalls(numberOfDepartures: 60, timeRange: 172800) {
       expectedDepartureTime aimedDepartureTime cancellation forBoarding
@@ -397,7 +613,7 @@ async function hentFerje() {
       .map(c => ({ venta: c.expectedDepartureTime, rute: c.aimedDepartureTime, innstilt: !!c.cancellation }));
     minne.skriv("avgangar", AVGANGAR);
   } catch (e) { console.warn("Fekk ikkje henta ferja:", e.message); }
-  teiknFerje();
+  teiknFerje(); tilpass();
 }
 function omTid(min) {
   if (min < 1) return "går no";
@@ -410,7 +626,7 @@ function teiknFerje() {
   // Ferja er farten når ho har gått; vis neste som ikkje er innstilt
   const kom = AVGANGAR.filter(a => new Date(a.venta).getTime() > nu - 30e3);
   const neste = kom.find(a => !a.innstilt);
-  $("ferje").hidden = !neste || new Date(neste.venta) - nu > 12 * 3600e3;
+  $("ferje").hidden = !MED("ferje") || !neste || new Date(neste.venta) - nu > 12 * 3600e3;
   if (!neste) return;
   const venta = new Date(neste.venta), rute = new Date(neste.rute);
   $("ferjetid").textContent = kl(venta);
@@ -419,6 +635,107 @@ function teiknFerje() {
   const innstilt = kom.indexOf(neste) > 0 && kom[0].innstilt;
   $("ferjemerknad").textContent = innstilt ? `Ferja kl. ${kl(new Date(kom[0].rute))} er innstilt`
                                 : forsein >= 3 ? `Forseinka – etter ruta kl. ${kl(rute)}` : "";
+}
+
+// ---- Fødd i dag (Wikidata + Bibliofil) ----------------------------------------
+// Forfattarar fødde på dagens dato som har ein artikkel på norsk Wikipedia.
+// Så sjekkar vi i Bibliofil kven av dei biblioteket har bøker av, og viser berre dei.
+// Norske og nordiske forfattarar kjem først, så dei mest kjende (flest Wikipedia-artiklar).
+// Blir henta éin gong per døgn. Kjem sida fram fleire gonger, blir det neste namnet vist.
+const SERVER = "https://strdbib.bib.no", AVDAR = ["tyfv", "tyfb"];
+let FØDD = minne.les("fodd"), foddNr = 0;
+const ordAv = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").split(/[^a-z0-9æøð]+/).filter(Boolean);
+
+// SRU med JSONP, som i karusellane (index.html). Svaret kjem alltid til «callback», så éin om gongen.
+function jsonp(url, ms) {
+  return new Promise((ok, feil) => {
+    const s = document.createElement("script");
+    let ferdig = false;
+    const slutt = (fn, v) => { if (ferdig) return; ferdig = true; clearTimeout(t); s.remove(); window.callback = () => {}; fn(v); };
+    const t = setTimeout(() => slutt(feil, new Error("Bibliofil svarte ikkje i tide")), ms);
+    window.callback = d => slutt(ok, d);
+    s.onerror = () => slutt(feil, new Error("Fekk ikkje kontakt med Bibliofil"));
+    s.src = url;
+    document.head.append(s);
+  });
+}
+const sru = q => jsonp(SERVER + "/cgi-bin/sru?" + Object.entries({ operation: "searchRetrieve", recordSchema: "bsdc", responseType: "text/javascript",
+  query: q, startRecord: 1, maximumRecords: 100 }).map(([k, v]) => k + "=" + encodeURIComponent(String(v)).replace(/%3A/gi, ":")).join("&"), 20000);
+const avdFilter = "(" + AVDAR.map(a => `bibliofil.ccl="avd=${a}"`).join(" or ") + ")";
+// Same forfattarindeksar som Nobel-malen prøver (index.html)
+const INDEKSAR = [w => `bibliofil.ccl="fo=${w}"`, w => `dc.creator="${w}"`];
+async function finnIndeks() {
+  for (const ix of INDEKSAR) {
+    try { const d = await sru(`${ix("hamsun")} and norzig.materialType=l`);
+          if (Number(d?.feed?.sru_numberOfRecords || 0) > 0) return ix; } catch (e) {}
+  }
+  return INDEKSAR[0];
+}
+// Tal titlar biblioteket har av forfattaren (null = fekk ikkje svar)
+async function talBøker(namn, ix) {
+  const ord = ordAv(namn);
+  if (ord.length < 2) return 0;
+  const etter = ord[ord.length - 1], før = ord[0];
+  const d = await sru(`${ix(etter)} and ${avdFilter} and norzig.materialType=l`);
+  const titlar = new Set();
+  for (const p of d?.feed?.entry || []) {
+    const r = p.sru_recordData || {};
+    const forf = [].concat(r.bsdc_creator || []).map(c => ordAv((c && c.name) || c));
+    // Både fornamn og etternamn må stå i forfattarnamnet (ikkje bøker OM forfattaren)
+    if (forf.some(f => f.includes(etter) && f.includes(før))) titlar.add(ordAv([].concat(r.bsdc_title || "")[0]).join(" "));
+  }
+  return titlar.size;
+}
+async function hentFødd() {
+  if (!FODD) return;
+  const d = new Date(), dato = isoDato(d);
+  if (FØDD && FØDD.dato === dato) return teiknFødd();
+  try {
+    const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?sl ?norsk ?nordisk WHERE {
+      VALUES ?yrke { wd:Q36180 wd:Q6625963 wd:Q49757 wd:Q4853732 wd:Q214917 wd:Q482980 }
+      ?p wdt:P106 ?yrke ; p:P569/psv:P569 [ wikibase:timeValue ?f ; wikibase:timePrecision 11 ] .
+      FILTER(MONTH(?f) = ${d.getMonth() + 1} && DAY(?f) = ${d.getDate()})
+      ?a schema:about ?p ; schema:isPartOf <https://no.wikipedia.org/> .
+      ?p wikibase:sitelinks ?sl .
+      BIND(YEAR(?f) AS ?aar)
+      BIND(EXISTS { ?p wdt:P27 wd:Q20 } AS ?norsk)
+      BIND(EXISTS { VALUES ?l { wd:Q20 wd:Q34 wd:Q35 wd:Q189 wd:Q33 wd:Q4628 } ?p wdt:P27 ?l } AS ?nordisk)
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "nn,nb,no,en". }
+    }`;
+    const r = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), { headers: { Accept: "application/sparql-results+json" } });
+    if (!r.ok) throw new Error("Wikidata " + r.status);
+    const ja = v => v && (v.value === "true" || v.value === "1");
+    const alle = (await r.json()).results.bindings
+      .map(b => ({ namn: b.pLabel?.value || "", skild: b.pDescription?.value || "", år: Number(b.aar?.value) || null,
+                   sl: Number(b.sl?.value) || 0, norsk: ja(b.norsk), nordisk: ja(b.nordisk) }))
+      .filter(x => x.namn && !/^Q\d+$/.test(x.namn))
+      .sort((a, b) => b.norsk - a.norsk || b.nordisk - a.nordisk || b.sl - a.sl);
+    // Alle nordiske, og dei mest kjende andre, til saman 12
+    const kandidatar = [...alle.filter(x => x.nordisk).slice(0, 8), ...alle.filter(x => !x.nordisk)].slice(0, 12);
+    let liste = [], svar = 0;
+    const ix = await finnIndeks();
+    for (const k of kandidatar) {
+      try { const n = await talBøker(k.namn, ix); svar++; if (n > 0) liste.push({ ...k, bøker: n }); }
+      catch (e) { console.warn("Bibliofil, " + k.namn + ":", e.message); }
+    }
+    // Svarte ikkje Bibliofil i det heile, viser vi dei tre første utan tal bøker
+    if (!svar) liste = kandidatar.slice(0, 3).map(k => ({ ...k, bøker: null }));
+    FØDD = { dato, liste };
+    if (svar || !kandidatar.length) minne.skriv("fodd", FØDD);   // prøv Bibliofil på nytt neste gong om det feila
+  } catch (e) { console.warn("Fekk ikkje henta Fødd i dag:", e.message); }
+  teiknFødd(); tilpass();
+}
+function teiknFødd() {
+  const liste = FODD && FØDD && FØDD.dato === isoDato(new Date()) ? FØDD.liste || [] : [];
+  $("fodd").hidden = !liste.length;
+  $("fodd").dataset.har = liste.length ? "1" : "";
+  if (!liste.length) return;
+  const f = liste[foddNr % liste.length];
+  $("foddNamn").textContent = f.namn;
+  const skild = f.skild ? f.skild.charAt(0).toUpperCase() + f.skild.slice(1) : "";
+  $("foddSkild").textContent = [skild, f.år && (f.år > 0 ? "fødd " + f.år : "")].filter(Boolean).join(", ");
+  $("foddBoker").hidden = !f.bøker;
+  $("foddBoker").textContent = f.bøker === 1 ? "1 bok i biblioteket" : f.bøker + " bøker i biblioteket";
 }
 
 // ---- Nedteljingshjulet og samspel med rotasjon.html -------------------------
@@ -443,17 +760,34 @@ let sistFerje = 0;
 window.addEventListener("message", e => {
   if (!e.data || e.data.nyheiter !== "vis") return;
   teljNed(Number(e.data.att) || Number(e.data.sekund) * 1000 || 60000, false, Number(e.data.sekund));
+  foddNr++;   // neste forfattar kvar gong sida kjem fram
   teiknAlt();
   if (Date.now() - sistFerje > 60e3) { sistFerje = Date.now(); hentFerje(); }
 });
 
+// ---- Får alt plass? ------------------------------------------------------------
+// Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
+// blir ho tettare i to steg. Får det framleis ikkje plass, fell Fødd i dag bort.
+function tilpass() {
+  const rot = document.documentElement, side = document.querySelector(".side");
+  const for_ = () => side.scrollHeight > side.clientHeight + 2;
+  rot.classList.remove("tett", "tettare");
+  $("fodd").hidden = !$("fodd").dataset.har;
+  if (!for_()) return;
+  rot.classList.add("tett");
+  if (!for_()) return;
+  rot.classList.add("tettare");
+  if (for_() && !$("fodd").hidden) $("fodd").hidden = true;
+}
+
 // ---- I gang -------------------------------------------------------------------
-function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); }
+function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }
 teiknAlt();
 // Klokka blir oppdatert rett etter kvart heile sekund
-(function tikk() { teiknKlokke(); teiknSkule(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
-setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); }, 15e3);
+(function tikk() { teiknKlokke(); teiknSkule(); tilpass(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
+setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }, 15e3);
 hentVer(); setInterval(hentVer, VER_KVAR_MS);
+hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
 melde("har"); melde("klar");

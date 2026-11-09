@@ -249,6 +249,7 @@
 <script src="tema.js"></script>
 <script src="skrifter.js"></script>
 <script src="qrcode.js"></script>
+<script src="plakatmal.js"></script>
 </head>
 <body>
 
@@ -291,7 +292,23 @@
       <div id="malstatus" style="margin-top:6px"></div>
     </div>
 
-    <div class="del"><h2>Innhald</h2>
+    <div class="del" id="klokkedel" hidden><h2>Klokke, vêr og ferje</h2>
+      <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Klokkesida hentar opningstid, vêr, ferje og farevarsel av seg sjølv. Boksar som ikkje har noko å vise, blir borte (skuletimane utanom skuletida, farevarsel når det ikkje er noko). Blir det for trongt, blir sida tettare, og «Fødd i dag» fell bort først.</p><p class="hjelp" style="margin-top:6px">Tips: legg klokka i ein eigen plakatkarusell med «Éin plakat mellom kvar side» på oversikta.</p></details>
+      <label class="felt"><span>Variant</span><select id="kvariant">
+        <option value="klokke">Klokke: stor klokke og vêret no</option>
+        <option value="ver">Klokke og meir vêr: vind, nedbør, høgast og lågast</option>
+        <option value="vertavle">Vêrtavle: lita klokke, dei neste timane, i dag og i morgon</option></select></label>
+      <div class="felt"><span>Vis</span></div>
+      <label class="avkryss"><input type="checkbox" id="kv-ope" checked> Opningstida (betjent, meirope eller stengt)</label>
+      <label class="avkryss"><input type="checkbox" id="kv-skule" checked> Skuletimar og friminutt (på skuledagar)</label>
+      <label class="avkryss" id="kv-ver-rad"><input type="checkbox" id="kv-ver" checked> Vêret</label>
+      <label class="avkryss"><input type="checkbox" id="kv-sol" checked> Sol opp og ned (i vêrboksen)</label>
+      <label class="avkryss"><input type="checkbox" id="kv-ferje" checked> Neste ferje Våge → Halhjem</label>
+      <label class="avkryss"><input type="checkbox" id="kv-fare" checked> Farevarsel frå MET (berre når det finst)</label>
+      <label class="avkryss"><input type="checkbox" id="kv-fodd"> Fødd i dag: forfattarar biblioteket har bøker av</label>
+    </div>
+
+    <div class="del" id="innhalddel"><h2>Innhald</h2>
       <label class="felt"><span>Liten tekst øvst</span><input type="text" name="overlinje" placeholder="Digitalt bibliotek"></label>
       <label class="felt"><span>Overskrift</span><input type="text" name="overskrift"></label>
       <label class="avkryss" id="logoval" hidden><input type="checkbox" id="brukLogo"> Vis logoen i staden for overskrifta</label>
@@ -325,7 +342,7 @@
       <p class="hjelp" id="tidfeil" hidden></p>
     </div>
 
-    <div class="del"><h2>QR-kode</h2>
+    <div class="del" id="qrdel"><h2>QR-kode</h2>
       <label class="felt"><span>Lenkje</span><input type="url" name="lenkje" placeholder="https://www.tysnesbibliotek.no/nn/…"><small>Helst undersida på tysnesbibliotek.no. Tom = ingen QR-kode.</small></label>
       <label class="felt"><span>Tekst ved QR-koden</span><input type="text" name="qrtekst" placeholder="Skann for å kome i gang"></label>
     </div>
@@ -333,7 +350,7 @@
     <div class="del"><h2>Utsjånad</h2>
       <div class="rad">
         <label class="felt"><span>Tema</span><select name="tema" id="tema"></select></label>
-        <label class="felt"><span>Skrift</span><select name="skrift" id="skrift"></select></label>
+        <label class="felt" id="skriftfelt"><span>Skrift</span><select name="skrift" id="skrift"></select></label>
       </div>
     </div>
 
@@ -885,6 +902,26 @@ async function startByggjar() {
   const andre = document.createElement("optgroup"); andre.label = "Anna";
   andre.append(new Option("Arrangement", "arrangement"), new Option("Tom plakat", "tom"));
   mal.append(andre);
+  // Sider som klokka: eiga side med eigne val, ikkje ein plakat
+  const sider = document.createElement("optgroup"); sider.label = "Sider";
+  sider.append(new Option("Klokke, vêr og ferje", "klokke"));
+  mal.append(sider);
+  const erKlokke = () => mal.value === "klokke";
+  const KLOKKEBOKSAR = ["ope", "skule", "ver", "sol", "ferje", "fare"];
+  // Temaet «Automatisk» (lys om dagen, kveld etter solnedgang) finst berre for klokka
+  function autoTema(på) {
+    const sel = $("tema"), finst = sel.querySelector('option[value="auto"]');
+    if (på && !finst) sel.prepend(new Option("Automatisk (lys / kveld)", "auto"));
+    if (!på && finst) { if (sel.value === "auto") sel.value = "lys"; finst.remove(); }
+  }
+  function fyllKlokke(cfg) {
+    const utan = new Set(String(cfg.utan || "").split(",").filter(Boolean));
+    $("kvariant").value = ["ver", "vertavle"].includes(cfg.variant) ? cfg.variant : "klokke";
+    for (const k of KLOKKEBOKSAR) $("kv-" + k).checked = !utan.has(k);
+    $("kv-fodd").checked = cfg.fodd === "1";
+    autoTema(true);
+    felt("tema").value = cfg.tema && TEMA[cfg.tema] ? cfg.tema : "auto";
+  }
 
   // Tema og skrift
   const temaSel = $("tema");
@@ -926,6 +963,8 @@ async function startByggjar() {
 
   // Fyll ut skjemaet frå ein mal
   function brukMal(id) {
+    if (id === "klokke") { mal.value = id; fyllKlokke({}); oppdater(); return; }
+    autoTema(false);
     const t = teneste(id);
     const tema = felt("tema").value, skrift = felt("skrift").value;
     skjema.reset();
@@ -969,6 +1008,12 @@ async function startByggjar() {
 
   function lesSkjema() {
     const id = mal.value, t = teneste(id);
+    if (id === "klokke") {
+      // Vêrtavla viser alltid vêret; sola står i vêrboksen
+      const utan = KLOKKEBOKSAR.filter(k => !$("kv-" + k).checked && !(k === "ver" && $("kvariant").value === "vertavle"));
+      return { mal: id, side: "klokke", variant: $("kvariant").value === "klokke" ? "" : $("kvariant").value, utan: utan.join(","),
+               fodd: $("kv-fodd").checked ? "1" : "", tema: felt("tema").value === "auto" ? "" : felt("tema").value, overskrift: "Klokke" };
+    }
     const sel = $("bileteval").value;
     let bilete = "", biletform = "", kjelde = "";
     if (sel === "eige" || sel === "last") { bilete = sel === "eige" ? $("eigeadresse").value.trim() : ""; biletform = bilete ? $("biletform").value : ""; }
@@ -999,6 +1044,7 @@ async function startByggjar() {
 
   // Fyll ut skjemaet frå ei lenkje (t.d. «Endre i byggjaren» på oversikta)
   function fyllFrå(cfg) {
+    if (cfg.side === "klokke") { mal.value = "klokke"; fyllKlokke(cfg); return; }
     mal.value = teneste(cfg.mal) || ["arrangement", "tom"].includes(cfg.mal) ? cfg.mal : "tom";
     for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
     felt("dato").value = tolkDato(cfg.dato);
@@ -1023,8 +1069,40 @@ async function startByggjar() {
   new ResizeObserver(skaler).observe(skjerm);
   const base = location.href.split("#")[0].replace(/[^/]*$/, "") + "plakat.html";
   let tidtakar = null, sistHash = null;
+  // Klokka: alt står i lenkja til klokke.html (side=klokke gjer at oversikta kjenner ho att)
+  const klokkeBase = location.href.split("#")[0].replace(/[^/]*$/, "") + "klokke.html";
+  function klokkeHash(cfg, vis) {
+    const p = new URLSearchParams();
+    if (vis) p.set("vis", "1");
+    p.set("side", "klokke");
+    for (const k of ["variant", "utan", "fodd", "tema"]) if (cfg[k]) p.set(k, cfg[k]);
+    return p.toString();
+  }
   function oppdater() {
     const cfg = lesSkjema();
+    const klokke = erKlokke();
+    for (const id of ["innhalddel", "qrdel", "skriftfelt"]) $(id).hidden = klokke;
+    $("klokkedel").hidden = !klokke;
+    if (klokke) {
+      $("kv-ver-rad").hidden = $("kvariant").value === "vertavle";
+      $("kv-sol").disabled = !$("kv-ver").checked && $("kvariant").value !== "vertavle";
+      $("arrdel").hidden = true; $("malboks").hidden = true;
+      const hash = klokkeHash(cfg, false);
+      history.replaceState(null, "", "#" + hash);
+      const lenkje = klokkeBase + "#" + klokkeHash(cfg, true);
+      $("lenkjefelt").textContent = lenkje;
+      $("opne").href = lenkje;
+      teiknTilSkjerm(cfg, lenkje);
+      clearTimeout(tidtakar);
+      tidtakar = setTimeout(() => {
+        const ny = "klokke.html#" + hash + "&forhand=1";
+        if (ny === sistHash) return;
+        sistHash = ny;
+        iframe.src = "about:blank";
+        setTimeout(() => { iframe.src = ny; }, 0);
+      }, 250);
+      return;
+    }
     $("logoval").hidden = !logoFor;
     { const t = teneste(mal.value);
       $("avsendarval").hidden = !(t && t.avsendarlogo);
@@ -1126,7 +1204,7 @@ async function startByggjar() {
     const til = p => "oversikt.html#" + new URLSearchParams(p).toString();
     const a = (tekst, href, hoved) => Object.assign(document.createElement("a"), { className: "knapp" + (hoved ? "" : " sekundær"), href, textContent: tekst });
     const knappar = [];
-    const tittel = "Plakat: " + (cfg.overskrift || "utan overskrift");
+    const tittel = cfg.side === "klokke" ? "Klokke" : "Plakat: " + (cfg.overskrift || "utan overskrift");
     if (returInfo) {
       // «skjerm1:3» = linje 3. «skjerm1:3:2» = plakat 2 i plakatkarusellen på linje 3, «…:ny» = ny plakat der
       const [sk, i, plakat] = returInfo.r.split(":");
@@ -1192,7 +1270,7 @@ async function startByggjar() {
 
   felt("tema").value = "lys";   // standardtemaet for nye plakatar
   const start = lesHash();
-  if (start.mal) { fyllFrå(start); oppdater(); }
+  if (start.mal || start.side) { fyllFrå(start); oppdater(); }
   else brukMal(data.tenester[0] ? data.tenester.find(t => t.id === "biblio") ? "biblio" : data.tenester[0].id : "tom");
 }
 
