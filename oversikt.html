@@ -469,7 +469,7 @@ function fråByggjaren() {
   }
   nyFørehand = { namn: p.get("tittel") || "", url, sekund: Number(p.get("sekund")) || 180 };
   open = { lk: skjerm, i: -1 }; teikn();
-  oppdaterStatus((/plakat\.html/.test(url) ? "Plakaten" : "Karusellen") + " frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «Legg til» og så Lagre.");
+  oppdaterStatus((/plakat\.html/.test(url) ? "Plakaten" : "Karusellen") + " frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «" + (lesNøkkel() ? "Legg til og lagre" : "Legg til") + "».");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } }, 50);
 }
 
@@ -710,13 +710,15 @@ function skjema(s, lk, i) {
         el("input", { type: "time", id: "f-tidtil", value: tidTil || "", "aria-label": "Til klokka" }))),
     el("p", { class: "hjelp", id: "f-feil" }),
     el("div", { class: "knappar" },
-      el("button", { type: "button", class: "hoved", onclick: () => brukSkjema(f, s, lk, i) }, i < 0 ? "Legg til" : "Bruk endringane"),
+      el("button", { type: "button", class: "hoved", onclick: () => brukSkjema(f, s, lk, i) },
+        // Med nøkkel blir endringa lagra med ein gong; utan nøkkel blir ho berre lagd inn i lista
+        lesNøkkel() ? (i < 0 ? "Legg til og lagre" : "Lagre") : (i < 0 ? "Legg til" : "Bruk endringane")),
       el("button", { type: "button", onclick: () => { open = null; teikn(); } }, "Avbryt")));
   return f;
 }
 
 // Lista over plakatane i ein plakatkarusell, inni skjemaet. Endringane blir
-// skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Bruk endringane».
+// skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Lagre» / «Bruk endringane».
 function pkBoks(s, lk, i) {
   const pk = lesPk(s.url);
   const liste = el("ol");
@@ -885,9 +887,11 @@ function brukSkjema(f, gammal, lk, i) {
   if (tilLk !== lk && i >= 0 && lk === skjermFor(lk) && oppsett[lk].length <= 1) return feil("Minst éi side må vere publisert på kvar skjerm, så denne kan ikkje flyttast.");
   if (i < 0) (oppsett[tilLk] || (oppsett[tilLk] = [])).push(ny);
   else if (tilLk === lk) oppsett[lk][i] = ny;
-  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); return; }
+  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); if (lesNøkkel()) lagre(); return; }
   open = null;
   teikn();
+  // Med nøkkel blir det lagra med ein gong (også andre endringar som ikkje er lagra enno)
+  if (lesNøkkel()) lagre();
 }
 
 // Med filteret på byter sida plass med den næraste synlege sida
@@ -1499,7 +1503,7 @@ $("nypk").addEventListener("click", () => {
   if (!oppsett) return;
   nyFørehand = { namn: "Plakatar", url: lagPk({ sek: 20, plakatar: [] }), sekund: 60 };
   open = { lk: "skjerm1", i: -1 }; teikn();
-  oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Hak av tenestene du vil ha med, klikk «Legg til dei valde», så «Legg til» og Lagre.");
+  oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Hak av tenestene du vil ha med, klikk «Legg til dei valde», så «" + (lesNøkkel() ? "Legg til og lagre" : "Legg til") + "».");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.select(); } }, 50);
 });
 $("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; namnOpen = null; teikn(); });
