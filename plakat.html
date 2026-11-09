@@ -487,6 +487,30 @@ function lagPynt(tema) {
 // søket blir skrive bokstav for bokstav, knappen blir trykt, og svaret syner.
 // Søka kan endrast med «anim» i lenkja, skilde med | (t.d. anim=Ingelin Røssland|Kongen av Os).
 const STANDARDSØK = ["Ingelin Røssland", "Norske Gaardnavne", "Kongen av Os", "Kongespeilet"];
+// ---- Pause når plakaten ikkje blir vist ----------------------------------
+// I plakatkarusellen ligg alle plakatane lasta oppå kvarandre. Får plakaten
+// «skjul», blir alle animasjonane sette på pause (CSS-animasjonar, skrivinga
+// i søkjefelta og lysbileta), så maskina berre teiknar den plakaten som syner.
+// «vis» held fram der det slapp.
+let PAUSA = false;
+let pausaAnim = [], vekk = [];
+const ventPåVis = () => PAUSA ? new Promise(r => vekk.push(r)) : Promise.resolve();
+// Ventar «ms» millisekund, og deretter til plakaten blir vist att om han er skjult
+const ventAnim = ms => new Promise(r => setTimeout(r, ms)).then(ventPåVis);
+function settPause(på) {
+  if (på === PAUSA) return;
+  PAUSA = på;
+  if (på) {
+    // Berre dei som går no: å starte ein ferdig animasjon på nytt ville spela han om att
+    pausaAnim = document.getAnimations().filter(a => a.playState === "running");
+    pausaAnim.forEach(a => a.pause());
+  } else {
+    pausaAnim.forEach(a => { try { a.play(); } catch (e) {} });
+    pausaAnim = [];
+    vekk.splice(0).forEach(r => r());
+  }
+}
+
 function biblioteksøkAnimasjon(eigne) {
   const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
   const liste = søk.length ? søk : STANDARDSØK;
@@ -500,7 +524,7 @@ function biblioteksøkAnimasjon(eigne) {
      <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
        <span><b>Finst i bibliotek over heile landet</b>Bestill, og hent boka på Tysnes</span></div>`;
   const skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst"), knapp = boks.querySelector(".knapp-s"), svar = boks.querySelector(".svar");
-  const vent = ms => new Promise(r => setTimeout(r, ms));
+  const vent = ventAnim;
   (async () => {
     for (let n = 0; ; n++) {
       const ord = liste[n % liste.length];
@@ -538,7 +562,7 @@ function nettbibliotekAnimasjon(eigne) {
        <span><b>Bøker, aviser, bilete og radio</b>Les og lytt gratis på nett</span></div>`;
   const felt = boks.querySelector(".nb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
   const svar = boks.querySelector(".svar");
-  const vent = ms => new Promise(r => setTimeout(r, ms));
+  const vent = ventAnim;
   (async () => {
     for (let n = 0; ; n++) {
       const ord = liste[n % liste.length];
@@ -583,7 +607,7 @@ function helsebibliotekAnimasjon(eigne) {
        <span><b>Oppslagsverk, retningslinjer og tidsskrift</b>Gratis for helsepersonell og studentar</span></div></div>`;
   const felt = boks.querySelector(".hb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
   const svar = boks.querySelector(".svar"), knapprad = boks.querySelector(".knappar");
-  const vent = ms => new Promise(r => setTimeout(r, ms));
+  const vent = ventAnim;
   (async () => {
     for (let n = 0; ; n++) {
       const ord = liste[n % liste.length];
@@ -642,7 +666,9 @@ function lysbileteAnimasjon(cfg) {
           const inn = Math.random() < .6, dx = (Math.random() * 2 - 1) * 4, dy = (Math.random() * 2 - 1) * 3;
           const a = `scale(${inn ? 1.02 : 1.16}) translate(${inn ? 0 : dx}%, ${inn ? 0 : dy}%)`;
           const z = `scale(${inn ? 1.16 : 1.02}) translate(${inn ? dx : 0}%, ${inn ? dy : 0}%)`;
-          img.animate([{ transform: a }, { transform: z }], { duration: (LYSBILETE_SEK + 2) * 1000, easing: "linear", fill: "forwards" });
+          const zoom = img.animate([{ transform: a }, { transform: z }], { duration: (LYSBILETE_SEK + 2) * 1000, easing: "linear", fill: "forwards" });
+          // Kom biletet medan plakaten er skjult, ventar zoomen òg til han blir vist
+          if (PAUSA) { zoom.pause(); pausaAnim.push(zoom); }
         }
         requestAnimationFrame(() => img.classList.add("synleg"));
         if (kjelde) {
@@ -653,7 +679,7 @@ function lysbileteAnimasjon(cfg) {
         const førre = [...boks.querySelectorAll("img")].filter(x => x !== img);
         setTimeout(() => førre.forEach(x => x.remove()), 2000);
         n++;
-        if (liste.length > 1) setTimeout(vis, LYSBILETE_SEK * 1000);
+        if (liste.length > 1) setTimeout(() => ventPåVis().then(vis), LYSBILETE_SEK * 1000);
       };
       if (img.complete) start(); else { img.onload = start; img.onerror = () => { img.remove(); n++; setTimeout(vis, 500); }; }
     };
@@ -787,11 +813,15 @@ function visPlakat(cfg) {
     window.addEventListener("message", e => {
       if (!e.data) return;
       if (e.data.nyheiter === "vis") {
+        settPause(false);
         // Kjem «vis» på nytt (t.d. etter «klar»), blir inngangen ikkje spela om att
         if (!linje || e.data.att >= e.data.sekund * 1000 - 1500) spel();
         nedteljing(Number(e.data.sekund), Number(e.data.att));
       }
-      if (e.data.nyheiter === "skjul" && linje) { linje.cancel(); linje = null; }
+      if (e.data.nyheiter === "skjul") {
+        if (linje) { linje.cancel(); linje = null; }
+        settPause(true);
+      }
     });
     try { parent.postMessage({ nyheiter: "klar" }, "*"); parent.postMessage({ nyheiter: "har" }, "*"); } catch (e) {}
   }

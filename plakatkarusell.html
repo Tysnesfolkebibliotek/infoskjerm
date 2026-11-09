@@ -34,9 +34,11 @@
   body.skjerm { cursor: none; }
   iframe {
     position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
-    opacity: 0; transition: opacity 1s ease-in-out; pointer-events: none;
+    opacity: 0; transition: opacity 1s ease-in-out, visibility 0s 1s; pointer-events: none;
+    /* Når overtoninga er ferdig, blir ramma gøymd heilt, så nettlesaren slepp å teikne ho */
+    visibility: hidden;
   }
-  iframe.synleg { opacity: 1; }
+  iframe.synleg { opacity: 1; visibility: visible; transition: opacity 1s ease-in-out, visibility 0s; }
   .melding { position: fixed; inset: 0; display: grid; place-items: center; color: #b8ab98;
     font: 3vh/1.4 "Ubuntu", "DejaVu Sans", system-ui, sans-serif; text-align: center; padding: 5vh; }
 </style>
@@ -110,6 +112,8 @@ window.addEventListener("message", e => {
   if (r) {
     if (e.data.nyheiter === "klar" && r.classList.contains("synleg") && køyrer)
       send(r, "vis", { sekund: SEK, att: Math.max(0, Number(r.dataset.slutt) - Date.now()) });
+    // Plakatar som er lasta på førehand, står på pause til det er deira tur
+    else if (e.data.nyheiter === "klar") send(r, "skjul");
     return;
   }
   // Beskjedar frå rotasjonen
