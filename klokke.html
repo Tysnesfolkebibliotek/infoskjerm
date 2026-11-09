@@ -161,8 +161,6 @@
   .fodd .person > div { flex: 1; min-width: 0; }
   .fodd .namn { font-size: 4.8rem; font-weight: 700; line-height: 1.1; }
   .fodd .skild { font-size: 3rem; color: var(--dempa); margin-top: .6rem; }
-  .fodd .boker { flex: none; font-size: 3rem; font-weight: 700; white-space: nowrap;
-                 padding: .8rem 2.4rem; border-radius: 99rem; background: var(--aksent); color: var(--aksent-tekst); }
 
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
   /* Kjeldene under biblioteknamnet, som «Forrige bok, Biblioteksentralen» på karusellane
@@ -812,7 +810,6 @@ const nynorskYrke = t => NYNORSK.reduce((x, [a, b]) => x.replace(a, b), t);
 // sida blir vist. Blir det for trongt (tilpass), blir det færre før boksen fell bort.
 const FODD_MAKS = 3;
 let foddVis = FODD_MAKS;
-const bøkerTekst = n => n === 1 ? "1 bok" : n + " bøker";
 function teiknFødd() {
   const liste = FODD && FØDD && FØDD.dato === isoDato(new Date()) ? FØDD.liste || [] : [];
   $("fodd").hidden = !liste.length;
@@ -839,7 +836,6 @@ function teiknFødd() {
       textContent: [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && "fødd " + f.år].filter(Boolean).join(", ") });
     tekst.append(namn, om);
     rad.append(tekst);
-    if (f.bøker) rad.append(Object.assign(document.createElement("span"), { className: "boker", textContent: bøkerTekst(f.bøker) }));
     return rad;
   }));
 }
