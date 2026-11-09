@@ -691,17 +691,27 @@ async function hentFødd() {
   const d = new Date(), dato = isoDato(d);
   if (FØDD && FØDD.dato === dato) return teiknFødd();
   try {
+    // Spørjinga må vere rask: Wikidata avbryt etter 60 sekund, og då kjem eit svar utan
+    // CORS-hovud, som nettlesaren berre kallar «NetworkError». Difor:
+    // 1) optimizer "None": Wikidata køyrer linjene i den rekkjefølgja dei står,
+    // 2) wdt:P569 (berre verdien) i staden for den tunge vegen om presisjonen,
+    // 3) berre forfattarar med minst 15 Wikipedia-artiklar eller nordisk statsborgarskap.
+    // Fødselsdatoar med berre årstal står som 1. januar i Wikidata, så 1.1. blir hoppa over.
     const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?sl ?norsk ?nordisk WHERE {
+      hint:Query hint:optimizer "None" .
       VALUES ?yrke { wd:Q36180 wd:Q6625963 wd:Q49757 wd:Q4853732 wd:Q214917 wd:Q482980 }
-      ?p wdt:P106 ?yrke ; p:P569/psv:P569 [ wikibase:timeValue ?f ; wikibase:timePrecision 11 ] .
+      ?p wdt:P106 ?yrke .
+      ?p wdt:P569 ?f .
       FILTER(MONTH(?f) = ${d.getMonth() + 1} && DAY(?f) = ${d.getDate()})
-      ?a schema:about ?p ; schema:isPartOf <https://no.wikipedia.org/> .
       ?p wikibase:sitelinks ?sl .
-      BIND(YEAR(?f) AS ?aar)
       BIND(EXISTS { ?p wdt:P27 wd:Q20 } AS ?norsk)
       BIND(EXISTS { VALUES ?l { wd:Q20 wd:Q34 wd:Q35 wd:Q189 wd:Q33 wd:Q4628 } ?p wdt:P27 ?l } AS ?nordisk)
+      FILTER(?nordisk || ?sl >= 15)
+      ?a schema:about ?p ; schema:isPartOf <https://no.wikipedia.org/> .
+      BIND(YEAR(?f) AS ?aar)
       SERVICE wikibase:label { bd:serviceParam wikibase:language "nn,nb,no,en". }
     }`;
+    if (d.getMonth() === 0 && d.getDate() === 1) throw new Error("1. januar blir hoppa over");
     const r = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), { headers: { Accept: "application/sparql-results+json" } });
     if (!r.ok) throw new Error("Wikidata " + r.status);
     const ja = v => v && (v.value === "true" || v.value === "1");

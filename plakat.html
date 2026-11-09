@@ -1069,6 +1069,11 @@ async function startByggjar() {
   new ResizeObserver(skaler).observe(skjerm);
   const base = location.href.split("#")[0].replace(/[^/]*$/, "") + "plakat.html";
   let tidtakar = null, sistHash = null;
+  // Last førehandsvisinga heilt på nytt. Ei endring berre etter # lastar ikkje sida på nytt,
+  // og omvegen om about:blank kunne gje tom førehandsvising (Chrome la den tomme sida
+  // inn etter den nye). Eit nytt tal i adressa (?f=…) gjer at sida alltid blir lasta på nytt.
+  let forhandNr = 0;
+  const lastForhand = ny => { const [fil, h] = ny.split("#"); iframe.src = fil + "?f=" + (++forhandNr) + "#" + h; };
   // Klokka: alt står i lenkja til klokke.html (side=klokke gjer at oversikta kjenner ho att)
   const klokkeBase = location.href.split("#")[0].replace(/[^/]*$/, "") + "klokke.html";
   function klokkeHash(cfg, vis) {
@@ -1098,8 +1103,7 @@ async function startByggjar() {
         const ny = "klokke.html#" + hash + "&forhand=1";
         if (ny === sistHash) return;
         sistHash = ny;
-        iframe.src = "about:blank";
-        setTimeout(() => { iframe.src = ny; }, 0);
+        lastForhand(ny);
       }, 250);
       return;
     }
@@ -1120,8 +1124,7 @@ async function startByggjar() {
       const ny = "plakat.html#" + lagHash(cfg, true) + "&forhand=1";
       if (ny === sistHash) return;
       sistHash = ny;
-      iframe.src = "about:blank";   // hashendring åleine lastar ikkje sida på nytt i alle nettlesarar
-      setTimeout(() => { iframe.src = ny; }, 0);
+      lastForhand(ny);
     }, 250);
   }
 
