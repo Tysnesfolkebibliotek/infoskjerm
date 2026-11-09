@@ -1074,8 +1074,8 @@ async function startByggjar() {
   // Last førehandsvisinga heilt på nytt. Ei endring berre etter # lastar ikkje sida på nytt,
   // og omvegen om about:blank kunne gje tom førehandsvising (Chrome la den tomme sida
   // inn etter den nye). Eit nytt tal i adressa (?f=…) gjer at sida alltid blir lasta på nytt.
-  let forhandNr = 0;
-  const lastForhand = ny => { const [fil, h] = ny.split("#"); iframe.src = fil + "?f=" + (++forhandNr) + "#" + h; };
+  // Tidsstempel, ikkje 1, 2, 3 …: då kunne nettlesaren vise ei gamal, lagra utgåve av sida.
+  const lastForhand = ny => { const [fil, h] = ny.split("#"); iframe.src = fil + "?f=" + Date.now() + "#" + h; };
   // Klokka: alt står i lenkja til klokke.html (side=klokke gjer at oversikta kjenner ho att)
   const klokkeBase = location.href.split("#")[0].replace(/[^/]*$/, "") + "klokke.html";
   function klokkeHash(cfg, vis) {
