@@ -511,6 +511,24 @@ function settPause(på) {
   }
 }
 
+// ---- Skriving i søkjefelt ------------------------------------------------
+// Kvar gong plakaten blir vist på nytt (OMSTART aukar), startar skrivinga frå
+// eit tomt felt, og første bokstav kjem først når feltet har glidd inn.
+// Elles kunne heile ordet vere skrive medan plakaten tona inn, og «poppe opp».
+let OMSTART = 0;
+const AVBROTEN = Symbol("avbroten");
+const INNGANG_MS = 1800;   // ramma tonar inn (1 s) og midtfeltet glir inn (ca. 1,4 s)
+function skriveløkkje(nullstill, runde) {
+  (async () => {
+    let n = 0, mi = OMSTART, først = true;
+    const vent = ms => ventAnim(ms).then(() => { if (mi !== OMSTART) throw AVBROTEN; });
+    for (;;) {
+      try { await vent(først ? INNGANG_MS : 900); først = false; await runde(n, vent); n++; }
+      catch (e) { if (e !== AVBROTEN) throw e; nullstill(); mi = OMSTART; først = true; }
+    }
+  })();
+}
+
 function biblioteksøkAnimasjon(eigne) {
   const søk = (eigne || "").split("|").map(x => x.trim()).filter(Boolean);
   const liste = søk.length ? søk : STANDARDSØK;
@@ -524,24 +542,22 @@ function biblioteksøkAnimasjon(eigne) {
      <div class="svar"><span class="hake"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
        <span><b>Finst i bibliotek over heile landet</b>Bestill, og hent boka på Tysnes</span></div>`;
   const skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst"), knapp = boks.querySelector(".knapp-s"), svar = boks.querySelector(".svar");
-  const vent = ventAnim;
-  (async () => {
-    for (let n = 0; ; n++) {
-      const ord = liste[n % liste.length];
-      await vent(900);
-      skrive.classList.remove("tom");
-      for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
-      await vent(650);
-      knapp.classList.add("trykt"); await vent(180); knapp.classList.remove("trykt");
-      await vent(350);
-      svar.classList.add("synleg");
-      await vent(3200);
-      svar.classList.remove("synleg");
-      await vent(500);
-      while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
-      skrive.classList.add("tom");
-    }
-  })();
+  skriveløkkje(() => {
+    tekst.textContent = ""; skrive.classList.add("tom"); knapp.classList.remove("trykt"); svar.classList.remove("synleg");
+  }, async (n, vent) => {
+    const ord = liste[n % liste.length];
+    skrive.classList.remove("tom");
+    for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
+    await vent(650);
+    knapp.classList.add("trykt"); await vent(180); knapp.classList.remove("trykt");
+    await vent(350);
+    svar.classList.add("synleg");
+    await vent(3200);
+    svar.classList.remove("synleg");
+    await vent(500);
+    while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
+    skrive.classList.add("tom");
+  });
   return boks;
 }
 
@@ -562,24 +578,22 @@ function nettbibliotekAnimasjon(eigne) {
        <span><b>Bøker, aviser, bilete og radio</b>Les og lytt gratis på nett</span></div>`;
   const felt = boks.querySelector(".nb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
   const svar = boks.querySelector(".svar");
-  const vent = ventAnim;
-  (async () => {
-    for (let n = 0; ; n++) {
-      const ord = liste[n % liste.length];
-      await vent(900);
-      felt.classList.add("aktiv"); skrive.classList.remove("tom");
-      for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
-      await vent(600);
-      felt.classList.remove("aktiv");
-      await vent(350);
-      svar.classList.add("synleg");
-      await vent(3000);
-      svar.classList.remove("synleg");
-      await vent(400);
-      while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
-      skrive.classList.add("tom");
-    }
-  })();
+  skriveløkkje(() => {
+    tekst.textContent = ""; skrive.classList.add("tom"); felt.classList.remove("aktiv"); svar.classList.remove("synleg");
+  }, async (n, vent) => {
+    const ord = liste[n % liste.length];
+    felt.classList.add("aktiv"); skrive.classList.remove("tom");
+    for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
+    await vent(600);
+    felt.classList.remove("aktiv");
+    await vent(350);
+    svar.classList.add("synleg");
+    await vent(3000);
+    svar.classList.remove("synleg");
+    await vent(400);
+    while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
+    skrive.classList.add("tom");
+  });
   return boks;
 }
 
@@ -607,26 +621,24 @@ function helsebibliotekAnimasjon(eigne) {
        <span><b>Oppslagsverk, retningslinjer og tidsskrift</b>Gratis for helsepersonell og studentar</span></div></div>`;
   const felt = boks.querySelector(".hb-felt"), skrive = boks.querySelector(".skrive"), tekst = boks.querySelector(".tekst");
   const svar = boks.querySelector(".svar"), knapprad = boks.querySelector(".knappar");
-  const vent = ventAnim;
-  (async () => {
-    for (let n = 0; ; n++) {
-      const ord = liste[n % liste.length];
-      await vent(900);
-      felt.classList.add("aktiv"); skrive.classList.remove("tom");
-      for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
-      await vent(600);
-      felt.classList.remove("aktiv");
-      knapprad.style.opacity = 0;
-      await vent(350);
-      svar.classList.add("synleg");
-      await vent(3000);
-      svar.classList.remove("synleg");
-      await vent(400);
-      knapprad.style.opacity = 1;
-      while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
-      skrive.classList.add("tom");
-    }
-  })();
+  skriveløkkje(() => {
+    tekst.textContent = ""; skrive.classList.add("tom"); felt.classList.remove("aktiv"); svar.classList.remove("synleg"); knapprad.style.opacity = 1;
+  }, async (n, vent) => {
+    const ord = liste[n % liste.length];
+    felt.classList.add("aktiv"); skrive.classList.remove("tom");
+    for (const t of ord) { tekst.textContent += t; await vent(90 + Math.random() * 110); }
+    await vent(600);
+    felt.classList.remove("aktiv");
+    knapprad.style.opacity = 0;
+    await vent(350);
+    svar.classList.add("synleg");
+    await vent(3000);
+    svar.classList.remove("synleg");
+    await vent(400);
+    knapprad.style.opacity = 1;
+    while (tekst.textContent) { tekst.textContent = tekst.textContent.slice(0, -1); await vent(35); }
+    skrive.classList.add("tom");
+  });
   return boks;
 }
 
@@ -815,7 +827,7 @@ function visPlakat(cfg) {
       if (e.data.nyheiter === "vis") {
         settPause(false);
         // Kjem «vis» på nytt (t.d. etter «klar»), blir inngangen ikkje spela om att
-        if (!linje || e.data.att >= e.data.sekund * 1000 - 1500) spel();
+        if (!linje || e.data.att >= e.data.sekund * 1000 - 1500) { OMSTART++; spel(); }
         nedteljing(Number(e.data.sekund), Number(e.data.att));
       }
       if (e.data.nyheiter === "skjul") {
