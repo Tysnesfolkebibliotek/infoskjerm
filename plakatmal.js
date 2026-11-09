@@ -65,7 +65,7 @@ function plakatsideNamn(h) {
   const s = plakatside(h), p = new URLSearchParams(h);
   if (!s) return "";
   const v = p.get("side") === "klokke" && p.get("variant") && KLOKKEVARIANTAR[p.get("variant")];
-  return s.namn + (v ? " (" + v + ")" : "") + (p.get("fodd") === "1" ? " + Fødd i dag" : "") + (p.get("nyhende") === "1" ? " + nyheiter" : "");
+  return s.namn + (v ? " (" + v + ")" : "") + (p.get("fodd") === "1" ? " + Fødd i dag" : "");
 }
 // Adressa ein plakat (eller ei plakatside) blir opna med, relativt til mappa på GitHub Pages
 function plakatAdresse(data, h) {

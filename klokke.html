@@ -15,7 +15,6 @@
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, fare (farevarsel)
     fodd=1              «Fødd i dag»: forfattarar fødde i dag som biblioteket har bøker av
-    nyhende=1           nyheitslinje nedst med dei siste toppsakene frå NRK Vestland
     kveld=1 / kveld=0   tving temaet «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
     tema=fjord          bruk eit anna tema frå tema.js heile døgnet
     teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
@@ -26,7 +25,6 @@
     Vêr og sol: MET Norge (api.met.no) — Locationforecast, Sunrise og MetAlerts (farevarsel), henta kvar 30. min.
     Ferje:      Entur (api.entur.io) — avgangar frå Våge kai (NSR:StopPlace:58466) mot Halhjem, henta kvart 2. min.
     Fødd i dag: Wikidata (query.wikidata.org) og Bibliofil (SRU), henta éin gong per døgn.
-    Nyheiter:   NRK Vestland, RSS (nrk.no/vestland/toppsaker.rss), henta kvart 15. min.
   Opningstidene står i opningstider.json (med ein reserve her i fila).
 
   Utan nett går klokka og opningstida som før. Vêr og ferje blir viste frå
@@ -155,21 +153,6 @@
   :root.tettare .timar > div { padding: 1.4rem 0; }
   :root.tettare .dagar > div { padding: 1.8rem 2.4rem; }
 
-  /* Nyheitslinja nedst (nyhende=1): overskriftene rullar frå høgre mot venstre */
-  .ticker { display: flex; align-items: center; gap: 2.4rem; margin-top: auto; padding: 2rem 0;
-            border-top: .2rem solid var(--spor); border-bottom: .2rem solid var(--spor); font-size: 3.4rem; }
-  .ticker[hidden] { display: none; }
-  .ticker:not([hidden]) + footer { margin-top: 2.4rem; }
-  .tickermerke { flex: none; font-size: 2.6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-                 padding: .7rem 1.8rem; border-radius: .8rem; background: var(--aksent); color: var(--aksent-tekst); }
-  .tickerbane { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap;
-                -webkit-mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
-                mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent); }
-  .tickertekst { display: inline-block; will-change: transform; }
-  .tickertekst .sak { margin-right: 2.4rem; }
-  .tickertekst .sak::after { content: "•"; margin-left: 2.4rem; color: var(--aksent); }
-  .tickertekst .kl { color: var(--dempa); margin-right: 1.2rem; font-variant-numeric: tabular-nums; }
-
   /* Fødd i dag */
   .fodd .topp { display: flex; align-items: center; gap: 1.6rem; }
   .fodd .topp svg { width: 4.4rem; height: 4.4rem; flex: none; color: var(--tekst); }
@@ -260,10 +243,6 @@
     <div id="foddListe"></div>
   </section>
 
-  <div class="ticker" id="ticker" hidden aria-label="Nyheiter frå NRK Vestland">
-    <span class="tickermerke">NRK</span>
-    <div class="tickerbane"><div class="tickertekst" id="tickertekst"></div></div>
-  </div>
   <footer>
     <div class="botnmerke">
       <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
@@ -304,12 +283,10 @@ document.documentElement.classList.add("v-" + VARIANT);
 const UTAN = new Set((H.get("utan") || "").split(",").map(s => s.trim()).filter(Boolean));
 const MED = k => !UTAN.has(k) || (k === "ver" && VARIANT === "vertavle");
 const FODD = H.get("fodd") === "1";
-const NYHENDE = H.get("nyhende") === "1";
 $("kjelde").textContent = [
   (MED("ver") || MED("sol") || MED("fare")) && "Vêr: MET Norge",
   MED("ferje") && "Ferje: Entur",
   FODD && "Fødd i dag: Wikidata",
-  NYHENDE && "Nyheiter: NRK Vestland",
 ].filter(Boolean).join(" · ");
 
 const minne = { les(k) { try { return JSON.parse(localStorage.getItem("klokke:" + k)); } catch (e) { return null; } },
@@ -883,52 +860,6 @@ window.addEventListener("message", e => {
   if (Date.now() - sistFerje > 60e3) { sistFerje = Date.now(); hentFerje(); }
 });
 
-// ---- Nyheitslinja (NRK Vestland) ----------------------------------------------
-// NRK opnar RSS-straumen for henting frå nettlesaren (CORS), så han kan lesast rett herifrå.
-// Overskriftene står to gonger etter kvarandre og blir flytte éi lengd til venstre,
-// så linja går rundt utan hopp. Farten er fast (rem per sekund), uansett kor mange saker.
-const NRK_RSS = "https://www.nrk.no/vestland/toppsaker.rss";
-const TICKER_FART = 9;   // rem per sekund
-let NYH = minne.les("nyhende"), tickerAnim = null, tickerInnhald = "";
-async function hentNyhende() {
-  if (!NYHENDE) return;
-  try {
-    const r = await fetch(NRK_RSS, { cache: "no-cache" });
-    if (!r.ok) throw new Error("NRK " + r.status);
-    const x = new DOMParser().parseFromString(await r.text(), "application/xml");
-    const saker = [...x.querySelectorAll("item")].slice(0, 10).map(i => ({
-      tittel: (i.querySelector("title")?.textContent || "").trim(),
-      tid: i.querySelector("pubDate")?.textContent || "" })).filter(s => s.tittel);
-    if (saker.length) { NYH = { henta: Date.now(), saker }; minne.skriv("nyhende", NYH); }
-  } catch (e) { console.warn("Fekk ikkje henta nyheitene:", e.message); }
-  teiknNyhende();
-}
-// «17.40» i dag, «i går» eller «tys.» for eldre saker
-function nyhendeTid(t) {
-  const d = new Date(t);
-  if (isNaN(d)) return "";
-  const i = new Date(), dagar = Math.round((new Date(i.getFullYear(), i.getMonth(), i.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
-  return dagar === 0 ? kl(d) : dagar === 1 ? "i går" : DAGKODE[d.getDay()] + ".";
-}
-function teiknNyhende() {
-  const saker = NYHENDE && NYH && Date.now() - NYH.henta < 6 * 3600e3 ? NYH.saker : [];
-  $("ticker").hidden = !saker.length;
-  if (!saker.length) { if (tickerAnim) tickerAnim.cancel(); tickerAnim = null; tickerInnhald = ""; return; }
-  const sak = s => { const t = nyhendeTid(s.tid); return `<span class="sak">${t ? `<span class="kl">${t}</span>` : ""}${s.tittel.replace(/[<&]/g, c => c === "<" ? "&lt;" : "&amp;")}</span>`; };
-  const éin = saker.map(sak).join("");
-  if (éin === tickerInnhald && tickerAnim) return;   // same saker: la linja gå vidare
-  tickerInnhald = éin;
-  const el = $("tickertekst");
-  el.innerHTML = éin + éin;
-  if (tickerAnim) tickerAnim.cancel();
-  requestAnimationFrame(() => {
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 10;
-    const breidd = el.scrollWidth / 2;
-    tickerAnim = el.animate([{ transform: "translateX(0)" }, { transform: `translateX(-${breidd}px)` }],
-      { duration: breidd / (TICKER_FART * rem) * 1000, iterations: Infinity, easing: "linear" });
-  });
-}
-
 // ---- Får alt plass? ------------------------------------------------------------
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
 // blir ho tettare i to steg. Får det framleis ikkje plass, blir det færre namn i Fødd i dag, og til slutt fell boksen bort.
@@ -951,15 +882,14 @@ function tilpass() {
 }
 
 // ---- I gang -------------------------------------------------------------------
-function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); teiknNyhende(); tilpass(); }
+function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }
 teiknAlt();
 // Klokka blir oppdatert rett etter kvart heile sekund
 (function tikk() { teiknKlokke(); teiknSkule(); tilpass(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
 setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }, 15e3);
 hentVer(); setInterval(hentVer, VER_KVAR_MS);
 window.addEventListener("load", tilpass);
-hentFødd(); setInterval(hentFødd, 30 * 60e3);
-hentNyhende(); setInterval(hentNyhende, 15 * 60e3);   // hentar berre når datoen er ny
+hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
 melde("har"); melde("klar");
