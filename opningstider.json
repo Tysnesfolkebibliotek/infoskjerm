@@ -1,0 +1,12 @@
+{
+  "_forklaring": "Opningstider for klokkesida (klokke.html). Tider som «09-15» eller «09:30-15». «meirope» gjeld alle dagar. «betjent» per dag: man, tys, ons, tor, fre, lør, søn (dagar som manglar, er utan betjening). «unntak» per dato (ÅÅÅÅ-MM-DD) overstyrer for den dagen: «betjent» og/eller «meirope» (tom tekst = ingen), og valfri «tekst» som blir vist etter opningstida. Døme: \"2026-12-24\": { \"betjent\": \"\", \"meirope\": \"08-14\", \"tekst\": \"God jul!\" }",
+  "meirope": "08-22",
+  "betjent": { "man": "09-15", "tys": "09-15", "ons": "09-15", "tor": "12-18" },
+  "unntak": {},
+  "_skule": "Skuletimane til klokkesida: boksen om time/friminutt blir vist på skuledagar frå 15 min før første time til siste time er slutt. «fri»: fridagar og feriar, anten éin dato («2026-11-20») eller periode («2026-12-19/2027-01-03»).",
+  "skule": {
+    "dagar": ["man", "tys", "ons", "tor", "fre"],
+    "timar": ["08.05-08.50", "08.50-09.35", "09.45-10.30", "11.05-11.50", "12.05-12.50", "13.00-13.45"],
+    "fri": []
+  }
+}

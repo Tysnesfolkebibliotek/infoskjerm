@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Klokke, vêr og ferje – Tysnes folkebibliotek</title>
+<!--
+  klokke.html — klokkeside for infoskjermane: opningstid, klokke, vêr og neste ferje.
+
+  Lenkje til oversikta («+ Legg til side»):
+    https://tysnesfolkebibliotek.github.io/infoskjerm/klokke.html#vis=1
+
+  Valfritt i lenkja (etter #):
+    kveld=1 / kveld=0   tving mørke eller lyse fargar (elles mørkt når sola har gått ned)
+    tid=19:30           lat som klokka er 19.30 (for å teste opningstida)
+    dag=lør             lat som det er laurdag (for å teste opningstida)
+
+  Kjelder (begge opne og gratis):
+    Vêr og sol: MET Norge (api.met.no) — Locationforecast og Sunrise, henta kvar 30. min.
+    Ferje:      Entur (api.entur.io) — avgangar frå Våge ferjekai mot Halhjem, henta kvart 2. min.
+  Opningstidene står i opningstider.json (med ein reserve her i fila).
+
+  Utan nett går klokka og opningstida som før. Vêr og ferje blir viste frå
+  sist henta data så lenge dei er ferske nok, elles blir boksane skjulte.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@600&display=swap">
+<style>
+  /* 1 rem = 10 px på ein ståande 1080 × 1920-skjerm. Liggjande skjerm:
+     same utforming, skalert ned og midtstilt. */
+  :root { font-size: min(calc(100vw / 108), calc(100vh / 192));
+          --bg: #F3F0E8; --tekst: #16212C; --dempa: #56636F; --kort: #FFFFFF; --strek: #E2DDD2;
+          --aksent: #1F5F8B; --sol: #C26A12; --gron: #2E8B57; }
+  :root.kveld { --bg: #0F1A24; --tekst: #EEF2F5; --dempa: #9DB0C0; --kort: #182836; --strek: #2A3F52;
+                --aksent: #7FB8E0; --sol: #F0A35E; --gron: #7FD1A0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; cursor: none; background: var(--bg); color: var(--tekst);
+               font-family: Inter, "Ubuntu", "DejaVu Sans", system-ui, sans-serif; transition: background 1s, color 1s; }
+  .side { position: absolute; left: 50%; top: 50%; width: 108rem; height: 192rem; transform: translate(-50%, -50%);
+          padding: 7.2rem 7.2rem 5.6rem; display: flex; flex-direction: column; gap: 4rem; }
+  .tal { font-family: "Space Grotesk", Inter, "Ubuntu", sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .ope { align-self: flex-start; display: flex; align-items: center; gap: 1.6rem; font-size: 3.4rem;
+         padding: 1.6rem 3rem; border-radius: 99rem; background: var(--kort); }
+  .ope i { width: 2rem; height: 2rem; border-radius: 50%; background: var(--aksent); }
+  .ope.betjent i { background: var(--gron); }
+  .ope.stengt i { background: var(--dempa); }
+  .ope span { color: var(--dempa); }
+
+  .klokke { display: flex; align-items: baseline; gap: 1.2rem; line-height: .9; }
+  .klokke .tid { font-size: 31rem; letter-spacing: -.04em; }
+  .klokke .sek { font-size: 8rem; color: var(--dempa); }
+  .kort.skule { flex-direction: row; align-items: center; gap: 3.2rem; padding: 3.6rem 4.8rem; }
+  .skule svg { width: 7.2rem; height: 7.2rem; flex: none; }
+  .skule b { display: block; font-size: 5.6rem; font-weight: 700; letter-spacing: -.01em; }
+  .skule span { display: block; font-size: 3.4rem; color: var(--dempa); margin-top: .6rem; }
+  .skule.fri b { color: var(--gron); }
+  .dato { display: flex; align-items: baseline; gap: 2.8rem; margin-top: -2rem; }
+  .dato b { font-size: 7.2rem; font-weight: 600; letter-spacing: -.01em; }
+  .dato span { font-size: 4rem; color: var(--dempa); }
+
+  .kort { padding: 4.8rem; border-radius: 3.2rem; background: var(--kort); display: flex; flex-direction: column; gap: 3.2rem; }
+  .kort[hidden] { display: none; }
+  .etikett { font-size: 3rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--dempa); }
+  .vernu { display: flex; align-items: center; gap: 4rem; }
+  .vernu svg { width: 17rem; height: 15rem; flex: none; }
+  .vernu .grad { font-size: 19rem; line-height: 1; letter-spacing: -.04em; }
+  .vernu .skildring { display: flex; flex-direction: column; gap: 1rem; font-size: 3.6rem; color: var(--dempa); }
+  .vernu .skildring b { font-size: 4.6rem; font-weight: 600; color: var(--tekst); }
+  .sol { display: flex; align-items: center; gap: 2rem; font-size: 3.4rem; padding-top: 2.8rem; border-top: .2rem solid var(--strek); }
+  .sol svg { width: 5.6rem; height: 4rem; flex: none; }
+  .sol[hidden] { display: none; }
+
+  .ferjetopp { display: flex; align-items: center; gap: 2rem; font-size: 4.6rem; font-weight: 700; }
+  .ferjetopp svg { width: 6.4rem; height: 4.8rem; flex: none; }
+  .avgang { display: flex; align-items: center; justify-content: space-between; padding-top: 2.4rem; border-top: .2rem solid var(--strek); }
+  .avgang .tal { font-size: 9.6rem; letter-spacing: -.02em; }
+  .om { font-size: 3.6rem; font-weight: 600; padding: 1rem 2.6rem; border-radius: 99rem; background: var(--aksent); color: var(--bg); }
+  .merknad { font-size: 3rem; color: var(--dempa); margin-top: -1.6rem; }
+  .merknad:empty { display: none; }
+
+  footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+  .botnnamn { font-size: 4rem; letter-spacing: .04em; white-space: nowrap; }
+  .botnnamn b { font-weight: 800; }
+  .kjelde { font-size: 2.2rem; color: var(--dempa); margin-top: .6rem; }
+  .hjul { width: 6.4rem; height: 6.4rem; transform: rotate(-90deg); }
+  .hjul circle { fill: none; stroke-width: 3.5; }
+  .hjul .spor { stroke: var(--strek); }
+  #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 0px; }
+</style>
+</head>
+<body>
+<div class="side">
+  <div class="ope" id="ope"><i></i><b id="opeNo"></b><span id="opeMeir"></span></div>
+
+  <div>
+    <div class="klokke tal"><span class="tid" id="tid">--.--</span><span class="sek" id="sek"></span></div>
+    <div class="dato"><b id="dato"></b><span id="veke"></span></div>
+  </div>
+
+  <section class="kort skule" id="skule" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9.5 2.5h5M12 2.5V5" stroke="var(--aksent)"/></svg>
+    <div><b id="skuleHovud"></b><span id="skuleMeir"></span></div>
+  </section>
+
+  <section class="kort" id="ver" hidden>
+    <div class="etikett">Vêret på Tysnes</div>
+    <div class="vernu">
+      <svg id="vericon" viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+      <div class="grad tal" id="grad"></div>
+      <div class="skildring"><b id="vertekst"></b><span id="vind"></span></div>
+    </div>
+    <div class="sol" id="sol" hidden>
+      <svg viewBox="0 0 28 20" fill="none" stroke="var(--sol)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 15a8 8 0 0 1 16 0"/><path d="M2 18h24"/><path d="M14 2v3M4.5 6l2 2M23.5 6l-2 2"/></svg>
+      <span id="soltekst"></span>
+    </div>
+  </section>
+
+  <section class="kort" id="ferje" hidden>
+    <div class="ferjetopp">
+      <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15h26l-3 5H6z"/><path d="M8 15V9h14v6"/><path d="M12 9V5h6v4"/><path d="M2 22.5c2 0 2-1 4-1s2 1 4 1 2-1 4-1 2 1 4 1 2-1 4-1 2 1 4 1 2-1 4-1" stroke="var(--aksent)"/></svg>
+      Ferje Våge → Halhjem
+    </div>
+    <div class="avgang"><div class="tal" id="ferjetid"></div><div class="om" id="ferjeom"></div></div>
+    <div class="merknad" id="ferjemerknad"></div>
+  </section>
+
+  <footer>
+    <div>
+      <div class="botnnamn"><b>TYSNES</b> folkebibliotek</div>
+      <div class="kjelde" id="kjelde">Vêr: MET Norge · Ferje: Entur</div>
+    </div>
+    <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
+  </footer>
+</div>
+
+<script>
+// ---- Innstillingar ---------------------------------------------------------
+const POS = { lat: 59.99, lon: 5.53 };                 // Tysnes (MET vil ha få desimalar)
+const KLIENT = "tysnesfolkebibliotek-infoskjerm";      // identifikasjon hos Entur
+const FERJEKAI = "Våge ferjekai";                      // blir slått opp hos Entur
+const MOT = /halhjem/i;                                // berre avgangar mot Halhjem
+const VER_KVAR_MS = 30 * 60e3, FERJE_KVAR_MS = 2 * 60e3;
+const VER_GAMAL_MS = 3 * 3600e3;                       // eldre vêrdata enn dette blir ikkje viste
+
+// Reserve om opningstider.json ikkje kan hentast. Dagane: søn=0 … lør=6.
+let OPNING = {
+  meirope: "08-22",
+  betjent: { man: "09-15", tys: "09-15", ons: "09-15", tor: "12-18" },
+  unntak: {}
+};
+
+const H = new URLSearchParams(location.hash.slice(1));
+const $ = id => document.getElementById(id);
+const p2 = n => String(n).padStart(2, "0");
+const kl = d => p2(d.getHours()) + "." + p2(d.getMinutes());
+const DAGKODE = ["søn", "man", "tys", "ons", "tor", "fre", "lør"];
+const DAGNAMN = ["Sundag", "Måndag", "Tysdag", "Onsdag", "Torsdag", "Fredag", "Laurdag"];
+const MND = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
+const minne = { les(k) { try { return JSON.parse(localStorage.getItem("klokke:" + k)); } catch (e) { return null; } },
+                skriv(k, v) { try { localStorage.setItem("klokke:" + k, JSON.stringify(v)); } catch (e) {} } };
+
+// «No», med moglegheit for å late som (tid=19:30, dag=lør) når ein testar.
+function no() {
+  const d = new Date();
+  const t = (H.get("tid") || "").match(/^(\d{1,2})[:.](\d{2})$/);
+  if (t) d.setHours(+t[1], +t[2]);
+  const dag = DAGKODE.indexOf((H.get("dag") || "").toLowerCase());
+  if (dag >= 0) d.setDate(d.getDate() + dag - d.getDay());
+  return d;
+}
+
+// ---- Klokke og dato ----------------------------------------------------------
+function veke(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+}
+function teiknKlokke() {
+  const d = no();
+  $("tid").textContent = kl(d);
+  $("sek").textContent = p2(d.getSeconds());
+  $("dato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()];
+  $("veke").textContent = "Veke " + veke(d);
+}
+
+// ---- Opningstid --------------------------------------------------------------
+const spenn = s => { const m = String(s || "").match(/^(\d{1,2})(?:[:.](\d{2}))?\s*-\s*(\d{1,2})(?:[:.](\d{2}))?$/);
+                     return m ? [+m[1] + (+m[2] || 0) / 60, +m[3] + (+m[4] || 0) / 60] : null; };
+const klTal = h => p2(Math.floor(h)) + "." + p2(Math.round((h % 1) * 60));
+function teiknOpning() {
+  const d = no(), t = d.getHours() + d.getMinutes() / 60;
+  const iso = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+  const u = (OPNING.unntak || {})[iso] || {};
+  const mo = spenn("meirope" in u ? u.meirope : OPNING.meirope);
+  const bt = spenn("betjent" in u ? u.betjent : (OPNING.betjent || {})[DAGKODE[d.getDay()]]);
+  let klasse = "", hovud, meir;
+  if (bt && t >= bt[0] && t < bt[1]) {
+    klasse = "betjent"; hovud = "Betjent"; meir = "til " + klTal(bt[1]) + (mo && mo[1] > bt[1] ? " · meirope til " + klTal(mo[1]) : "");
+  } else if (mo && t >= mo[0] && t < mo[1]) {
+    hovud = "Meirope"; meir = bt && t < bt[0] ? "· betjent frå " + klTal(bt[0]) : "til " + klTal(mo[1]);
+  } else {
+    klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "· opnar " + klTal(mo[0]) : "";
+  }
+  if (u.tekst) meir += " · " + u.tekst;
+  $("ope").className = "ope " + klasse;
+  $("opeNo").textContent = hovud;
+  $("opeMeir").textContent = meir;
+}
+fetch("opningstider.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null)
+  .then(j => { if (j && j.meirope) { OPNING = j; minne.skriv("opning", j); } })
+  .catch(() => { const j = minne.les("opning"); if (j) OPNING = j; })
+  .finally(teiknOpning);
+
+// ---- Skuletimar og friminutt --------------------------------------------------
+// Frå «skule» i opningstider.json: skuledagar, timeplanen og fridagar/feriar.
+const SKULE_RESERVE = { dagar: ["man", "tys", "ons", "tor", "fre"],
+  timar: ["08.05-08.50", "08.50-09.35", "09.45-10.30", "11.05-11.50", "12.05-12.50", "13.00-13.45"], fri: [] };
+const omMin = m => m < 60 ? "om " + Math.max(1, m) + " min" : "om " + Math.floor(m / 60) + " t" + (m % 60 ? " " + (m % 60) + " min" : "");
+function teiknSkule() {
+  const S = OPNING.skule || SKULE_RESERVE, d = no();
+  const iso = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+  const fri = (S.fri || []).some(f => { const [a, b] = String(f).split("/"); return iso >= a && iso <= (b || a); });
+  const timar = (S.timar || []).map(spenn).filter(Boolean).map(([a, b]) => [a * 60, b * 60]);   // minutt etter midnatt
+  const t = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+  const vis = !fri && timar.length && (S.dagar || []).includes(DAGKODE[d.getDay()]) && t >= timar[0][0] - 15 && t < timar[timar.length - 1][1];
+  $("skule").hidden = !vis;
+  if (!vis) return;
+  const klm = m => klTal(m / 60), att = m => Math.ceil(m - t);
+  let hovud, meir, friminutt = false;
+  const i = timar.findIndex(([a, b]) => t >= a && t < b);
+  if (t < timar[0][0]) {
+    hovud = "Skulen byrjar " + omMin(att(timar[0][0])); meir = "Første time kl. " + klm(timar[0][0]);
+  } else if (i >= 0) {
+    // Neste friminutt: første time frå no som ikkje går rett over i ein ny
+    let j = i;
+    while (timar[j + 1] && timar[j + 1][0] <= timar[j][1]) j++;
+    const slutt = timar[j][1], etter = timar[j + 1];
+    if (!etter) { hovud = "Skulen sluttar " + omMin(att(slutt)); meir = "Siste time sluttar kl. " + klm(slutt); }
+    else { hovud = "Friminutt " + omMin(att(slutt)); meir = "Friminutt kl. " + klm(slutt) + "–" + klm(etter[0]); }
+    if (j > i) meir = "Timeskifte kl. " + klm(timar[i][1]) + " · " + meir.charAt(0).toLowerCase() + meir.slice(1);
+  } else {
+    const neste = timar.find(([a]) => a > t);
+    friminutt = true; hovud = "Friminutt no"; meir = "Ny time kl. " + klm(neste[0]) + " – " + omMin(att(neste[0]));
+  }
+  $("skule").classList.toggle("fri", friminutt);
+  $("skuleHovud").textContent = hovud;
+  $("skuleMeir").textContent = meir;
+}
+
+// ---- Vêr og sol (MET Norge) ---------------------------------------------------
+// MET godtek kall frå nettlesaren når Origin-headeren har domenet til sida
+// (tysnesfolkebibliotek.github.io). Nettlesaren lagrar svara etter Expires.
+const VERORD = { clearsky: "Klårt", fair: "Lettskya", partlycloudy: "Delvis skya", cloudy: "Skya", fog: "Tåke",
+  rain: "Regn", rainshowers: "Regnbyer", sleet: "Sludd", sleetshowers: "Sluddbyer", snow: "Snø", snowshowers: "Snøbyer" };
+function verTekst(kode) {
+  const k = String(kode).replace(/_(day|night|polartwilight)$/, "");
+  const torden = k.endsWith("andthunder"), grunn = k.replace("andthunder", "");
+  // MET skriv nokre kodar med «lights» (t.d. lightssleetshowers)
+  const lett = /^lights?/.test(grunn), kraftig = grunn.startsWith("heavy");
+  let ord = VERORD[grunn.replace(/^(lights?|heavy)/, "")] || "";
+  if (ord && (lett || kraftig)) {
+    const byer = /byer$/.test(ord);
+    ord = (lett ? (byer ? "Lette " : "Lett ") : (byer ? "Kraftige " : "Kraftig ")) + ord.toLowerCase();
+  }
+  return ord + (ord && torden ? " og torden" : "");
+}
+// Små strekikon (same stil som resten av sida)
+const SKY = '<path d="M9 19h16a6 6 0 0 0 0-12 8 8 0 0 0-15.3 2.5A5 5 0 0 0 9 19z" stroke="currentColor"/>';
+const IKON = {
+  sol: '<circle cx="17" cy="15" r="6" stroke="var(--sol)"/><path d="M17 3v3M17 24v3M5 15h3M26 15h3M8.5 6.5l2 2M23.5 21.5l2 2M8.5 23.5l2-2M23.5 8.5l2-2" stroke="var(--sol)"/>',
+  mane: '<path d="M21 4a11 11 0 1 0 9 15A9 9 0 0 1 21 4z" stroke="currentColor"/>',
+  lettskya: '<circle cx="11" cy="10" r="5" stroke="var(--sol)"/><path d="M11 1.5v2M2.5 10h2M5 4l1.4 1.4M17 4l-1.4 1.4" stroke="var(--sol)"/><path d="M12 25h13a5 5 0 0 0 0-10 6.5 6.5 0 0 0-12.4 2A4 4 0 0 0 12 25z" stroke="currentColor"/>',
+  skya: SKY,
+  regn: SKY + '<path d="M11 23l-1.5 4M17 23l-1.5 4M23 23l-1.5 4" stroke="var(--aksent)"/>',
+  sno: SKY + '<path d="M11 24v3M9.5 25.5h3M17 24v3M15.5 25.5h3M23 24v3M21.5 25.5h3" stroke="var(--aksent)"/>',
+  sludd: SKY + '<path d="M11 23l-1.5 4M23 23l-1.5 4" stroke="var(--aksent)"/><path d="M17 24v3M15.5 25.5h3" stroke="var(--aksent)"/>',
+  torden: SKY + '<path d="M18 20l-3 5h4l-3 5" stroke="var(--sol)"/>',
+  take: '<path d="M4 9h26M7 15h22M4 21h26M9 27h18" stroke="currentColor"/>'
+};
+function verIkon(kode) {
+  const k = String(kode), natt = /_night$/.test(k), g = k.replace(/_(day|night|polartwilight)$/, "");
+  if (/thunder/.test(g)) return IKON.torden;
+  if (/sleet/.test(g)) return IKON.sludd;
+  if (/snow/.test(g)) return IKON.sno;
+  if (/rain/.test(g)) return IKON.regn;
+  if (g === "fog") return IKON.take;
+  if (g === "cloudy") return IKON.skya;
+  if (g === "clearsky") return natt ? IKON.mane : IKON.sol;
+  return natt ? IKON.skya : IKON.lettskya;   // fair, partlycloudy
+}
+const VINDRETNING = ["nord", "nordaust", "aust", "søraust", "sør", "sørvest", "vest", "nordvest"];
+
+let VER = minne.les("ver"), SOL = minne.les("sol");
+async function hentVer() {
+  try {
+    const r = await fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${POS.lat}&lon=${POS.lon}`);
+    if (!r.ok) throw new Error("MET " + r.status);
+    const j = await r.json();
+    VER = { henta: Date.now(), serie: j.properties.timeseries.slice(0, 6).map(t => ({
+      tid: t.time, temp: t.data.instant.details.air_temperature, vind: t.data.instant.details.wind_speed,
+      retning: t.data.instant.details.wind_from_direction,
+      kode: (t.data.next_1_hours || t.data.next_6_hours || {}).summary?.symbol_code })) };
+    minne.skriv("ver", VER);
+  } catch (e) { console.warn("Fekk ikkje henta vêret:", e.message); }
+  try {
+    const d = new Date(), dato = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+    if (!SOL || SOL.dato !== dato) {
+      const off = -d.getTimezoneOffset(), offset = (off < 0 ? "-" : "+") + p2(Math.floor(Math.abs(off) / 60)) + ":" + p2(Math.abs(off) % 60);
+      const r = await fetch(`https://api.met.no/weatherapi/sunrise/3.0/sun?lat=${POS.lat}&lon=${POS.lon}&date=${dato}&offset=${encodeURIComponent(offset)}`);
+      if (!r.ok) throw new Error("MET sol " + r.status);
+      const j = await r.json();
+      SOL = { dato, opp: j.properties.sunrise?.time, ned: j.properties.sunset?.time };
+      minne.skriv("sol", SOL);
+    }
+  } catch (e) { console.warn("Fekk ikkje henta soltidene:", e.message); }
+  teiknVer();
+}
+function teiknVer() {
+  const d = new Date();
+  // Bruk timen som gjeld no (MET gir ein serie frå no og framover)
+  const nu = VER && Date.now() - VER.henta < VER_GAMAL_MS && VER.serie.filter(t => new Date(t.tid) <= new Date(d.getTime() + 30 * 60e3)).pop();
+  $("ver").hidden = !nu || !nu.kode;
+  if (nu && nu.kode) {
+    $("vericon").innerHTML = verIkon(nu.kode);
+    $("grad").textContent = Math.round(nu.temp) + "°";
+    $("vertekst").textContent = verTekst(nu.kode);
+    const v = Math.round(nu.vind);
+    $("vind").textContent = "Vind " + v + " m/s" + (v >= 4 && nu.retning != null ? " frå " + VINDRETNING[Math.round(nu.retning / 45) % 8] : "");
+  }
+  const idag = SOL && SOL.dato === d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+  const opp = idag && SOL.opp && new Date(SOL.opp), ned = idag && SOL.ned && new Date(SOL.ned);
+  $("sol").hidden = !(opp && ned);
+  if (opp && ned) {
+    const t = no();
+    $("soltekst").innerHTML = t < opp ? `Sola går opp <b>${kl(opp)}</b>` : t < ned ? `Sola går ned <b>${kl(ned)}</b>` : `Sola gjekk ned ${kl(ned)}`;
+  }
+  // Mørke fargar når sola er nede (eller kveld=1/0 i lenkja)
+  const t = no();
+  const kveld = H.has("kveld") ? H.get("kveld") === "1" : (opp && ned ? (t < opp || t >= ned) : (t.getHours() < 8 || t.getHours() >= 16));
+  document.documentElement.classList.toggle("kveld", kveld);
+}
+
+// ---- Ferje (Entur) ------------------------------------------------------------
+// Slår opp stoppestaden éin gong og hugsar han. Avgangane blir lagra med
+// klokkeslett, så sida kan vise neste ferje sjølv om nettet er borte ei stund.
+let STOPP = minne.les("stopp"), AVGANGAR = minne.les("avgangar") || [];
+async function finnStopp() {
+  if (STOPP) return STOPP;
+  const r = await fetch("https://api.entur.io/geocoder/v1/autocomplete?" + new URLSearchParams({ text: FERJEKAI, layers: "venue", size: "10" }),
+                        { headers: { "ET-Client-Name": KLIENT } });
+  const j = await r.json();
+  // Rett namn, og nær Tysnes (det finst fleire stader som heiter Våge)
+  const nær = f => { const [lon, lat] = f.geometry?.coordinates || [0, 0]; return Math.abs(lat - POS.lat) < 0.2 && Math.abs(lon - POS.lon) < 0.4; };
+  const kand = (j.features || []).filter(f => /^NSR:StopPlace:/.test(f.properties.id) && nær(f));
+  const f = kand.find(f => f.properties.name.toLowerCase() === FERJEKAI.toLowerCase())
+         || kand.find(f => /våge/i.test(f.properties.name) && /ferje/i.test(f.properties.name));
+  if (!f) throw new Error("fann ikkje " + FERJEKAI);
+  STOPP = f.properties.id;
+  console.info(FERJEKAI + " =", STOPP);
+  minne.skriv("stopp", STOPP);
+  return STOPP;
+}
+async function hentFerje() {
+  try {
+    const id = await finnStopp();
+    const q = `{ stopPlace(id: "${id}") { estimatedCalls(numberOfDepartures: 12, timeRange: 172800) {
+      expectedDepartureTime aimedDepartureTime cancellation forBoarding
+      destinationDisplay { frontText } serviceJourney { line { transportMode } } } } }`;
+    const r = await fetch("https://api.entur.io/journey-planner/v3/graphql", {
+      method: "POST", headers: { "Content-Type": "application/json", "ET-Client-Name": KLIENT }, body: JSON.stringify({ query: q }) });
+    if (!r.ok) throw new Error("Entur " + r.status);
+    const j = await r.json();
+    if (!j.data || !j.data.stopPlace) { STOPP = null; minne.skriv("stopp", null); throw new Error("ukjend stopp"); }
+    AVGANGAR = j.data.stopPlace.estimatedCalls
+      .filter(c => c.forBoarding !== false && MOT.test(c.destinationDisplay?.frontText || "") && c.serviceJourney?.line?.transportMode === "water")
+      .map(c => ({ venta: c.expectedDepartureTime, rute: c.aimedDepartureTime, innstilt: !!c.cancellation }));
+    minne.skriv("avgangar", AVGANGAR);
+  } catch (e) { console.warn("Fekk ikkje henta ferja:", e.message); }
+  teiknFerje();
+}
+function omTid(min) {
+  if (min < 1) return "går no";
+  if (min < 60) return "om " + min + " min";
+  const t = Math.floor(min / 60), m = min % 60;
+  return "om " + t + " t" + (m ? " " + m + " min" : "");
+}
+function teiknFerje() {
+  const nu = Date.now();
+  // Ferja er farten når ho har gått; vis neste som ikkje er innstilt
+  const kom = AVGANGAR.filter(a => new Date(a.venta).getTime() > nu - 30e3);
+  const neste = kom.find(a => !a.innstilt);
+  $("ferje").hidden = !neste || new Date(neste.venta) - nu > 12 * 3600e3;
+  if (!neste) return;
+  const venta = new Date(neste.venta), rute = new Date(neste.rute);
+  $("ferjetid").textContent = kl(venta);
+  $("ferjeom").textContent = omTid(Math.floor((venta - nu) / 60e3));
+  const forsein = Math.round((venta - rute) / 60e3);
+  const innstilt = kom.indexOf(neste) > 0 && kom[0].innstilt;
+  $("ferjemerknad").textContent = innstilt ? `Ferja kl. ${kl(new Date(kom[0].rute))} er innstilt`
+                                : forsein >= 3 ? `Forseinka – etter ruta kl. ${kl(rute)}` : "";
+}
+
+// ---- Nedteljingshjulet og samspel med rotasjon.html -------------------------
+const iRotasjon = window.parent !== window && !H.has("forhand");
+let hjulAnim = null;
+function teljNed(ms, gjenta) {
+  if (hjulAnim) hjulAnim.cancel();
+  hjulAnim = $("hjul").animate([{ strokeDashoffset: "0px" }, { strokeDashoffset: "94.25px" }],
+    { duration: ms, easing: "linear", fill: "forwards", iterations: gjenta ? Infinity : 1 });
+}
+function melde(b) { if (iRotasjon) parent.postMessage({ nyheiter: b }, "*"); }
+let sistFerje = 0;
+window.addEventListener("message", e => {
+  if (!e.data || e.data.nyheiter !== "vis") return;
+  teljNed(Number(e.data.att) || Number(e.data.sekund) * 1000 || 60000, false);
+  teiknAlt();
+  if (Date.now() - sistFerje > 60e3) { sistFerje = Date.now(); hentFerje(); }
+});
+
+// ---- I gang -------------------------------------------------------------------
+function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); }
+teiknAlt();
+// Klokka blir oppdatert rett etter kvart heile sekund
+(function tikk() { teiknKlokke(); teiknSkule(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
+setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); }, 15e3);
+hentVer(); setInterval(hentVer, VER_KVAR_MS);
+hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
+if (!iRotasjon) teljNed(60000, true);
+melde("har"); melde("klar");
+</script>
+</body>
+</html>
