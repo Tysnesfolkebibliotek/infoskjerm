@@ -163,8 +163,12 @@
   .fodd .boker[hidden] { display: none; }
 
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
-  .kjelde { margin-top: auto; font-size: 2.2rem; color: var(--dempa); }
-  footer { display: flex; align-items: center; justify-content: space-between; margin-top: -2.4rem; }
+  /* Kjeldene under biblioteknamnet, som «Forrige bok, Biblioteksentralen» på karusellane
+     (index.html: .botnmerke / .kjeldetekst, 1,6vw = 1,73rem her) */
+  footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  .botnmerke { display: flex; flex-direction: column; align-items: flex-start; gap: .77rem; flex: none; }
+  .kjelde { font-size: 1.73rem; color: var(--dempa); opacity: .8; }
+  .kjelde:empty { display: none; }
   .botnnamn { font-size: 3.02rem;
               text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
   .botnnamn b { font-weight: 700; }
@@ -239,9 +243,11 @@
     </div>
   </section>
 
-  <div class="kjelde" id="kjelde"></div>
   <footer>
-    <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
+    <div class="botnmerke">
+      <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
+      <span class="kjelde" id="kjelde"></span>
+    </div>
     <svg class="hjul" viewBox="0 0 36 36" aria-hidden="true"><circle class="spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
   </footer>
 </div>
