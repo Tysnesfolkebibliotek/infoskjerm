@@ -17,7 +17,7 @@
 
   Kjelder (begge opne og gratis):
     Vêr og sol: MET Norge (api.met.no) — Locationforecast og Sunrise, henta kvar 30. min.
-    Ferje:      Entur (api.entur.io) — avgangar frå Våge ferjekai mot Halhjem, henta kvart 2. min.
+    Ferje:      Entur (api.entur.io) — avgangar frå Våge kai (NSR:StopPlace:58466) mot Halhjem, henta kvart 2. min.
   Opningstidene står i opningstider.json (med ein reserve her i fila).
 
   Utan nett går klokka og opningstida som før. Vêr og ferje blir viste frå
@@ -138,7 +138,6 @@
 // ---- Innstillingar ---------------------------------------------------------
 const POS = { lat: 59.99, lon: 5.53 };                 // Tysnes (MET vil ha få desimalar)
 const KLIENT = "tysnesfolkebibliotek-infoskjerm";      // identifikasjon hos Entur
-const FERJEKAI = "Våge ferjekai";                      // blir slått opp hos Entur
 const MOT = /halhjem/i;                                // berre avgangar mot Halhjem
 const VER_KVAR_MS = 30 * 60e3, FERJE_KVAR_MS = 2 * 60e3;
 const VER_GAMAL_MS = 3 * 3600e3;                       // eldre vêrdata enn dette blir ikkje viste
@@ -344,36 +343,21 @@ function teiknVer() {
 }
 
 // ---- Ferje (Entur) ------------------------------------------------------------
-// Slår opp stoppestaden éin gong og hugsar han. Avgangane blir lagra med
-// klokkeslett, så sida kan vise neste ferje sjølv om nettet er borte ei stund.
-let STOPP = minne.les("stopp"), AVGANGAR = minne.les("avgangar") || [];
-async function finnStopp() {
-  if (STOPP) return STOPP;
-  const r = await fetch("https://api.entur.io/geocoder/v1/autocomplete?" + new URLSearchParams({ text: FERJEKAI, layers: "venue", size: "10" }),
-                        { headers: { "ET-Client-Name": KLIENT } });
-  const j = await r.json();
-  // Rett namn, og nær Tysnes (det finst fleire stader som heiter Våge)
-  const nær = f => { const [lon, lat] = f.geometry?.coordinates || [0, 0]; return Math.abs(lat - POS.lat) < 0.2 && Math.abs(lon - POS.lon) < 0.4; };
-  const kand = (j.features || []).filter(f => /^NSR:StopPlace:/.test(f.properties.id) && nær(f));
-  const f = kand.find(f => f.properties.name.toLowerCase() === FERJEKAI.toLowerCase())
-         || kand.find(f => /våge/i.test(f.properties.name) && /ferje/i.test(f.properties.name));
-  if (!f) throw new Error("fann ikkje " + FERJEKAI);
-  STOPP = f.properties.id;
-  console.info(FERJEKAI + " =", STOPP);
-  minne.skriv("stopp", STOPP);
-  return STOPP;
-}
+// Våge kai (NSR:StopPlace:58466) er éin stoppestad for buss, hurtigbåt og ferje.
+// Vi tek berre med ferjer mot Halhjem. Avgangane blir lagra med klokkeslett,
+// så sida kan vise neste ferje sjølv om nettet er borte ei stund.
+const STOPP = "NSR:StopPlace:58466";
+let AVGANGAR = minne.les("avgangar") || [];
 async function hentFerje() {
   try {
-    const id = await finnStopp();
-    const q = `{ stopPlace(id: "${id}") { estimatedCalls(numberOfDepartures: 12, timeRange: 172800) {
+    const q = `{ stopPlace(id: "${STOPP}") { estimatedCalls(numberOfDepartures: 60, timeRange: 172800) {
       expectedDepartureTime aimedDepartureTime cancellation forBoarding
       destinationDisplay { frontText } serviceJourney { line { transportMode } } } } }`;
     const r = await fetch("https://api.entur.io/journey-planner/v3/graphql", {
       method: "POST", headers: { "Content-Type": "application/json", "ET-Client-Name": KLIENT }, body: JSON.stringify({ query: q }) });
     if (!r.ok) throw new Error("Entur " + r.status);
     const j = await r.json();
-    if (!j.data || !j.data.stopPlace) { STOPP = null; minne.skriv("stopp", null); throw new Error("ukjend stopp"); }
+    if (!j.data || !j.data.stopPlace) throw new Error("ukjend stopp " + STOPP);
     AVGANGAR = j.data.stopPlace.estimatedCalls
       .filter(c => c.forBoarding !== false && MOT.test(c.destinationDisplay?.frontText || "") && c.serviceJourney?.line?.transportMode === "water")
       .map(c => ({ venta: c.expectedDepartureTime, rute: c.aimedDepartureTime, innstilt: !!c.cancellation }));
