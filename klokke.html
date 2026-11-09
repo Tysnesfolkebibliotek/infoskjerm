@@ -318,6 +318,8 @@ function teiknKlokke() {
 const spenn = s => { const m = String(s || "").match(/^(\d{1,2})(?:[:.](\d{2}))?\s*-\s*(\d{1,2})(?:[:.](\d{2}))?$/);
                      return m ? [+m[1] + (+m[2] || 0) / 60, +m[3] + (+m[4] || 0) / 60] : null; };
 const klTal = h => p2(Math.floor(h)) + ":" + p2(Math.round((h % 1) * 60));
+// Kort form til opningstida øvst: «15» for 15:00, «15:30» elles
+const klKort = h => h % 1 ? klTal(h) : String(Math.floor(h));
 function teiknOpning() {
   const d = no(), t = d.getHours() + d.getMinutes() / 60;
   const iso = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
@@ -326,11 +328,11 @@ function teiknOpning() {
   const bt = spenn("betjent" in u ? u.betjent : (OPNING.betjent || {})[DAGKODE[d.getDay()]]);
   let klasse = "", hovud, meir;
   if (bt && t >= bt[0] && t < bt[1]) {
-    klasse = "betjent"; hovud = "Betjent"; meir = "til " + klTal(bt[1]) + (mo && mo[1] > bt[1] ? " · meirope til " + klTal(mo[1]) : "");
+    klasse = "betjent"; hovud = "Betjent"; meir = "til " + klKort(bt[1]) + (mo && mo[1] > bt[1] ? " · meirope til " + klKort(mo[1]) : "");
   } else if (mo && t >= mo[0] && t < mo[1]) {
-    hovud = "Meirope"; meir = bt && t < bt[0] ? "· betjent frå " + klTal(bt[0]) : "til " + klTal(mo[1]);
+    hovud = "Meirope"; meir = bt && t < bt[0] ? "· betjent frå " + klKort(bt[0]) : "til " + klKort(mo[1]);
   } else {
-    klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "· opnar " + klTal(mo[0]) : "";
+    klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "· opnar " + klKort(mo[0]) : "";
   }
   if (u.tekst) meir += " · " + u.tekst;
   $("ope").className = "ope " + klasse;
