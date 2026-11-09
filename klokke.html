@@ -148,19 +148,23 @@
   :root.tettare .ferjetopp { font-size: 3.8rem; }
   :root.tettare .avgang { padding-top: 1.6rem; }
   :root.tettare .avgang .tal { font-size: 6.4rem; }
-  :root.tettare .fodd .rad > svg { display: none; }
+  :root.tettare .fodd .person { padding-top: 1.8rem; }
   :root.tettare .timar svg { width: 5.6rem; height: 5rem; }
   :root.tettare .timar > div { padding: 1.4rem 0; }
   :root.tettare .dagar > div { padding: 1.8rem 2.4rem; }
 
   /* Fødd i dag */
-  .fodd .rad { display: flex; align-items: center; gap: 3.6rem; }
-  .fodd .rad > svg { width: 9rem; height: 9rem; flex: none; }
-  .fodd .namn { font-size: 6rem; font-weight: 700; line-height: 1.1; }
-  .fodd .skild { font-size: 3.4rem; color: var(--dempa); margin-top: .8rem; }
-  .fodd .boker { display: inline-flex; align-items: center; gap: 1.4rem; margin-top: 1.6rem; font-size: 3.4rem; font-weight: 700;
-                 padding: .9rem 2.6rem; border-radius: 99rem; background: var(--aksent); color: var(--aksent-tekst); }
-  .fodd .boker[hidden] { display: none; }
+  .fodd .topp { display: flex; align-items: center; gap: 1.6rem; }
+  .fodd .topp svg { width: 4.4rem; height: 4.4rem; flex: none; color: var(--tekst); }
+  #foddListe { display: flex; flex-direction: column; gap: 2.2rem; }
+  :root.tettare #foddListe { gap: 1.6rem; }
+  .fodd .person { display: flex; align-items: center; gap: 2.4rem; padding-top: 2.4rem; border-top: .2rem solid var(--spor); }
+  .fodd .person:first-of-type { border-top: 0; padding-top: 0; }
+  .fodd .person > div { flex: 1; min-width: 0; }
+  .fodd .namn { font-size: 4.8rem; font-weight: 700; line-height: 1.1; }
+  .fodd .skild { font-size: 3rem; color: var(--dempa); margin-top: .6rem; }
+  .fodd .boker { flex: none; font-size: 3rem; font-weight: 700; white-space: nowrap;
+                 padding: .8rem 2.4rem; border-radius: 99rem; background: var(--aksent); color: var(--aksent-tekst); }
 
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
   /* Kjeldene under biblioteknamnet, som «Forrige bok, Biblioteksentralen» på karusellane
@@ -232,15 +236,11 @@
   </section>
 
   <section class="kort fodd" id="fodd" hidden>
-    <div class="etikett">Fødd i dag</div>
-    <div class="rad">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V11h16v10z"/><path d="M4 15c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M8 11V8M12 11V8M16 11V8" stroke="var(--aksent)"/><path d="M8 5.5v.01M12 5.5v.01M16 5.5v.01" stroke="var(--aksent)" stroke-width="2.4"/></svg>
-      <div>
-        <div class="namn" id="foddNamn"></div>
-        <div class="skild" id="foddSkild"></div>
-        <div class="boker" id="foddBoker"></div>
-      </div>
+    <div class="topp">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V11h16v10z"/><path d="M4 15c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M8 11V8M12 11V8M16 11V8" stroke="var(--aksent)"/><path d="M8 5.5v.01M12 5.5v.01M16 5.5v.01" stroke="var(--aksent)" stroke-width="2.4"/></svg>
+      <div class="etikett">Fødd i dag</div>
     </div>
+    <div id="foddListe"></div>
   </section>
 
   <footer>
@@ -765,19 +765,33 @@ const NYNORSK = [[/forfatter/g, "forfattar"], [/dikter/g, "diktar"], [/lyriker/g
   [/oversetter/g, "omsetjar"], [/kritiker/g, "kritikar"], [/historiker/g, "historikar"], [/politiker/g, "politikar"],
   [/musiker/g, "musikar"], [/billedkunstner/g, "biletkunstnar"], [/kunstner/g, "kunstnar"], [/tegner/g, "teiknar"]];
 const nynorskYrke = t => NYNORSK.reduce((x, [a, b]) => x.replace(a, b), t);
+// Opptil FODD_MAKS forfattarar samstundes. Er det fleire, kjem dei neste fram neste gong
+// sida blir vist. Blir det for trongt (tilpass), blir det færre før boksen fell bort.
+const FODD_MAKS = 3;
+let foddVis = FODD_MAKS;
+const bøkerTekst = n => n === 1 ? "1 bok" : n + " bøker";
 function teiknFødd() {
   const liste = FODD && FØDD && FØDD.dato === isoDato(new Date()) ? FØDD.liste || [] : [];
   $("fodd").hidden = !liste.length;
   $("fodd").dataset.har = liste.length ? "1" : "";
   if (!liste.length) return;
-  const f = liste[foddNr % liste.length];
-  $("foddNamn").textContent = f.namn;
-  // Wikidata har ofte berre bokmålsskildring («russisk forfatter og dramatiker (1818–1883)»):
-  // ta bort årstala i parentes og byt dei vanlegaste yrkesorda til nynorsk
-  const skild = nynorskYrke(String(f.skild || "").replace(/\s*\([^)]*\d{3,4}[^)]*\)/g, "").trim());
-  $("foddSkild").textContent = [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && "fødd " + f.år].filter(Boolean).join(", ");
-  $("foddBoker").hidden = !f.bøker;
-  $("foddBoker").textContent = f.bøker === 1 ? "1 bok i biblioteket" : f.bøker + " bøker i biblioteket";
+  const n = Math.min(foddVis, liste.length);
+  const start = (foddNr * n) % liste.length;
+  const valde = Array.from({ length: n }, (_, i) => liste[(start + i) % liste.length]);
+  $("foddListe").replaceChildren(...valde.map(f => {
+    // Wikidata har ofte berre bokmålsskildring («russisk forfatter og dramatiker (1818–1883)»):
+    // ta bort årstala i parentes og byt dei vanlegaste yrkesorda til nynorsk
+    const skild = nynorskYrke(String(f.skild || "").replace(/\s*\([^)]*\d{3,4}[^)]*\)/g, "").trim());
+    const rad = document.createElement("div"); rad.className = "person";
+    const tekst = document.createElement("div");
+    const namn = Object.assign(document.createElement("div"), { className: "namn", textContent: f.namn });
+    const om = Object.assign(document.createElement("div"), { className: "skild",
+      textContent: [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && "fødd " + f.år].filter(Boolean).join(", ") });
+    tekst.append(namn, om);
+    rad.append(tekst);
+    if (f.bøker) rad.append(Object.assign(document.createElement("span"), { className: "boker", textContent: bøkerTekst(f.bøker) }));
+    return rad;
+  }));
 }
 
 // ---- Nedteljingshjulet og samspel med rotasjon.html -------------------------
@@ -809,7 +823,7 @@ window.addEventListener("message", e => {
 
 // ---- Får alt plass? ------------------------------------------------------------
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
-// blir ho tettare i to steg. Får det framleis ikkje plass, fell Fødd i dag bort.
+// blir ho tettare i to steg. Får det framleis ikkje plass, blir det færre namn i Fødd i dag, og til slutt fell boksen bort.
 function tilpass() {
   // Vent til sida (og skrifta/temaet) er ferdig lasta, elles må nettlesaren rekne ut
   // utforminga for tidleg (Firefox: «Layouten ble tvunget før siden var fullastet»)
@@ -817,11 +831,14 @@ function tilpass() {
   const rot = document.documentElement, side = document.querySelector(".side");
   const for_ = () => side.scrollHeight > side.clientHeight + 2;
   rot.classList.remove("tett", "tettare");
+  if (foddVis !== FODD_MAKS) { foddVis = FODD_MAKS; teiknFødd(); }
   $("fodd").hidden = !$("fodd").dataset.har;
   if (!for_()) return;
   rot.classList.add("tett");
   if (!for_()) return;
   rot.classList.add("tettare");
+  // Færre forfattarar, og til slutt ingen
+  while (for_() && !$("fodd").hidden && foddVis > 1) { foddVis--; teiknFødd(); }
   if (for_() && !$("fodd").hidden) $("fodd").hidden = true;
 }
 
