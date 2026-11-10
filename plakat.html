@@ -202,7 +202,6 @@
   .b-skjema { background: var(--b-flate); border-right: 1px solid var(--b-strek); padding: 26px 26px 40px; overflow: auto; }
   .b-skjema h1 { font-size: 22px; margin-bottom: 4px; }
   .b-skjema .intro { color: var(--b-dempa); font-size: 14px; margin-bottom: 14px; line-height: 1.45; }
-  .applenkje { font-size: 14px; color: var(--b-dempa); text-decoration: none; display: inline-block; margin-bottom: 8px; }
   .felt { display: flex; flex-direction: column; gap: 5px; margin-top: 14px; }
   .felt > span { font-weight: 600; font-size: 14px; }
   .felt small, .hjelp { color: var(--b-dempa); font-size: 12.5px; line-height: 1.4; }
@@ -281,9 +280,8 @@
 <!-- ======================= BYGGJAREN ======================= -->
 <div class="b-ramme" id="byggjar" hidden>
   <form class="b-skjema" id="skjema" autocomplete="off" onsubmit="return false">
-    <a class="applenkje" href="oversikt.html">← Oversikta</a>
     <h1>Plakatbyggjar</h1>
-    <p class="intro">Plakatar for digitale tenester og arrangement. Vel ei teneste for å få teksten og lenkja ferdig utfylte. Karusellar lagar du i <a href="index.html">karusellbyggjaren</a>.</p>
+    <p class="intro">Plakatar for digitale tenester og arrangement. Vel ei teneste for å få teksten og lenkja ferdig utfylte.</p>
 
     <label class="felt"><span>Mal</span><select id="mal" name="mal"></select></label>
     <div class="malboks" id="malboks" hidden>
@@ -865,6 +863,9 @@ function visPlakat(cfg) {
 async function startByggjar() {
   document.body.className = "bygg";
   $("byggjar").hidden = false;
+  // Toppstripa «← Tilbake til oversikta» (navigasjon.js). Berre i byggjaren,
+  // så skjermane aldri hentar fila.
+  document.head.append(Object.assign(document.createElement("script"), { src: "navigasjon.js" }));
   const skjema = $("skjema");
   const felt = n => skjema.elements[n];
 

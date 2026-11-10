@@ -54,7 +54,6 @@
   .filter { margin: 0 0 14px; }
   .toppline { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   .toppline .knapp { text-decoration: none; color: inherit; }
-  .nyknappar { display: flex; gap: 8px; flex-wrap: wrap; }
   .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
   .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
   .side[draggable=true] { cursor: grab; }
@@ -166,7 +165,8 @@
 </head>
 <body>
 <main>
-  <div class="toppline"><h1>Infoskjermar</h1><span class="nyknappar"><a class="knapp" href="index.html">+ Lag ny karusell</a> <a class="knapp" href="plakat.html">+ Lag ny plakat</a> <button type="button" class="knapp" id="nypk">+ Lag plakatkarusell</button></span></div>
+  <div class="toppline"><h1>Infoskjermar</h1><span id="nyttmeny"></span></div>
+  <script src="navigasjon.js"></script>
   <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og kjem fram på skjermane innan om lag ein halvtime, ofte raskare.</p>
 
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
@@ -1505,8 +1505,9 @@ lesSvarteliste(lesNøkkel())
 
 // ---- Knappar -------------------------------------------------------------
 $("lagre").addEventListener("click", lagre);
-$("nypk").addEventListener("click", () => {
-  if (!oppsett) return;
+// «+ Lag nytt ▾» (navigasjon.js): det som blir laga på oversikta sjølv
+document.addEventListener("lag-nytt", e => {
+  if (e.detail !== "plakatkarusell" || !oppsett) return;
   nyFørehand = { namn: "Plakatar", url: lagPk({ sek: 20, plakatar: [] }), sekund: 60 };
   open = { lk: "skjerm1", i: -1 }; teikn();
   oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Hak av tenestene du vil ha med, klikk «Legg til dei valde», så «" + (lesNøkkel() ? "Legg til og lagre" : "Legg til") + "».");
@@ -1525,6 +1526,11 @@ window.addEventListener("beforeunload", e => { if (endra()) { e.preventDefault()
 
 // Status «Vist no» blir rekna på nytt kvart minutt
 setInterval(() => { if (oppsett && !open && !namnOpen) teikn(); }, 60000);
+
+// Ein byggjar opna med «Endre i byggjaren» hugsar sida han skal oppdatere.
+// Er vi tilbake her, gjeld ikkje det lenger (elles kan «+ Lag nytt» få ein
+// «Oppdater …»-knapp for ei gamal side). Det byggjaren sender med, står i adressa.
+try { sessionStorage.removeItem("infoskjerm-retur"); } catch (e) {}
 
 hent().then(fråByggjaren).catch(e => {
   $("skjermar").replaceChildren(el("p", {}, "Fekk ikkje henta oppsettet frå GitHub: " + e.message + ". Prøv å laste sida på nytt."));

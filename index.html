@@ -452,9 +452,6 @@
   .tilskjerm .knapp { text-decoration: none; }
   .knapp { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--b-aksent); background: var(--b-aksent); color: var(--b-aksent-tekst); cursor: pointer; text-decoration: none; }
   .knapp.sekundær { background: transparent; color: var(--b-tekst); border-color: var(--b-strek); }
-  /* Tilbakelenkje til oversikta – alltid synleg (som i plakatbyggjaren) */
-  .applenkje { display: inline-block; font-size: 14px; color: var(--b-dempa); text-decoration: none; margin-bottom: 6px; }
-  .applenkje:hover { color: var(--b-tekst); }
 
   .b-forhand { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 12px; min-width: 0; }
   .b-skjerm { position: relative; height: min(calc(100vh - 110px), 1100px); aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; background: #000; box-shadow: 0 0 0 10px #2a2622, 0 20px 50px rgba(0,0,0,.35); }
@@ -504,7 +501,6 @@
 <!-- ======================= BYGGJAR ======================= -->
 <div id="byggjar" class="b-ramme" hidden>
   <form class="b-skjema" id="skjema" autocomplete="off">
-    <a class="applenkje" href="oversikt.html">← Oversikta</a>
     <h1>Karusellbyggjar</h1>
     <p class="ingress">Lag ein karusell, sjå han med ekte bøker, og kopier lenkja til skjermen.</p>
 
@@ -3051,6 +3047,9 @@ async function hentSøk(cfg, avd, mål, meld) {
 function startByggjar(startCfg) {
   document.body.className = "byggjar";
   document.getElementById("byggjar").hidden = false;
+  // Toppstripa «← Tilbake til oversikta» (navigasjon.js). Berre i byggjaren,
+  // så skjermane aldri hentar fila.
+  document.head.append(Object.assign(document.createElement("script"), { src: "navigasjon.js" }));
 
   const skjema = document.getElementById("skjema");
 
