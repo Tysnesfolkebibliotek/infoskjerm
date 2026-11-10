@@ -23,6 +23,11 @@
   malane kjem med av seg sjølv. Sist henta versjon blir teken vare på i
   nettlesaren, så plakatane kan visast sjølv om fila ikkje kan hentast.
 
+  Arrangement frå nettsida: «p=arr%3Dnettside%26tema%3Dlys» blir til éin plakat
+  per arrangement, dei neste fem, henta frå API-et til tysnesbibliotek.no
+  (sjå plakatmal.js). Ein plakat forsvinn når arrangementet er over, og er det
+  ingen arrangement, blir elementet hoppa over.
+
   Karusellen blir laga og endra på oversikta (oversikt.html). Han snakkar med
   rotasjon.html på same måte som karusellane: «vis» startar han, «skjul» set
   han på pause, og neste gong held han fram med neste plakat. Når alle
@@ -79,9 +84,22 @@ async function hentMalar() {
     try { localStorage.setItem(MAL_LAGER, JSON.stringify(d)); } catch (e) {}
   } catch (e) { console.warn("Fekk ikkje henta tenester.json:", e.message); }
 }
+// Arrangementa frå nettsida (høgst kvart tiande minutt, sjå plakatmal.js)
+const ARR_ELEMENT = [...new Set(ALLE.filter(erArrangement))];
+const hentAlleArrangement = () => Promise.all(ARR_ELEMENT.map(hentArrangement));
+
 // Fyller ut plakatane frå malane. Den som blir vist no, blir ikkje rørt.
 function brukMalar() {
   for (const r of rammer) {
+    if (r.dataset.arr) {
+      // Plass nr. «arr» i lista over arrangement. Tom plass = ingen plakat.
+      const ev = (arrangementNo(r.dataset.hash) || [])[Number(r.dataset.arr)];
+      const src = ev ? "plakat.html#vis=1&" + arrangementPlakat(ev, r.dataset.hash) : "";
+      r.dataset.borte = src ? "" : "1";
+      if (!src || r.classList.contains("synleg")) continue;
+      if (r.dataset.src !== src) { r.dataset.src = src; r.src = src; }
+      continue;
+    }
     // Plakatar frå malane, eigne plakatar, eller ei plakatside («side=klokke»)
     const src = plakatAdresse(malData, r.dataset.hash);
     r.dataset.borte = src ? "" : "1";           // malen finst ikkje (lenger)
@@ -94,12 +112,14 @@ function sei(beskjed) { if (I_ROTASJON) try { parent.postMessage({ nyheiter: bes
 function send(r, beskjed, meir) { try { r.contentWindow.postMessage({ nyheiter: beskjed, ...meir }, "*"); } catch (e) {} }
 
 function bygg() {
-  rammer = ALLE.map(h => {
+  // Arrangement frå nettsida får ARR_TAL plassar, éin per arrangement
+  rammer = ALLE.flatMap(h => (erArrangement(h) ? [...Array(ARR_TAL).keys()] : [null]).map(k => {
     const f = document.createElement("iframe");
     f.dataset.hash = h;
+    if (k !== null) f.dataset.arr = String(k);
     document.body.append(f);
     return f;
-  });
+  }));
   brukMalar();
 }
 const aktuelle = () => rammer.filter(r => gjeld(r.dataset.hash) && !r.dataset.borte);
@@ -122,9 +142,19 @@ window.addEventListener("message", e => {
   if (e.data.nyheiter === "skjul") pause();
 });
 
+// I førehandsvisinga: ei melding når det ikkje er noko å vise (t.d. ingen arrangement)
+const tomMelding = Object.assign(document.createElement("div"), { className: "melding", hidden: true,
+  textContent: ALLE.every(erArrangement) ? "Ingen komande arrangement på nettsida no." : "Ingen plakatar å vise no." });
+document.body.append(tomMelding);
 function visNeste() {
   const l = aktuelle();
-  if (!l.length) { pause(); sei("tom"); return; }
+  tomMelding.hidden = I_ROTASJON || l.length > 0;
+  if (!l.length) {
+    pause(); sei("tom");
+    // Utanfor rotasjonen prøver vi igjen litt seinare
+    if (!I_ROTASJON) { køyrer = true; tidtakar = setTimeout(async () => { await hentAlleArrangement(); brukMalar(); visNeste(); }, 60000); }
+    return;
+  }
   const førre = rammer.find(r => r.classList.contains("synleg"));
   // Neste plakat etter den førre i lista (ikkje same plakat to gonger på rad om det finst fleire)
   const start = førre ? rammer.indexOf(førre) : n;
@@ -156,7 +186,7 @@ async function start() {
   if (køyrer) return;
   køyrer = true;
   // Hent malane på nytt (høgst kvart tiande minutt), men vent ikkje meir enn 2 sekund
-  await Promise.race([hentMalar(), new Promise(ok => setTimeout(ok, 2000))]);
+  await Promise.race([Promise.all([hentMalar(), hentAlleArrangement()]), new Promise(ok => setTimeout(ok, 2000))]);
   if (!køyrer) return;
   vistIRunden = 0;
   brukMalar();
@@ -175,7 +205,8 @@ if (!ALLE.length) {
   document.body.append(Object.assign(document.createElement("div"), { className: "melding", textContent: "Plakatkarusellen har ingen plakatar enno. Legg dei til på oversikta." }));
   sei("klar"); sei("tom");
 } else (async () => {
-  await hentMalar();
+  // Ved oppstart ventar vi på arrangementa (høgst 8 sekund), så «har»/«tom» blir rett
+  await Promise.all([hentMalar(), hentAlleArrangement()]);
   bygg();
   sei("klar");
   sei(aktuelle().length ? "har" : "tom");
@@ -184,7 +215,7 @@ if (!ALLE.length) {
   else {
     // Ein plakat kan gå ut på dato medan karusellen står og ventar.
     // Får han ikkje henta malane ved oppstart, prøver han igjen
-    setInterval(async () => { await hentMalar(); brukMalar(); sei(aktuelle().length ? "har" : "tom"); }, MAL_KVART_MS);
+    setInterval(async () => { await Promise.all([hentMalar(), hentAlleArrangement()]); brukMalar(); sei(aktuelle().length ? "har" : "tom"); }, MAL_KVART_MS);
   }
 })();
 window.addEventListener("hashchange", () => location.reload());

@@ -415,8 +415,9 @@ const plakatHash = url => { const p = new URLSearchParams(String(url).split("#")
 const utanTil = h => { const p = new URLSearchParams(h); p.delete("til"); return p.toString(); };
 const medTil = (h, til) => { const p = new URLSearchParams(h); if (til) p.set("til", til); else p.delete("til"); return p.toString(); };
 const tilDatoAv = h => new URLSearchParams(h).get("til") || "";
-const plakatNamn = h => { if (plakatside(h)) return plakatsideNamn(h); const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
-const plakatUrl = h => "https://tysnesfolkebibliotek.github.io/infoskjerm/" + plakatAdresse(tenesteData, utanTil(h));
+const plakatNamn = h => { if (erArrangement(h)) return "Arrangement frå nettsida"; if (plakatside(h)) return plakatsideNamn(h); const p = new URLSearchParams(løys(h) || h); return p.get("overskrift") || p.get("overlinje") || (p.get("mal") ? "Mal: " + p.get("mal") : "(plakat utan overskrift)"); };
+// Arrangement frå nettsida blir førehandsviste som ein liten plakatkarusell (8 sekund per arrangement)
+const plakatUrl = h => erArrangement(h) ? PK_ADRESSE + "#" + new URLSearchParams({ vis: "1", sek: "8", p: utanTil(h) }) : "https://tysnesfolkebibliotek.github.io/infoskjerm/" + plakatAdresse(tenesteData, utanTil(h));
 // Malane i plakatbyggjaren (tenester.json). Plakatar som blir lagde til frå ein
 // mal, følgjer malen («mal=<id>&folg=1», sjå plakatmal.js).
 let tenesteData = null;
@@ -425,7 +426,10 @@ const tenesterLasting = fetch("tenester.json?t=" + Date.now(), { cache: "no-stor
 const løys = h => løysPlakat(tenesteData, h);
 // Sekund på skjermen for ein plakatkarusell: tal plakatar som ikkje er ute på dato × sekund per plakat
 // Med «plakatar per gong» (kvar): så mange plakatar, men ikkje fleire enn det finst
-const pkAktive = pk => pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= idagTekst()).length;
+// Arrangement frå nettsida blir rekna som ARR_TAL plakatar (det høgste). Er det færre,
+// seier karusellen «ferdig» tidlegare, så skjermen går vidare med ein gong.
+const pkPlassar = h => erArrangement(h) ? ARR_TAL : 1;
+const pkAktive = pk => pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= idagTekst()).reduce((n, h) => n + pkPlassar(h), 0);
 const pkPerGong = pk => pk.kvar ? Math.min(pk.kvar, pkAktive(pk)) : pkAktive(pk);
 const pkSekund = pk => Math.max(5, pkPerGong(pk) * pk.sek);
 // Alle plakatane som finst i oppsettet: eigne linjer og plakatar i karusellar
@@ -436,7 +440,7 @@ function allePlakatar() {
     if (k.startsWith("_") || !Array.isArray(l)) continue;
     for (const s of l) {
       if (erPlakat(s)) legg(s.namn || plakatNamn(plakatHash(s.url)), plakatHash(s.url));
-      if (erPlakatkarusell(s)) for (const h of lesPk(s.url).plakatar) legg(plakatNamn(h), h);
+      if (erPlakatkarusell(s)) for (const h of lesPk(s.url).plakatar) if (!erArrangement(h)) legg(plakatNamn(h), h);
     }
   }
   return ut;
@@ -749,6 +753,25 @@ function skjema(s, lk, i) {
   return f;
 }
 
+// Temaval for «Arrangement frå nettsida»: same tema på alle arrangementsplakatane.
+// Tema med logo eller symbol øvst til høgre er skjulte, som i plakatbyggjaren.
+function arrTemaval(h, ved) {
+  const no = new URLSearchParams(h).get("tema") || ARR_STANDARDTEMA;
+  const sel = el("select", {}, new Option(no, no));
+  hentTema().then(() => {
+    if (typeof TEMA_LISTE === "undefined") return;
+    const harSymbol = t => t.logo || /--symbol-plass/.test(t.css || "");
+    sel.replaceChildren(...TEMAGRUPPER.map(g => {
+      const og = el("optgroup", { label: g });
+      for (const t of TEMA_LISTE) if ((t.gruppe || "Faste") === g && !harSymbol(t)) og.append(new Option(t.namn, t.id));
+      return og;
+    }).filter(og => og.children.length));
+    sel.value = no;
+  });
+  sel.addEventListener("change", () => { const p = new URLSearchParams(h); p.set("tema", sel.value); ved(p.toString()); });
+  return el("label", { class: "val", title: "Same tema på alle arrangementsplakatane" }, "Tema", sel);
+}
+
 // Lista over plakatane i ein plakatkarusell, inni skjemaet. Endringane blir
 // skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Lagre» / «Bruk endringane».
 function pkBoks(s, lk, i) {
@@ -787,7 +810,7 @@ function pkBoks(s, lk, i) {
     } }, "+ Lag ny plakat");
   // Kryss = med i karusellen. Endringa skjer med ein gong.
   const vel = el("details", {}, el("summary", {}, "+ Legg til eller ta bort plakatar"), velliste,
-    el("div", {}, nyKnapp, el("span", { class: "hjelp" }, lagret ? " Til dømes eit arrangement." : " Lagre oppsettet først for å lage ein ny plakat.")));
+    el("div", {}, nyKnapp, el("span", { class: "hjelp" }, lagret ? " Til dømes ei kunngjering." : " Lagre oppsettet først for å lage ein ny plakat.")));
   const visSamandrag = el("summary");
   const fleire = el("details", {}, visSamandrag,
     el("label", {}, "Når skal plakatane visast?"), visboks, døme,
@@ -821,11 +844,12 @@ function pkBoks(s, lk, i) {
       const til = tilDatoAv(h), ute = til && til < no;
       const lagra = i >= 0 && !endra();
       const erOpen = openK === k;
-      const merknad = plakatside(h) ? "eiga side" : følgjerMal(h) ? "følgjer malen" : "eigen plakat";
+      const arr = erArrangement(h);
+      const merknad = arr ? `dei neste ${ARR_TAL} arrangementa` : plakatside(h) ? "eiga side" : følgjerMal(h) ? "følgjer malen" : "eigen plakat";
       return el("li", { class: ute ? "ute" : "" },
         el("div", { class: "plinje" },
           el("button", { type: "button", class: "pnamn", "aria-expanded": String(erOpen),
-            title: følgjerMal(h) ? "Teksten blir henta frå malen kvar gong, så endringar i malen kjem med av seg sjølv." : plakatside(h) ? "" : "Eigen plakat: teksten står i lenkja og blir ikkje endra om malen blir endra.",
+            title: arr ? "Arrangementa blir henta frå tysnesbibliotek.no. Ein plakat forsvinn når arrangementet er over." : følgjerMal(h) ? "Teksten blir henta frå malen kvar gong, så endringar i malen kjem med av seg sjølv." : plakatside(h) ? "" : "Eigen plakat: teksten står i lenkja og blir ikkje endra om malen blir endra.",
             onclick: () => { openK = erOpen ? null : k; teiknPk(); } },
             (erOpen ? "▾ " : "▸ ") + plakatNamn(h),
             el("span", { class: "hjelp" }, `  · ${merknad}` + (til ? (ute ? " · ute på dato" : ` · til ${datoKort(til)}`) : ""))),
@@ -833,10 +857,11 @@ function pkBoks(s, lk, i) {
           n > 1 ? el("button", { type: "button", class: "pil", title: "Flytt ned", disabled: k === n - 1, onclick: () => flytt(k, k + 1) }, "↓") : null),
         erOpen ? el("div", { class: "pknappar" },
           el("button", { type: "button", onclick: () => førehandsvis({ namn: plakatNamn(h), url: plakatUrl(h) }) }, "Førehandsvis"),
-          plakatside(h) && new URLSearchParams(h).get("side") !== "klokke" ? null : el("button", { type: "button", disabled: !lagra,
+          arr ? arrTemaval(h, nyH => endre(() => { pk.plakatar[k] = nyH; })) : null,
+          arr || (plakatside(h) && new URLSearchParams(h).get("side") !== "klokke") ? null : el("button", { type: "button", disabled: !lagra,
             title: lagra ? (følgjerMal(h) ? "Opne plakaten i plakatbyggjaren. Etterpå følgjer han ikkje malen lenger." : "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå.") : "Lagre oppsettet først, så du ikkje mistar endringane",
             onclick: () => { location.href = "plakat.html#" + utanTil(plakatside(h) ? h : løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
-          el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
+          arr ? null : el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
             el("input", { type: "date", value: til, onchange: e => endre(() => { pk.plakatar[k] = medTil(h, e.target.value); }) })),
           el("button", { type: "button", class: "fare", onclick: () => endre(() => { pk.plakatar.splice(k, 1); openK = null; }) }, "Fjern")) : null);
     }));
@@ -851,13 +876,15 @@ function pkBoks(s, lk, i) {
     // Eigne plakatar: frå heile oppsettet og frå denne karusellen
     const eigne = new Map();
     for (const x of allePlakatar()) if (!følgjerMal(x.hash) && !plakatside(x.hash)) eigne.set(x.hash, x.namn);
-    for (const h of pk.plakatar) if (!følgjerMal(h) && !plakatside(h) && !eigne.has(utanTil(h))) eigne.set(utanTil(h), plakatNamn(h));
+    for (const h of pk.plakatar) if (!følgjerMal(h) && !plakatside(h) && !erArrangement(h) && !eigne.has(utanTil(h))) eigne.set(utanTil(h), plakatNamn(h));
     velliste.replaceChildren(
       ...(tenesteData ? [] : [el("span", { class: "hjelp" }, "Hentar malane …")]),
       ...Object.entries(grupper).flatMap(([g, l]) => [el("b", { class: "hjelp" }, g),
         ...l.map(tn => rad(tn.namn, h => følgjerMal(h) && sp(h).get("mal") === tn.id, new URLSearchParams({ mal: tn.id, folg: "1" }).toString()))]),
       el("b", { class: "hjelp" }, "Sider"),
       ...Object.entries(PLAKATSIDER).map(([id, sd]) => rad(sd.namn, h => !!plakatside(h) && sp(h).get("side") === id, new URLSearchParams({ side: id }).toString())),
+      el("b", { class: "hjelp" }, "Frå nettsida"),
+      rad(`Arrangement (dei neste ${ARR_TAL}, éin plakat kvar)`, erArrangement, new URLSearchParams({ arr: "nettside", tema: ARR_STANDARDTEMA }).toString()),
       ...(eigne.size ? [el("b", { class: "hjelp" }, "Plakatar du har laga"),
         ...[...eigne].map(([hash, namn]) => rad(namn, h => utanTil(h) === hash, hash))] : []));
     if (!n) vel.open = true;
@@ -865,7 +892,8 @@ function pkBoks(s, lk, i) {
     // Sekunda på skjermen blir alltid rekna ut: plakatar per gong (eller alle) × sekund per plakat
     const aktive = pkAktive(pk), gong = pkPerGong(pk);
     runde.textContent = aktive ? `${gong} ${gong === 1 ? "plakat" : "plakatar"} × ${pk.sek} sekund = ${gong * pk.sek} sekund på skjermen kvar gong.`
-      + (aktive < n ? " Plakatar som er ute på dato, er ikkje rekna med." : "") : "";
+      + (aktive < pk.plakatar.reduce((x, h) => x + pkPlassar(h), 0) ? " Plakatar som er ute på dato, er ikkje rekna med." : "")
+      + (pk.plakatar.some(erArrangement) ? ` Arrangementa er rekna som ${ARR_TAL}; er det færre, går skjermen vidare tidlegare.` : "") : "";
     const visTekst = { "1": "éin plakat mellom kvar side", "2": "to plakatar mellom kvar side", samla: "alle samla" }[visVal];
     visSamandrag.textContent = `Visning: ${visTekst}, ${pk.sek} sek per plakat`;
     // Døme med dei ekte sidene på skjermen, så det er lett å sjå kva valet gjer
