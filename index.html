@@ -2725,18 +2725,33 @@ async function hentNettliste(id) {
 }
 
 // Eit innslag på lista utan kopling til katalogen (records tom), t.d. ei ny utgåve nettsida
-// ikkje har kopla enno. Vi søkjer på tittel (og forfattar) og godtek berre ei utgåve med
-// same utgjevingsår, så det ikkje blir feil utgåve. Er boka alt med på lista, blir ho ikkje teken med to gonger.
+// ikkje har kopla enno, eller året då verket først kom ut (Hobbiten 1937). Vi søkjer i
+// avdelingane våre og godtek ei utgåve der tittelen og forfattaren stemmer. Ei utgåve med
+// same utgjevingsår blir føretrekt. Utan forfattar må året stemme. Er boka alt med på
+// lista, blir ho ikkje teken med to gonger.
+const normTekst = t => String(t || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const hovudtittel = t => String(t || "").split(/\s*[:;,]\s*|\s+[–-]\s+/)[0].trim();   // «Hobbiten, eller Fram …» → «Hobbiten»
 async function finnUtanKopling(u, avdar, alt) {
-  if (!(u.år > 0)) return null;
-  const tittel = String(u.tittel || "").split(" : ")[0].trim();
+  const tittel = hovudtittel(u.tittel);
   if (!tittel) return null;
-  const etternamn = String(u.forfattar || "").split(",")[0].trim().split(/\s+/).pop() || "";
-  const årstal = p => Number((((p && p.sru_recordData) || {}).bsdc_date || "").match(/\d{4}/)?.[0] || 0);
+  const etternamn = normTekst(String(u.forfattar || "").split(",")[0]).split(" ").pop() || "";
+  if (!etternamn && !(u.år > 0)) return null;
+  const år = p => Number((((p && p.sru_recordData) || {}).bsdc_date || "").match(/\d{4}/)?.[0] || 0);
+  const nt = normTekst(tittel);
+  const passar = p => {
+    const d = (p && p.sru_recordData) || {};
+    if (alt.includes(String(p.id))) return false;
+    if (!(" " + normTekst(d.bsdc_title) + " ").includes(" " + nt + " ")) return false;
+    if (etternamn) return (" " + normTekst(JSON.stringify(d.bsdc_creator || "")) + " ").includes(" " + etternamn + " ");
+    return år(p) === u.år;
+  };
   try {
-    for (const tekst of etternamn ? [tittel + " " + etternamn, tittel] : [tittel]) {
-      const treff = (await søkTitlar(tekst, avdar)).filter(p => årstal(p) === u.år && !alt.includes(String(p.id)));
-      if (treff.length) { postCache.set(String(treff[0].id), treff[0]); return String(treff[0].id); }
+    for (const tekst of etternamn ? [nt + " " + etternamn, nt] : [nt]) {
+      const treff = (await søkTitlar(tekst, avdar)).filter(passar);
+      if (!treff.length) continue;
+      const p = treff.find(p => u.år > 0 && år(p) === u.år) || treff[0];
+      postCache.set(String(p.id), p);
+      return String(p.id);
     }
   } catch (e) {}
   return null;
@@ -2754,11 +2769,13 @@ async function hentUtval(cfg, avdar, meld) {
     idar = l.bøker.map(b => b.id);
     tekstar = new Map(l.bøker.map(b => [b.id, b.tekst]));
     // Innslag utan kopling: prøv å finne utgåva på tittel og utgjevingsår. Set dei inn der dei stod på lista.
+    // Står same tittel alt på lista (med kopling), er innslaget ein dublett og blir hoppa over
+    const påLista = new Set(l.bøker.map(b => normTekst(hovudtittel(b.tittel))));
     for (const u of [...(l.utanfor || [])].reverse()) {
+      if (typeof u === "object" && påLista.has(normTekst(hovudtittel(u.tittel)))) { utelat(`same tittel er alt med på lista («${u.tittel}»)`); continue; }
       const id = typeof u === "object" ? await finnUtanKopling(u, avdar, idar) : null;
       if (id) { idar.splice(u.pos, 0, id); if (u.tekst) tekstar.set(id, u.tekst); }
-      else if (typeof u === "object" && !(u.år > 0)) utelat(`utan kopling til katalogen og utan utgjevingsår («${u.tittel}»)`);
-      else utelat(`ikkje i samlinga («${typeof u === "object" ? u.tittel : u}», fann ikkje utgåva i katalogen)`);
+      else utelat(`ikkje i samlinga («${typeof u === "object" ? u.tittel : u}», fann inga utgåve med same tittel og forfattar)`);
     }
     meld(0, idar.length);
     const funne = new Map((await hentPostar(idar)).map(p => [String(p.id), p]));
@@ -3954,7 +3971,7 @@ function startByggjar(startCfg) {
     if (l.bøker === 0) st.textContent = l.digitale ? "Lista har berre digitalt innhald (til dømes filmar), så karusellen blir tom. Vel ei anna liste."
       : "Ingen av bøkene på lista finst i samlinga, så karusellen blir tom. Vel ei anna liste.";
     else st.textContent = [l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"} frå samlinga` : "", l.digitale ? `${l.digitale === 1 ? "1 digital tittel" : l.digitale + " digitale titlar"} blir hoppa over` + ((l.digitaleTitlar || []).length ? ` (${l.digitaleTitlar.map(t => "«" + t + "»").join(", ")})` : " (filmar o.l.)") : "",
-      (l.utanfor || []).length ? `${l.utanfor.length} utan kopling til katalogen (${l.utanfor.map(u => "«" + (u.tittel || u) + (u.år ? " " + u.år : "") + "»").join(", ")}) – karusellen prøver å finne dei på tittel og år` : ""].filter(Boolean).join(", ") + ". ";
+      (l.utanfor || []).length ? `${l.utanfor.length} utan kopling til katalogen (${l.utanfor.map(u => "«" + (u.tittel || u) + (u.år ? " " + u.år : "") + "»").join(", ")}) – karusellen prøver å finne ei utgåve med same tittel og forfattar` : ""].filter(Boolean).join(", ") + ". ";
     if (l.url) {
       const a = Object.assign(document.createElement("a"), { href: l.url, target: "_blank", rel: "noopener", textContent: "Sjå lista på nettsida" });
       st.append(a);
