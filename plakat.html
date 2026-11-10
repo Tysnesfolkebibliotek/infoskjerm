@@ -57,6 +57,9 @@
   .midt { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 3vh 0; }
   .bilete { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 2vh 4vh rgba(0,0,0,.28)); }
   .bilete.foto { border-radius: 3vw; filter: none; box-shadow: 0 2vh 5vh rgba(0,0,0,.3); }
+  /* Stort bilete (arrangement frå nettsida): fyller heile breidda og er blikkfanget på plakaten */
+  .midt:has(.bilete.stor) { flex: 1.8; margin: 2.5vh 0; }
+  .bilete.stor { width: 100%; height: 100%; max-height: none; object-fit: cover; }
   .ikonsirkel { height: min(52vw, 100%); aspect-ratio: 1; border-radius: 50%; background: var(--brikke); display: grid; place-items: center;
                 box-shadow: inset 0 0 0 1vw color-mix(in srgb, var(--aksent) 35%, transparent); }
   .ikonsirkel svg { width: 52%; height: 52%; color: var(--aksent-tekstfarge, var(--aksent)); }
@@ -176,6 +179,11 @@
   .qr { width: 25vw; flex: none; aspect-ratio: 1; background: #fff; border-radius: 1.6vw; padding: 1.8vw; }
   .qr svg { width: 100%; height: 100%; display: block; }
   .qrtekst { font-size: 4vw; font-weight: 700; line-height: 1.2; }
+  /* Liten QR (arrangement frå nettsida): mindre kode, utan boks, så han ikkje tek over plakaten */
+  .qrrad.liten { background: none; padding: 0; gap: 3.5vw; margin-top: 3vh; }
+  .qrrad.liten .qr { width: 14vw; padding: 1vw; border-radius: 1.2vw; }
+  .qrrad.liten .qrtekst { font-size: 3.2vw; }
+  .qrrad.liten .qrlenkje { font-size: 2.3vw; margin-top: .5vh; }
   .qrlenkje { font-size: 2.6vw; color: var(--dempa); margin-top: 1vh; overflow-wrap: anywhere; }
 
   #visning footer { display: flex; align-items: center; justify-content: space-between; margin-top: 3vh; flex: none; }
@@ -788,7 +796,7 @@ function visPlakat(cfg) {
       new ResizeObserver(tilpass).observe(midt);
     }
   } else if (cfg.bilete && cfg.bilete !== "ikon") {
-    const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : ""), alt: "", src: cfg.bilete });
+    const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : cfg.biletform === "stor" ? " foto stor" : ""), alt: "", src: cfg.bilete });
     prøvIgjen(img, () => { midt.innerHTML = cfg.ikon ? `<div class="ikonsirkel">${ikonSvg(cfg.ikon)}</div>` : ""; });
     midt.append(img);
     if (cfg.kjelde) {
@@ -822,6 +830,7 @@ function visPlakat(cfg) {
       $("qrtekst").textContent = cfg.qrtekst || "Skann for meir informasjon";
       $("qrlenkje").textContent = kortLenkje(cfg.lenkje);
       $("qrrad").hidden = false;
+      $("qrrad").classList.toggle("liten", cfg.qr === "liten");
     } catch (e) { console.warn("QR:", e); }
   }
 

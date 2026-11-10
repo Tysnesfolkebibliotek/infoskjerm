@@ -195,9 +195,9 @@ function arrangementPlakat(ev, h) {
   const bilete = arrBilete(ev);
   const cfg = {
     mal: "arrangement", overlinje, overskrift: ev.title, tekst: arrIngress(ev), merkelapp,
-    bilete: bilete.url || "ikon", biletform: bilete.url ? "foto" : "", kjelde: bilete.kjelde, ikon: "kalender",
+    bilete: bilete.url || "ikon", biletform: bilete.url ? "stor" : "", kjelde: bilete.kjelde, ikon: "kalender",
     dato, tid: /^\d{2}:\d{2}(-\d{2}:\d{2})?$/.test(tid) ? tid : "", stad: arrStad(ev.location),
-    lenkje: ev.url || "", qrtekst: "Les meir", tema,
+    lenkje: ev.url || "", qrtekst: "Les meir", qr: "liten", tema,
   };
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(cfg)) if (v) p.set(k, v);
