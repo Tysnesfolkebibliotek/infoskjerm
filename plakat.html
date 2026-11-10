@@ -186,11 +186,11 @@
   .qr svg { width: 100%; height: 100%; display: block; }
   .qrtekst { font-size: 4vw; font-weight: 700; line-height: 1.2; }
   /* Liten QR (arrangement frå nettsida): mindre kode, utan boks, så han ikkje tek over plakaten */
-  /* QR-koden nedst til høgre, teksten til venstre for han */
-  .qrrad.liten { background: none; padding: 0; gap: 3.5vw; margin-top: 3vh; flex-direction: row-reverse; text-align: right; }
+  /* Liten QR-kode åleine nedst til høgre, på linje med biblioteknamnet i botnen */
+  #visning footer:has(.qrrad.liten) { align-items: flex-end; }
+  .qrrad.liten { background: none; padding: 0; margin: 0; }
+  .qrrad.liten > div:not(.qr) { display: none; }
   .qrrad.liten .qr { width: 14vw; padding: 1vw; border-radius: 1.2vw; }
-  .qrrad.liten .qrtekst { font-size: 3.2vw; }
-  .qrrad.liten .qrlenkje { font-size: 2.3vw; margin-top: .5vh; }
   .qrlenkje { font-size: 2.6vw; color: var(--dempa); margin-top: 1vh; overflow-wrap: anywhere; }
 
   #visning footer { display: flex; align-items: center; justify-content: space-between; margin-top: 3vh; flex: none; }
@@ -847,8 +847,8 @@ function visPlakat(cfg) {
       $("qrlenkje").textContent = kortLenkje(cfg.lenkje);
       $("qrrad").hidden = false;
       $("qrrad").classList.toggle("liten", cfg.qr === "liten");
-      // Liten QR: ingen lang adresse under teksten (teksten seier kvar ein finn meir)
-      if (cfg.qr === "liten") $("qrlenkje").hidden = true;
+      // Liten QR: berre koden, flytta ned i botnen ved biblioteknamnet
+      if (cfg.qr === "liten") document.querySelector("#visning footer").append($("qrrad"));
     } catch (e) { console.warn("QR:", e); }
   }
 
