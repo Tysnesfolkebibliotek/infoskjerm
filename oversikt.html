@@ -80,6 +80,7 @@
   .side .detaljar { font-size: 13px; color: var(--dempa); margin-top: 3px; }
   .side .detaljar.merknad { font-style: italic; }
   .side .knappar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .skjema .knappar.fleire { margin-top: 0; padding-top: 10px; border-top: 1px dashed var(--strek); }
   button, .knapp { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--strek);
     background: var(--flate); color: var(--tekst); cursor: pointer; text-decoration: none; display: inline-block; }
   button.hoved { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 650; font-size: 15px; padding: 8px 16px; }
@@ -132,6 +133,9 @@
   .status { flex: 1; min-width: 200px; font-size: 14px; }
   .status.feil { color: var(--åtvar); }
   .status.ok { color: var(--ok); }
+  details.innstillingar { margin-top: 24px; }
+  details.innstillingar > summary { cursor: pointer; font-weight: 650; color: var(--dempa); }
+  details.innstillingar details.nokkel { margin-top: 12px; }
   details.nokkel { margin-top: 20px; background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 12px 16px; }
   details.nokkel summary { cursor: pointer; font-weight: 650; }
   details.nokkel input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--bg); color: var(--tekst); margin: 6px 0; }
@@ -187,6 +191,8 @@
 
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
 
+  <details class="innstillingar" id="innstillingar">
+  <summary>Innstillingar</summary>
   <details class="nokkel svart" id="svartboks">
     <summary>Svartelista bøker <span class="merke ikkje" id="svarttal" hidden></span></summary>
     <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Bøker på denne lista blir aldri viste på skjermane, til dømes fordi omslaget kan verke støytande. Kvar endring blir lagra med ein gong og kjem fram på skjermane innan om lag ein halvtime, ofte raskare. Krev nøkkelen nedanfor.</p></details>
@@ -226,6 +232,7 @@
       <li>Under <b>Permissions → Repository permissions</b>: set <b>Contents</b> til <b>Read and write</b>.</li>
       <li>Klikk <b>Generate token</b>, kopier nøkkelen og lim han inn i feltet ovanfor.</li>
     </ol></details>
+  </details>
   </details>
 
   <div class="lagrelinje">
@@ -540,9 +547,7 @@ function teikn() {
         el("div", { class: "knappar" },
           el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
           el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
-          ...felleKnappar(s, lk, i, erOpen),
-          el("button", { type: "button", title: "Ta sida av skjermen, men ta vare på henne", onclick: () => avpubliser(lk, i) }, "Avpubliser"),
-          el("button", { type: "button", class: "fare", onclick: () => slett(lk, i) }, "Slett")),
+          ...felleKnappar(s, lk, i, erOpen)),
         erOpen ? skjema(s, lk, i) : null), lk, i));
     });
     // Avpubliserte: samanfalda, men opne når ei av dei blir endra eller filteret er av
@@ -559,8 +564,7 @@ function teikn() {
           kalenderMerknad(s),
           el("div", { class: "knappar" },
             el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser"),
-            ...felleKnappar(s, AV(lk), i, erOpen),
-            el("button", { type: "button", class: "fare", onclick: () => slett(AV(lk), i) }, "Slett")),
+            ...felleKnappar(s, AV(lk), i, erOpen)),
           erOpen ? skjema(s, AV(lk), i) : null), AV(lk), i));
       });
       avgruppe = slippMål(el("details", { class: "avgruppe" }, el("summary", {}, `Avpubliserte (${avsider.length})`), avliste), AV(lk));
@@ -685,8 +689,17 @@ function felleKnappar(s, lk, i, erOpen) {
   return [
     el("button", { type: "button", onclick: () => { open = erOpen ? null : { lk, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
     adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
-    erKarusell(s) || erPlakat(s) ? el("button", { type: "button", title: `Opne ${erPlakat(s) ? "plakaten i plakatbyggjaren" : "karusellen i byggjaren"}. Du kjem tilbake hit etterpå.`, onclick: () => { location.href = tilByggjaren(s, lk, i); } }, "Endre i byggjaren") : null,
   ];
+}
+
+// Sjeldnare handlingar ligg nedst i skjemaet (Endre), så linjene ikkje blir fulle av knappar
+function fleireKnappar(s, lk, i) {
+  if (i < 0) return null;
+  const av = lk !== skjermFor(lk);
+  return el("div", { class: "knappar fleire" },
+    erKarusell(s) || erPlakat(s) ? el("button", { type: "button", title: `Opne ${erPlakat(s) ? "plakaten i plakatbyggjaren" : "karusellen i byggjaren"}. Du kjem tilbake hit etterpå.`, onclick: () => { location.href = tilByggjaren(s, lk, i); } }, erPlakat(s) ? "Endre plakaten i byggjaren" : "Endre bøkene og utsjånaden i byggjaren") : null,
+    av ? null : el("button", { type: "button", title: "Ta sida av skjermen, men ta vare på henne", onclick: () => avpubliser(lk, i) }, "Avpubliser"),
+    el("button", { type: "button", class: "fare", onclick: () => slett(lk, i) }, "Slett"));
 }
 
 // Ta ei side av skjermen (men ta vare på henne), og set henne tilbake
@@ -749,7 +762,8 @@ function skjema(s, lk, i) {
       el("button", { type: "button", class: "hoved", onclick: () => erVideo(s) ? brukVideo(f, s, lk, i) : brukSkjema(f, s, lk, i) },
         // Endringa blir berre lagd inn i lista; skjermane får henne først når ein klikkar Lagre nedst
         i < 0 ? "Legg til" : "Bruk endringane"),
-      el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")));
+      el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")),
+    fleireKnappar(s, lk, i));
   // «Gjenta kvart år» gjeld berre når det er vald ein periode: grå til begge datoane er fylte ut,
   // og får kryss av seg sjølv når periodefelta går frå tomme til utfylte
   {
@@ -1087,7 +1101,7 @@ function opneVideo() {
   const d = $("videodialog");
   const f = skjema({ namn: "", url: lagVideo({ fil: "", tema: "kveld" }), sekund: 0 }, "skjerm1", -1);
   $("videoinnhald").replaceChildren(...[
-    lesNøkkel() ? null : el("p", { class: "videoåtvar stopp" }, "For å laste opp video treng du tilgangsnøkkelen (nedst på oversikta)."),
+    lesNøkkel() ? null : el("p", { class: "videoåtvar stopp" }, "For å laste opp video treng du tilgangsnøkkelen (under Innstillingar nedst på oversikta)."),
     f].filter(Boolean));
   d.showModal();
 }
@@ -1112,13 +1126,13 @@ async function lastOppVideo(fil, namn, nøkkel, melding) {
     const prøv = `video/${filnamn(namn)}${k > 1 ? "-" + k : ""}.mp4`;
     const svar = await fetch(api(prøv) + "?t=" + Date.now(), { headers: hode, cache: "no-store" });
     if (svar.status === 404) sti = prøv;
-    else if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjekk tilgangsnøkkelen nedst på oversikta.");
+    else if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjekk tilgangsnøkkelen under Innstillingar nedst på oversikta.");
   }
   if (!sti) throw new Error("Fann ikkje eit ledig filnamn.");
   melding("Lastar opp videoen … Det kan ta eitt minutt. Ikkje lukk sida.");
   const svar = await fetch(api(sti), { method: "PUT", headers: { ...hode, "Content-Type": "application/json" },
     body: JSON.stringify({ message: `La til video ${sti} via oversiktssida`, content: await filTil64(fil), author: FORFATTAR, committer: FORFATTAR }) });
-  if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjekk tilgangsnøkkelen nedst på oversikta.");
+  if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjekk tilgangsnøkkelen under Innstillingar nedst på oversikta.");
   if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}${svar.status === 413 || svar.status === 422 ? " (fila er truleg for stor – krymp ho med ffmpeg)" : ""}.`);
   return sti;
 }
@@ -1245,6 +1259,8 @@ function tilJson(o) {
 // ---- Henting og lagring --------------------------------------------------
 const b64 = s => { let t = ""; for (const b of new TextEncoder().encode(s)) t += String.fromCharCode(b); return btoa(t); };
 const frå64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0)));
+// Svartelista, emneorda og nøkkelen ligg samla under «Innstillingar»
+function opneInnstilling(id) { $("innstillingar").open = true; $(id).open = true; }
 const lesNøkkel = () => { try { return localStorage.getItem(NØKKEL_LAGER) || ""; } catch (e) { return ""; } };
 
 async function hent() {
@@ -1263,7 +1279,7 @@ async function hent() {
   open = null;
   teikn();
   if (nøkkelAvvist) {
-    $("nokkelboks").open = true;
+    opneInnstilling("nokkelboks");
     oppdaterStatus("Nøkkelen din har gått ut eller er sletta. Du kan sjå oversikta, men må lage ein ny nøkkel for å lagre (sjå nedanfor).", "feil");
   }
 }
@@ -1280,7 +1296,7 @@ let lagrar = false;   // hindrar at eit dobbeltklikk på Lagre sender to lagring
 
 async function lagre() {
   const nøkkel = lesNøkkel();
-  if (!nøkkel) { $("nokkelboks").open = true; $("nokkel").focus(); return oppdaterStatus("Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor.", "feil"); }
+  if (!nøkkel) { opneInnstilling("nokkelboks"); $("nokkel").focus(); return oppdaterStatus("Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor.", "feil"); }
   const innhald = tilJson(oppsett);
   try { JSON.parse(innhald); } catch (e) { return oppdaterStatus("Oppsettet er ugyldig og blir ikkje lagra: " + e.message, "feil"); }
   if (lagrar) return;
@@ -1308,7 +1324,7 @@ async function lagreNo(nøkkel, innhald) {
     return oppdaterStatus("Nokon har endra oppsettet sidan du opna sida. Last sida på nytt og gjer endringa igjen.", "feil");
   }
   if (svar.status === 401 || svar.status === 403) {
-    $("nokkelboks").open = true;
+    opneInnstilling("nokkelboks");
     return oppdaterStatus(svar.status === 401
       ? "Nøkkelen har gått ut eller er sletta. Lag ein ny (sjå nedanfor), lim han inn, og klikk Lagre igjen. Endringane dine er ikkje tapte."
       : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.", "feil");
@@ -1389,7 +1405,7 @@ async function visEmneinfo() {
 
 async function oppdaterEmneord() {
   const nøkkel = lesNøkkel(), st = $("emnestatus");
-  if (!nøkkel) { $("nokkelboks").open = true; st.textContent = "Du treng ein tilgangsnøkkel for å lagre listene. Sjå nedanfor."; return; }
+  if (!nøkkel) { opneInnstilling("nokkelboks"); st.textContent = "Du treng ein tilgangsnøkkel for å lagre listene. Sjå nedanfor."; return; }
   $("emneknapp").disabled = true;
   let emneOk = false;
   try {
@@ -1443,7 +1459,7 @@ async function lagreIRepo(api, innhald, melding, nøkkel) {
   if (før.ok) sha = (await før.json()).sha;
   const svar = await fetch(api, { method: "PUT", headers: { ...hode, "Content-Type": "application/json" },
     body: JSON.stringify({ message: melding, content: b64(innhald), ...(sha ? { sha } : {}), author: FORFATTAR, committer: FORFATTAR }) });
-  if (svar.status === 401 || svar.status === 403) { $("nokkelboks").open = true; throw new Error("Nøkkelen vart avvist. Sjå nedanfor."); }
+  if (svar.status === 401 || svar.status === 403) { opneInnstilling("nokkelboks"); throw new Error("Nøkkelen vart avvist. Sjå nedanfor."); }
   if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}`);
 }
 
@@ -1655,7 +1671,7 @@ $("paaminningseinare").addEventListener("click", () => {
 });
 $("paaminningok").addEventListener("click", () => {
   $("paaminning").close();
-  $("emneboks").open = true;
+  opneInnstilling("emneboks");
   $("emneboks").scrollIntoView({ behavior: "smooth", block: "center" });
   oppdaterEmneord();     // ber om nøkkel om han manglar
 });
@@ -1696,7 +1712,7 @@ function svartJson(bøker) {
 // lista og gir den nye lista. Prøver éin gong til om nokon lagra samstundes.
 async function endreSvarteliste(endring, melding) {
   const nøkkel = lesNøkkel(), st = $("svartstatus");
-  if (!nøkkel) { $("nokkelboks").open = true; st.textContent = "Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor."; return false; }
+  if (!nøkkel) { opneInnstilling("nokkelboks"); st.textContent = "Du treng ein tilgangsnøkkel for å lagre. Sjå nedanfor."; return false; }
   if (svartLagrar) return false;
   svartLagrar = true;
   document.querySelectorAll("#svartboks ul button").forEach(b => b.disabled = true);
@@ -1710,7 +1726,7 @@ async function endreSvarteliste(endring, melding) {
         body: JSON.stringify({ message: melding, content: b64(svartJson(nye)), ...(sha ? { sha } : {}), author: FORFATTAR, committer: FORFATTAR }) });
       if ((svar.status === 409 || svar.status === 422) && forsøk === 0) continue;
       if (svar.status === 401 || svar.status === 403) {
-        $("nokkelboks").open = true;
+        opneInnstilling("nokkelboks");
         throw new Error(svar.status === 401 ? "Nøkkelen har gått ut eller er sletta. Lag ein ny (sjå nedanfor)." : "Nøkkelen vart avvist. Sjekk at han har skrivetilgang til innhald (Contents) i repoet infoskjerm.");
       }
       if (!svar.ok) throw new Error(`Lagringa feila (GitHub svarte ${svar.status}).`);

@@ -38,8 +38,8 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 3. Oversiktssida opnar seg med karusellen fylt ut. Legg til periode, dagar eller
    klokkeslett om du vil, klikk **Legg til** og så **Lagre**.
 
-For å endre ein karusell som alt er på skjermen: klikk **Endre i byggjaren** på
-oversiktssida, gjer endringa, klikk **Oppdater … på skjerm N** og så **Lagre**
+For å endre ein karusell som alt er på skjermen: klikk **Endre** på oversiktssida
+og så **Endre bøkene og utsjånaden i byggjaren** nedst i skjemaet, gjer endringa, klikk **Oppdater … på skjerm N** og så **Lagre**
 på oversikta.
 
 Ingenting blir endra på skjermane før du klikkar **Lagre** nedst på oversikta
@@ -211,7 +211,8 @@ blir sletta automatisk.
 ## Svartelista bøker
 
 Bøker som ikkje skal visast på skjermane, til dømes fordi omslaget kan verke
-støytande, kan svartelistast i boksen **Svartelista bøker** på oversiktssida:
+støytande, kan svartelistast i boksen **Svartelista bøker** under **Innstillingar** nedst
+på oversiktssida:
 søk på tittel (eller forfattar eller tittelnummer), skriv eventuelt ein grunn,
 og klikk **Svartelist**. **Frigi** tek boka av lista igjen. Kvar endring blir
 lagra med ein gong i `svarteliste.json` (krev nøkkelen).
