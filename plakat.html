@@ -9,7 +9,7 @@
 <meta name="robots" content="noindex">
 <title>Plakatbyggjar</title>
 <!--
-  Plakatar for Tysnes folkebibliotek: digitale tenester og arrangement.
+  Plakatar for Tysnes folkebibliotek: digitale tenester og arrangement (arrangementa kjem frå nettsida, sjå plakatmal.js).
 
   Éi fil, to roller, som karusellbyggjaren (index.html):
     plakat.html             → byggjaren (skjema + førehandsvising)
@@ -296,7 +296,7 @@
 <div class="b-ramme" id="byggjar" hidden>
   <form class="b-skjema" id="skjema" autocomplete="off" onsubmit="return false">
     <h1>Plakatbyggjar</h1>
-    <p class="intro">Plakatar for digitale tenester og arrangement. Vel ei teneste for å få teksten og lenkja ferdig utfylte.</p>
+    <p class="intro">Plakatar for digitale tenester. Vel ei teneste for å få teksten og lenkja ferdig utfylte.</p>
 
     <label class="felt"><span>Mal</span><select id="mal" name="mal"></select></label>
     <div class="malboks" id="malboks" hidden>
@@ -340,19 +340,6 @@
         <option value="foto">Fotografi med runde hjørne</option>
         <option value="heil">Ferdig plakat: fyller heile skjermen</option></select>
         <small>«Ferdig plakat» passar for plakatar laga i Canva o.l. i ståande format (1080 × 1920).</small></label>
-    </div>
-
-    <div class="del" id="arrdel"><h2>Arrangement</h2>
-      <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Fyll ut det som passar. Det som står tomt, blir ikkje vist.</p><p class="hjelp" style="margin-top:6px">Tips: gje plakaten ein periode på oversikta, så forsvinn han av seg sjølv etter arrangementet.</p></details>
-      <div class="rad">
-        <label class="felt"><span>Dato</span><input type="date" name="dato"></label>
-        <label class="felt"><span>Stad</span><input type="text" name="stad" placeholder="Biblioteket"></label>
-      </div>
-      <div class="rad">
-        <label class="felt"><span>Byrjar kl.</span><input type="time" name="tid"></label>
-        <label class="felt"><span>Sluttar kl. (valfritt)</span><input type="time" name="tidtil"></label>
-      </div>
-      <p class="hjelp" id="tidfeil" hidden></p>
     </div>
 
     <div class="del" id="qrdel"><h2>QR-kode</h2>
@@ -401,7 +388,7 @@ function lagHash(cfg, vis) {
 }
 
 // ---- Dato og klokkeslett for arrangement ----------------------------
-// Lagra som 2026-11-12 og 18:00 eller 18:00-20:00 (same form som tid i oppsett.json).
+// Arrangementa kjem frå nettsida (plakatmal.js): 2026-11-12 og 18:00 eller 18:00-20:00.
 // Eldre plakatar med fritekst blir viste som dei er.
 const MÅNAD = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
 const VEKEDAG = ["Søndag", "Måndag", "Tysdag", "Onsdag", "Torsdag", "Fredag", "Laurdag"];
@@ -417,22 +404,6 @@ function visTid(v) {
   const m = String(v || "").match(ISOTID);
   if (!m) return v || "";
   return `kl. ${m[1]}:${m[2]}` + (m[3] ? `–${m[3]}:${m[4]}` : "");
-}
-// Prøv å lese ein eldre fritekst-dato («Torsdag 12. november») eller -tid («18.00–20.00»)
-function tolkDato(v) {
-  v = String(v || "").trim();
-  if (ISODATO.test(v)) return v;
-  const m = v.toLowerCase().match(/(\d{1,2})\.\s*([a-zæøå]+)(?:\s+(\d{4}))?/);
-  const mnd = m ? MÅNAD.indexOf(m[2]) : -1;
-  if (mnd < 0) return "";
-  const no = new Date();
-  let år = m[3] ? +m[3] : no.getFullYear();
-  if (!m[3] && new Date(år, mnd, +m[1]) < new Date(no.getFullYear(), no.getMonth(), no.getDate() - 7)) år++;
-  return `${år}-${String(mnd + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-}
-function tolkTid(v) {
-  const t = [...String(v || "").matchAll(/(\d{1,2})[.:](\d{2})/g)].map(m => m[1].padStart(2, "0") + ":" + m[2]);
-  return t.length ? [t[0], t[1] || ""] : ["", ""];
 }
 
 // ---- Ikon (enkle strekteikningar, fargen kjem frå temaet) ---------------
@@ -914,11 +885,11 @@ async function startByggjar() {
     try { data = await (await fetch("tenester.json", { cache: "no-cache" })).json(); } catch (e2) { console.warn("tenester.json:", e2); }
   }
   data.malar ||= {};
-  // Ei teneste, eller dei lagra standardane for «Arrangement» og «Tom plakat»
+  // Ei teneste, eller dei lagra standardane for «Tom plakat»
   const malData = id => data.tenester.find(t => t.id === id) || data.malar[id] || null;
   const teneste = id => data.tenester.find(t => t.id === id);
 
-  // Malar: tenestene etter kategori, så arrangement og tom plakat
+  // Malar: tenestene etter kategori, så tom plakat
   const mal = $("mal");
   const grupper = {};
   for (const t of data.tenester) (grupper[t.kategori] ||= []).push(t);
@@ -928,7 +899,7 @@ async function startByggjar() {
     mal.append(g);
   }
   const andre = document.createElement("optgroup"); andre.label = "Anna";
-  andre.append(new Option("Arrangement", "arrangement"), new Option("Tom plakat", "tom"));
+  andre.append(new Option("Tom plakat", "tom"));
   mal.append(andre);
   // Sider som klokka: eiga side med eigne val, ikkje ein plakat
   const sider = document.createElement("optgroup"); sider.label = "Sider";
@@ -1014,24 +985,11 @@ async function startByggjar() {
       $("biletform").value = m.standardbiletform || "";
     } else {
       logoFor = ""; $("brukLogo").checked = false;
-      if (id === "arrangement") { felt("overlinje").value = "Arrangement"; felt("qrtekst").value = "Les meir"; }
-      for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "lenkje", "qrtekst", "stad"]) if (m[k] != null) felt(k).value = m[k];
-      if (m.tid) [felt("tid").value, felt("tidtil").value] = tolkTid(m.tid);
-      teiknBileteval(null, m.standardbilete || (id === "arrangement" ? "ikon" : "ingen"));
+      for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "lenkje", "qrtekst"]) if (m[k] != null) felt(k).value = m[k];
+      teiknBileteval(null, m.standardbilete || "ingen");
       $("biletform").value = m.standardbiletform || "";
     }
     oppdater();
-  }
-
-  // Sluttid utan byrjing, eller slutt før byrjing, blir ikkje teke med (og gir ei melding)
-  function lesTid() {
-    const frå = felt("tid").value, til = felt("tidtil").value, feil = $("tidfeil");
-    let melding = "";
-    if (til && !frå) melding = "Fyll ut når arrangementet byrjar.";
-    else if (til && til <= frå) melding = "Sluttida må vere etter byrjinga.";
-    feil.textContent = melding; feil.hidden = !melding; feil.style.color = melding ? "#c0392b" : "";
-    if (!frå) return "";
-    return til && !melding ? `${frå}-${til}` : frå;
   }
 
   function lesSkjema() {
@@ -1060,8 +1018,7 @@ async function startByggjar() {
       tekst: felt("tekst").value.trim(),
       merkelapp: felt("merkelapp").value.trim(),
       bilete, biletform, kjelde,
-      ikon: t ? t.ikon : id === "arrangement" ? "kalender" : "",
-      dato: felt("dato").value, tid: lesTid(), stad: felt("stad").value.trim(),
+      ikon: t ? t.ikon : "",
       anim: sel.startsWith("anim:") ? felt("anim").value.split("|").map(x => x.trim()).filter(Boolean).join("|") : "",
       lenkje: felt("lenkje").value.trim(),
       qrtekst: felt("qrtekst").value.trim(),
@@ -1073,10 +1030,8 @@ async function startByggjar() {
   // Fyll ut skjemaet frå ei lenkje (t.d. «Endre i byggjaren» på oversikta)
   function fyllFrå(cfg) {
     if (cfg.side === "klokke") { mal.value = "klokke"; fyllKlokke(cfg); return; }
-    mal.value = teneste(cfg.mal) || ["arrangement", "tom"].includes(cfg.mal) ? cfg.mal : "tom";
-    for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "stad", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
-    felt("dato").value = tolkDato(cfg.dato);
-    [felt("tid").value, felt("tidtil").value] = tolkTid(cfg.tid);
+    mal.value = teneste(cfg.mal) ? cfg.mal : "tom";
+    for (const k of ["overlinje", "overskrift", "tekst", "merkelapp", "lenkje", "qrtekst"]) felt(k).value = cfg[k] || "";
     felt("anim").value = (cfg.anim || "").split("|").join(" | ");
     // Ein eldre plakat kan ha eit tema som er skjult no: ta det med i lista, så det ikkje blir bytt ut
     if (cfg.tema && TEMA[cfg.tema] && ![...felt("tema").options].some(o => o.value === cfg.tema))
@@ -1119,7 +1074,7 @@ async function startByggjar() {
     if (klokke) {
       $("kv-ver-rad").hidden = $("kvariant").value === "vertavle";
       $("kv-sol").disabled = !$("kv-ver").checked && $("kvariant").value !== "vertavle";
-      $("arrdel").hidden = true; $("malboks").hidden = true;
+      $("malboks").hidden = true;
       const hash = klokkeHash(cfg, false);
       history.replaceState(null, "", "#" + hash);
       const lenkje = klokkeBase + "#" + klokkeHash(cfg, true);
@@ -1140,7 +1095,6 @@ async function startByggjar() {
       $("avsendarval").hidden = !(t && t.avsendarlogo);
       if (t && t.avsendarlogo) $("avsendartekst").textContent = `Vis logoen til ${t.avsendarnamn || "avsendaren"} nedst`; }
     teiknMalboks();
-    $("arrdel").hidden = mal.value !== "arrangement" && !(cfg.dato || cfg.tid || cfg.stad);
     const hash = lagHash(cfg, false);
     history.replaceState(null, "", "#" + hash);
     const lenkje = base + "#" + lagHash(cfg, true);
@@ -1159,9 +1113,9 @@ async function startByggjar() {
   // ---- Lagre endringane som ny standard for malen ----------------------
   // Tenestene: namn i menyen og kategori blir ikkje endra; overskrift, tekst, merkelapp,
   // lenkje, tekst ved QR-koden, liten tekst øvst, bilete, logo og tema blir lagra.
-  // «Arrangement» og «Tom plakat» lagrar under «malar» i same fil (ikkje dato).
+  // «Tom plakat» lagrar under «malar» i same fil.
   // Plakatar som alt er laga, er uendra: dei har teksten i lenkja si.
-  const malNamn = id => (data.tenester.find(t => t.id === id) || {}).namn || { arrangement: "Arrangement", tom: "Tom plakat" }[id] || id;
+  const malNamn = id => (data.tenester.find(t => t.id === id) || {}).namn || { tom: "Tom plakat" }[id] || id;
   function standardFrå(cfg, id) {
     const t = data.tenester.find(x => x.id === id);
     const sel = $("bileteval").value;
@@ -1172,8 +1126,7 @@ async function startByggjar() {
     };
     if (t) return { ...fast, overskrift: cfg.overskrift === t.namn ? "" : cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp,
                     lenkje: cfg.lenkje, brukLogo: !t.logo || $("brukLogo").checked, brukAvsendar: !t.avsendarlogo || $("brukAvsendar").checked };
-    // Arrangement: datoen er alltid ny, så han blir ikkje lagra
-    return { ...fast, overskrift: cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp, lenkje: cfg.lenkje, stad: cfg.stad, tid: cfg.tid };
+    return { ...fast, overskrift: cfg.overskrift, tekst: cfg.tekst, merkelapp: cfg.merkelapp, lenkje: cfg.lenkje };
   }
   // Same rekkjefølgje og ei teneste per line, så fila er lett å lese og endre for hand
   function tenesterJson(d) {
