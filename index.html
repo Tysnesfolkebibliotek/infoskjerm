@@ -2680,18 +2680,19 @@ function bibnoTekst(x) {
 // Bøkene i ei liste: tittelnummer (Bibliofil) og teksten om boka, i rekkjefølgja på nettsida.
 // Film og anna frå Filmoteket o.l. har ikkje «library-system» og blir hoppa over.
 function listeBøker(items) {
-  const ut = [], sett = new Set();
+  const ut = [], sett = new Set(), utanfor = [];
   let digitale = 0;
   for (const it of items || []) {
     const w = (it && it.work) || {};
     const r = (w.records || []).find(r => r && r.source && r.source.code === "library-system" && r.recordId);
-    if (!r) { digitale++; continue; }
+    // Andre kjelder (Filmoteket o.l.) er digitale. Utan nokon kopling har ikkje biblioteket utgåva (t.d. kassert).
+    if (!r) { if ((w.records || []).length) digitale++; else utanfor.push(w.title || "utan tittel"); continue; }
     const id = String(r.recordId).replace(/\D/g, "");
     if (!id || sett.has(id)) continue;
     sett.add(id);
     ut.push({ id, tekst: bibnoTekst(it.teaser), tittel: w.title || "" });
   }
-  return { bøker: ut, digitale };
+  return { bøker: ut, digitale, utanfor };
 }
 
 const LISTE_LAGER = "infoskjerm-bokliste:";
@@ -2723,6 +2724,7 @@ async function hentUtval(cfg, avdar, meld) {
     const l = await hentNettliste(cfg.liste);
     idar = l.bøker.map(b => b.id);
     tekstar = new Map(l.bøker.map(b => [b.id, b.tekst]));
+    for (const t of l.utanfor || []) utelat(`ikkje i samlinga («${t}», ingen kopling til katalogen)`);
     meld(0, idar.length);
     const funne = new Map((await hentPostar(idar)).map(p => [String(p.id), p]));
     for (const b of l.bøker) {
@@ -3797,7 +3799,7 @@ function startByggjar(startCfg) {
   // ---- Boklister frå nettsida ----------------------------------------
   // Menyen blir henta første gong ein vel «Liste på nettsida», og hugsa i ein time.
   // «var»: oppdaterSynlege kan kalle lastListemeny før denne delen har køyrt
-  var LISTEMENY_LAGER = "infoskjerm-boklister";
+  var LISTEMENY_LAGER = "infoskjerm-boklister2";   // 2: med «ikkje i samlinga»
   var listemeny = null, listemenyHentar = null, listemenyFeil = 0;
   // Datoen til lista, for å sortere dei nyaste først (feltnamnet er ikkje stadfesta, så vi prøver fleire)
   function listeDato(l) { return l.publishedAt || l.createdAt || l._createdAt || l.updatedAt || l._updatedAt || l.date || ""; }
@@ -3818,8 +3820,8 @@ function startByggjar(startCfg) {
       }
     }));
     const ut = lister.map(l => {
-      const { bøker, digitale } = l.items ? listeBøker(l.items) : { bøker: null, digitale: 0 };
-      return { id: l.id, tittel: l.tittel, url: l.url, dato: l.dato, bøker: bøker ? bøker.length : null, digitale };
+      const { bøker, digitale, utanfor } = l.items ? listeBøker(l.items) : { bøker: null, digitale: 0, utanfor: [] };
+      return { id: l.id, tittel: l.tittel, url: l.url, dato: l.dato, bøker: bøker ? bøker.length : null, digitale, utanfor };
     });
     if (ut.some(l => l.dato)) ut.sort((a, b) => String(b.dato).localeCompare(String(a.dato)));
     try { localStorage.setItem(LISTEMENY_LAGER, JSON.stringify({ tid: Date.now(), lister: ut })); } catch (e) {}
@@ -3832,7 +3834,7 @@ function startByggjar(startCfg) {
     const t = String(l.tittel || "").match(/\b(19|20)\d{2}\b/);
     return t ? t[0] : "";
   }
-  function listeMerk(l) { return l.bøker === 0 ? "berre digitalt" : l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"}` : ""; }
+  function listeMerk(l) { return l.bøker === 0 ? (l.digitale ? "berre digitalt" : "ingen bøker i samlinga") : l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"}` : ""; }
   var opneListeår = new Set(), sistListe = "";
   function lastListemeny() {
     if (listemeny) { teiknListemeny(); return; }
@@ -3913,8 +3915,10 @@ function startByggjar(startCfg) {
     if (!listemeny) { if (id) st.textContent = "Karusellen brukar lista som er vald, sjølv om menyen ikkje kunne hentast no."; return; }
     if (!id) { st.textContent = `${listemeny.length} lister på nettsida, ordna etter år. Bøkene blir viste i same rekkjefølgje som på lista.`; return; }
     if (!l) { st.textContent = "Lista er sletta frå nettsida. Karusellen viser bøkene frå sist ho vart henta, så vel gjerne ei anna liste."; return; }
-    if (l.bøker === 0) st.textContent = "Lista har berre digitalt innhald (til dømes filmar), så karusellen blir tom. Vel ei anna liste.";
-    else st.textContent = [l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"} frå samlinga` : "", l.digitale ? `${l.digitale === 1 ? "1 digital tittel" : l.digitale + " digitale titlar"} (filmar o.l.) blir hoppa over` : ""].filter(Boolean).join(", ") + ". ";
+    if (l.bøker === 0) st.textContent = l.digitale ? "Lista har berre digitalt innhald (til dømes filmar), så karusellen blir tom. Vel ei anna liste."
+      : "Ingen av bøkene på lista finst i samlinga, så karusellen blir tom. Vel ei anna liste.";
+    else st.textContent = [l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"} frå samlinga` : "", l.digitale ? `${l.digitale === 1 ? "1 digital tittel" : l.digitale + " digitale titlar"} (filmar o.l.) blir hoppa over` : "",
+      (l.utanfor || []).length ? `${l.utanfor.length} finst ikkje i samlinga (${l.utanfor.map(t => "«" + t + "»").join(", ")})` : ""].filter(Boolean).join(", ") + ". ";
     if (l.url) {
       const a = Object.assign(document.createElement("a"), { href: l.url, target: "_blank", rel: "noopener", textContent: "Sjå lista på nettsida" });
       st.append(a);
