@@ -936,16 +936,16 @@ function videoBoks(s, i) {
   let skjemaRot = null;
   const finnSkjema = () => skjemaRot || (skjemaRot = boks.closest(".skjema"));
   // Lenkja står i det gøymde lenkjefeltet, som for plakatkarusellen
-  const oppdater = () => { const f = finnSkjema(); if (f) f.querySelector("#f-url").value = lagVideo({ fil: v.fil || "video/(ny).mp4", tema: tema.value }); };
+  const oppdater = () => { const f = finnSkjema(); if (f) f.querySelector("#f-url").value = lagVideo({ fil: f._videoSti || v.fil || "video/(ny).mp4", tema: tema.value }); };
   tema.addEventListener("change", oppdater);
   setTimeout(oppdater, 0);
 
-  let filfelt = null;
+  let filfelt = null, finst = null;
   if (i < 0) {
     filfelt = el("input", { type: "file", id: "v-fil", accept: "video/mp4,.mp4,.m4v" });
     filfelt.addEventListener("change", () => {
       const f = finnSkjema(), fil = filfelt.files[0];
-      f._videoFil = null;
+      f._videoFil = null; f._videoSti = null; finst.value = "";
       åtvar.hidden = true; åtvar.replaceChildren(); info.textContent = "";
       if (!fil) return;
       const mb = fil.size / 1048576, mbTekst = mb.toLocaleString("nn-NO", { maximumFractionDigits: 1 }) + " MB";
@@ -985,9 +985,45 @@ function videoBoks(s, i) {
       }, { once: true });
       prøve.src = adr;
     });
+    // Eller: ein video som alt ligg i video/ (t.d. same video på begge skjermane), så fila ikkje blir lasta opp to gonger
+    finst = el("select", { id: "v-finst" }, new Option("Hentar lista …", ""));
+    const nøkkel = lesNøkkel();
+    fetch(`https://api.github.com/repos/${REPO}/contents/video?t=${Date.now()}`, { cache: "no-store",
+      headers: { Accept: "application/vnd.github+json", ...(nøkkel ? { Authorization: "Bearer " + nøkkel } : {}) } })
+      .then(r => r.status === 404 ? [] : r.ok ? r.json() : Promise.reject(new Error("GitHub svarte " + r.status)))
+      .then(l => {
+        const filer = l.filter(x => x.type === "file" && /\.(mp4|m4v)$/i.test(x.name));
+        finst.replaceChildren(new Option(filer.length ? "– vel –" : "Ingen videoar lasta opp enno", ""),
+          ...filer.map(x => new Option(`${x.name} (${(x.size / 1048576).toLocaleString("nn-NO", { maximumFractionDigits: 1 })} MB)`, x.path)));
+      })
+      .catch(e => finst.replaceChildren(new Option("Fekk ikkje henta lista: " + e.message, "")));
+    finst.addEventListener("change", () => {
+      const f = finnSkjema();
+      f._videoFil = null; f._videoSti = null; filfelt.value = "";
+      åtvar.hidden = true; åtvar.replaceChildren(); info.textContent = "";
+      if (!finst.value) return;
+      const sti = finst.value;
+      info.textContent = "Les lengda på videoen …";
+      const prøve = document.createElement("video");
+      prøve.preload = "metadata"; prøve.muted = true;
+      prøve.addEventListener("loadedmetadata", () => {
+        const d = prøve.duration;
+        if (!(d > 0) || !isFinite(d)) { info.textContent = "Fekk ikkje lese lengda på videoen."; return; }
+        const sek = Math.max(5, Math.ceil(d) + VIDEO_MARGIN_SEK);
+        f.querySelector("#f-sek").value = sek;
+        const namn = f.querySelector("#f-namn");
+        if (!namn.value.trim()) namn.value = sti.replace(/^video\//, "").replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+        info.textContent = `${Math.round(d)} sekund lang · ${sek} sekund på skjermen · blir ikkje lasta opp på nytt`;
+        f._videoSti = sti;
+        oppdater();
+      }, { once: true });
+      prøve.addEventListener("error", () => { info.textContent = "Fekk ikkje opna videoen (er han publisert på GitHub Pages enno?)."; }, { once: true });
+      prøve.src = sti;
+    });
   }
   const boks = el("div", { class: "videoboks" },
-    i < 0 ? el("div", {}, el("label", { for: "v-fil" }, "Videofil (.mp4, utan lyd)"), filfelt)
+    i < 0 ? el("div", {}, el("label", { for: "v-fil" }, "Ny videofil (.mp4, utan lyd)"), filfelt) : null,
+    i < 0 ? el("div", {}, el("label", { for: "v-finst" }, "… eller ein video som alt er lasta opp (t.d. til den andre skjermen)"), finst)
       : el("p", { class: "hjelp" }, "Fil: ", el("code", {}, v.fil || "(manglar)"), ` · ${s.sekund} sekund på skjermen (lengda på videoen). Vil du byte video, lag ein ny og slett denne.`),
     info, åtvar,
     el("div", {}, el("label", { for: "v-tema" }, "Farge over og under videoen (tema)"), tema));
@@ -1047,7 +1083,7 @@ async function brukVideo(f, s, lk, i) {
   // Er fila alt lasta opp (og lagringa stoppa på noko anna i skjemaet), blir ho ikkje lasta opp på nytt
   if (i < 0 && !f._videoSti) {
     const fil = f._videoFil;
-    if (!fil) return feil("Vel ei videofil først (under " + VIDEO_MAKS_MB + " MB).");
+    if (!fil) return feil("Vel ei ny videofil (under " + VIDEO_MAKS_MB + " MB) eller ein video som alt er lasta opp.");
     const nøkkel = lesNøkkel();
     if (!nøkkel) return feil("Du treng tilgangsnøkkelen for å laste opp video (nedst på oversikta).");
     knapp.disabled = true;
