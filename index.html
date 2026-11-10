@@ -2701,7 +2701,7 @@ function listeBøker(items) {
     const id = String(r.recordId).replace(/\D/g, "");
     if (!id || sett.has(id)) continue;
     sett.add(id);
-    ut.push({ id, tekst: bibnoTekst(it.teaser), tittel: w.title || "" });
+    ut.push({ id, tekst: bibnoTekst(it.teaser), tittel: w.title || "", år: Number(w.publicationYear) || 0 });
   }
   return { bøker: ut, digitale, utanfor, digitaleTitlar };
 }
@@ -2769,10 +2769,12 @@ async function hentUtval(cfg, avdar, meld) {
     idar = l.bøker.map(b => b.id);
     tekstar = new Map(l.bøker.map(b => [b.id, b.tekst]));
     // Innslag utan kopling: prøv å finne utgåva på tittel og utgjevingsår. Set dei inn der dei stod på lista.
-    // Står same tittel alt på lista (med kopling), er innslaget ein dublett og blir hoppa over
-    const påLista = new Set(l.bøker.map(b => normTekst(hovudtittel(b.tittel))));
+    // Står same tittel med same år alt på lista (med kopling), er innslaget ein dublett og blir hoppa over.
+    // (Odysseen -800 to gonger er dublett; Odysseen 2025 er ei anna utgåve og skal med.)
+    const dublettNøkkel = b => normTekst(hovudtittel(b.tittel)) + "|" + (Number(b.år) || 0);
+    const påLista = new Set(l.bøker.map(dublettNøkkel));
     for (const u of [...(l.utanfor || [])].reverse()) {
-      if (typeof u === "object" && påLista.has(normTekst(hovudtittel(u.tittel)))) { utelat(`same tittel er alt med på lista («${u.tittel}»)`); continue; }
+      if (typeof u === "object" && påLista.has(dublettNøkkel(u))) { utelat(`same tittel er alt med på lista («${u.tittel}»)`); continue; }
       const id = typeof u === "object" ? await finnUtanKopling(u, avdar, idar) : null;
       if (id) { idar.splice(u.pos, 0, id); if (u.tekst) tekstar.set(id, u.tekst); }
       else utelat(`ikkje i samlinga («${typeof u === "object" ? u.tittel : u}», fann inga utgåve med same tittel og forfattar)`);
