@@ -591,6 +591,25 @@
         <input type="hidden" id="omtalar" name="omtalar">
         <datalist id="medieliste"><option value="Aftenposten"><option value="Bergens Tidende"><option value="Dagbladet"><option value="Dag og Tid"><option value="Dagens Næringsliv"><option value="Klassekampen"><option value="Morgenbladet"><option value="NRK"><option value="Stavanger Aftenblad"><option value="Adresseavisen"><option value="Fædrelandsvennen"><option value="Vårt Land"><option value="VG"><option value="Sunnhordland"><option value="Bok365"><option value="Biblioteket"></datalist>
         <p class="hjelp" id="bragehjelp" hidden><b>Brageprisen:</b> Legg til dei nominerte bøkene. Søket leitar i heile basen, så bøker som berre er bestilte, kjem òg med – dei får lappen «Bestilt – kan reserverast». Alle får merket «Nominert» med årstalet. Når vinnarane er kåra, trykkjer du «Vinnar» på dei, så får dei merket «Vinner».</p>
+        <!-- Bøkene kan vere valde her, eller kome frå ei bokliste på tysnesbibliotek.no -->
+        <div class="felt" id="utvalfrafelt">
+          <span class="etikett">Bøkene kjem frå</span>
+          <div class="segment" role="radiogroup">
+            <label><input type="radio" name="utvalfra" value="eigne" checked> Eigne val</label>
+            <label><input type="radio" name="utvalfra" value="nettside"> Liste på nettsida</label>
+          </div>
+        </div>
+        <div id="nettlistefelt" hidden>
+          <input type="hidden" id="liste" name="liste">
+          <div class="felt">
+            <label for="listeval">Boklista</label>
+            <select id="listeval"><option value="">Hentar boklistene …</option></select>
+            <p class="hjelp" id="listestatus">Boklistene blir henta frå tysnesbibliotek.no.</p>
+          </div>
+          <label class="val"><input type="checkbox" name="listetekst" value="1"> Vis teksten de har skrive om kvar bok</label>
+          <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Karusellen hentar lista på nytt frå nettsida når han oppdaterer seg, så endringar i lista kjem med av seg sjølv. Filmar og anna digitalt innhald blir hoppa over. Med teksten på kjem det de har skrive om boka på nettsida i staden for omtalen frå katalogen (bøker utan tekst får katalogomtalen som vanleg).</p></details>
+        </div>
+        <div id="eignevalfelt">
         <div class="felt">
           <label for="utvalsok">Finn bøker</label>
           <div class="malrad">
@@ -609,6 +628,7 @@
           <ol class="utvalliste" id="utvalliste"></ol>
           <p class="hjelp" id="utvaltom">Ingen bøker valde enno.</p>
         </div>
+        </div><!-- /eignevalfelt -->
         <!-- Julekalender: same liste, men kvar bok er ei luke -->
         <div class="felt" id="kalenderfelt" hidden>
           <p class="hjelp">Den første boka i lista er luke 1, den andre luke 2, og så vidare. Ei ny luke opnar seg kvar dag frå 1. desember. Før det står alle pakkane attlatne. Utlånte bøker er med.</p>
@@ -892,6 +912,8 @@ const STANDARD = {
   brage: "0", vinnarar: "",   // Brageprisen-merke på omslaga, og tittelnummera til vinnarane
   nobel: "0",                 // Nobelprisen i litteratur: vinnarane blir henta frå Nobel (sjå hentNobel)
   omtalar: "",  // Handplukka: sitat, terningkast og kjelde per bok, som JSON {tittelnr: {s, t, m}}
+  liste: "",       // Handplukka: id til ei bokliste på tysnesbibliotek.no (tomt = eigne val i «titlar»)
+  listetekst: "0", // Boklista: vis teksten biblioteket har skrive om kvar bok («teaser»)
   tittel: "Frå hylla", tema: "kveld", skrift: "standard", bakgrunn: "", overgang: "", visning: "", fart: "", teljar: "", namn: "", sek: "20", oppdater: "360", omtale: "1",
   likte: "", liktenamn: "", liktebilete: "", appell: "", appellmodus: "eitt", merkelapp: "0",
   omtalelengd: "",  // tal teikn i omtalen; tomt = standard (220). Brukt av skule.html
@@ -1191,7 +1213,10 @@ function startVisning(cfg) {
     if (brikker.childElementCount) info.append(brikker);
     // omtalelengd (brukt av skule.html): lengre omtale enn standard, til liggjande skjermar med meir plass
     const lengd = Number(cfg.omtalelengd) || 0;
-    const omtale = heil ? (t.omtaleHeil || t.omtale) : lengd ? setningsOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
+    // Boklister frå nettsida: teksten biblioteket har skrive om boka kjem i staden for katalogomtalen
+    const eigen = cfg.listetekst === "1" && cfg.liste ? (t.listetekst || "") : "";
+    const omtale = eigen ? (heil ? eigen : lengd ? setningsOmtale(eigen, lengd) : kortOmtale(eigen))
+      : heil ? (t.omtaleHeil || t.omtale) : lengd ? setningsOmtale(t.omtaleHeil || t.omtale || "", lengd) : (t.omtale || kortOmtale(t.omtaleHeil || ""));
     const k0 = OMTALAR[String(t.id)];
     const kritikk = k0 ? { s: String(k0.s || "").trim(), t: k0.t, m: String(k0.m || "").trim() } : null;
     if (kritikk && kritikk.s) {
@@ -1202,7 +1227,7 @@ function startVisning(cfg) {
       info.append(sitat);
     } else {
       if (kritikk && kritikk.t && kritikk.m) info.append(el("p", "sitat-kjelde terning-linje", `Terningkast ${kritikk.t} · ${kritikk.m}`));
-      if (cfg.omtale === "1" && omtale) info.append(el("p", "omtale", omtale));
+      if ((cfg.omtale === "1" || eigen) && omtale) info.append(el("p", "omtale", omtale));
     }
     bok.append(ramme, info);
     if (cfg.brage === "1") brageMerke(ramme, VINNARAR.has(String(t.id)));
@@ -1942,7 +1967,7 @@ function ryddLager(behald, alt = false) {
 // Kva innstillingar påverkar sjølve boklista (resten er utsjånad)
 function datanøkkel(cfg) {
   return ["kjelde","avd","lf","sjanger","sjangermodus","plass","emne","emnemodus","dewey","serie","ccl","rekkje","omslag","hylla","perforf","utan","antal","aarfra","aartil","aarsiste","kulturfond","alder","spraak","alle","titlar","namn"]
-    .concat(["likte", "appell", "merkelapp", "aldermodus", "brage", "nobel"].filter(k => cfg[k] && cfg[k] !== "0"))
+    .concat(["likte", "appell", "merkelapp", "aldermodus", "brage", "nobel", "liste"].filter(k => cfg[k] && cfg[k] !== "0"))
     .concat(cfg.appell ? ["appellmodus"] : [])
     .concat(erKalenderCfg(cfg) ? ["visning"] : [])
     .map(k => k + "=" + (cfg[k] || "")).join("&");
@@ -2614,11 +2639,79 @@ async function hentPost(id) {
   return null;
 }
 
+// ---- Boklister frå tysnesbibliotek.no (Bibliotek.no-API-et) ------------------
+// Sjå prosjektdokumentet bibliotekno-api. Ingen nøkkel, men API-et krev at vi
+// seier kven vi er (Client-Identifier). Svaret blir hugsa i nettlesaren, så
+// karusellen fungerer òg når nettsida er nede.
+const BIBNO_LISTER = "https://www.tysnesbibliotek.no/api/v1/recommendation-lists";
+const BIBNO_HOVUD = { "Client-Identifier": "Tysnes folkebibliotek infoskjerm (biblioteket@tysnes.kommune.no)" };
+
+async function bibnoHent(sti) {
+  const svar = await fetch(BIBNO_LISTER + sti, { headers: BIBNO_HOVUD, cache: "no-cache", signal: AbortSignal.timeout(15000) });
+  if (!svar.ok) throw new Error("tysnesbibliotek.no svarte HTTP " + svar.status);
+  return svar.json();
+}
+
+// Rein tekst frå eit tekstfelt: anten ein streng, eller typa blokker (TextBlock med CommonMark)
+function bibnoTekst(x) {
+  if (!x) return "";
+  if (typeof x === "string") return x.replace(/[*_`#>]+/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim();
+  if (Array.isArray(x)) return x.map(bibnoTekst).filter(Boolean).join(" ");
+  if (typeof x === "object") return bibnoTekst(x.text ?? x.markdown ?? x.value ?? x.content ?? "");
+  return "";
+}
+
+// Bøkene i ei liste: tittelnummer (Bibliofil) og teksten om boka, i rekkjefølgja på nettsida.
+// Film og anna frå Filmoteket o.l. har ikkje «library-system» og blir hoppa over.
+function listeBøker(items) {
+  const ut = [], sett = new Set();
+  let digitale = 0;
+  for (const it of items || []) {
+    const w = (it && it.work) || {};
+    const r = (w.records || []).find(r => r && r.source && r.source.code === "library-system" && r.recordId);
+    if (!r) { digitale++; continue; }
+    const id = String(r.recordId).replace(/\D/g, "");
+    if (!id || sett.has(id)) continue;
+    sett.add(id);
+    ut.push({ id, tekst: bibnoTekst(it.teaser) });
+  }
+  return { bøker: ut, digitale };
+}
+
+const LISTE_LAGER = "infoskjerm-bokliste:";
+async function hentNettliste(id) {
+  try {
+    const d = await bibnoHent("/" + encodeURIComponent(id));
+    const l = d && (d.data && !Array.isArray(d.data) ? d.data : d);
+    if (!l || !Array.isArray(l.items)) throw new Error("uventa svar frå tysnesbibliotek.no");
+    const r = { tittel: l.title || "", ...listeBøker(l.items) };
+    try { localStorage.setItem(LISTE_LAGER + id, JSON.stringify(r)); } catch (e) {}
+    return r;
+  } catch (e) {
+    // Nettsida er nede eller svarer rart: bruk siste lista vi fekk
+    let lagra = null;
+    try { lagra = JSON.parse(localStorage.getItem(LISTE_LAGER + id) || "null"); } catch (e2) {}
+    if (lagra && Array.isArray(lagra.bøker)) return lagra;
+    throw e;
+  }
+}
+
 async function hentUtval(cfg, avdar, meld) {
   // Handplukka bøker blir ikkje filtrerte, bortsett frå «står på hylla» om det er valt
   cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", omslag: "0", perforf: "0", plass: "", utan: "" };
-  const idar = (cfg.titlar || "").split(",").map(s => s.trim()).filter(Boolean);
+  let idar = (cfg.titlar || "").split(",").map(s => s.trim()).filter(Boolean);
   const poster = [];
+  let tekstar = null;
+  if (cfg.liste) {
+    // Bokliste frå nettsida: hent alle postane i éin omgang og behald rekkjefølgja på lista
+    const l = await hentNettliste(cfg.liste);
+    idar = l.bøker.map(b => b.id);
+    tekstar = new Map(l.bøker.map(b => [b.id, b.tekst]));
+    meld(0, idar.length);
+    const funne = new Map((await hentPostar(idar)).map(p => [String(p.id), p]));
+    for (const id of idar) if (funne.has(id)) poster.push(funne.get(id));
+    meld(poster.length, idar.length);
+  } else
   for (const id of idar) { const p = await hentPost(id); if (p) poster.push(p); meld(poster.length, idar.length); }
   const eks = poster.length ? await hentEksemplar(poster.map(p => String(p.id))) : {};
   const ut = [];
@@ -2629,6 +2722,7 @@ async function hentUtval(cfg, avdar, meld) {
     for (const avd of avdar) { t = vurder(p, avd, eks, cfg); if (t && !t.bestilt) break; }
     // Brageprisen: står boka i ei anna av avdelingane, er ho ikkje berre bestilt
     if (t && t.bestilt) { const avd = avdar.find(a => finnEksemplar(eks, p.id, a)); if (avd) t = vurder(p, avd, eks, cfg) || t; }
+    if (t && tekstar && tekstar.get(String(p.id))) t.listetekst = tekstar.get(String(p.id));
     if (t) ut.push(t);
   }
   return ut;   // i den rekkjefølgja bøkene vart valde
@@ -3253,6 +3347,8 @@ function startByggjar(startCfg) {
       } else if (felt.type === "checkbox") felt.checked = v === felt.value;
       else felt.value = v;
     }
+    // Bokliste frå nettsida eller eigne val
+    for (const r of skjema.elements.utvalfra) r.checked = r.value === (cfg.liste ? "nettside" : "eigne");
     oppdaterSynlege();
     teiknTemaknapp(); teiknSkriftknapp();
     teiknLikte(); teiknAppell(); teiknEmne(); teiknSjanger(); teiknÅr(); teiknAlder(); teiknSpråk(); teiknOppdater(); teiknCcl();
@@ -3276,8 +3372,11 @@ function startByggjar(startCfg) {
       } else if (felt.type === "checkbox") cfg[k] = felt.checked ? "1" : "0";
       else cfg[k] = String(felt.value).trim();
     }
+    // Boklista gjeld berre Handplukka med «Liste på nettsida»
+    if (cfg.kjelde !== "utval" || !listemodus()) { cfg.liste = ""; cfg.listetekst = "0"; }
     return cfg;
   }
+  function listemodus() { return (Array.from(skjema.elements.utvalfra).find(r => r.checked) || {}).value === "nettside"; }
 
   function oppdaterSynlege() {
     const kjelde = (Array.from(skjema.elements.kjelde).find(r => r.checked) || {}).value;
@@ -3287,14 +3386,21 @@ function startByggjar(startCfg) {
     document.getElementById("nobelhjelp").hidden = !nobel;
     document.getElementById("sokefelt").hidden = kjelde !== "sok" || nobel;
     // Julekalender er berre mogleg med handplukka bøker
+    // (og ikkje med ei bokliste frå nettsida, der lukene ikkje kan styrast)
+    const nettliste = kjelde === "utval" && listemodus();
     const kalOpt = skjema.elements.visning.querySelector('option[value="kalender"]');
-    kalOpt.disabled = kjelde !== "utval";
-    if (kjelde !== "utval" && skjema.elements.visning.value === "kalender") skjema.elements.visning.value = "";
+    kalOpt.disabled = kjelde !== "utval" || nettliste;
+    if ((kjelde !== "utval" || nettliste) && skjema.elements.visning.value === "kalender") skjema.elements.visning.value = "";
+    // Kalenderen og Brageprisen treng eigne val, så då blir valet mellom eigne val og nettsida gøymt
+    document.getElementById("utvalfrafelt").hidden = (skjema.elements.visning.value === "kalender" && !nettliste) || (skjema.elements.brage.value === "1" && !nettliste);
+    document.getElementById("nettlistefelt").hidden = !nettliste;
+    document.getElementById("eignevalfelt").hidden = nettliste;
+    if (nettliste) lastListemeny();
     const kalender = kjelde === "utval" && skjema.elements.visning.value === "kalender";
     const fast = kjelde === "utval" || kjelde === "likte" || nobel;     // bøkene er valde på førehand (Nobel: av vinnarlista)
     document.getElementById("utvalfelt").hidden = kjelde !== "utval";
     const brage = kjelde === "utval" && skjema.elements.brage.value === "1";
-    document.getElementById("bragehjelp").hidden = !brage;
+    document.getElementById("bragehjelp").hidden = !brage || nettliste;
     document.getElementById("kritikkrad").hidden = kalender;
     const st = document.getElementById("utvalstatus");
     if (/^Søkjer i (avdelingane|heile basen)/.test(st.textContent))
@@ -3661,6 +3767,84 @@ function startByggjar(startCfg) {
   $("utvalsok").addEventListener("input", visTøm);
   $("utvaltom-felt").addEventListener("click", () => { $("utvalsok").value = ""; visTøm(); $("utvalsok").focus(); });
   $("utvalsok").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); søkUtval(); } });
+
+  // ---- Boklister frå nettsida ----------------------------------------
+  // Menyen blir henta første gong ein vel «Liste på nettsida», og hugsa i ein time.
+  // «var»: oppdaterSynlege kan kalle lastListemeny før denne delen har køyrt
+  var LISTEMENY_LAGER = "infoskjerm-boklister";
+  var listemeny = null, listemenyHentar = null, listemenyFeil = 0;
+  // Datoen til lista, for å sortere dei nyaste først (feltnamnet er ikkje stadfesta, så vi prøver fleire)
+  function listeDato(l) { return l.publishedAt || l.createdAt || l._createdAt || l.updatedAt || l._updatedAt || l.date || ""; }
+  async function hentListemeny() {
+    try {
+      const lagra = JSON.parse(localStorage.getItem(LISTEMENY_LAGER) || "null");
+      if (lagra && Date.now() - lagra.tid < 3600e3 && Array.isArray(lagra.lister)) return lagra.lister;
+    } catch (e) {}
+    const d = await bibnoHent("?limit=100&view=full");
+    const rå = (d && Array.isArray(d.data)) ? d.data : [];
+    // Har ikkje listeoversikta med bøkene, hentar vi kvar liste (seks om gongen)
+    const lister = rå.filter(l => l && l.id).map(l => ({ id: String(l.id), tittel: l.title || "Utan namn", url: l.url || "", dato: listeDato(l), items: l.items }));
+    const kø = lister.filter(l => !Array.isArray(l.items));
+    await Promise.all(Array.from({ length: 6 }, async () => {
+      for (let l; (l = kø.shift());) {
+        try { const x = await bibnoHent("/" + encodeURIComponent(l.id)); l.items = ((x && x.data && !Array.isArray(x.data) ? x.data : x) || {}).items || []; }
+        catch (e) { l.items = null; }
+      }
+    }));
+    const ut = lister.map(l => {
+      const { bøker, digitale } = l.items ? listeBøker(l.items) : { bøker: null, digitale: 0 };
+      return { id: l.id, tittel: l.tittel, url: l.url, dato: l.dato, bøker: bøker ? bøker.length : null, digitale };
+    });
+    if (ut.some(l => l.dato)) ut.sort((a, b) => String(b.dato).localeCompare(String(a.dato)));
+    try { localStorage.setItem(LISTEMENY_LAGER, JSON.stringify({ tid: Date.now(), lister: ut })); } catch (e) {}
+    return ut;
+  }
+  function lastListemeny() {
+    if (listemeny) { teiknListemeny(); return; }
+    if (listemenyHentar || Date.now() - listemenyFeil < 60e3) return;
+    $("listestatus").textContent = "Hentar boklistene frå tysnesbibliotek.no …";
+    listemenyHentar = hentListemeny()
+      .then(l => { listemeny = l; teiknListemeny(); })
+      .catch(e => {
+        listemenyFeil = Date.now();
+        $("listeval").replaceChildren(new Option("Fekk ikkje henta boklistene", ""));
+        $("listestatus").textContent = "Fekk ikkje kontakt med tysnesbibliotek.no. Vel «Eigne val» og så «Liste på nettsida» igjen for å prøve på nytt.";
+        teiknListemenyValt();
+      })
+      .finally(() => { listemenyHentar = null; });
+  }
+  function teiknListemeny() {
+    const valt = $("liste").value;
+    const opts = [new Option("– Vel ei liste –", "")];
+    for (const l of listemeny) {
+      const merk = l.bøker === 0 ? " (berre digitalt)" : l.bøker != null ? ` (${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"})` : "";
+      opts.push(new Option(l.tittel + merk, l.id));
+    }
+    if (valt && !listemeny.some(l => l.id === valt)) opts.push(new Option("Lista finst ikkje lenger på nettsida", valt));
+    $("listeval").replaceChildren(...opts);
+    $("listeval").value = valt;
+    teiknListemenyValt();
+  }
+  function teiknListemenyValt() {
+    const st = $("listestatus"), id = $("liste").value;
+    const l = listemeny && listemeny.find(x => x.id === id);
+    st.replaceChildren();
+    if (!listemeny) { if (id) st.textContent = "Karusellen brukar lista som er vald, sjølv om menyen ikkje kunne hentast no."; return; }
+    if (!id) { st.textContent = `${listemeny.length} lister på nettsida, dei nyaste først. Bøkene blir viste i same rekkjefølgje som på lista.`; return; }
+    if (!l) { st.textContent = "Lista er sletta frå nettsida. Karusellen viser bøkene frå sist ho vart henta, så vel gjerne ei anna liste."; return; }
+    if (l.bøker === 0) st.textContent = "Lista har berre digitalt innhald (til dømes filmar), så karusellen blir tom. Vel ei anna liste.";
+    else st.textContent = [l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"} frå samlinga` : "", l.digitale ? `${l.digitale === 1 ? "1 digital tittel" : l.digitale + " digitale titlar"} (filmar o.l.) blir hoppa over` : ""].filter(Boolean).join(", ") + ". ";
+    if (l.url) {
+      const a = Object.assign(document.createElement("a"), { href: l.url, target: "_blank", rel: "noopener", textContent: "Sjå lista på nettsida" });
+      st.append(a);
+    }
+  }
+  // «input» kjem før skjemaet teiknar menyen på nytt, så valet må lagrast her og ikkje berre ved «change»
+  for (const ev of ["input", "change"]) $("listeval").addEventListener(ev, () => { $("liste").value = $("listeval").value; teiknListemenyValt(); });
+  for (const r of skjema.elements.utvalfra) for (const ev of ["input", "change"]) r.addEventListener(ev, () => {
+    $("liste").value = listemodus() ? $("listeval").value : "";
+    listemenyFeil = 0;     // prøv å hente menyen på nytt om det gjekk gale sist
+  });
 
   // ---- Neste bok -----------------------------------------------------
   function verkRad(w, knappar) {
