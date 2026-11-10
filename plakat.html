@@ -60,6 +60,12 @@
   /* Stort bilete (arrangement frå nettsida): fyller heile breidda og er blikkfanget på plakaten */
   .midt:has(.bilete.stor) { flex: 1.8; margin: 2.5vh 0; }
   .bilete.stor { width: 100%; height: 100%; max-height: none; object-fit: cover; }
+  .storramme { position: relative; width: 100%; height: 100%; }
+  /* Datomerke øvst til venstre i biletet («24 NOV»), som på arrangementssidene på nettsida */
+  .datomerke { position: absolute; top: 2.4vw; left: 2.4vw; background: #fff; color: #1d1d1b; border-radius: 1.8vw;
+               padding: 1.2vw 2.4vw 1vw; text-align: center; line-height: 1; box-shadow: 0 .6vh 2vh rgba(0,0,0,.25); }
+  .datomerke b { display: block; font-size: 7vw; font-weight: 700; }
+  .datomerke span { display: block; font-size: 2.8vw; font-weight: 600; letter-spacing: .08em; margin-top: .5vw; }
   .ikonsirkel { height: min(52vw, 100%); aspect-ratio: 1; border-radius: 50%; background: var(--brikke); display: grid; place-items: center;
                 box-shadow: inset 0 0 0 1vw color-mix(in srgb, var(--aksent) 35%, transparent); }
   .ikonsirkel svg { width: 52%; height: 52%; color: var(--aksent-tekstfarge, var(--aksent)); }
@@ -798,7 +804,16 @@ function visPlakat(cfg) {
   } else if (cfg.bilete && cfg.bilete !== "ikon") {
     const img = Object.assign(document.createElement("img"), { className: "bilete" + (cfg.biletform === "foto" ? " foto" : cfg.biletform === "stor" ? " foto stor" : ""), alt: "", src: cfg.bilete });
     prøvIgjen(img, () => { midt.innerHTML = cfg.ikon ? `<div class="ikonsirkel">${ikonSvg(cfg.ikon)}</div>` : ""; });
-    midt.append(img);
+    // Stort bilete med datomerke («merke=ÅÅÅÅ-MM-DD», arrangement frå nettsida)
+    const merke = cfg.biletform === "stor" && String(cfg.merke || "").match(ISODATO);
+    if (merke) {
+      const ramme = Object.assign(document.createElement("div"), { className: "storramme" });
+      const dm = Object.assign(document.createElement("div"), { className: "datomerke" });
+      dm.append(Object.assign(document.createElement("b"), { textContent: String(Number(merke[3])) }),
+                Object.assign(document.createElement("span"), { textContent: MÅNAD[merke[2] - 1].slice(0, 3).toUpperCase() }));
+      ramme.append(img, dm);
+      midt.append(ramme);
+    } else midt.append(img);
     if (cfg.kjelde) {
       // Kjelda syner berre når biletet får plass (i eit lågt vindauge kan midt bli 0 høgt)
       $("kjelde").textContent = "Foto: " + cfg.kjelde;
