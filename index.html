@@ -3946,6 +3946,10 @@ function startByggjar(startCfg) {
     }
   }
   function velListe(id) {
+    // Overskrifta blir namnet på lista, med mindre ein har skrive ei eiga
+    const felt = skjema.elements.tittel, forrige = (listemeny.find(x => x.id === $("liste").value) || {}).tittel;
+    const ny = (listemeny.find(x => x.id === id) || {}).tittel;
+    if (ny && (!felt.value.trim() || felt.value === STANDARD.tittel || felt.value === forrige)) felt.value = ny;
     $("liste").value = sistListe = id;
     teiknListemeny();
     oppdater(false);
