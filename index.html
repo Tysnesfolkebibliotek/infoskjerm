@@ -2165,6 +2165,16 @@ const bibliofilAlder = t => (t && /\d/.test(t)) ? t : "";   // reserve viss koda
 let utelatne = {};
 let nåddeGrense = false;   // stoppa fordi «Tal bøker» var nådd, før alle treff var sjekka
 const utelat = grunn => { utelatne[grunn] = (utelatne[grunn] || 0) + 1; return false; };
+// Ei bok som blir prøvd i fleire avdelingar, skal berre teljast som utelaten éin gong,
+// og ikkje i det heile om ho blir funnen i ei av dei. fn gjer forsøka og returnerer boka eller null.
+function éiTeljing(fn) {
+  const før = { ...utelatne };
+  const t = fn();
+  const første = Object.keys(utelatne).find(k => (utelatne[k] || 0) > (før[k] || 0));
+  utelatne = før;
+  if (!t && første) utelat(første);
+  return t;
+}
 
 // ---- Svartelista (svarteliste.json) ----------------------------------------
 // Bøker som aldri skal visast på skjermane, til dømes på grunn av omslaget.
@@ -2589,12 +2599,13 @@ async function hentLikte(cfg, avdar, meld) {
     const poster = await posterForVerk(w.id, isbnar);
     if (!poster.length) { utelat("finst ikkje i samlinga"); continue; }
     const eks = await hentEksemplar(poster.map(p => String(p.id)));
-    let t = null;
-    for (const p of poster) {
-      if (!førehand(p, kfg)) continue;
-      for (const avd of avdar) { t = vurder(p, avd, eks, kfg); if (t) break; }
-      if (t) break;
-    }
+    const t = éiTeljing(() => {
+      for (const p of poster) {
+        if (!førehand(p, kfg)) continue;
+        for (const avd of avdar) { const t = vurder(p, avd, eks, kfg); if (t) return t; }
+      }
+      return null;
+    });
     if (t) {
       // Manglar Bibliofil omslag eller omtale, brukar vi dei frå Forrige bok
       const m = w.simplifiedPresentationMetadata || {};
@@ -2723,10 +2734,13 @@ async function hentUtval(cfg, avdar, meld) {
   for (const p of poster) {
     if (!førehand(p, cfg)) continue;
     // Boka blir vist med eksemplaret frå den første avdelinga som har henne
-    let t = null;
-    for (const avd of avdar) { t = vurder(p, avd, eks, cfg); if (t && !t.bestilt) break; }
-    // Brageprisen: står boka i ei anna av avdelingane, er ho ikkje berre bestilt
-    if (t && t.bestilt) { const avd = avdar.find(a => finnEksemplar(eks, p.id, a)); if (avd) t = vurder(p, avd, eks, cfg) || t; }
+    const t = éiTeljing(() => {
+      let t = null;
+      for (const avd of avdar) { t = vurder(p, avd, eks, cfg); if (t && !t.bestilt) break; }
+      // Brageprisen: står boka i ei anna av avdelingane, er ho ikkje berre bestilt
+      if (t && t.bestilt) { const avd = avdar.find(a => finnEksemplar(eks, p.id, a)); if (avd) t = vurder(p, avd, eks, cfg) || t; }
+      return t;
+    });
     if (t && tekstar && tekstar.get(String(p.id))) t.listetekst = tekstar.get(String(p.id));
     if (t) ut.push(t);
   }
@@ -2866,12 +2880,15 @@ async function hentNobel(cfg, avdar, meld) {
   const eks = await hentEksemplar(poster.map(p => String(p.id)));
   const perVinnar = new Map();
   for (const p of poster) {
-    let t = null;
-    for (const avd of avdar) {
-      const ny = vurder(p, avd, eks, cfg);
-      if (ny && (!t || (ny.ledig && !t.ledig))) t = ny;
-      if (t && t.ledig) break;
-    }
+    const t = éiTeljing(() => {
+      let t = null;
+      for (const avd of avdar) {
+        const ny = vurder(p, avd, eks, cfg);
+        if (ny && (!t || (ny.ledig && !t.ledig))) t = ny;
+        if (t && t.ledig) break;
+      }
+      return t;
+    });
     if (!t) continue;
     const v = vinnarFor.get(String(p.id));
     t.nobel = v.år;
