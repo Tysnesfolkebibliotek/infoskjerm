@@ -412,6 +412,8 @@
   .temaalternativ > span:nth-child(2) { white-space: nowrap; flex: none; }
   .temaalternativ .temadato { min-width: 0; flex: 1; }
   .temaalternativ:hover { background: var(--b-bg); }
+  #listemenyboks .temaalternativ > span:nth-child(2) { white-space: normal; flex: 1; }   /* lange listenamn kan bryte */
+  #listemenyboks .temaalternativ .temadato { flex: none; }
   #skriftmeny { left: auto; right: 0; }   /* skriftvalet står i høgre kolonne: opne mot venstre */
   #skriftmeny .temaalternativ.utan-gruppe { padding-left: 12px; }
   #skriftmeny .utan-gruppe + .temagruppe { border-top: 1px solid var(--b-strek); }
@@ -602,8 +604,11 @@
         <div id="nettlistefelt" hidden>
           <input type="hidden" id="liste" name="liste">
           <div class="felt">
-            <label for="listeval">Boklista</label>
-            <select id="listeval"><option value="">Hentar boklistene …</option></select>
+            <span class="etikett">Boklista</span>
+            <div class="temaval" id="listevalboks">
+              <button type="button" class="temaknapp" id="listeknapp" aria-haspopup="true" aria-expanded="false"><span class="temanamn">Hentar boklistene …</span></button>
+              <div class="temameny" id="listemenyboks" hidden></div>
+            </div>
             <p class="hjelp" id="listestatus">Boklistene blir henta frå tysnesbibliotek.no.</p>
           </div>
           <label class="val"><input type="checkbox" name="listetekst" value="1"> Vis teksten de har skrive om kvar bok</label>
@@ -3799,6 +3804,15 @@ function startByggjar(startCfg) {
     try { localStorage.setItem(LISTEMENY_LAGER, JSON.stringify({ tid: Date.now(), lister: ut })); } catch (e) {}
     return ut;
   }
+  // Året lista høyrer til: frå datoen, elles eit årstal i namnet (t.d. «Falturiltu 2022»)
+  function listeÅr(l) {
+    const d = String(l.dato || "").match(/^(\d{4})/);
+    if (d) return d[1];
+    const t = String(l.tittel || "").match(/\b(19|20)\d{2}\b/);
+    return t ? t[0] : "";
+  }
+  function listeMerk(l) { return l.bøker === 0 ? "berre digitalt" : l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"}` : ""; }
+  var opneListeår = new Set(), sistListe = "";
   function lastListemeny() {
     if (listemeny) { teiknListemeny(); return; }
     if (listemenyHentar || Date.now() - listemenyFeil < 60e3) return;
@@ -3807,30 +3821,76 @@ function startByggjar(startCfg) {
       .then(l => { listemeny = l; teiknListemeny(); })
       .catch(e => {
         listemenyFeil = Date.now();
-        $("listeval").replaceChildren(new Option("Fekk ikkje henta boklistene", ""));
+        $("listeknapp").querySelector(".temanamn").textContent = $("liste").value ? "Lista som er vald" : "Fekk ikkje henta boklistene";
         $("listestatus").textContent = "Fekk ikkje kontakt med tysnesbibliotek.no. Vel «Eigne val» og så «Liste på nettsida» igjen for å prøve på nytt.";
         teiknListemenyValt();
       })
       .finally(() => { listemenyHentar = null; });
   }
+  // Knappen viser lista som er vald. Sjølve menyen blir teikna når han blir opna.
   function teiknListemeny() {
-    const valt = $("liste").value;
-    const opts = [new Option("– Vel ei liste –", "")];
-    for (const l of listemeny) {
-      const merk = l.bøker === 0 ? " (berre digitalt)" : l.bøker != null ? ` (${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"})` : "";
-      opts.push(new Option(l.tittel + merk, l.id));
-    }
-    if (valt && !listemeny.some(l => l.id === valt)) opts.push(new Option("Lista finst ikkje lenger på nettsida", valt));
-    $("listeval").replaceChildren(...opts);
-    $("listeval").value = valt;
+    const id = $("liste").value, l = listemeny.find(x => x.id === id);
+    $("listeknapp").querySelector(".temanamn").textContent = !id ? "Vel ei liste …" : l ? l.tittel : "Lista finst ikkje lenger på nettsida";
+    if (!$("listemenyboks").hidden) teiknListegrupper();
     teiknListemenyValt();
   }
+  // Grupper per år, nyaste år først. Berre éi gruppe open om gongen, som i malmenyen.
+  function teiknListegrupper() {
+    const valt = $("liste").value, grupper = new Map();
+    for (const l of listemeny) {
+      const år = listeÅr(l) || "Utan år";
+      if (!grupper.has(år)) grupper.set(år, []);
+      grupper.get(år).push(l);
+    }
+    const rekkje = [...grupper.keys()].sort((a, b) => a === "Utan år" ? 1 : b === "Utan år" ? -1 : b.localeCompare(a));
+    const boks = $("listemenyboks");
+    boks.replaceChildren();
+    for (const år of rekkje) {
+      const liste = grupper.get(år), open = opneListeår.has(år);
+      const gr = document.createElement("div"); gr.className = "temagruppe";
+      const hovud = document.createElement("button");
+      hovud.type = "button"; hovud.className = "gruppehovud"; hovud.setAttribute("aria-expanded", open);
+      hovud.innerHTML = `<span class="ikon pil fald" aria-hidden="true"></span><span></span><span class="tal">${liste.length}</span>`;
+      hovud.children[1].textContent = år;
+      hovud.addEventListener("click", () => { const varOpen = opneListeår.has(år); opneListeår.clear(); if (!varOpen) opneListeår.add(år); teiknListegrupper(); });
+      gr.append(hovud);
+      if (open) for (const l of liste) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "temaalternativ"; b.setAttribute("role", "menuitemradio");
+        b.setAttribute("aria-checked", l.id === valt);
+        b.innerHTML = `<span></span><span></span><span class="temadato"></span>`;
+        b.children[1].textContent = l.tittel;
+        b.children[2].textContent = listeMerk(l);
+        b.addEventListener("click", () => { velListe(l.id); lukkListemeny(); $("listeknapp").focus(); });
+        gr.append(b);
+      }
+      boks.append(gr);
+    }
+  }
+  function velListe(id) {
+    $("liste").value = sistListe = id;
+    teiknListemeny();
+    oppdater(false);
+  }
+  function opneListemeny() {
+    if (!listemeny) { lastListemeny(); return; }
+    // Opne året til lista som er vald, elles det nyaste året
+    const l = listemeny.find(x => x.id === $("liste").value);
+    const år = l ? (listeÅr(l) || "Utan år") : (listemeny.map(listeÅr).filter(Boolean).sort().pop() || "Utan år");
+    opneListeår.clear(); opneListeår.add(år);
+    $("listemenyboks").hidden = false; $("listeknapp").setAttribute("aria-expanded", "true");
+    teiknListegrupper();
+  }
+  function lukkListemeny() { $("listemenyboks").hidden = true; $("listeknapp").setAttribute("aria-expanded", "false"); }
+  $("listeknapp").addEventListener("click", () => { if ($("listemenyboks").hidden) opneListemeny(); else lukkListemeny(); });
+  document.addEventListener("click", e => { if (!$("listemenyboks").hidden && !$("listevalboks").contains(e.target)) lukkListemeny(); }, true);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("listemenyboks").hidden) { lukkListemeny(); $("listeknapp").focus(); } });
   function teiknListemenyValt() {
     const st = $("listestatus"), id = $("liste").value;
     const l = listemeny && listemeny.find(x => x.id === id);
     st.replaceChildren();
     if (!listemeny) { if (id) st.textContent = "Karusellen brukar lista som er vald, sjølv om menyen ikkje kunne hentast no."; return; }
-    if (!id) { st.textContent = `${listemeny.length} lister på nettsida, dei nyaste først. Bøkene blir viste i same rekkjefølgje som på lista.`; return; }
+    if (!id) { st.textContent = `${listemeny.length} lister på nettsida, ordna etter år. Bøkene blir viste i same rekkjefølgje som på lista.`; return; }
     if (!l) { st.textContent = "Lista er sletta frå nettsida. Karusellen viser bøkene frå sist ho vart henta, så vel gjerne ei anna liste."; return; }
     if (l.bøker === 0) st.textContent = "Lista har berre digitalt innhald (til dømes filmar), så karusellen blir tom. Vel ei anna liste.";
     else st.textContent = [l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"} frå samlinga` : "", l.digitale ? `${l.digitale === 1 ? "1 digital tittel" : l.digitale + " digitale titlar"} (filmar o.l.) blir hoppa over` : ""].filter(Boolean).join(", ") + ". ";
@@ -3839,10 +3899,10 @@ function startByggjar(startCfg) {
       st.append(a);
     }
   }
-  // «input» kjem før skjemaet teiknar menyen på nytt, så valet må lagrast her og ikkje berre ved «change»
-  for (const ev of ["input", "change"]) $("listeval").addEventListener(ev, () => { $("liste").value = $("listeval").value; teiknListemenyValt(); });
+  // Eigne val ↔ liste: lista blir hugsa, så ein kan byte fram og tilbake utan å velje på nytt
   for (const r of skjema.elements.utvalfra) for (const ev of ["input", "change"]) r.addEventListener(ev, () => {
-    $("liste").value = listemodus() ? $("listeval").value : "";
+    if ($("liste").value) sistListe = $("liste").value;
+    $("liste").value = listemodus() ? sistListe : "";
     listemenyFeil = 0;     // prøv å hente menyen på nytt om det gjekk gale sist
   });
 
