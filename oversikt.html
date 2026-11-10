@@ -144,6 +144,18 @@
   dialog.paaminning h2 { margin: 0 0 8px; font-size: 18px; }
   dialog.paaminning p { margin: 0 0 16px; }
   dialog.paaminning .knappar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  /* Video: vindauget frå «+ Lag nytt ▾» og boksen i skjemaet */
+  dialog.videodialog { max-width: 560px; width: calc(100% - 32px); }
+  dialog.videodialog .linje { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  dialog.videodialog .knappar { justify-content: flex-start; }
+  .videoboks { display: grid; gap: 8px; }
+  .videoboks input[type=file] { font: inherit; max-width: 100%; }
+  .videoåtvar { border-left: 4px solid #d89a1c; background: var(--seinare-bg); padding: 8px 10px; border-radius: 6px; font-size: 14px; }
+  .videoåtvar.stopp { border-left-color: var(--åtvar); }
+  .videoåtvar p { margin: 0 0 6px; }
+  .ffmpeg pre { white-space: pre-wrap; word-break: break-all; background: var(--bg); border: 1px solid var(--strek); border-radius: 6px; padding: 8px; font-size: 12.5px; margin: 6px 0; }
+  .ffmpeg ul { margin: 6px 0 0; padding-left: 18px; }
+  .ffmpeg code { font-size: 12.5px; }
   .forevis .linje { display: flex; gap: 10px; align-items: center; justify-content: space-between; color: #fff; margin-bottom: 8px; font-size: 14px; }
   .forevis .linje b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .forevis .linje span { display: flex; gap: 8px; flex-shrink: 0; }
@@ -230,6 +242,11 @@
     <button type="button" id="paaminningseinare">Minn meg på om ei veke</button>
     <button type="button" class="hoved" id="paaminningok" autofocus>Oppdater no</button>
   </div>
+</dialog>
+
+<dialog class="paaminning videodialog" id="videodialog">
+  <div class="linje"><h2>Ny video</h2><button type="button" onclick="this.closest('dialog').close()">Lukk</button></div>
+  <div id="videoinnhald"></div>
 </dialog>
 
 <dialog class="forevis" id="forevis">
@@ -347,6 +364,7 @@ function typeTekst(s) {
     const ute = pk.plakatar.filter(h => tilDatoAv(h) && tilDatoAv(h) < idagTekst()).length;
     return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""}${s.mellom ? ` · ${pk.kvar === 2 ? "to" : "éin"} mellom kvar side` : " · alle samla"} · ${pk.sek} sek kvar`;
   }
+  if (erVideo(s)) return `Video · ${String(lesVideo(s.url).fil).replace(/^video\//, "")}`;
   if (erPlakat(s)) {
     const p = new URLSearchParams((s.url.split("#")[1] || ""));
     if (/klokke\.html#/.test(s.url)) return plakatsideNamn("side=klokke&" + p.toString());
@@ -374,6 +392,13 @@ const erPlakat = s => !s.lokal && /github\.io\/infoskjerm\/(plakat|klokke)\.html
 // «til=ÅÅÅÅ-MM-DD» i ein plakat gjer at han ikkje blir vist etter den datoen.
 const PK_ADRESSE = "https://tysnesfolkebibliotek.github.io/infoskjerm/plakatkarusell.html";
 const erPlakatkarusell = s => !s.lokal && /github\.io\/infoskjerm\/plakatkarusell\.html#vis=1/.test(s.url || "");
+// Video (video.html): «fil=video/<namn>.mp4» og «tema=…». Fila blir lasta opp frå
+// vindauget «+ Lag nytt ▾» → Video. Sekunda på skjermen = lengda på videoen + litt
+// (berre eit tak: video.html seier «ferdig» når videoen er slutt).
+const VIDEO_ADRESSE = "https://tysnesfolkebibliotek.github.io/infoskjerm/video.html";
+const erVideo = s => !s.lokal && /github\.io\/infoskjerm\/video\.html#vis=1/.test(s.url || "");
+const lesVideo = url => { const p = new URLSearchParams(String(url || "").split("#")[1] || ""); return { fil: p.get("fil") || "", tema: p.get("tema") || "kveld" }; };
+const lagVideo = v => VIDEO_ADRESSE + "#" + new URLSearchParams({ vis: "1", fil: v.fil, tema: v.tema }).toString();
 function lesPk(url) {
   const p = new URLSearchParams(String(url || "").split("#")[1] || "");
   return { sek: Number(p.get("sek")) || 20, kvar: Math.max(0, Math.floor(Number(p.get("kvar")) || 0)), plakatar: p.getAll("p").filter(Boolean) };
@@ -695,13 +720,14 @@ function skjema(s, lk, i) {
       el("div", {}, el("label", { for: "f-skjerm" }, "Skjerm"),
         el("select", { id: "f-skjerm" }, ...SKJERMAR.map(x => { const o = new Option(skjermInfo(x.nøkkel).namn, x.nøkkel); o.selected = x.nøkkel === skjermFor(lk); return o; })))),
     erPlakatkarusell(s) ? pkBoks(s, lk, i) : null,
-    el("div", { hidden: erPlakatkarusell(s) }, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
+    erVideo(s) ? videoBoks(s, i) : null,
+    el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
-      // For plakatkarusellar blir sekunda rekna ut og vist i plakatboksen; feltet ligg gøymt og blir lagra som før
-      el("div", { hidden: erPlakatkarusell(s) }, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
-        el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: s.sekund || 180 })),
-      el("div", { hidden: erPlakatkarusell(s) }, el("label", {}, " "),
+      // For plakatkarusellar og video blir sekunda rekna ut og viste i boksen over; feltet ligg gøymt og blir lagra som før
+      el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
+        el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: erVideo(s) && !s.sekund ? "" : s.sekund || 180, readonly: erVideo(s) })),
+      el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", {}, " "),
         el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
     el("div", {}, el("label", {}, "Periode (tomt = heile året)"),
       el("div", { class: "rad" },
@@ -716,10 +742,10 @@ function skjema(s, lk, i) {
         el("input", { type: "time", id: "f-tidtil", value: tidTil || "", "aria-label": "Til klokka" }))),
     el("p", { class: "hjelp", id: "f-feil" }),
     el("div", { class: "knappar" },
-      el("button", { type: "button", class: "hoved", onclick: () => brukSkjema(f, s, lk, i) },
+      el("button", { type: "button", class: "hoved", onclick: () => erVideo(s) ? brukVideo(f, s, lk, i) : brukSkjema(f, s, lk, i) },
         // Med nøkkel blir endringa lagra med ein gong; utan nøkkel blir ho berre lagd inn i lista
         lesNøkkel() ? (i < 0 ? "Legg til og lagre" : "Lagre") : (i < 0 ? "Legg til" : "Bruk endringane")),
-      el("button", { type: "button", onclick: () => { open = null; teikn(); } }, "Avbryt")));
+      el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")));
   return f;
 }
 
@@ -866,6 +892,182 @@ function pkBoks(s, lk, i) {
   setTimeout(teiknPk, 0);
   if (!tenesteData) tenesterLasting.then(() => { if (boks.isConnected) teiknPk(); });
   return boks;
+}
+
+// ---- Video (video.html) ----------------------------------------------------
+// «+ Lag nytt ▾» → Video opnar eit lite vindauge med det vanlege skjemaet og
+// eit filval. Fila blir lasta opp til video/ i repoet med nøkkelen i nettlesaren,
+// og sekunda på skjermen blir rekna ut frå lengda på videoen.
+const VIDEO_ÅTVAR_MB = 30;    // meir enn dette er tungt for wifi-en på skjerm 2 og for GitHub Pages
+const VIDEO_MAKS_MB = 100;    // grensa til GitHub for éi fil
+const VIDEO_MARGIN_SEK = 3;   // litt ekstra, så «ferdig» frå videoen kjem før taket
+const FFMPEG = 'ffmpeg -i innfil.mp4 -vf "scale=1080:-2" -c:v libx264 -crf 26 -preset slow -pix_fmt yuv420p -an -movflags +faststart utfil.mp4';
+function ffmpegHjelp() {
+  return el("details", { class: "ffmpeg" }, el("summary", {}, "Slik krympar du videoen med ffmpeg"),
+    el("pre", {}, FFMPEG),
+    el("button", { type: "button", onclick: e => { navigator.clipboard.writeText(FFMPEG).then(() => { e.target.textContent = "Kopiert"; }).catch(() => {}); } }, "Kopier kommandoen"),
+    el("ul", { class: "hjelp" },
+      el("li", {}, el("code", {}, "-i innfil.mp4"), " – fila du har (input). Byt ut namnet."),
+      el("li", {}, el("code", {}, '-vf "scale=1080:-2"'), " – eit videofilter som skalerer til 1080 punkt breitt, same breidd som skjermen. -2 reknar ut høgda sjølv og gjer ho til eit partal, som H.264 krev."),
+      el("li", {}, el("code", {}, "-c:v libx264"), " – lagar videoen om til H.264, som Chromium på skjermane kan spele."),
+      el("li", {}, el("code", {}, "-crf 26"), " – kvaliteten: lågare tal gir betre bilete og større fil (18 er nesten tapsfritt, 28 er tydeleg komprimert). 26 er eit godt kompromiss for ein skjerm på avstand."),
+      el("li", {}, el("code", {}, "-preset slow"), " – brukar meir tid på å komprimere, og gir mindre fil med same kvalitet."),
+      el("li", {}, el("code", {}, "-pix_fmt yuv420p"), " – vanleg fargeformat. Video frå nyare mobilar kan vere 10-bit/HDR, som nettlesarar ofte ikkje spelar."),
+      el("li", {}, el("code", {}, "-an"), " – «audio none»: tek bort lyden. Skjermane spelar utan lyd uansett, så det er berre bortkasta plass."),
+      el("li", {}, el("code", {}, "-movflags +faststart"), " – flyttar innhaldslista i fila til byrjinga, så videoen kan starte før heile fila er lasta ned."),
+      el("li", {}, el("code", {}, "utfil.mp4"), " – den nye, mindre fila. Last opp denne.")));
+}
+function videoBoks(s, i) {
+  const v = lesVideo(s.url);
+  const info = el("p", { class: "hjelp" });
+  const åtvar = el("div", { class: "videoåtvar", hidden: true });
+  const tema = el("select", { id: "v-tema" }, new Option(v.tema === "kveld" ? "Kveld" : v.tema, v.tema));
+  // Temalista kjem frå tema.js, som berre blir henta når ein video blir endra (oversikta treng henne ikkje elles)
+  hentTema().then(() => {
+    if (typeof TEMA_LISTE === "undefined") return;
+    tema.replaceChildren(...TEMAGRUPPER.map(g => {
+      const og = el("optgroup", { label: g });
+      for (const t of TEMA_LISTE) if ((t.gruppe || "Faste") === g && !t.logo) og.append(new Option(t.namn, t.id));
+      return og;
+    }));
+    tema.value = v.tema;
+    if (tema.value !== v.tema) tema.value = "kveld";
+  });
+  let skjemaRot = null;
+  const finnSkjema = () => skjemaRot || (skjemaRot = boks.closest(".skjema"));
+  // Lenkja står i det gøymde lenkjefeltet, som for plakatkarusellen
+  const oppdater = () => { const f = finnSkjema(); if (f) f.querySelector("#f-url").value = lagVideo({ fil: v.fil || "video/(ny).mp4", tema: tema.value }); };
+  tema.addEventListener("change", oppdater);
+  setTimeout(oppdater, 0);
+
+  let filfelt = null;
+  if (i < 0) {
+    filfelt = el("input", { type: "file", id: "v-fil", accept: "video/mp4,.mp4,.m4v" });
+    filfelt.addEventListener("change", () => {
+      const f = finnSkjema(), fil = filfelt.files[0];
+      f._videoFil = null;
+      åtvar.hidden = true; åtvar.replaceChildren(); info.textContent = "";
+      if (!fil) return;
+      const mb = fil.size / 1048576, mbTekst = mb.toLocaleString("nn-NO", { maximumFractionDigits: 1 }) + " MB";
+      if (mb > VIDEO_MAKS_MB) {
+        åtvar.hidden = false; åtvar.className = "videoåtvar stopp";
+        åtvar.append(el("p", {}, `Fila er ${mbTekst}. GitHub tek ikkje imot filer over ${VIDEO_MAKS_MB} MB, så ho må krympast først.`), ffmpegHjelp());
+        åtvar.querySelector("details").open = true;
+        return;
+      }
+      if (mb > VIDEO_ÅTVAR_MB || !/\.(mp4|m4v)$/i.test(fil.name)) {
+        åtvar.hidden = false; åtvar.className = "videoåtvar";
+        åtvar.append(el("p", {}, mb > VIDEO_ÅTVAR_MB
+          ? `Fila er ${mbTekst}. Over ca. ${VIDEO_ÅTVAR_MB} MB blir det tungt for wifi-en på skjerm 2 og for GitHub Pages. Krymp ho gjerne først. Du kan likevel laste ho opp.`
+          : "Fila er ikkje ei .mp4. Skjermane spelar sikrast .mp4 med H.264. Lag ho om først."), ffmpegHjelp());
+      }
+      // Lengda: les metadata frå fila lokalt, utan å laste ho opp
+      const prøve = document.createElement("video");
+      prøve.preload = "metadata"; prøve.muted = true;
+      const adr = URL.createObjectURL(fil);
+      prøve.addEventListener("loadedmetadata", () => {
+        const d = prøve.duration;
+        URL.revokeObjectURL(adr);
+        if (!(d > 0) || !isFinite(d)) { info.textContent = "Fekk ikkje lese lengda på videoen."; return; }
+        const sek = Math.max(5, Math.ceil(d) + VIDEO_MARGIN_SEK);
+        f.querySelector("#f-sek").value = sek;
+        const namn = f.querySelector("#f-namn");
+        if (!namn.value.trim()) namn.value = fil.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+        info.textContent = `${mbTekst} · ${Math.round(d)} sekund lang · ${sek} sekund på skjermen`;
+        f._videoFil = fil;
+      }, { once: true });
+      prøve.addEventListener("error", () => {
+        URL.revokeObjectURL(adr);
+        info.textContent = "";
+        åtvar.hidden = false; åtvar.className = "videoåtvar stopp";
+        åtvar.replaceChildren(el("p", {}, "Nettlesaren klarte ikkje å lese videoen. Lag ho om til .mp4 med H.264 først."), ffmpegHjelp());
+        åtvar.querySelector("details").open = true;
+      }, { once: true });
+      prøve.src = adr;
+    });
+  }
+  const boks = el("div", { class: "videoboks" },
+    i < 0 ? el("div", {}, el("label", { for: "v-fil" }, "Videofil (.mp4, utan lyd)"), filfelt)
+      : el("p", { class: "hjelp" }, "Fil: ", el("code", {}, v.fil || "(manglar)"), ` · ${s.sekund} sekund på skjermen (lengda på videoen). Vil du byte video, lag ein ny og slett denne.`),
+    info, åtvar,
+    el("div", {}, el("label", { for: "v-tema" }, "Farge over og under videoen (tema)"), tema));
+  return boks;
+}
+let temaLasting = null;
+const hentTema = () => temaLasting || (temaLasting = new Promise(ok => {
+  const sk = document.createElement("script");
+  sk.src = "tema.js"; sk.onload = ok; sk.onerror = ok;
+  document.head.append(sk);
+}));
+
+function opneVideo() {
+  open = null; teikn();
+  const d = $("videodialog");
+  const f = skjema({ namn: "", url: lagVideo({ fil: "", tema: "kveld" }), sekund: 0 }, "skjerm1", -1);
+  $("videoinnhald").replaceChildren(...[
+    lesNøkkel() ? null : el("p", { class: "videoåtvar stopp" }, "For å laste opp video treng du tilgangsnøkkelen (nedst på oversikta)."),
+    f].filter(Boolean));
+  d.showModal();
+}
+$("videodialog").addEventListener("close", () => $("videoinnhald").replaceChildren());
+
+// Filnamn til repoet: små bokstavar, æøå skrivne om, berre a–z, 0–9 og bindestrek
+const filnamn = t => String(t).toLowerCase().replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "aa")
+  .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "video";
+// Les fila som base64 (det GitHub sitt API vil ha)
+const filTil64 = fil => new Promise((ok, feil) => {
+  const r = new FileReader();
+  r.onload = () => ok(String(r.result).split(",")[1]);
+  r.onerror = () => feil(r.error);
+  r.readAsDataURL(fil);
+});
+async function lastOppVideo(fil, namn, nøkkel, melding) {
+  const hode = { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel };
+  const api = sti => `https://api.github.com/repos/${REPO}/contents/${sti}`;
+  // Finn eit ledig namn (namn.mp4, namn-2.mp4 …), så vi aldri skriv over ein annan video
+  let sti = null;
+  for (let k = 1; k < 50 && !sti; k++) {
+    const prøv = `video/${filnamn(namn)}${k > 1 ? "-" + k : ""}.mp4`;
+    const svar = await fetch(api(prøv) + "?t=" + Date.now(), { headers: hode, cache: "no-store" });
+    if (svar.status === 404) sti = prøv;
+    else if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjekk tilgangsnøkkelen nedst på oversikta.");
+  }
+  if (!sti) throw new Error("Fann ikkje eit ledig filnamn.");
+  melding("Lastar opp videoen … Det kan ta eitt minutt. Ikkje lukk sida.");
+  const svar = await fetch(api(sti), { method: "PUT", headers: { ...hode, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: `La til video ${sti} via oversiktssida`, content: await filTil64(fil), author: FORFATTAR, committer: FORFATTAR }) });
+  if (svar.status === 401 || svar.status === 403) throw new Error("Nøkkelen vart avvist. Sjekk tilgangsnøkkelen nedst på oversikta.");
+  if (!svar.ok) throw new Error(`GitHub svarte ${svar.status}${svar.status === 413 || svar.status === 422 ? " (fila er truleg for stor – krymp ho med ffmpeg)" : ""}.`);
+  return sti;
+}
+async function brukVideo(f, s, lk, i) {
+  const feil = t => { f.querySelector("#f-feil").textContent = t; f.querySelector("#f-feil").style.color = t ? "var(--åtvar)" : ""; };
+  const knapp = f.querySelector("button.hoved");
+  const tema = f.querySelector("#v-tema").value;
+  // Er fila alt lasta opp (og lagringa stoppa på noko anna i skjemaet), blir ho ikkje lasta opp på nytt
+  if (i < 0 && !f._videoSti) {
+    const fil = f._videoFil;
+    if (!fil) return feil("Vel ei videofil først (under " + VIDEO_MAKS_MB + " MB).");
+    const nøkkel = lesNøkkel();
+    if (!nøkkel) return feil("Du treng tilgangsnøkkelen for å laste opp video (nedst på oversikta).");
+    knapp.disabled = true;
+    try {
+      const sti = await lastOppVideo(fil, f.querySelector("#f-namn").value.trim() || fil.name.replace(/\.[^.]+$/, ""), nøkkel,
+        t => { f.querySelector("#f-feil").textContent = t; f.querySelector("#f-feil").style.color = ""; });
+      f._videoSti = sti;
+      feil("");
+    } catch (e) { knapp.disabled = false; return feil("Fekk ikkje lasta opp videoen: " + e.message); }
+  }
+  f.querySelector("#f-url").value = lagVideo({ fil: f._videoSti || lesVideo(s.url).fil, tema });
+  const før = tilJson(oppsett);
+  brukSkjema(f, s, lk, i);
+  knapp.disabled = false;
+  if (tilJson(oppsett) !== før || i >= 0) {
+    if ($("videodialog").open) $("videodialog").close();
+    // Når lagringa er ferdig: sei frå at GitHub Pages treng litt tid
+    if (i < 0) { const vent = setInterval(() => { if (lagrar) return; clearInterval(vent);
+      if ($("status").classList.contains("ok")) oppdaterStatus("Videoen er lasta opp og lagd til. GitHub Pages brukar om lag eitt minutt på å publisere fila, så vent litt med å førehandsvise.", "ok"); }, 300); }
+  }
 }
 
 function brukSkjema(f, gammal, lk, i) {
@@ -1521,6 +1723,7 @@ lesSvarteliste(lesNøkkel())
 $("lagre").addEventListener("click", lagre);
 // «+ Lag nytt ▾» (navigasjon.js): det som blir laga på oversikta sjølv
 document.addEventListener("lag-nytt", e => {
+  if (e.detail === "video" && oppsett) return opneVideo();
   if (e.detail !== "plakatkarusell" || !oppsett) return;
   nyFørehand = { namn: "Plakatar", url: lagPk({ sek: 20, plakatar: [] }), sekund: 60 };
   open = { lk: "skjerm1", i: -1 }; teikn();

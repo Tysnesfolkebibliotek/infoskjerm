@@ -10,13 +10,13 @@
 (function () {
   // ---- Det som kan lagast -------------------------------------------------
   // href: sida som skal opnast. id: noko oversikta gjer sjølv (sjå «lag-nytt»
-  // i oversikt.html). Ny type = éi ny linje her, til dømes:
-  //   { namn: "Video", forklaring: "Ein videosnutt på skjermen", href: "video.html" },
+  // i oversikt.html). Ny type = éi ny linje her.
   const NYTT = [
     { namn: "Karusell", forklaring: "Bøker som vekslar på skjermen", href: "index.html" },
     { namn: "Plakat", forklaring: "Digital teneste eller arrangement", href: "plakat.html" },
     { namn: "Plakatkarusell", forklaring: "Fleire plakatar etter tur", id: "plakatkarusell" },
     { namn: "Klokke", forklaring: "Klokke, vêr og ferje", href: "plakat.html#side=klokke" },
+    { namn: "Video", forklaring: "Ein videosnutt utan lyd", id: "video" },
   ];
 
   const stil = document.createElement("style");

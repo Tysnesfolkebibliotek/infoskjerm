@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Video</title>
+<!--
+  Video for Tysnes folkebibliotek: éin videosnutt utan lyd på infoskjermen.
+
+    video.html#vis=1&fil=video/<namn>.mp4&tema=<tema>
+
+  Videoen fyller breidda. Over og under er det flat temafarge, og nedst står
+  den vanlege botnen («Tysnes folkebibliotek» og ei tynn linje som viser kor
+  mykje som er att av videoen).
+
+  Videoen blir lagd inn frå oversikta («+ Lag nytt ▾» → Video), som lastar fila
+  opp til mappa video/ og reknar ut sekunda på skjermen frå lengda.
+
+  Han snakkar med rotasjon.html som plakatkarusellen: «vis» spelar frå
+  byrjinga, «skjul» set på pause, og når videoen er ferdig, seier han
+  «ferdig», så rotasjonen går vidare med ein gong. Kjem ikkje videoen i gang
+  (feil format, inkje nett), seier han «ferdig» med ein gong og «tom», så
+  skjermen ikkje blir ståande tom.
+
+  Opna utanfor rotasjonen (førehandsvising) går videoen i ring av seg sjølv.
+-->
+<style>
+  :root {
+    --bakgrunn: #14110f; --tekst: #f5efe6; --dempa: #b8ab98; --aksent: #e8a33d;
+    --skrift: "Ubuntu", "DejaVu Sans", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bakgrunn); color: var(--tekst); font-family: var(--skrift); }
+  body.skjerm { cursor: none; }
+  main { height: 100%; display: flex; flex-direction: column; padding: 0 0 4vh; }
+  .midt { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  video { display: block; width: 100%; max-height: 100%; object-fit: contain; background: transparent; }
+  footer { display: flex; align-items: center; margin-top: 3vh; padding: 0 7vw; flex: none; }
+  .botnnamn { font-size: 2.8vw; color: var(--tekst); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+  .botnnamn b { font-weight: 700; }
+  /* Tynn linje nedst som kryp saman etter kvart som videoen spelar */
+  .nedteljing { position: fixed; left: 0; right: 0; bottom: 0; height: .55vh; background: var(--aksent); transform-origin: left center;
+                transform: scaleX(0); opacity: .9; }
+  .melding { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dempa);
+    font-size: 3vh; line-height: 1.4; text-align: center; padding: 5vh; }
+</style>
+</head>
+<body>
+<main>
+  <div class="midt"><video id="video" muted playsinline preload="auto" disablepictureinpicture></video></div>
+  <footer><span class="botnnamn"><b>Tysnes</b> folkebibliotek</span></footer>
+</main>
+<div class="nedteljing" id="nedteljing" aria-hidden="true"></div>
+<script src="tema.js"></script>
+<script>
+const p = new URLSearchParams(location.hash.slice(1));
+const FIL = p.get("fil") || "";
+const FORHAND = p.has("forhand");
+const I_ROTASJON = window.parent !== window && !FORHAND;
+const VENT_PÅ_START_MS = 15000;   // kjem ikkje videoen i gang innan dette, går vi vidare
+if (I_ROTASJON) document.body.classList.add("skjerm");
+
+// Temafargane frå tema.js («kveld» brukar standardfargane over)
+const TEMA = typeof TEMA_ETTER_ID !== "undefined" ? TEMA_ETTER_ID : {};
+if (TEMA[p.get("tema")] && p.get("tema") !== "kveld") document.documentElement.dataset.tema = p.get("tema");
+
+const video = document.getElementById("video");
+const linje = document.getElementById("nedteljing");
+function sei(beskjed) { if (I_ROTASJON) try { parent.postMessage({ nyheiter: beskjed }, "*"); } catch (e) {} }
+
+let vist = false;        // rotasjonen viser sida no
+let startTid = null;     // tidtakar: går vi vidare om videoen ikkje kjem i gang
+let ferdigSagt = false;  // berre éin «ferdig» per visning
+
+// Linja nedst følgjer videoen
+function teiknLinje() {
+  const d = video.duration;
+  linje.style.transform = d > 0 ? `scaleX(${Math.max(0, 1 - video.currentTime / d)})` : "scaleX(0)";
+  if (!video.paused) requestAnimationFrame(teiknLinje);
+}
+video.addEventListener("play", () => requestAnimationFrame(teiknLinje));
+
+function ferdig() {
+  clearTimeout(startTid);
+  if (!vist || ferdigSagt) return;
+  ferdigSagt = true;
+  sei("ferdig");
+}
+function vis() {
+  // «vis» kan kome to gonger (etter «klar»): då held vi fram
+  if (vist) return;
+  vist = true; ferdigSagt = false;
+  try { video.currentTime = 0; } catch (e) {}
+  clearTimeout(startTid);
+  startTid = setTimeout(() => { if (video.paused || video.currentTime < 0.2) ferdig(); }, VENT_PÅ_START_MS);
+  const lovnad = video.play();
+  if (lovnad) lovnad.catch(e => { console.warn("Videoen ville ikkje starte:", e.message); ferdig(); });
+}
+function skjul() {
+  vist = false;
+  clearTimeout(startTid);
+  video.pause();
+}
+
+video.addEventListener("ended", ferdig);
+video.addEventListener("error", () => {
+  console.warn("Fekk ikkje spela videoen:", FIL, video.error && video.error.message);
+  if (!I_ROTASJON) document.body.append(Object.assign(document.createElement("div"),
+    { className: "melding", textContent: "Fekk ikkje spela videoen. Er fila ei .mp4 med H.264?" }));
+  sei("tom");   // rotasjonen hoppar over sida til ho seier «har» igjen
+  meldtTom = true;
+  ferdig();
+  // Prøv igjen om fem minutt (t.d. var nettet nede då sida vart lasta)
+  setTimeout(() => { video.src = FIL + "?t=" + Date.now(); video.load(); }, 5 * 60000);
+});
+// Melde «tom» før, men fungerer no
+let meldtTom = false;
+video.addEventListener("canplay", () => { if (meldtTom) { meldtTom = false; sei("har"); } });
+
+window.addEventListener("message", e => {
+  if (e.source !== window.parent || !e.data) return;
+  if (e.data.nyheiter === "vis") vis();
+  if (e.data.nyheiter === "skjul") skjul();
+});
+window.addEventListener("hashchange", () => location.reload());
+
+if (!FIL) {
+  document.body.append(Object.assign(document.createElement("div"), { className: "melding", textContent: "Inga videofil i lenkja (fil=video/….mp4)." }));
+  sei("klar"); sei("tom");
+} else {
+  // Utanfor rotasjonen går videoen i ring av seg sjølv
+  if (!I_ROTASJON) { video.loop = true; video.autoplay = true; }
+  video.src = FIL;
+  sei("klar"); sei("har");
+}
+</script>
+</body>
+</html>
