@@ -25,7 +25,10 @@
     Vêr og sol: MET Norge (api.met.no) — Locationforecast, Sunrise og MetAlerts (farevarsel), henta kvar 30. min.
     Ferje:      Entur (api.entur.io) — avgangar frå Våge kai (NSR:StopPlace:58466) mot Halhjem, henta kvart 2. min.
     Fødd i dag: Wikidata (query.wikidata.org) og Bibliofil (SRU), henta éin gong per døgn.
-  Opningstidene står i opningstider.json (med ein reserve her i fila).
+    Opningstid: Bibliotek.no (tysnesbibliotek.no/api/v1/libraries) — same tider som på nettsida, henta kvar time.
+  Opningstidene blir endra på nettsida (redaktørverktøyet), ikkje her. Er nettsida nede, blir
+  sist henta tider brukte; har sida aldri fått svar, blir opningstider.json brukt som reserve.
+  Skuletimane står i opningstider.json.
 
   Utan nett går klokka og opningstida som før. Vêr og ferje blir viste frå
   sist henta data så lenge dei er ferske nok, elles blir boksane skjulte.
@@ -322,7 +325,9 @@ function teiknOpning() {
   const d = no(), t = d.getHours() + d.getMinutes() / 60;
   const iso = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
   const u = (OPNING.unntak || {})[iso] || {};
-  const mo = spenn("meirope" in u ? u.meirope : OPNING.meirope);
+  // «meirope» er éi tid for alle dagar (opningstider.json) eller per dag (frå Bibliotek.no)
+  const moFast = typeof OPNING.meirope === "object" ? (OPNING.meirope || {})[DAGKODE[d.getDay()]] : OPNING.meirope;
+  const mo = spenn("meirope" in u ? u.meirope : moFast);
   const bt = spenn("betjent" in u ? u.betjent : (OPNING.betjent || {})[DAGKODE[d.getDay()]]);
   let klasse = "", hovud, meir;
   if (bt && t >= bt[0] && t < bt[1]) {
@@ -332,16 +337,63 @@ function teiknOpning() {
   } else {
     klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "· opnar " + klKort(mo[0]) : "";
   }
-  if (u.tekst) meir += " · " + u.tekst;
+  if (u.tekst) meir += (meir ? " · " : "· ") + u.tekst;
   $("ope").className = "ope " + klasse;
   $("ope").hidden = !MED("ope");
   $("opeNo").textContent = hovud;
   $("opeMeir").textContent = meir;
 }
-fetch("opningstider.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null)
-  .then(j => { if (j && j.meirope) { OPNING = j; minne.skriv("opning", j); } })
-  .catch(() => { const j = minne.les("opning"); if (j) OPNING = j; })
-  .finally(teiknOpning);
+// Opningstidene kjem frå Bibliotek.no (same som på tysnesbibliotek.no), så dei berre
+// treng å endrast éin stad. Rekkjefølgje: 1) opningstider.json (reserve + skuletimar),
+// 2) Bibliotek.no oppå, eller sist henta svar frå Bibliotek.no om nettsida ikkje svarar.
+const BIBNO = "https://www.tysnesbibliotek.no/api/v1/libraries";
+const BIBNO_HOVUD = { "Client-Identifier": "Tysnes folkebibliotek infoskjerm (biblioteket@tysnes.kommune.no)" };
+const BIBNO_DAG = { monday: "man", tuesday: "tys", wednesday: "ons", thursday: "tor", friday: "fre", saturday: "lør", sunday: "søn" };
+// Éin dag frå API-et ({ isClosedAllDay, periods: [{ opens, closes }] }) → «09:00-15:00», "" når stengt
+function bibnoDag(o) {
+  const p = (o && !o.isClosedAllDay && o.periods) || [];
+  return p.length ? p[0].opens + "-" + p[p.length - 1].closes : "";
+}
+// Avvik (specialOpeningHours) → «unntak» per dato. Formatet er ikkje dokumentert i detalj,
+// så her blir dei vanlegaste feltnamna prøvde; ukjende oppføringar blir hoppa over.
+function bibnoUnntak(liste) {
+  const ut = {};
+  for (const s of liste || []) {
+    const fra = s.date || s.startDate || s.from || s.fromDate;
+    if (!/^\d{4}-\d{2}-\d{2}/.test(fra || "")) continue;
+    const til = s.endDate || s.to || s.toDate || fra;
+    const e = {};
+    if (s.regular) e.betjent = bibnoDag(s.regular);
+    if (s.selfService) e.meirope = bibnoDag(s.selfService);
+    if (!s.regular && !s.selfService && ("isClosedAllDay" in s || s.periods)) { e.betjent = bibnoDag(s); e.meirope = bibnoDag(s); }
+    const tekst = [s.note, s.description, s.label, s.title, s.name].find(x => typeof x === "string" && x);
+    if (tekst) e.tekst = tekst;
+    const d = new Date(fra.slice(0, 10) + "T12:00:00"), slutt = new Date(til.slice(0, 10) + "T12:00:00");
+    for (let n = 0; d <= slutt && n < 62; n++, d.setDate(d.getDate() + 1)) ut[isoDato(d)] = e;
+  }
+  return ut;
+}
+function fraBibno(b) {
+  const betjent = {}, meirope = {};
+  for (const [en, nn] of Object.entries(BIBNO_DAG)) {
+    const dag = b.openingHours[en] || {};
+    betjent[nn] = bibnoDag(dag.regular);
+    meirope[nn] = b.hasSelfService === false ? "" : bibnoDag(dag.selfService);
+  }
+  return { betjent, meirope, unntak: Object.assign({}, OPNING.unntak, bibnoUnntak(b.specialOpeningHours)) };
+}
+async function hentOpning() {
+  const fil = await fetch("opningstider.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (fil && fil.meirope) { OPNING = fil; minne.skriv("opning", fil); }
+  else { const j = minne.les("opning"); if (j) OPNING = j; }
+  let b = await fetch(BIBNO, { headers: BIBNO_HOVUD, cache: "no-cache" }).then(r => r.ok ? r.json() : null)
+    .then(j => j && ((j.data || []).find(x => /tysnes/i.test(x.name)) || (j.data || [])[0])).catch(() => null);
+  if (b && b.openingHours) minne.skriv("bibno", b); else b = minne.les("bibno");
+  if (b && b.openingHours) OPNING = Object.assign({}, OPNING, fraBibno(b));
+  teiknOpning();
+}
+hentOpning();
+setInterval(hentOpning, 3600e3);
 
 // ---- Skuletimar og friminutt --------------------------------------------------
 // Frå «skule» i opningstider.json: skuledagar og timeplanen. Ingenting å halde

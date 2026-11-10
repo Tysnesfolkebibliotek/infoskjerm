@@ -1,5 +1,5 @@
 {
-  "_forklaring": "Opningstider for klokkesida (klokke.html). Tider som «09-15» eller «09:30-15». «meirope» gjeld alle dagar. «betjent» per dag: man, tys, ons, tor, fre, lør, søn (dagar som manglar, er utan betjening). «unntak» per dato (ÅÅÅÅ-MM-DD) overstyrer for den dagen: «betjent» og/eller «meirope» (tom tekst = ingen), og valfri «tekst» som blir vist etter opningstida. Døme: \"2026-12-24\": { \"betjent\": \"\", \"meirope\": \"08-14\", \"tekst\": \"God jul!\" }",
+  "_forklaring": "Opningstidene blir no henta frå tysnesbibliotek.no (Bibliotek.no) og skal endrast der, i redaktørverktøyet. Tidene under er berre reserve dersom klokkesida aldri har fått svar frå nettsida. Tider som «09-15» eller «09:30-15». «meirope» gjeld alle dagar. «betjent» per dag: man, tys, ons, tor, fre, lør, søn. «unntak» per dato (ÅÅÅÅ-MM-DD) blir brukt saman med avvika frå nettsida (nettsida vinn om same dato står begge stader).",
   "meirope": "08-22",
   "betjent": {
     "man": "09-15",
