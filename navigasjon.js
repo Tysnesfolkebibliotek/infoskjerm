@@ -17,7 +17,7 @@
     { namn: "Plakatkarusell", forklaring: "Fleire plakatar etter tur", id: "plakatkarusell" },
     { namn: "Klokke", forklaring: "Klokke, vêr og ferje", href: "plakat.html#side=klokke" },
     { namn: "Video", forklaring: "Ein videosnutt utan lyd", id: "video" },
-    { namn: "Nettside", forklaring: "Ei side frå tysnesbibliotek.no, t.d. ein kanal", id: "nettside" },
+    { namn: "Nettsider", forklaring: "Ei side frå tysnesbibliotek.no, t.d. ein kanal", id: "nettside" },
   ];
 
   const stil = document.createElement("style");

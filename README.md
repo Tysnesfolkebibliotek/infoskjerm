@@ -80,7 +80,7 @@ Kvar side i `oppsett.json` er éi linje:
 - **`dagar`**: `man-fre`, `lør,søn`, `tys` osv.
 - **`tid`**: `13:00-17:00`.
 
-Ei kanalside eller anna nettside blir lagd til med **+ Lag nytt ▾ → Nettside**.
+Ei kanalside eller anna nettside blir lagd til med **+ Lag nytt ▾ → Nettsider**.
 Adressefeltet er berre synleg for slike sider; for karusellar, plakatar o.l.
 kjem lenkja frå byggjaren.
 
