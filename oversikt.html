@@ -519,6 +519,8 @@ function fråByggjaren() {
 // Skjermane les berre «skjerm1»/«skjerm2», så dei ser ikkje desse.
 const AV = sk => sk + "_avpublisert";
 const skjermFor = lk => lk.replace(/_avpublisert$/, "");
+// Ei vanleg nettside (t.d. ein kanal på tysnesbibliotek.no), ikkje ei av våre eigne sider
+const erNettside = s => !!s.nettside || (!!s.url && !/tysnesfolkebibliotek\.github\.io\/infoskjerm\//.test(s.url));
 const erOpenFor = (lk, i) => open && open.lk === lk && open.i === i;
 
 function teikn() {
@@ -580,8 +582,8 @@ function teikn() {
       liste,
       sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi ${sider.length - synlege.length === 1 ? "ho" : "dei"} ikkje er i bruk no. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
-      nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1))
-        : el("button", { type: "button", class: "leggtil", onclick: () => { nyFørehand = null; open = { lk, i: -1 }; teikn(); } }, "+ Legg til side"),
+      // Nye sider kjem frå «+ Lag nytt ▾» øvst (eller frå byggjarane)
+      nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1)) : null,
       avgruppe));
   }
   oppdaterStatus();
@@ -738,14 +740,15 @@ function skjema(s, lk, i) {
         el("select", { id: "f-skjerm" }, ...SKJERMAR.map(x => { const o = new Option(skjermInfo(x.nøkkel).namn, x.nøkkel); o.selected = x.nøkkel === skjermFor(lk); return o; })))),
     erPlakatkarusell(s) ? pkBoks(s, lk, i) : null,
     erVideo(s) ? videoBoks(s, i) : null,
-    el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
-      el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
+    // Lenkja blir berre vist for nettsider (t.d. kanalsider) og lokale filer; elles kjem ho frå byggjaren og ligg gøymd
+    el("div", { hidden: !(s.lokal || erNettside(s)) }, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Adresse til nettsida"),
+      el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://www.tysnesbibliotek.no/nn/kanal/1" })),
     el("div", { class: "rad" },
       // For plakatkarusellar og video blir sekunda rekna ut og viste i boksen over; feltet ligg gøymt og blir lagra som før
       el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
         el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: erVideo(s) && !s.sekund ? "" : s.sekund || 180, readonly: erVideo(s) })),
-      el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", {}, " "),
-        el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
+      el("div", { hidden: !erNettside(s) }, el("label", {}, " "),
+        el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last sida på nytt kvar gong"))),
     el("div", {}, el("label", {}, "Periode (tomt = heile året)"),
       el("div", { class: "rad" },
         el("input", { type: "date", id: "f-fra", value: tilDato(periode[0], iÅr), "aria-label": "Frå dato" }),
@@ -1820,6 +1823,13 @@ $("lagre").addEventListener("click", lagre);
 // «+ Lag nytt ▾» (navigasjon.js): det som blir laga på oversikta sjølv
 document.addEventListener("lag-nytt", e => {
   if (e.detail === "video" && oppsett) return opneVideo();
+  if (e.detail === "nettside" && oppsett) {
+    nyFørehand = { namn: "", url: "", sekund: 80, frisk: true, nettside: true };
+    open = { lk: "skjerm1", i: -1 }; teikn();
+    oppdaterStatus("Ny nettside nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Lim inn adressa, så «Legg til» og Lagre nedst.");
+    setTimeout(() => { const f = document.getElementById("f-url"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } }, 50);
+    return;
+  }
   if (e.detail !== "plakatkarusell" || !oppsett) return;
   nyFørehand = { namn: "Plakatar", url: lagPk({ sek: 20, plakatar: [] }), sekund: 60 };
   open = { lk: "skjerm1", i: -1 }; teikn();
