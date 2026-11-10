@@ -750,6 +750,24 @@ function skjema(s, lk, i) {
         // Med nøkkel blir endringa lagra med ein gong; utan nøkkel blir ho berre lagd inn i lista
         lesNøkkel() ? (i < 0 ? "Legg til og lagre" : "Lagre") : (i < 0 ? "Legg til" : "Bruk endringane")),
       el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")));
+  // «Gjenta kvart år» gjeld berre når det er vald ein periode: grå til begge datoane er fylte ut,
+  // og får kryss av seg sjølv når periodefelta går frå tomme til utfylte
+  {
+    const frå = f.querySelector("#f-fra"), til = f.querySelector("#f-til"), kv = f.querySelector("#f-kvartar");
+    let hadde = !!(frå.value && til.value);
+    const oppdater = () => {
+      const har = !!(frå.value && til.value);
+      if (har && !hadde) kv.checked = true;
+      if (!har) kv.checked = false;
+      kv.disabled = !har;
+      kv.parentElement.style.opacity = har ? "" : "0.45";
+      kv.parentElement.title = har ? "" : "Vel frå- og til-dato først";
+      hadde = har;
+    };
+    frå.addEventListener("input", oppdater);
+    til.addEventListener("input", oppdater);
+    if (!hadde) oppdater();
+  }
   return f;
 }
 
