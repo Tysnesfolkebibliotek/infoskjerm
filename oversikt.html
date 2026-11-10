@@ -181,7 +181,7 @@
 <main>
   <div class="toppline"><h1>Infoskjermar</h1><span id="nyttmeny"></span></div>
   <script src="navigasjon.js"></script>
-  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Endringar må lagrast nedst, og kjem fram på skjermane innan om lag ein halvtime, ofte raskare.</p>
+  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Ingenting blir endra på skjermane før du klikkar <b>Lagre</b> nedst. Etterpå kjem endringane fram innan om lag ein halvtime, ofte raskare.</p>
 
   <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
 
@@ -503,7 +503,7 @@ function fråByggjaren() {
   }
   nyFørehand = { namn: p.get("tittel") || "", url, sekund: Number(p.get("sekund")) || 180 };
   open = { lk: skjerm, i: -1 }; teikn();
-  oppdaterStatus((/plakat\.html/.test(url) ? "Plakaten" : "Karusellen") + " frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «" + (lesNøkkel() ? "Legg til og lagre" : "Legg til") + "».");
+  oppdaterStatus((/plakat\.html/.test(url) ? "Plakaten" : "Karusellen") + " frå byggjaren er fylt ut nedst på skjermen. Legg til tidspunkt om du vil, klikk «Legg til» og så Lagre nedst.");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.focus(); } }, 50);
 }
 
@@ -747,8 +747,8 @@ function skjema(s, lk, i) {
     el("p", { class: "hjelp", id: "f-feil" }),
     el("div", { class: "knappar" },
       el("button", { type: "button", class: "hoved", onclick: () => erVideo(s) ? brukVideo(f, s, lk, i) : brukSkjema(f, s, lk, i) },
-        // Med nøkkel blir endringa lagra med ein gong; utan nøkkel blir ho berre lagd inn i lista
-        lesNøkkel() ? (i < 0 ? "Legg til og lagre" : "Lagre") : (i < 0 ? "Legg til" : "Bruk endringane")),
+        // Endringa blir berre lagd inn i lista; skjermane får henne først når ein klikkar Lagre nedst
+        i < 0 ? "Legg til" : "Bruk endringane"),
       el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")));
   // «Gjenta kvart år» gjeld berre når det er vald ein periode: grå til begge datoane er fylte ut,
   // og får kryss av seg sjølv når periodefelta går frå tomme til utfylte
@@ -791,7 +791,7 @@ function arrTemaval(h, ved) {
 }
 
 // Lista over plakatane i ein plakatkarusell, inni skjemaet. Endringane blir
-// skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Lagre» / «Bruk endringane».
+// skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Legg til» / «Bruk endringane».
 function pkBoks(s, lk, i) {
   const pk = lesPk(s.url);
   const liste = el("ol");
@@ -1147,8 +1147,7 @@ async function brukVideo(f, s, lk, i) {
   if (tilJson(oppsett) !== før || i >= 0) {
     if ($("videodialog").open) $("videodialog").close();
     // Når lagringa er ferdig: sei frå at GitHub Pages treng litt tid
-    if (i < 0) { const vent = setInterval(() => { if (lagrar) return; clearInterval(vent);
-      if ($("status").classList.contains("ok")) oppdaterStatus("Videoen er lasta opp og lagd til. GitHub Pages brukar om lag eitt minutt på å publisere fila, så vent litt med å førehandsvise.", "ok"); }, 300); }
+    if (i < 0) oppdaterStatus("Videoen er lasta opp og lagd til nedst. Klikk Lagre for å setje han på skjermen. GitHub Pages brukar om lag eitt minutt på å publisere fila, så vent litt med å førehandsvise.");
   }
 }
 
@@ -1191,11 +1190,10 @@ function brukSkjema(f, gammal, lk, i) {
   if (tilLk !== lk && i >= 0 && lk === skjermFor(lk) && oppsett[lk].length <= 1) return feil("Minst éi side må vere publisert på kvar skjerm, så denne kan ikkje flyttast.");
   if (i < 0) (oppsett[tilLk] || (oppsett[tilLk] = [])).push(ny);
   else if (tilLk === lk) oppsett[lk][i] = ny;
-  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); if (lesNøkkel()) lagre(); return; }
+  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); return; }
   open = null;
   teikn();
-  // Med nøkkel blir det lagra med ein gong (også andre endringar som ikkje er lagra enno)
-  if (lesNøkkel()) lagre();
+  oppdaterStatus(`«${ny.namn}» er ${i < 0 ? "lagd til" : "endra"}. Klikk Lagre for å sende det til skjermane.`);
 }
 
 // Med filteret på byter sida plass med den næraste synlege sida
@@ -1809,7 +1807,7 @@ document.addEventListener("lag-nytt", e => {
   if (e.detail !== "plakatkarusell" || !oppsett) return;
   nyFørehand = { namn: "Plakatar", url: lagPk({ sek: 20, plakatar: [] }), sekund: 60 };
   open = { lk: "skjerm1", i: -1 }; teikn();
-  oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Kryss av plakatane du vil ha med, så «" + (lesNøkkel() ? "Legg til og lagre" : "Legg til") + "».");
+  oppdaterStatus("Ny plakatkarusell nedst på skjerm 1 (du kan velje skjerm 2 i skjemaet). Kryss av plakatane du vil ha med, så «Legg til» og Lagre nedst.");
   setTimeout(() => { const f = document.getElementById("f-namn"); if (f) { f.scrollIntoView({ block: "center" }); f.select(); } }, 50);
 });
 $("angre").addEventListener("click", () => { oppsett = JSON.parse(original); open = null; namnOpen = null; teikn(); });

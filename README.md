@@ -39,7 +39,11 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
    klokkeslett om du vil, klikk **Legg til** og så **Lagre**.
 
 For å endre ein karusell som alt er på skjermen: klikk **Endre i byggjaren** på
-oversiktssida, gjer endringa, og klikk **Oppdater … på skjerm N**.
+oversiktssida, gjer endringa, klikk **Oppdater … på skjerm N** og så **Lagre**
+på oversikta.
+
+Ingenting blir endra på skjermane før du klikkar **Lagre** nedst på oversikta
+(unnateke svartelista, som blir lagra med ein gong).
 
 Skjermen hentar `oppsett.json` ved starten av kvar runde og tek ho i bruk i
 runden etter. Med publiseringa på GitHub kan det ta opptil om lag ein halvtime
