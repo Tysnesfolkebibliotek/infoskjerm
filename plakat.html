@@ -847,6 +847,8 @@ function visPlakat(cfg) {
       $("qrlenkje").textContent = kortLenkje(cfg.lenkje);
       $("qrrad").hidden = false;
       $("qrrad").classList.toggle("liten", cfg.qr === "liten");
+      // Liten QR: ingen lang adresse under teksten (teksten seier kvar ein finn meir)
+      if (cfg.qr === "liten") $("qrlenkje").hidden = true;
     } catch (e) { console.warn("QR:", e); }
   }
 

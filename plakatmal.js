@@ -197,7 +197,7 @@ function arrangementPlakat(ev, h) {
     mal: "arrangement", overlinje, overskrift: ev.title, tekst: arrIngress(ev), merkelapp,
     bilete: bilete.url || "ikon", biletform: bilete.url ? "stor" : "", kjelde: bilete.kjelde, ikon: "kalender",
     dato, tid: /^\d{2}:\d{2}(-\d{2}:\d{2})?$/.test(tid) ? tid : "", stad: arrStad(ev.location),
-    lenkje: ev.url || "", qrtekst: "Les meir", qr: "liten", tema,
+    lenkje: ev.url || "", qrtekst: "Les meir på tysnesbibliotek.no", qr: "liten", tema,
     merke: bilete.url && /^\d{4}-\d{2}-\d{2}$/.test(dag) ? dag : "",   // datomerke på biletet
   };
   const p = new URLSearchParams();
