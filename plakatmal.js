@@ -144,14 +144,9 @@ const MÅNAD_KORT = ["januar", "februar", "mars", "april", "mai", "juni", "juli"
 // Felt som kan vere tekst eller objekt med namn/merkelapp
 const arrTekst = x => typeof x === "string" ? x : x && (x.label || x.name || x.title || x.id) || "";
 const arrId = x => typeof x === "string" ? x : x && (x.id || x.key || x.value) || "";
-// Kort ingress: teaser, elles første avsnitt i body (CommonMark utan formatering)
+// Kort ingress: berre teaser (utan formatering). Manglar han, blir det ingen tekst.
 function arrIngress(ev) {
-  let t = ev.teaser || "";
-  if (!t && Array.isArray(ev.body)) {
-    const b = ev.body.find(b => b && typeof (b.text || b.content || b.markdown) === "string");
-    t = b ? (b.text || b.content || b.markdown) : "";
-  }
-  t = String(t).replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+  let t = String(ev.teaser || "").replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/[*_#>`]+/g, "").split(/\n\s*\n/)[0].replace(/\s+/g, " ").trim();
   if (t.length > 200) t = t.slice(0, 200).replace(/\s+\S*$/, "") + " …";
   return t;
