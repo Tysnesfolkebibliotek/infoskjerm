@@ -2686,7 +2686,13 @@ function listeBøker(items) {
     const w = (it && it.work) || {};
     const r = (w.records || []).find(r => r && r.source && r.source.code === "library-system" && r.recordId);
     // Andre kjelder (Filmoteket o.l.) er digitale. Utan nokon kopling har ikkje biblioteket utgåva (t.d. kassert).
-    if (!r) { if ((w.records || []).length) digitale++; else utanfor.push(w.title || "utan tittel"); continue; }
+    if (!r) {
+      if ((w.records || []).length) { digitale++; continue; }
+      // Ingen kopling: karusellen prøver å finne utgåva i katalogen på tittel og år (sjå finnUtanKopling)
+      utanfor.push({ tittel: w.title || "utan tittel", år: Number(w.publicationYear) || 0,
+                     forfattar: ((w.mainContributors || [])[0] || {}).name || "", pos: ut.length, tekst: bibnoTekst(it.teaser) });
+      continue;
+    }
     const id = String(r.recordId).replace(/\D/g, "");
     if (!id || sett.has(id)) continue;
     sett.add(id);
@@ -2713,6 +2719,24 @@ async function hentNettliste(id) {
   }
 }
 
+// Eit innslag på lista utan kopling til katalogen (records tom), t.d. ei ny utgåve nettsida
+// ikkje har kopla enno. Vi søkjer på tittel (og forfattar) og godtek berre ei utgåve med
+// same utgjevingsår, så det ikkje blir feil utgåve. Er boka alt med på lista, blir ho ikkje teken med to gonger.
+async function finnUtanKopling(u, avdar, alt) {
+  if (!(u.år > 0)) return null;
+  const tittel = String(u.tittel || "").split(" : ")[0].trim();
+  if (!tittel) return null;
+  const etternamn = String(u.forfattar || "").split(",")[0].trim().split(/\s+/).pop() || "";
+  const årstal = p => Number((((p && p.sru_recordData) || {}).bsdc_date || "").match(/\d{4}/)?.[0] || 0);
+  try {
+    for (const tekst of etternamn ? [tittel + " " + etternamn, tittel] : [tittel]) {
+      const treff = (await søkTitlar(tekst, avdar)).filter(p => årstal(p) === u.år && !alt.includes(String(p.id)));
+      if (treff.length) { postCache.set(String(treff[0].id), treff[0]); return String(treff[0].id); }
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function hentUtval(cfg, avdar, meld) {
   // Handplukka bøker blir ikkje filtrerte, bortsett frå «står på hylla» om det er valt
   cfg = { ...cfg, lf: "", alder: "", spraak: "", aarfra: "", aartil: "", omslag: "0", perforf: "0", plass: "", utan: "" };
@@ -2724,13 +2748,20 @@ async function hentUtval(cfg, avdar, meld) {
     const l = await hentNettliste(cfg.liste);
     idar = l.bøker.map(b => b.id);
     tekstar = new Map(l.bøker.map(b => [b.id, b.tekst]));
-    for (const t of l.utanfor || []) utelat(`ikkje i samlinga («${t}», ingen kopling til katalogen)`);
+    // Innslag utan kopling: prøv å finne utgåva på tittel og utgjevingsår. Set dei inn der dei stod på lista.
+    for (const u of [...(l.utanfor || [])].reverse()) {
+      const id = typeof u === "object" ? await finnUtanKopling(u, avdar, idar) : null;
+      if (id) { idar.splice(u.pos, 0, id); if (u.tekst) tekstar.set(id, u.tekst); }
+      else if (typeof u === "object" && !(u.år > 0)) utelat(`utan kopling til katalogen og utan utgjevingsår («${u.tittel}»)`);
+      else utelat(`ikkje i samlinga («${typeof u === "object" ? u.tittel : u}», fann ikkje utgåva i katalogen)`);
+    }
     meld(0, idar.length);
     const funne = new Map((await hentPostar(idar)).map(p => [String(p.id), p]));
-    for (const b of l.bøker) {
-      if (funne.has(b.id)) poster.push(funne.get(b.id));
+    const titlar = new Map(l.bøker.map(b => [b.id, b.tittel]));
+    for (const id of idar) {
+      if (funne.has(id)) poster.push(funne.get(id));
       // Står på lista, men tittelnummeret finst ikkje i katalogen (sletta eller flytta post)
-      else utelat(`finst ikkje i katalogen («${b.tittel || "tittelnr. " + b.id}», tittelnr. ${b.id})`);
+      else utelat(`finst ikkje i katalogen («${titlar.get(id) || "tittelnr. " + id}», tittelnr. ${id})`);
     }
     meld(poster.length, idar.length);
   } else
@@ -3799,7 +3830,7 @@ function startByggjar(startCfg) {
   // ---- Boklister frå nettsida ----------------------------------------
   // Menyen blir henta første gong ein vel «Liste på nettsida», og hugsa i ein time.
   // «var»: oppdaterSynlege kan kalle lastListemeny før denne delen har køyrt
-  var LISTEMENY_LAGER = "infoskjerm-boklister2";   // 2: med «ikkje i samlinga»
+  var LISTEMENY_LAGER = "infoskjerm-boklister3";   // 3: med tittel og år på innslag utan kopling
   var listemeny = null, listemenyHentar = null, listemenyFeil = 0;
   // Datoen til lista, for å sortere dei nyaste først (feltnamnet er ikkje stadfesta, så vi prøver fleire)
   function listeDato(l) { return l.publishedAt || l.createdAt || l._createdAt || l.updatedAt || l._updatedAt || l.date || ""; }
@@ -3918,7 +3949,7 @@ function startByggjar(startCfg) {
     if (l.bøker === 0) st.textContent = l.digitale ? "Lista har berre digitalt innhald (til dømes filmar), så karusellen blir tom. Vel ei anna liste."
       : "Ingen av bøkene på lista finst i samlinga, så karusellen blir tom. Vel ei anna liste.";
     else st.textContent = [l.bøker != null ? `${l.bøker} ${l.bøker === 1 ? "bok" : "bøker"} frå samlinga` : "", l.digitale ? `${l.digitale === 1 ? "1 digital tittel" : l.digitale + " digitale titlar"} (filmar o.l.) blir hoppa over` : "",
-      (l.utanfor || []).length ? `${l.utanfor.length} finst ikkje i samlinga (${l.utanfor.map(t => "«" + t + "»").join(", ")})` : ""].filter(Boolean).join(", ") + ". ";
+      (l.utanfor || []).length ? `${l.utanfor.length} utan kopling til katalogen (${l.utanfor.map(u => "«" + (u.tittel || u) + (u.år ? " " + u.år : "") + "»").join(", ")}) – karusellen prøver å finne dei på tittel og år` : ""].filter(Boolean).join(", ") + ". ";
     if (l.url) {
       const a = Object.assign(document.createElement("a"), { href: l.url, target: "_blank", rel: "noopener", textContent: "Sjå lista på nettsida" });
       st.append(a);
