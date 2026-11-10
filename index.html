@@ -2689,7 +2689,7 @@ function listeBøker(items) {
     const id = String(r.recordId).replace(/\D/g, "");
     if (!id || sett.has(id)) continue;
     sett.add(id);
-    ut.push({ id, tekst: bibnoTekst(it.teaser) });
+    ut.push({ id, tekst: bibnoTekst(it.teaser), tittel: w.title || "" });
   }
   return { bøker: ut, digitale };
 }
@@ -2725,7 +2725,11 @@ async function hentUtval(cfg, avdar, meld) {
     tekstar = new Map(l.bøker.map(b => [b.id, b.tekst]));
     meld(0, idar.length);
     const funne = new Map((await hentPostar(idar)).map(p => [String(p.id), p]));
-    for (const id of idar) if (funne.has(id)) poster.push(funne.get(id));
+    for (const b of l.bøker) {
+      if (funne.has(b.id)) poster.push(funne.get(b.id));
+      // Står på lista, men tittelnummeret finst ikkje i katalogen (sletta eller flytta post)
+      else utelat(`finst ikkje i katalogen («${b.tittel || "tittelnr. " + b.id}», tittelnr. ${b.id})`);
+    }
     meld(poster.length, idar.length);
   } else
   for (const id of idar) { const p = await hentPost(id); if (p) poster.push(p); meld(poster.length, idar.length); }
