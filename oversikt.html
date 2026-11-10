@@ -698,7 +698,8 @@ function skjema(s, lk, i) {
     el("div", { hidden: erPlakatkarusell(s) }, el("label", { for: "f-url" }, s.lokal ? "Lokal fil" : "Lenkje (frå karusellbyggjaren eller ei kanalside)"),
       el("input", { type: "url", id: "f-url", value: s.lokal || s.url || "", placeholder: "https://tysnesfolkebibliotek.github.io/infoskjerm/#vis=1&…" })),
     el("div", { class: "rad" },
-      el("div", {}, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
+      // For plakatkarusellar blir sekunda rekna ut og vist i plakatboksen; feltet ligg gøymt og blir lagra som før
+      el("div", { hidden: erPlakatkarusell(s) }, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
         el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: s.sekund || 180 })),
       el("div", { hidden: erPlakatkarusell(s) }, el("label", {}, " "),
         el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last på nytt kvar gong (kanalsider)"))),
