@@ -75,14 +75,14 @@ Kvar side i `oppsett.json` er éi linje:
 - **`sekund`**: kor lenge sida blir vist. Minst 5. For julekalenderen er det eit
   tak: han går vidare sjølv når runden er ferdig.
 - **`frisk`**: `true` lastar sida på nytt kvar gong ho blir vist (kanalsider).
-
-Ei kanalside eller anna nettside blir lagd til med **+ Lag nytt ▾ → Nettside**.
-Adressefeltet er berre synleg for slike sider; for karusellar, plakatar o.l.
-kjem lenkja frå byggjaren.
 - **`periode`**: `12-01/12-24` kvart år, kan gå over nyttår (`11-15/01-15`).
   Med årstal (`2026-10-01/2026-10-31`) berre den eine gongen.
 - **`dagar`**: `man-fre`, `lør,søn`, `tys` osv.
 - **`tid`**: `13:00-17:00`.
+
+Ei kanalside eller anna nettside blir lagd til med **+ Lag nytt ▾ → Nettside**.
+Adressefeltet er berre synleg for slike sider; for karusellar, plakatar o.l.
+kjem lenkja frå byggjaren.
 
 Sider utan tidsstyring blir alltid viste. Gjeld ingen sider akkurat no, viser
 skjermen dei utan tidsstyring.
