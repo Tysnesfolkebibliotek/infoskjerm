@@ -120,6 +120,12 @@
   .pk li .pknappar button { padding: 3px 8px; font-size: 12.5px; }
   .pk li .pknappar input[type=date] { width: auto; padding: 2px 6px; font-size: 12.5px; }
   .pk li.ute { opacity: .6; }
+  /* Berre éin plakat: éi enkel linje utan nummer og ramme */
+  .pk ol.einsleg li { border: 0; background: none; padding: 0; }
+  .pk .einslinje { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+  .pk .einslinje .pnamn { flex: 1 1 12em; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pk .einslinje button { padding: 3px 8px; font-size: 12.5px; }
+  .pk .einslinje input[type=date] { width: auto; padding: 2px 6px; font-size: 12.5px; }
   .pk .tom { color: var(--dempa); font-size: 13px; font-style: italic; }
   .pk details summary { cursor: pointer; font-size: 13.5px; font-weight: 650; }
   .pk .velliste { display: grid; gap: 2px; margin: 6px 0; }
@@ -852,9 +858,8 @@ function pkBoks(s, lk, i) {
     el("div", { class: "rad" },
       el("div", {}, el("label", { for: "pk-sek" }, "Sekund per plakat"), sek),
       el("div", {}, el("label", {}, " "), runde)));
-  const boks = el("div", { class: "pk" },
-    el("label", {}, "Plakatar i karusellen (trykk på ein plakat for fleire val)"),
-    liste, vel, fleire);
+  const tittel = el("label", {}, "Plakatar i karusellen (trykk på ein plakat for fleire val)");
+  const boks = el("div", { class: "pk" }, tittel, liste, vel, fleire);
 
   let skjemaRot = null;
   const finnSkjema = () => skjemaRot || (skjemaRot = boks.closest(".skjema"));
@@ -875,6 +880,25 @@ function pkBoks(s, lk, i) {
     if (f) f.querySelector("#f-url").value = lagPk(pk);
     const no = idagTekst();
     const n = pk.plakatar.length;
+    // Knappen «Endre i byggjaren» (ikkje for arrangement og dei fleste eigne sider)
+    const byggKnapp = (h, k, lagra) => erArrangement(h) || (plakatside(h) && new URLSearchParams(h).get("side") !== "klokke") ? null : el("button", { type: "button", disabled: !lagra,
+      title: lagra ? (følgjerMal(h) ? "Opne plakaten i plakatbyggjaren. Etterpå følgjer han ikkje malen lenger." : "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå.") : "Lagre oppsettet først, så du ikkje mistar endringane",
+      onclick: () => { location.href = "plakat.html#" + utanTil(plakatside(h) ? h : løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren");
+    // Berre éin plakat: inga liste, ingen eigen Førehandsvis (knappen øvst viser det same),
+    // og «Vis til» berre om han alt er sett (Periode nedanfor gjer same jobben).
+    tittel.textContent = n === 1 ? "Plakat" : "Plakatar i karusellen (trykk på ein plakat for fleire val)";
+    liste.classList.toggle("einsleg", n === 1);
+    if (n === 1) {
+      const h = pk.plakatar[0], til = tilDatoAv(h), lagra = i >= 0 && !endra();
+      liste.replaceChildren(el("li", { class: til && til < no ? "ute" : "" },
+        el("div", { class: "einslinje" },
+          el("span", { class: "pnamn" }, plakatNamn(h)),
+          byggKnapp(h, 0, lagra),
+          erArrangement(h) ? arrTemaval(h, nyH => endre(() => { pk.plakatar[0] = nyH; })) : null,
+          til ? el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
+            el("input", { type: "date", value: til, onchange: e => endre(() => { pk.plakatar[0] = medTil(h, e.target.value); }) })) : null),
+        lagra ? null : el("span", { class: "hjelp" }, "Lagre først for å endre i byggjaren.")));
+    } else
     liste.replaceChildren(...pk.plakatar.map((h, k) => {
       const til = tilDatoAv(h), ute = til && til < no;
       const lagra = i >= 0 && !endra();
@@ -893,9 +917,7 @@ function pkBoks(s, lk, i) {
         erOpen ? el("div", { class: "pknappar" },
           el("button", { type: "button", onclick: () => førehandsvis({ namn: plakatNamn(h), url: plakatUrl(h) }) }, "Førehandsvis"),
           arr ? arrTemaval(h, nyH => endre(() => { pk.plakatar[k] = nyH; })) : null,
-          arr || (plakatside(h) && new URLSearchParams(h).get("side") !== "klokke") ? null : el("button", { type: "button", disabled: !lagra,
-            title: lagra ? (følgjerMal(h) ? "Opne plakaten i plakatbyggjaren. Etterpå følgjer han ikkje malen lenger." : "Opne plakaten i plakatbyggjaren. Du kjem tilbake hit etterpå.") : "Lagre oppsettet først, så du ikkje mistar endringane",
-            onclick: () => { location.href = "plakat.html#" + utanTil(plakatside(h) ? h : løys(h)) + "&" + new URLSearchParams({ retur: `${lk}:${i}:${k}`, returnamn: s.namn || "" }); } }, "Endre i byggjaren"),
+          byggKnapp(h, k, lagra),
           arr ? null : el("label", { class: "val", title: "Plakaten blir ikkje vist etter denne datoen. Tomt = alltid." }, "Vis til",
             el("input", { type: "date", value: til, onchange: e => endre(() => { pk.plakatar[k] = medTil(h, e.target.value); }) })),
           el("button", { type: "button", class: "fare", onclick: () => endre(() => { pk.plakatar.splice(k, 1); openK = null; }) }, "Fjern")) : null);
