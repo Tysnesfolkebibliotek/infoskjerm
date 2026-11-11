@@ -135,6 +135,9 @@
   :root.v-vertavle .vernu svg { width: 21rem; height: 18.5rem; }
   :root.v-vertavle .vernu .grad { font-size: 22rem; }
 
+  /* Ekstra luft under datoen når det er plass (sjå tilpass()) */
+  :root.luft .klokkeblokk { margin-bottom: 4.8rem; }
+
   /* Når alt ikkje får plass, blir sida tettare i to steg (sjå tilpass()) */
   :root.tett .side, :root.tett .midt { gap: 2.6rem; }
   :root.tett .kort { padding: 3.4rem 4.2rem; gap: 2.2rem; }
@@ -196,7 +199,7 @@
   <div class="ope" id="ope"><i></i><b id="opeNo"></b><span id="opeMeir"></span></div>
 
   <div class="midt">
-  <div>
+  <div class="klokkeblokk">
     <div class="klokke tal"><span class="tid"><span id="tim">--</span><span class="kolon" id="kolon">:</span><span id="min">--</span></span></div>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
   </div>
@@ -921,7 +924,7 @@ window.addEventListener("message", e => {
 
 // ---- Får alt plass? ------------------------------------------------------------
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
-// blir ho tettare i to steg. Får det framleis ikkje plass, blir det færre namn i Fødd i dag, og til slutt fell boksen bort.
+// blir ho tettare i to steg. Er det god plass, får datoen litt ekstra luft under seg. Får det framleis ikkje plass, blir det færre namn i Fødd i dag, og til slutt fell boksen bort.
 function tilpass() {
   // Vent til sida (og skrifta/temaet) er ferdig lasta, elles må nettlesaren rekne ut
   // utforminga for tidleg (Firefox: «Layouten ble tvunget før siden var fullastet»)
@@ -929,8 +932,11 @@ function tilpass() {
   const rot = document.documentElement, side = document.querySelector(".side");
   const for_ = () => side.scrollHeight > side.clientHeight + 2;
   rot.classList.remove("tett", "tettare");
+  rot.classList.add("luft");
   if (foddVis !== FODD_MAKS) { foddVis = FODD_MAKS; teiknFødd(); }
   $("fodd").hidden = !$("fodd").dataset.har;
+  if (!for_()) return;
+  rot.classList.remove("luft");   // ikkje plass til ekstra luft
   if (!for_()) return;
   rot.classList.add("tett");
   if (!for_()) return;
