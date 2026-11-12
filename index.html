@@ -1378,14 +1378,26 @@ function startVisning(cfg) {
   // med ein gong, og karusellen viser berre bøker der omslaget er ferdig.
   const bilete = new Map();   // adresse → "lastar" | "ok" | "feil"
   const forhold = new Map();  // adresse → breidd/høgd på omslaget (til julekalenderen)
-  const PRØV_IGJEN_MIN = 2;
+  const PRØV_IGJEN_MIN = 1;
+  // Eit bilete har inga tidsgrense i nettlesaren. Heng hentinga (t.d. når
+  // wifi-en fell ut midt i), ville omslaget stått som «lastar» til skjermen
+  // starta på nytt. Etter GI_OPP_SEK prøver vi difor på nytt.
+  const GI_OPP_SEK = 60;
+  const forsøk = new Map();   // adresse → det siste Image-objektet vi prøvde med
 
   function forlast(url) {
-    if (!url || bilete.has(url)) return;
+    if (!url) return;
+    const st = bilete.get(url);
+    if (st === "ok" || st === "feil") return;
+    if (st === "lastar" && Date.now() - (lastarSidan.get(url) || 0) < GI_OPP_SEK * 1000) return;
     bilete.set(url, "lastar"); lastarSidan.set(url, Date.now());
     const img = new Image();
+    forsøk.set(url, img);
     img.onload = () => { bilete.set(url, "ok"); if (img.naturalHeight) forhold.set(url, img.naturalWidth / img.naturalHeight); if (ventarPåBilete) { ventarPåBilete = false; clearTimeout(tidtakar); tidtakar = null; fortset(); } };
-    img.onerror = () => { bilete.set(url, "feil"); setTimeout(() => bilete.delete(url), PRØV_IGJEN_MIN * 60000); };
+    img.onerror = () => {
+      if (forsøk.get(url) !== img || bilete.get(url) === "ok") return;   // eit nyare forsøk har teke over
+      bilete.set(url, "feil"); setTimeout(() => bilete.delete(url), PRØV_IGJEN_MIN * 60000);
+    };
     img.src = url;
   }
 
