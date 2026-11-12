@@ -323,6 +323,7 @@
       <label class="avkryss"><input type="checkbox" id="kv-ferje" checked> Neste ferje Våge → Halhjem</label>
       <label class="avkryss"><input type="checkbox" id="kv-fare" checked> Farevarsel frå MET (berre når det finst)</label>
       <label class="avkryss"><input type="checkbox" id="kv-dag" checked> Dagen i dag: namnedag og nasjonaldagar (nynorsk Wikipedia)</label>
+      <label class="avkryss"><input type="checkbox" id="kv-bilete" checked> Dagens bilete frå Wikimedia Commons</label>
       <label class="avkryss"><input type="checkbox" id="kv-fodd"> Fødd i dag: forfattarar biblioteket har bøker av</label>
     </div>
 
@@ -911,7 +912,7 @@ async function startByggjar() {
   sider.append(new Option("Klokke, vêr og ferje", "klokke"));
   mal.append(sider);
   const erKlokke = () => mal.value === "klokke";
-  const KLOKKEBOKSAR = ["ope", "skule", "ver", "sol", "ferje", "fare", "dag"];
+  const KLOKKEBOKSAR = ["ope", "skule", "ver", "sol", "ferje", "fare", "dag", "bilete"];
   // Temaet «Automatisk» (lys om dagen, kveld etter solnedgang) finst berre for klokka
   function autoTema(på) {
     const sel = $("tema"), finst = sel.querySelector('option[value="auto"]');
