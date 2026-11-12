@@ -956,8 +956,7 @@ function pkBoks(s, lk, i) {
       ...(tenesteData ? [] : [el("span", { class: "hjelp" }, "Hentar malane …")]),
       ...Object.entries(grupper).flatMap(([g, l]) => [el("b", { class: "hjelp" }, g),
         ...l.map(tn => rad(tn.namn, h => følgjerMal(h) && sp(h).get("mal") === tn.id, new URLSearchParams({ mal: tn.id, folg: "1" }).toString()))]),
-      el("b", { class: "hjelp" }, "Sider"),
-      ...Object.entries(PLAKATSIDER).map(([id, sd]) => rad(sd.namn, h => !!plakatside(h) && sp(h).get("side") === id, new URLSearchParams({ side: id }).toString())),
+      // Klokka står ikkje lenger i plakatkarusellar: ho er ei eiga side med prioritet høg
       el("b", { class: "hjelp" }, "Frå nettsida"),
       rad(`Arrangement (dei neste ${ARR_TAL}, éin plakat kvar)`, erArrangement, new URLSearchParams({ arr: "nettside", tema: ARR_STANDARDTEMA }).toString()),
       ...(eigne.size ? [el("b", { class: "hjelp" }, "Plakatar du har laga"),
