@@ -17,10 +17,13 @@
     variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, fare (farevarsel)
-    veksle=1            éin ting om gongen under klokka (opningstid, skule, vêr, ferje, Fødd i dag) som vekslar
+    veksle=0            vis alt på éin gong (standard: éin ting om gongen under klokka, som vekslar)
+    farge=petrol        eigne lyse fargar: petrol (standard), papir, mynte, rosa, kalk, betong, himmel,
+                        salvie, aprikos, lavendel, sennep, havbla. farge=auto: Lys om dagen, Kveld om kvelden
+    skrift=poppins      skrift frå Google Fonts: poppins (standard), inter, lora; skrift=standard gir Ubuntu
     fodd=1              «Fødd i dag»: forfattarar fødde i dag som biblioteket har bøker av
-    kveld=1 / kveld=0   tving temaet «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
-    tema=fjord          bruk eit anna tema frå tema.js heile døgnet
+    kveld=1 / kveld=0   med farge=auto: tving «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
+    tema=fjord          bruk eit tema frå tema.js heile døgnet i staden for fargane under
     teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
     tid=19:30           lat som klokka er 19:30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
@@ -329,10 +332,14 @@ const UTAN = new Set((H.get("utan") || "").split(",").map(s => s.trim()).filter(
 const MED = k => !UTAN.has(k) || (k === "ver" && VARIANT === "vertavle");
 const FODD = H.get("fodd") === "1";
 // Skrift (#skrift=…): frå Google Fonts, som karusellane. Utan nett: standardskrifta (Ubuntu).
+// Fargar (#farge=…): standard «petrol» (sand og petrol) heile døgnet. Med #tema=… blir
+// eit tema frå tema.js brukt i staden; «farge=auto» gir det gamle (Lys om dagen, Kveld om kvelden).
+const FARGE = H.get("farge") === "auto" ? "" : H.get("farge") || (H.get("tema") ? "" : "petrol");
 const SKRIFTER = { inter: ["Inter", "Inter:wght@300;400;700"], poppins: ["Poppins", "Poppins:wght@300;400;700"],
                    lora: ["Lora", "Lora:wght@400;700"] };
-if (SKRIFTER[H.get("skrift")]) {
-  const [namn, last] = SKRIFTER[H.get("skrift")];
+const SKRIFT = H.get("skrift") || "poppins";   // «skrift=standard» gir Ubuntu
+if (SKRIFTER[SKRIFT]) {
+  const [namn, last] = SKRIFTER[SKRIFT];
   document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=" + last + "&display=swap" }));
   document.documentElement.style.setProperty("--skrift", `"${namn}", "Ubuntu", "DejaVu Sans", sans-serif`);
 }
@@ -711,7 +718,7 @@ function teiknVer() {
   const kveld = H.has("kveld") ? H.get("kveld") === "1" : (opp && ned ? (t < opp || t >= ned) : (t.getHours() < 8 || t.getHours() >= 16));
   // Tema som på karusellane: «Kveld» (standardfargane) etter solnedgang, «Lys» om dagen
   // Eigne klokkefargar (#farge=…) gjeld heile døgnet; då blir ikkje tema frå tema.js brukt
-  const farge = H.get("farge");
+  const farge = FARGE;
   if (farge) { document.documentElement.dataset.farge = farge; delete document.documentElement.dataset.tema; return; }
   const tema = H.get("tema") || (kveld ? "kveld" : "lys");
   if (tema === "kveld" || typeof TEMA_ETTER_ID === "undefined" || !TEMA_ETTER_ID[tema]) delete document.documentElement.dataset.tema;
@@ -983,7 +990,7 @@ window.addEventListener("message", e => {
 // ---- Veksle (#veksle=1): éi rad om gongen ------------------------------------
 // Radene som har noko å vise (ikkje skjulte) kjem etter tur. Står sida i rotasjonen,
 // blir tida delt likt, så alt kjem fram éin gong medan sida står (minst 6 s per rad).
-const VEKSLE = H.get("veksle") === "1";
+const VEKSLE = H.get("veksle") !== "0";   // standard: veksle; «veksle=0» viser alt på éin gong
 document.documentElement.classList.toggle("veksle", VEKSLE);
 let veksleNr = 0, veksleTid = null, veksleMs = 8000;
 const synlegeRader = () => [...document.querySelectorAll(".rader .rad")].filter(r => !r.hidden);

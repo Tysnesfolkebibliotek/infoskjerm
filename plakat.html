@@ -320,6 +320,7 @@
       <label class="avkryss"><input type="checkbox" id="kv-ferje" checked> Neste ferje Våge → Halhjem</label>
       <label class="avkryss"><input type="checkbox" id="kv-fare" checked> Farevarsel frå MET (berre når det finst)</label>
       <label class="avkryss"><input type="checkbox" id="kv-fodd"> Fødd i dag: forfattarar biblioteket har bøker av</label>
+      <label class="avkryss"><input type="checkbox" id="kv-veksle" checked> Vis éin ting om gongen under klokka (vekslar). Utan kryss: alt på éin gong</label>
     </div>
 
     <div class="del" id="innhalddel"><h2>Innhald</h2>
@@ -911,7 +912,7 @@ async function startByggjar() {
   // Temaet «Automatisk» (lys om dagen, kveld etter solnedgang) finst berre for klokka
   function autoTema(på) {
     const sel = $("tema"), finst = sel.querySelector('option[value="auto"]');
-    if (på && !finst) sel.prepend(new Option("Automatisk (lys / kveld)", "auto"));
+    if (på && !finst) sel.prepend(new Option("Sand og petrol (standard for klokka)", "auto"));
     if (!på && finst) { if (sel.value === "auto") sel.value = "lys"; finst.remove(); }
   }
   function fyllKlokke(cfg) {
@@ -919,6 +920,7 @@ async function startByggjar() {
     $("kvariant").value = ["ver", "vertavle"].includes(cfg.variant) ? cfg.variant : "klokke";
     for (const k of KLOKKEBOKSAR) $("kv-" + k).checked = !utan.has(k);
     $("kv-fodd").checked = cfg.fodd === "1";
+    $("kv-veksle").checked = cfg.veksle !== "0";
     autoTema(true);
     felt("tema").value = cfg.tema && TEMA[cfg.tema] ? cfg.tema : "auto";
   }
@@ -999,7 +1001,7 @@ async function startByggjar() {
       // Vêrtavla viser alltid vêret; sola står i vêrboksen
       const utan = KLOKKEBOKSAR.filter(k => !$("kv-" + k).checked && !(k === "ver" && $("kvariant").value === "vertavle"));
       return { mal: id, side: "klokke", variant: $("kvariant").value === "klokke" ? "" : $("kvariant").value, utan: utan.join(","),
-               fodd: $("kv-fodd").checked ? "1" : "", tema: felt("tema").value === "auto" ? "" : felt("tema").value, overskrift: "Klokke" };
+               fodd: $("kv-fodd").checked ? "1" : "", veksle: $("kv-veksle").checked ? "" : "0", tema: felt("tema").value === "auto" ? "" : felt("tema").value, overskrift: "Klokke" };
     }
     const sel = $("bileteval").value;
     let bilete = "", biletform = "", kjelde = "";
@@ -1064,7 +1066,7 @@ async function startByggjar() {
     const p = new URLSearchParams();
     if (vis) p.set("vis", "1");
     p.set("side", "klokke");
-    for (const k of ["variant", "utan", "fodd", "tema"]) if (cfg[k]) p.set(k, cfg[k]);
+    for (const k of ["variant", "utan", "fodd", "veksle", "tema"]) if (cfg[k]) p.set(k, cfg[k]);
     return p.toString();
   }
   function oppdater() {
