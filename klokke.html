@@ -111,6 +111,7 @@
   .under b { color: var(--tekst); font-weight: 700; }
   .under:empty { display: none; }
   #dagMeir { white-space: pre-line; }
+  #dagHovud .lett { font-weight: 400; }
   .aksent { color: var(--aksent-tekstfarge, var(--aksent)); }
   .gron, .skule.fri .verdi > span:first-child { color: var(--gron); }
 
@@ -874,9 +875,13 @@ function teiknDag() {
   const punkt = MED("dag") && DAG && DAG.dato === isoDato(new Date()) ? DAG.punkt : [];
   $("dag").hidden = !punkt.length;
   if (!punkt.length) return;
+  // Éi setning: namna utheva, «har namnedag» i vanleg skrift. Resten (nasjonaldagar) under.
   const m = punkt[0].match(/^(.*?)\s+(har namnedag.*)$/i);
-  $("dagHovud").textContent = m ? m[1] : punkt[0];
-  $("dagMeir").textContent = [m && m[2].charAt(0).toUpperCase() + m[2].slice(1), ...punkt.slice(1)].filter(Boolean).join("\n");
+  const namn = document.createElement("b"), rest = document.createElement("span");
+  namn.textContent = m ? m[1] : punkt[0];
+  rest.className = "lett"; rest.textContent = m ? " " + m[2] : "";
+  $("dagHovud").replaceChildren(namn, rest);
+  $("dagMeir").textContent = punkt.slice(1).join("\n");
 }
 
 async function hentFødd() {
