@@ -53,6 +53,14 @@
           --verdi: 6rem;      /* storleiken på verdiane i radene */
           --rad: 4rem; }      /* luft over og under kvar rad */
   :root[data-tema="lys"] { --gron: #2e7d4f; }
+  /* Eigne lyse fargar til klokkesida (#farge=…). Gjeld heile døgnet og går framfor tema. */
+  :root[data-farge] { --spor: color-mix(in srgb, var(--tekst) 14%, transparent); --brikke: color-mix(in srgb, var(--tekst) 8%, transparent); }
+  :root[data-farge="himmel"]   { --bakgrunn: #dcebf5; --tekst: #0f2a3d; --dempa: #4d6779; --aksent: #1f6fa8; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="salvie"]   { --bakgrunn: #e1eadc; --tekst: #1b2a1d; --dempa: #55675a; --aksent: #4a7a33; --aksent-tekst: #fff; --gron: #2f7a3e; }
+  :root[data-farge="aprikos"]  { --bakgrunn: #f7e3d4; --tekst: #3a1e10; --dempa: #7c5a47; --aksent: #c2502a; --aksent-tekst: #fff; --gron: #2f7a4a; }
+  :root[data-farge="lavendel"] { --bakgrunn: #e8e4f3; --tekst: #231c3d; --dempa: #605a7b; --aksent: #6a4fb3; --aksent-tekst: #fff; --gron: #2e7a50; }
+  :root[data-farge="sennep"]   { --bakgrunn: #f3cd52; --tekst: #2a2006; --dempa: #66541c; --aksent: #2a2006; --aksent-tekst: #f3cd52; --gron: #1f5f35; }
+  :root[data-farge="havbla"]   { --bakgrunn: #3a74b8; --tekst: #ffffff; --dempa: #d3e2f3; --aksent: #ffd36b; --aksent-tekst: #1b2a40; --gron: #b7f0c9; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; cursor: none; background: var(--bakgrunn); color: var(--tekst);
                font-family: var(--skrift); transition: background 1s, color 1s; }
@@ -644,6 +652,9 @@ function teiknVer() {
   const t = no();
   const kveld = H.has("kveld") ? H.get("kveld") === "1" : (opp && ned ? (t < opp || t >= ned) : (t.getHours() < 8 || t.getHours() >= 16));
   // Tema som på karusellane: «Kveld» (standardfargane) etter solnedgang, «Lys» om dagen
+  // Eigne klokkefargar (#farge=…) gjeld heile døgnet; då blir ikkje tema frå tema.js brukt
+  const farge = H.get("farge");
+  if (farge) { document.documentElement.dataset.farge = farge; delete document.documentElement.dataset.tema; return; }
   const tema = H.get("tema") || (kveld ? "kveld" : "lys");
   if (tema === "kveld" || typeof TEMA_ETTER_ID === "undefined" || !TEMA_ETTER_ID[tema]) delete document.documentElement.dataset.tema;
   else document.documentElement.dataset.tema = tema;
