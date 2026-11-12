@@ -15,7 +15,7 @@
   Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
     variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
-    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, fare (farevarsel)
+    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel)
     veksle=0            vis alt på éin gong (standard: éin ting om gongen under klokka, som vekslar)
     farge=petrol        eigne lyse fargar: petrol (standard), papir, mynte, rosa, kalk, betong, himmel,
                         salvie, aprikos, lavendel, sennep, havbla. farge=auto: Lys om dagen, Kveld om kvelden
@@ -31,6 +31,7 @@
     Vêr og sol: MET Norge (api.met.no) — Locationforecast, Sunrise og MetAlerts (farevarsel), henta kvar 30. min.
     Ferje:      Entur (api.entur.io) — avgangar frå Våge kai (NSR:StopPlace:58466) mot Halhjem, henta kvart 2. min.
     Fødd i dag: Wikidata (query.wikidata.org) og Bibliofil (SRU), henta éin gong per døgn.
+    Dagen i dag: nynorsk Wikipedia (nn.wikipedia.org) – boksen på framsida, henta éin gong per døgn.
     Opningstid: Bibliotek.no (tysnesbibliotek.no/api/v1/libraries) — same tider som på nettsida, henta kvar time.
   Opningstidene blir endra på nettsida (redaktørverktøyet), ikkje her. Er nettsida nede, blir
   sist henta tider brukte; har sida aldri fått svar, blir opningstider.json brukt som reserve.
@@ -109,6 +110,7 @@
   .under { display: block; font-size: 3.4rem; font-weight: 400; color: var(--dempa); margin-top: 1.2rem; line-height: 1.3; }
   .under b { color: var(--tekst); font-weight: 700; }
   .under:empty { display: none; }
+  #dagMeir { white-space: pre-line; }
   .aksent { color: var(--aksent-tekstfarge, var(--aksent)); }
   .gron, .skule.fri .verdi > span:first-child { color: var(--gron); }
 
@@ -283,6 +285,11 @@
       <div class="verdi"><span class="tal" id="ferjetid"></span> <span class="aksent" id="ferjeom"></span><span class="under" id="ferjemerknad"></span></div>
     </section>
 
+    <section class="rad" id="dag" hidden>
+      <div class="namn">Dagen i dag</div>
+      <div class="verdi"><span id="dagHovud"></span><span class="under" id="dagMeir"></span></div>
+    </section>
+
     <section class="rad fodd" id="fodd" hidden>
       <div class="namn">Fødd i dag</div>
       <div class="verdi" id="foddListe"></div>
@@ -346,6 +353,7 @@ $("kjelde").textContent = [
   (MED("ver") || MED("sol") || MED("fare")) && "Vêr: MET Norge",
   MED("ferje") && "Ferje: Entur",
   FODD && "Fødd i dag: Wikidata",
+  MED("dag") && "Dagen i dag: Wikipedia",
 ].filter(Boolean).join(" · ");
 
 const minne = { les(k) { try { return JSON.parse(localStorage.getItem("klokke:" + k)); } catch (e) { return null; } },
@@ -831,6 +839,46 @@ async function talBøker(kandidatar, ix) {
   }
   return new Map([...titlar].map(([n, t]) => [n, t.size]));
 }
+// ---- Dagen i dag (nynorsk Wikipedia) ------------------------------------------
+// Same innhald som boksen «Dagen i dag» på framsida av nn.wikipedia.org: namnedag og
+// nasjonaldagar. Framsida ligg ofte i mellomlageret med gamal dato, så vi ber API-et
+// lage ho på nytt («{{:Hovudside}}») og plukkar ut punkta i boksen. Éin gong per døgn.
+let DAG = minne.les("dag");
+async function hentDag() {
+  if (!MED("dag")) return;
+  const dato = isoDato(new Date());
+  if (DAG && DAG.dato === dato) return teiknDag();
+  try {
+    const url = "https://nn.wikipedia.org/w/api.php?" + new URLSearchParams({ action: "parse", format: "json", formatversion: "2",
+      origin: "*", prop: "text", disablelimitreport: "1", contentmodel: "wikitext", title: "Hovudside", text: "{{:Hovudside}}" });
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Wikipedia " + r.status);
+    const html = (await r.json())?.parse?.text;
+    if (!html) throw new Error("tomt svar");
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    // Overskrifta «Dagen i dag», så den næraste boksen rundt ho som har punkt (li)
+    const overskrift = [...doc.querySelectorAll("h1,h2,h3,h4,div,span,b,th,p")]
+      .find(e => e.children.length <= 2 && /^\s*Dagen i dag\s*$/i.test(e.textContent));
+    let boks = overskrift;
+    while (boks && !boks.querySelector("li")) boks = boks.parentElement;
+    const punkt = boks ? [...boks.querySelectorAll("li")].map(l => l.textContent.replace(/\s+/g, " ").trim())
+      .filter(t => t && !/^ingen /i.test(t)) : [];
+    if (!punkt.length || punkt.length > 8) throw new Error("fann ikkje boksen «Dagen i dag»");
+    DAG = { dato, punkt };
+    minne.skriv("dag", DAG);
+  } catch (e) { console.warn("Fekk ikkje henta Dagen i dag:", e.message); }
+  teiknDag(); tilpass();
+}
+// «Tordis og Teodor har namnedag» → «Tordis og Teodor» stort, «har namnedag» under
+function teiknDag() {
+  const punkt = MED("dag") && DAG && DAG.dato === isoDato(new Date()) ? DAG.punkt : [];
+  $("dag").hidden = !punkt.length;
+  if (!punkt.length) return;
+  const m = punkt[0].match(/^(.*?)\s+(har namnedag.*)$/i);
+  $("dagHovud").textContent = m ? m[1] : punkt[0];
+  $("dagMeir").textContent = [m && m[2].charAt(0).toUpperCase() + m[2].slice(1), ...punkt.slice(1)].filter(Boolean).join("\n");
+}
+
 async function hentFødd() {
   if (!FODD) return;
   const d = new Date(), dato = isoDato(d);
@@ -1014,6 +1062,8 @@ function startVeksle(sekund) {
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
 // blir ho tettare i to steg. Er det god plass, får datoen litt ekstra luft under seg. Får det framleis ikkje plass, blir det færre namn i Fødd i dag, og til slutt fell boksen bort.
 function tilpass() {
+  // Veksling: står ingen synleg rad fremst (data kom etter start, eller rada forsvann), vis ei no
+  if (VEKSLE && !document.querySelector(".rader .rad.aktiv:not([hidden])")) visRad();
   // Vent til sida (og skrifta/temaet) er ferdig lasta, elles må nettlesaren rekne ut
   // utforminga for tidleg (Firefox: «Layouten ble tvunget før siden var fullastet»)
   if (document.readyState !== "complete") return;
@@ -1035,14 +1085,15 @@ function tilpass() {
 }
 
 // ---- I gang -------------------------------------------------------------------
-function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); if (VEKSLE) visRad(); }
+function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknDag(); teiknFødd(); tilpass(); if (VEKSLE) visRad(); }
 teiknAlt();
 // Klokka blir oppdatert rett etter kvart heile sekund
 (function tikk() { teiknKlokke(); teiknSkule(); tilpass(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
-setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }, 15e3);
+setInterval(() => { teiknOpning(); teiknVer(); teiknFerje(); teiknDag(); teiknFødd(); tilpass(); }, 15e3);
 hentVer(); setInterval(hentVer, VER_KVAR_MS);
 window.addEventListener("load", tilpass);
 hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
+hentDag(); setInterval(hentDag, 30 * 60e3);     // same her
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
 if (VEKSLE) startVeksle(0);
