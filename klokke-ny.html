@@ -17,6 +17,7 @@
     variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, fare (farevarsel)
+    veksle=1            éin ting om gongen under klokka (opningstid, skule, vêr, ferje, Fødd i dag) som vekslar
     fodd=1              «Fødd i dag»: forfattarar fødde i dag som biblioteket har bøker av
     kveld=1 / kveld=0   tving temaet «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
     tema=fjord          bruk eit anna tema frå tema.js heile døgnet
@@ -166,6 +167,47 @@
   :root.tettare #foddListe { gap: 1.6rem; }
   :root.tettare .person .pnamn { font-size: 4rem; }
 
+  /* ---- Veksle (#veksle=1): klokka står fast, éi rad om gongen under, i stor skrift ---- */
+  .punkt { display: none; }
+  :root.veksle .midt { margin-block: auto; }
+  :root.veksle .klokke { font-size: 26rem; }
+  :root.veksle .dato b { font-size: 5.6rem; }
+  :root.veksle .dato span { font-size: 4rem; }
+  :root.veksle .klokkeblokk { padding-bottom: 7rem; border-bottom: .2rem solid var(--spor); margin-bottom: 7rem; }
+  /* Alle radene i same rute oppå kvarandre: høgda blir den høgaste rada, så prikkane står i ro */
+  :root.veksle .rader { display: grid; min-height: 50rem; }
+  :root.veksle .rad { display: block; border: 0; padding: 0; grid-area: 1 / 1;
+                      opacity: 0; transform: translateY(2rem); transition: opacity .7s ease, transform .7s ease; pointer-events: none; }
+  :root.veksle .rad.aktiv { opacity: 1; transform: none; }
+  :root.veksle .namn { font-size: 3.6rem; color: var(--aksent-tekstfarge, var(--aksent)); margin-bottom: 4rem; }
+  :root.veksle { --verdi: 10.4rem; }
+  :root.veksle #opeNo { white-space: nowrap; }
+  :root.veksle .verdi { line-height: 1.05; }
+  :root.veksle .under { font-size: 5.4rem; margin-top: 2.8rem; }
+  :root.veksle .prikk { width: 3rem; height: 3rem; margin-right: 3.2rem; vertical-align: 2rem; }
+  :root.veksle .vernu .grad { font-size: 24rem; }
+  :root.veksle .vernu svg { width: 16rem; height: 14rem; }
+  :root.veksle .vernu .skildring { font-size: 7rem; }
+  :root.veksle .vernu .skildring span { font-size: 5rem; }
+  :root.veksle .verlinjer { font-size: 4.8rem; margin-top: 4.8rem; gap: 2rem; }
+  :root.veksle .verlinjer svg { width: 5rem; height: 5rem; }
+  :root.veksle .timar { margin-top: 4.4rem; }
+  :root.veksle .timar span { font-size: 3.4rem; }
+  :root.veksle .timar svg { width: 8rem; height: 7rem; }
+  :root.veksle .timar b { font-size: 5rem; }
+  :root.veksle .dagar span { font-size: 4.2rem; min-width: 20rem; }
+  :root.veksle .dagar b { font-size: 5.2rem; }
+  :root.veksle #foddListe { gap: 3.6rem; }
+  :root.veksle .person .pnamn { font-size: 7.6rem; }
+  :root.veksle .person .skild { font-size: 4.6rem; }
+  :root.veksle #ferjeom { display: block; }
+  /* Små prikkar som viser kor mange ting som vekslar, og kva som står no */
+  :root.veksle .punkt { display: flex; gap: 1.6rem; margin-top: 4rem; }
+  .punkt i { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--spor); transition: background .5s, width .5s; }
+  .punkt i.no { background: var(--aksent); width: 4.4rem; border-radius: 99rem; }
+  /* Vêrtavla med veksling: klokka litt mindre, så timane får plass */
+  :root.veksle.v-vertavle .klokke { font-size: 22rem; }
+
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
   footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 3rem; }
   .botnmerke { display: flex; flex-direction: column; align-items: flex-start; gap: .77rem; flex: none; }
@@ -238,6 +280,7 @@
       <div class="verdi" id="foddListe"></div>
     </section>
   </div>
+  <div class="punkt" id="punkt" aria-hidden="true"></div>
   </div>
 
   <footer>
@@ -337,7 +380,8 @@ function teiknOpning() {
     klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "Opnar kl. " + klKort(mo[0]) : "";
   }
   if (u.tekst) meir += (meir ? " · " : "") + u.tekst;
-  $("ope").className = "rad ope " + klasse;
+  $("ope").classList.remove("betjent", "stengt");
+  if (klasse) $("ope").classList.add(klasse);
   $("ope").hidden = !MED("ope");
   $("opeNo").textContent = hovud;
   $("opeMeir").textContent = meir;
@@ -916,10 +960,35 @@ let sistFerje = 0;
 window.addEventListener("message", e => {
   if (!e.data || e.data.nyheiter !== "vis") return;
   teljNed(Number(e.data.att) || Number(e.data.sekund) * 1000 || 60000, false, Number(e.data.sekund));
+  startVeksle(Number(e.data.sekund) || 0);
   foddNr++;   // neste forfattar kvar gong sida kjem fram
   teiknAlt();
   if (Date.now() - sistFerje > 60e3) { sistFerje = Date.now(); hentFerje(); }
 });
+
+// ---- Veksle (#veksle=1): éi rad om gongen ------------------------------------
+// Radene som har noko å vise (ikkje skjulte) kjem etter tur. Står sida i rotasjonen,
+// blir tida delt likt, så alt kjem fram éin gong medan sida står (minst 6 s per rad).
+const VEKSLE = H.get("veksle") === "1";
+document.documentElement.classList.toggle("veksle", VEKSLE);
+let veksleNr = 0, veksleTid = null, veksleMs = 8000;
+const synlegeRader = () => [...document.querySelectorAll(".rader .rad")].filter(r => !r.hidden);
+function visRad() {
+  const rader = synlegeRader();
+  if (!rader.length) return;
+  veksleNr %= rader.length;
+  document.querySelectorAll(".rader .rad").forEach(r => r.classList.toggle("aktiv", r === rader[veksleNr]));
+  $("punkt").replaceChildren(...(rader.length > 1 ? rader.map((r, i) => Object.assign(document.createElement("i"), { className: i === veksleNr ? "no" : "" })) : []));
+}
+function startVeksle(sekund) {
+  if (!VEKSLE) return;
+  clearInterval(veksleTid);
+  veksleNr = 0;
+  const n = Math.max(1, synlegeRader().length);
+  veksleMs = sekund > 0 ? Math.max(6000, sekund * 1000 / n) : 8000;
+  visRad();
+  veksleTid = setInterval(() => { veksleNr++; visRad(); }, veksleMs);
+}
 
 // ---- Får alt plass? ------------------------------------------------------------
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
@@ -946,7 +1015,7 @@ function tilpass() {
 }
 
 // ---- I gang -------------------------------------------------------------------
-function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }
+function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); if (VEKSLE) visRad(); }
 teiknAlt();
 // Klokka blir oppdatert rett etter kvart heile sekund
 (function tikk() { teiknKlokke(); teiknSkule(); tilpass(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
@@ -956,6 +1025,7 @@ window.addEventListener("load", tilpass);
 hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
+if (VEKSLE) startVeksle(0);
 melde("har"); melde("klar");
 </script>
 </body>
