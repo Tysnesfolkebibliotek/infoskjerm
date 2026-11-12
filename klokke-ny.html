@@ -61,6 +61,12 @@
   :root[data-farge="aprikos"]  { --bakgrunn: #f7e3d4; --tekst: #3a1e10; --dempa: #7c5a47; --aksent: #c2502a; --aksent-tekst: #fff; --gron: #2f7a4a; }
   :root[data-farge="lavendel"] { --bakgrunn: #e8e4f3; --tekst: #231c3d; --dempa: #605a7b; --aksent: #6a4fb3; --aksent-tekst: #fff; --gron: #2e7a50; }
   :root[data-farge="sennep"]   { --bakgrunn: #f3cd52; --tekst: #2a2006; --dempa: #66541c; --aksent: #2a2006; --aksent-tekst: #f3cd52; --gron: #1f5f35; }
+  :root[data-farge="papir"]    { --bakgrunn: #f4efe6; --tekst: #1d1b18; --dempa: #6e665c; --aksent: #c8102e; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="mynte"]    { --bakgrunn: #d7efe3; --tekst: #0e3b2e; --dempa: #4a6c60; --aksent: #d9582f; --aksent-tekst: #fff; --gron: #1f7a46; }
+  :root[data-farge="rosa"]     { --bakgrunn: #f6dfe5; --tekst: #3d1730; --dempa: #7c5468; --aksent: #b5315f; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="kalk"]     { --bakgrunn: #eeeee6; --tekst: #1a2340; --dempa: #5d6377; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="petrol"]   { --bakgrunn: #efe4cf; --tekst: #133b45; --dempa: #5a6d6f; --aksent: #0f7c8a; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="betong"]   { --bakgrunn: #e6e7e9; --tekst: #202326; --dempa: #5f6368; --aksent: #f05a14; --aksent-tekst: #fff; --gron: #2a7a4b; }
   :root[data-farge="havbla"]   { --bakgrunn: #3a74b8; --tekst: #ffffff; --dempa: #d3e2f3; --aksent: #ffd36b; --aksent-tekst: #1b2a40; --gron: #b7f0c9; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; cursor: none; background: var(--bakgrunn); color: var(--tekst);
@@ -322,6 +328,14 @@ document.documentElement.classList.add("v-" + VARIANT);
 const UTAN = new Set((H.get("utan") || "").split(",").map(s => s.trim()).filter(Boolean));
 const MED = k => !UTAN.has(k) || (k === "ver" && VARIANT === "vertavle");
 const FODD = H.get("fodd") === "1";
+// Skrift (#skrift=…): frå Google Fonts, som karusellane. Utan nett: standardskrifta (Ubuntu).
+const SKRIFTER = { inter: ["Inter", "Inter:wght@300;400;700"], poppins: ["Poppins", "Poppins:wght@300;400;700"],
+                   lora: ["Lora", "Lora:wght@400;700"] };
+if (SKRIFTER[H.get("skrift")]) {
+  const [namn, last] = SKRIFTER[H.get("skrift")];
+  document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=" + last + "&display=swap" }));
+  document.documentElement.style.setProperty("--skrift", `"${namn}", "Ubuntu", "DejaVu Sans", sans-serif`);
+}
 $("kjelde").textContent = [
   (MED("ver") || MED("sol") || MED("fare")) && "Vêr: MET Norge",
   MED("ferje") && "Ferje: Entur",
