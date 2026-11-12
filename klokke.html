@@ -7,6 +7,8 @@
 <!--
   klokke.html — klokkeside for infoskjermane: opningstid, klokke, vêr og neste ferje.
 
+  Utforming frå 12.11.2026: «tavle» i sand og petrol med Poppins, éin ting om gongen under klokka.
+
   Lenkje til oversikta («+ Legg til side»):
     https://tysnesfolkebibliotek.github.io/infoskjerm/klokke.html#vis=1
 
@@ -14,9 +16,13 @@
     variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, fare (farevarsel)
+    veksle=0            vis alt på éin gong (standard: éin ting om gongen under klokka, som vekslar)
+    farge=petrol        eigne lyse fargar: petrol (standard), papir, mynte, rosa, kalk, betong, himmel,
+                        salvie, aprikos, lavendel, sennep, havbla. farge=auto: Lys om dagen, Kveld om kvelden
+    skrift=poppins      skrift frå Google Fonts: poppins (standard), inter, lora; skrift=standard gir Ubuntu
     fodd=1              «Fødd i dag»: forfattarar fødde i dag som biblioteket har bøker av
-    kveld=1 / kveld=0   tving temaet «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
-    tema=fjord          bruk eit anna tema frå tema.js heile døgnet
+    kveld=1 / kveld=0   med farge=auto: tving «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
+    tema=fjord          bruk eit tema frå tema.js heile døgnet i staden for fargane under
     teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
     tid=19:30           lat som klokka er 19:30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
@@ -34,154 +40,193 @@
   sist henta data så lenge dei er ferske nok, elles blir boksane skjulte.
 -->
 <style>
-  /* Same variablar, skrift og marg som karusellane (index.html) og plakatane
-     (plakat.html). Standardfargane er temaet «Kveld»; om dagen blir temaet «Lys»
-     brukt (frå tema.js). Eit anna tema kan veljast med #tema=… i lenkja.
-     1 rem = 10 px på ein ståande 1080 × 1920-skjerm (1 rem = 1 % av breidda /
-     0,926). Liggjande skjerm: same utforming, skalert ned og midtstilt. */
+  /* Utforming «tavle» (12.11.2026): ingen boksar eller pillar. Klokka og datoen
+     øvst, deretter rader med tynne skiljeliner: etikett til venstre, verdi til
+     høgre, same rytme i alle radene. Farevarselet er ei farga stripe heilt øvst.
+     Same variablar og skrift som karusellane (index.html) og plakatane, så tema
+     frå tema.js verkar. Standardfargane er temaet «Kveld»; om dagen «Lys».
+     1 rem = 10 px på ein ståande 1080 × 1920-skjerm. Liggjande skjerm: same
+     utforming, skalert ned og midtstilt. */
   :root { font-size: min(calc(100vw / 108), calc(100vh / 192));
           --bakgrunn: #14110f; --tekst: #f5efe6; --dempa: #b8ab98; --aksent: #e8a33d;
           --brikke: rgba(255,255,255,.10); --aksent-tekst: #1b140c; --spor: rgba(255,255,255,.12);
           --skrift: "Ubuntu", "DejaVu Sans", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-          --gron: #7fd1a0; }
+          --gron: #7fd1a0;
+          --etikett: 25rem;   /* breidda på etikettkolonnen */
+          --verdi: 6rem;      /* storleiken på verdiane i radene */
+          --rad: 4rem; }      /* luft over og under kvar rad */
   :root[data-tema="lys"] { --gron: #2e7d4f; }
+  /* Eigne lyse fargar til klokkesida (#farge=…). Gjeld heile døgnet og går framfor tema. */
+  :root[data-farge] { --spor: color-mix(in srgb, var(--tekst) 14%, transparent); --brikke: color-mix(in srgb, var(--tekst) 8%, transparent); }
+  :root[data-farge="himmel"]   { --bakgrunn: #dcebf5; --tekst: #0f2a3d; --dempa: #4d6779; --aksent: #1f6fa8; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="salvie"]   { --bakgrunn: #e1eadc; --tekst: #1b2a1d; --dempa: #55675a; --aksent: #4a7a33; --aksent-tekst: #fff; --gron: #2f7a3e; }
+  :root[data-farge="aprikos"]  { --bakgrunn: #f7e3d4; --tekst: #3a1e10; --dempa: #7c5a47; --aksent: #c2502a; --aksent-tekst: #fff; --gron: #2f7a4a; }
+  :root[data-farge="lavendel"] { --bakgrunn: #e8e4f3; --tekst: #231c3d; --dempa: #605a7b; --aksent: #6a4fb3; --aksent-tekst: #fff; --gron: #2e7a50; }
+  :root[data-farge="sennep"]   { --bakgrunn: #f3cd52; --tekst: #2a2006; --dempa: #66541c; --aksent: #2a2006; --aksent-tekst: #f3cd52; --gron: #1f5f35; }
+  :root[data-farge="papir"]    { --bakgrunn: #f4efe6; --tekst: #1d1b18; --dempa: #6e665c; --aksent: #c8102e; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="mynte"]    { --bakgrunn: #d7efe3; --tekst: #0e3b2e; --dempa: #4a6c60; --aksent: #d9582f; --aksent-tekst: #fff; --gron: #1f7a46; }
+  :root[data-farge="rosa"]     { --bakgrunn: #f6dfe5; --tekst: #3d1730; --dempa: #7c5468; --aksent: #b5315f; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="kalk"]     { --bakgrunn: #eeeee6; --tekst: #1a2340; --dempa: #5d6377; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="petrol"]   { --bakgrunn: #efe4cf; --tekst: #133b45; --dempa: #5a6d6f; --aksent: #0f7c8a; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="betong"]   { --bakgrunn: #e6e7e9; --tekst: #202326; --dempa: #5f6368; --aksent: #f05a14; --aksent-tekst: #fff; --gron: #2a7a4b; }
+  :root[data-farge="havbla"]   { --bakgrunn: #3a74b8; --tekst: #ffffff; --dempa: #d3e2f3; --aksent: #ffd36b; --aksent-tekst: #1b2a40; --gron: #b7f0c9; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; cursor: none; background: var(--bakgrunn); color: var(--tekst);
                font-family: var(--skrift); transition: background 1s, color 1s; }
-  /* Marg som plakatane: 5vh oppe, 7vw på sidene, 4vh nede */
   .side { position: absolute; left: 50%; top: 50%; width: 108rem; height: 192rem; transform: translate(-50%, -50%);
-          padding: 9.6rem 7.56rem 7.68rem; display: flex; flex-direction: column; gap: 3.6rem; }
-  /* Klokka og boksane: står midt i den ledige plassen mellom opningstida og botnen */
-  .midt { display: flex; flex-direction: column; gap: 3.6rem; margin-block: auto; }
-  .tal { font-weight: 700; font-variant-numeric: tabular-nums; }
+          padding: 9.6rem 7.56rem 7.68rem; display: flex; flex-direction: column; }
+  .tal { font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
 
-  .ope { align-self: flex-start; display: flex; align-items: center; gap: 1.6rem; font-size: 3.24rem;
-         padding: 1.4rem 3rem; border-radius: 99rem; background: var(--brikke); }
-  .ope i { width: 2rem; height: 2rem; border-radius: 50%; background: var(--aksent); }
-  .ope.betjent i { background: var(--gron); }
-  .ope.stengt i { background: var(--dempa); }
-  .ope span { color: var(--dempa); }
-  .ope[hidden] { display: none; }
-
-  .klokke { display: flex; align-items: baseline; gap: 1.2rem; line-height: .9; }
-  .klokke .tid { font-size: 29rem; letter-spacing: -.03em; white-space: nowrap; }
-  .klokke .kolon { transition: opacity .5s ease-in-out; }
-  .klokke .kolon.av { opacity: .25; }
-  .dato { display: flex; align-items: baseline; gap: 2.8rem; margin-top: 1.6rem; white-space: nowrap; }
-  .dato b { font-size: 6rem; font-weight: 700; }
-  .dato span { font-size: 3.6rem; color: var(--dempa); }
-
-  .kort { padding: 4.4rem 4.8rem; border-radius: 3.2rem; background: var(--brikke); display: flex; flex-direction: column; gap: 2.8rem; }
-  .kort[hidden] { display: none; }
-  .kort.skule { flex-direction: row; align-items: center; gap: 3.2rem; padding: 3.6rem 4.8rem; }
-  .skule svg { width: 7.2rem; height: 7.2rem; flex: none; }
-  .skule b { display: block; font-size: 5.6rem; font-weight: 700; }
-  .skule span { display: block; font-size: 3.4rem; color: var(--dempa); margin-top: .6rem; }
-  .skule.fri b { color: var(--gron); }
-  /* Som «avdeling» på karusellane og plakatane */
-  .etikett { font-size: 3.24rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-             color: var(--aksent-tekstfarge, var(--aksent)); }
-  .vernu { display: flex; align-items: center; gap: 3.2rem; }
-  .vernu svg { width: 15rem; height: 13rem; flex: none; }
-  .vernu .grad { font-size: 17rem; line-height: 1; letter-spacing: -.03em; white-space: nowrap; }
-  .vernu .skildring { display: flex; flex-direction: column; gap: 1rem; font-size: 3.4rem; color: var(--dempa); min-width: 0; }
-  .vernu .skildring b { font-size: 4.6rem; font-weight: 700; color: var(--tekst); }
-  .sol { display: flex; align-items: center; gap: 2rem; font-size: 3.4rem; padding-top: 2.8rem; border-top: .2rem solid var(--spor); }
-  .sol svg { width: 5.6rem; height: 4rem; flex: none; }
-  .sol[hidden] { display: none; }
-
-  /* Ferja på éi linje, same oppbygging som skuleboksen */
-  .kort.ferje { flex-direction: row; align-items: center; gap: 3.2rem; padding: 3.6rem 4.8rem; }
-  .ferje svg { width: 7.2rem; height: 5.4rem; flex: none; }
-  .ferje > div:not(.om) { flex: 1; min-width: 0; }
-  .ferje b { display: block; font-size: 5.6rem; font-weight: 700; white-space: nowrap; }
-  .ferje span { display: block; font-size: 3.4rem; color: var(--dempa); margin-top: .6rem; }
-  .om { flex: none; font-size: 3.6rem; font-weight: 700; white-space: nowrap; padding: 1rem 2.6rem; border-radius: 99rem;
-        background: var(--aksent); color: var(--aksent-tekst); }
-
-  /* Farevarsel frå MET: berre når det finst eitt for Tysnes. Fargane er MET sine. */
-  .fare { display: flex; align-items: center; gap: 3rem; padding: 3.2rem 4.4rem; border-radius: 3.2rem;
+  /* ---- Farevarsel: farga stripe heilt øvst, kant til kant (fargane er MET sine) ---- */
+  .fare { display: grid; grid-template-columns: var(--etikett) 1fr; column-gap: 3rem; align-items: baseline;
+          margin: -9.6rem -7.56rem 6rem; padding: 4.4rem 7.56rem 4rem;
           background: #f2c230; color: #1b140c; }
   .fare.oransje { background: #f08c25; }
   .fare.raudt { background: #d7302b; color: #fff; }
-  .fare[hidden] { display: none; }
-  .fare svg { width: 7rem; height: 7rem; flex: none; }
-  .fare b { display: block; font-size: 4.4rem; font-weight: 700; }
-  .fare span { display: block; font-size: 3.2rem; margin-top: .4rem; }
+  .fare .namn { color: inherit; opacity: .75; }
+  .fare b { display: block; font-size: 4.6rem; font-weight: 700; line-height: 1.15; }
+  .fare span { display: block; font-size: 3.2rem; margin-top: .8rem; }
 
-  /* Meir vêr (variant=ver og variant=vertavle) */
-  .vermeir { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem 3.2rem; font-size: 3.4rem;
-             padding-top: 2.8rem; border-top: .2rem solid var(--spor); }
-  .vermeir[hidden], .timar[hidden], .dagar[hidden] { display: none; }
-  .vermeir > div { display: flex; align-items: center; gap: 1.6rem; min-width: 0; }
-  .vermeir > div[hidden] { display: none; }
-  .vermeir .heil { grid-column: 1 / -1; }
-  .vermeir svg { width: 5rem; height: 5rem; flex: none; }
-  .vermeir b { font-weight: 700; }
-  .timar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.6rem; }
-  .timar > div { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: .6rem 0; }
-  .timar span { font-size: 3rem; color: var(--dempa); }
-  .timar svg { width: 7.4rem; height: 6.6rem; }
-  .timar b { font-size: 4.4rem; font-weight: 700; }
-  .dagar { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-top: 2.8rem; border-top: .2rem solid var(--spor); }
+  /* ---- Klokka og datoen ---- */
+  .klokkeblokk { padding-bottom: 5.6rem; }
+  .klokke { font-size: 24rem; font-weight: 300; line-height: .85; letter-spacing: -.04em; white-space: nowrap; margin-left: -.06em; }
+  .klokke .kolon { transition: opacity .5s ease-in-out; }
+  .klokke .kolon.av { opacity: .25; }
+  .dato { display: flex; align-items: baseline; gap: 2.4rem; margin-top: 3.2rem; white-space: nowrap; }
+  .dato b { font-size: 4.6rem; font-weight: 700; }
+  .dato span { font-size: 3.4rem; color: var(--dempa); }
+
+  /* ---- Radene ---- */
+  /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
+  .midt { margin-block: auto; }
+  .rader { display: flex; flex-direction: column; }
+  .rad { display: grid; grid-template-columns: var(--etikett) 1fr; column-gap: 3rem; align-items: baseline;
+         padding: var(--rad) 0; border-top: .2rem solid var(--spor); }
+  .namn { font-size: 2.6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dempa); }
+  .verdi { font-size: var(--verdi); font-weight: 700; line-height: 1.1; min-width: 0; }
+  .verdi .lett { font-weight: 300; }
+  .under { display: block; font-size: 3.4rem; font-weight: 400; color: var(--dempa); margin-top: 1.2rem; line-height: 1.3; }
+  .under b { color: var(--tekst); font-weight: 700; }
+  .under:empty { display: none; }
+  .aksent { color: var(--aksent-tekstfarge, var(--aksent)); }
+  .gron, .skule.fri .verdi > span:first-child { color: var(--gron); }
+
+  /* Opningstida: liten prikk framfor (grøn = betjent, aksent = meirope, dempa = stengt) */
+  .prikk { display: inline-block; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--aksent);
+           margin-right: 1.8rem; vertical-align: .6rem; }
+  .ope.betjent .prikk { background: var(--gron); }
+  .ope.stengt .prikk { background: var(--dempa); }
+
+  /* Vêret no: temperatur, ikon og skildring på éi linje */
+  .vernu { display: flex; align-items: center; gap: 2.8rem; }
+  .vernu svg { width: 9rem; height: 8rem; flex: none; }
+  .vernu .grad { font-size: 11rem; font-weight: 300; line-height: .9; letter-spacing: -.03em; white-space: nowrap; }
+  .vernu .skildring { font-size: 4.6rem; font-weight: 700; line-height: 1.15; min-width: 0; }
+  .vernu .skildring span { display: block; font-size: 3.4rem; font-weight: 400; color: var(--dempa); margin-top: .6rem; }
+  .vernu .skildring span:empty { display: none; }
+  .verlinjer { display: flex; flex-direction: column; gap: 1rem; margin-top: 2.8rem; font-size: 3.4rem; font-weight: 400; line-height: 1.3; color: var(--dempa); }
+  .verlinjer b { color: var(--tekst); font-weight: 700; }
+  .verlinjer > div { display: flex; align-items: flex-start; gap: 1.6rem; }
+  .verlinjer svg { margin-top: .4rem; }
+  .verlinjer svg { width: 3.6rem; height: 3.6rem; flex: none; }
+
+  /* Vêrtavla: dei neste timane og dei neste dagane, utan ramer */
+  .timar { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 3.6rem; }
+  .timar > div { display: flex; flex-direction: column; align-items: flex-start; gap: .8rem; }
+  .timar span { font-size: 2.8rem; font-weight: 400; color: var(--dempa); }
+  .timar svg { width: 6.4rem; height: 5.6rem; margin-left: -.6rem; }
+  .timar b { font-size: 4rem; font-weight: 700; }
+  .dagar { display: flex; flex-direction: column; gap: 1.4rem; margin-top: 3.6rem; }
   .dagar > div { display: flex; align-items: center; gap: 2.4rem; }
-  .dagar svg { width: 9.6rem; height: 8.5rem; flex: none; }
-  .dagar span { display: block; font-size: 3rem; color: var(--dempa); }
-  .dagar b { display: block; font-size: 5rem; font-weight: 700; white-space: nowrap; }
-  /* Vêrtavla: lita klokke øvst, stort vêr */
-  :root.v-vertavle .klokke .tid { font-size: 16rem; }
-    :root.v-vertavle .dato { margin-top: .8rem; }
-  :root.v-vertavle .dato b { font-size: 4.6rem; }
-  :root.v-vertavle .vernu svg { width: 21rem; height: 18.5rem; }
-  :root.v-vertavle .vernu .grad { font-size: 22rem; }
+  .dagar > div > div { display: flex; align-items: baseline; gap: 2rem; }
+  .dagar svg { width: 5.6rem; height: 5rem; flex: none; }
+  .dagar span { display: inline-block; min-width: 17rem; font-size: 3.6rem; font-weight: 400; color: var(--dempa); }
+  .dagar b { font-size: 4.4rem; font-weight: 700; white-space: nowrap; }
 
-  /* Ekstra luft under datoen når det er plass (sjå tilpass()) */
-  :root.luft .klokkeblokk { margin-bottom: 4.8rem; }
+  /* Vêrtavla: lita klokke, større vêr */
+  :root.v-vertavle .klokke { font-size: 14rem; }
+  :root.v-vertavle .dato { margin-top: 2rem; }
+  :root.v-vertavle .vernu .grad { font-size: 15rem; }
+  :root.v-vertavle .vernu svg { width: 12rem; height: 10.5rem; }
 
+  /* Fødd i dag: namn og skildring, éin per linje */
+  #foddListe { display: flex; flex-direction: column; gap: 2.4rem; }
+  .person .pnamn { display: block; font-size: 4.6rem; font-weight: 700; line-height: 1.1; }
+  .person .skild { display: block; font-size: 3.2rem; font-weight: 400; color: var(--dempa); margin-top: .6rem; }
+
+  /* Ekstra luft mellom klokka og radene når det er plass (sjå tilpass()) */
+  :root.luft .klokkeblokk { padding-bottom: 8rem; }
+  :root.luft { --rad: 4.8rem; }
   /* Når alt ikkje får plass, blir sida tettare i to steg (sjå tilpass()) */
-  :root.tett .side, :root.tett .midt { gap: 2.6rem; }
-  :root.tett .kort { padding: 3.4rem 4.2rem; gap: 2.2rem; }
-  :root.tett .kort.skule, :root.tett .kort.ferje { padding: 2.8rem 4.2rem; }
-  :root.tett .klokke .tid { font-size: 24rem; }
-  :root.tett .vernu .grad { font-size: 13rem; }
-  :root.tett .vernu svg { width: 12rem; height: 10.5rem; }
-  :root.tett.v-vertavle .klokke .tid { font-size: 12rem; }
-  :root.tett.v-vertavle .vernu .grad { font-size: 16rem; }
-  :root.tett.v-vertavle .vernu svg { width: 15rem; height: 13rem; }
-  :root.tettare .side, :root.tettare .midt { gap: 2rem; }
-  :root.tettare .klokke .tid { font-size: 17rem; }
-  :root.tettare .dato b { font-size: 4.6rem; }
-  :root.tettare .dato { margin-top: .8rem; }
-  :root.tettare .ferje b, :root.tettare .skule b { font-size: 4.6rem; }
-  :root.tettare .fodd .person { padding-top: 1.8rem; }
-  :root.tettare .timar svg { width: 5.6rem; height: 5rem; }
-  :root.tettare .dagar { padding-top: 2rem; }
-
-  /* Fødd i dag */
-  .fodd .topp { display: flex; align-items: center; gap: 1.6rem; }
-  .fodd .topp svg { width: 4.4rem; height: 4.4rem; flex: none; color: var(--tekst); }
-  #foddListe { display: flex; flex-direction: column; gap: 2.2rem; }
+  :root.tett { --rad: 3rem; --verdi: 5.4rem; }
+  :root.tett .klokke { font-size: 19rem; }
+  :root.tett .klokkeblokk { padding-bottom: 4rem; }
+  :root.tett .vernu .grad { font-size: 9rem; }
+  :root.tett.v-vertavle .klokke { font-size: 11rem; }
+  :root.tett.v-vertavle .vernu .grad { font-size: 12rem; }
+  :root.tett .timar, :root.tett .dagar, :root.tett .verlinjer { margin-top: 2.4rem; }
+  :root.tettare { --rad: 2.2rem; --verdi: 4.8rem; }
+  :root.tettare .klokke { font-size: 15rem; }
+  :root.tettare .dato { margin-top: 1.6rem; }
+  :root.tettare .dato b { font-size: 4rem; }
+  :root.tettare .klokkeblokk { padding-bottom: 3rem; }
+  :root.tettare .timar svg { width: 5rem; height: 4.4rem; }
   :root.tettare #foddListe { gap: 1.6rem; }
-  .fodd .person { display: flex; align-items: center; gap: 2.4rem; padding-top: 2.4rem; border-top: .2rem solid var(--spor); }
-  .fodd .person:first-of-type { border-top: 0; padding-top: 0; }
-  .fodd .person > div { flex: 1; min-width: 0; }
-  .fodd .namn { font-size: 4.8rem; font-weight: 700; line-height: 1.1; }
-  .fodd .skild { font-size: 3rem; color: var(--dempa); margin-top: .6rem; }
+  :root.tettare .person .pnamn { font-size: 4rem; }
+
+  /* ---- Veksle (#veksle=1): klokka står fast, éi rad om gongen under, i stor skrift ---- */
+  .punkt { display: none; }
+  :root.veksle .midt { margin-block: auto; }
+  :root.veksle .klokke { font-size: 26rem; }
+  :root.veksle .dato b { font-size: 5.6rem; }
+  :root.veksle .dato span { font-size: 4rem; }
+  :root.veksle .klokkeblokk { padding-bottom: 7rem; border-bottom: .2rem solid var(--spor); margin-bottom: 7rem; }
+  /* Alle radene i same rute oppå kvarandre: høgda blir den høgaste rada, så prikkane står i ro */
+  :root.veksle .rader { display: grid; min-height: 50rem; }
+  :root.veksle .rad { display: block; border: 0; padding: 0; grid-area: 1 / 1;
+                      opacity: 0; transform: translateY(2rem); transition: opacity .7s ease, transform .7s ease; pointer-events: none; }
+  :root.veksle .rad.aktiv { opacity: 1; transform: none; }
+  :root.veksle .namn { font-size: 3.6rem; color: var(--aksent-tekstfarge, var(--aksent)); margin-bottom: 4rem; }
+  :root.veksle { --verdi: 10.4rem; }
+  :root.veksle #opeNo { white-space: nowrap; }
+  :root.veksle .verdi { line-height: 1.05; }
+  :root.veksle .under { font-size: 5.4rem; margin-top: 2.8rem; }
+  :root.veksle .prikk { width: 3rem; height: 3rem; margin-right: 3.2rem; vertical-align: 2rem; }
+  :root.veksle .vernu .grad { font-size: 24rem; }
+  :root.veksle .vernu svg { width: 16rem; height: 14rem; }
+  :root.veksle .vernu .skildring { font-size: 7rem; }
+  :root.veksle .vernu .skildring span { font-size: 5rem; }
+  :root.veksle .verlinjer { font-size: 4.8rem; margin-top: 4.8rem; gap: 2rem; }
+  :root.veksle .verlinjer svg { width: 5rem; height: 5rem; }
+  :root.veksle .timar { margin-top: 4.4rem; }
+  :root.veksle .timar span { font-size: 3.4rem; }
+  :root.veksle .timar svg { width: 8rem; height: 7rem; }
+  :root.veksle .timar b { font-size: 5rem; }
+  :root.veksle .dagar span { font-size: 4.2rem; min-width: 20rem; }
+  :root.veksle .dagar b { font-size: 5.2rem; }
+  :root.veksle #foddListe { gap: 3.6rem; }
+  :root.veksle .person .pnamn { font-size: 7.6rem; }
+  :root.veksle .person .skild { font-size: 4.6rem; }
+  :root.veksle #ferjeom { display: block; }
+  /* Små prikkar som viser kor mange ting som vekslar, og kva som står no */
+  :root.veksle .punkt { display: flex; gap: 1.6rem; margin-top: 4rem; }
+  .punkt i { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--spor); transition: background .5s, width .5s; }
+  .punkt i.no { background: var(--aksent); width: 4.4rem; border-radius: 99rem; }
+  /* Vêrtavla med veksling: klokka litt mindre, så timane får plass */
+  :root.veksle.v-vertavle .klokke { font-size: 22rem; }
 
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
-  /* Kjeldene under biblioteknamnet, som «Forrige bok, Biblioteksentralen» på karusellane
-     (index.html: .botnmerke / .kjeldetekst, 1,6vw = 1,73rem her) */
-  footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 3rem; }
   .botnmerke { display: flex; flex-direction: column; align-items: flex-start; gap: .77rem; flex: none; }
   .kjelde { font-size: 1.73rem; color: var(--dempa); opacity: .8; }
   .kjelde:empty { display: none; }
-  .botnnamn { font-size: 3.02rem;
-              text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+  .botnnamn { font-size: 3.02rem; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
   .botnnamn b { font-weight: 700; }
   .hjul { width: 8.8rem; height: 8.8rem; flex: none; transform: rotate(-90deg); }
   .hjul circle { fill: none; stroke-width: 3.5; }
   .hjul .spor { stroke: var(--spor); }
-  /* Nedteljing som på plakatane: tynn linje nedst som kryp saman. Med #teljar=hjul: hjulet som på karusellane. */
+  /* Nedteljing som på plakatane: tynn linje nedst. Med #teljar=hjul: hjulet som på karusellane. */
   .nedteljing { position: fixed; left: 0; right: 0; bottom: 0; height: .55vh; background: var(--aksent); transform-origin: left center;
                 transform: scaleX(0); z-index: 5; opacity: .9; }
   :root:not(.hjul-teljar) .hjul { visibility: hidden; }
@@ -193,54 +238,57 @@
 <body>
 <div class="side">
   <section class="fare" id="fare" hidden>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3L2 20.5h20z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>
+    <div class="namn" id="fareNiva"></div>
     <div><b id="fareHovud"></b><span id="fareMeir"></span></div>
   </section>
-  <div class="ope" id="ope"><i></i><b id="opeNo"></b><span id="opeMeir"></span></div>
 
   <div class="midt">
   <div class="klokkeblokk">
-    <div class="klokke tal"><span class="tid"><span id="tim">--</span><span class="kolon" id="kolon">:</span><span id="min">--</span></span></div>
+    <div class="klokke tal"><span id="tim">--</span><span class="kolon" id="kolon">:</span><span id="min">--</span></div>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
   </div>
 
-  <section class="kort skule" id="skule" hidden>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9.5 2.5h5M12 2.5V5" stroke="var(--aksent)"/></svg>
-    <div><b id="skuleHovud"></b><span id="skuleMeir"></span></div>
-  </section>
+  <div class="rader">
+    <section class="rad ope" id="ope">
+      <div class="namn">Biblioteket</div>
+      <div class="verdi"><span class="prikk"></span><span id="opeNo"></span><span class="under" id="opeMeir"></span></div>
+    </section>
 
-  <section class="kort" id="ver" hidden>
-    <div class="vernu">
-      <svg id="vericon" viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
-      <div class="grad tal" id="grad"></div>
-      <div class="skildring"><b id="vertekst"></b><span id="vind"></span></div>
-    </div>
-    <div class="vermeir" id="vermeir" hidden>
-      <div id="vmVind"><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g id="vindpil"><path d="M12 20V4M6 10l6-6 6 6"/></g></svg><span></span></div>
-      <div id="vmSpenn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14.5V4a2 2 0 1 1 4 0v10.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg><span></span></div>
-      <div id="vmNedbor" class="heil"><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg><span></span></div>
-    </div>
-    <div class="timar" id="timar" hidden></div>
-    <div class="dagar" id="dagar" hidden></div>
-    <div class="sol" id="sol" hidden>
-      <svg viewBox="0 0 28 20" fill="none" stroke="var(--aksent)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 15a8 8 0 0 1 16 0"/><path d="M2 18h24"/><path d="M14 2v3M4.5 6l2 2M23.5 6l-2 2"/></svg>
-      <span id="soltekst"></span>
-    </div>
-  </section>
+    <section class="rad skule" id="skule" hidden>
+      <div class="namn">Skulen</div>
+      <div class="verdi"><span id="skuleHovud"></span><span class="under" id="skuleMeir"></span></div>
+    </section>
 
-  <section class="kort ferje" id="ferje" hidden>
-      <svg viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15h26l-3 5H6z"/><path d="M8 15V9h14v6"/><path d="M12 9V5h6v4"/><path d="M2 22.5c2 0 2-1 4-1s2 1 4 1 2-1 4-1 2 1 4 1 2-1 4-1 2 1 4 1 2-1 4-1" stroke="var(--aksent)"/></svg>
-    <div><b id="ferjetid"></b><span id="ferjemerknad"></span></div>
-    <div class="om" id="ferjeom"></div>
-  </section>
+    <section class="rad" id="ver" hidden>
+      <div class="namn">Vêret</div>
+      <div class="verdi">
+        <div class="vernu">
+          <div class="grad tal" id="grad"></div>
+          <svg id="vericon" viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+          <div class="skildring"><b id="vertekst"></b><span id="vind"></span></div>
+        </div>
+        <div class="timar" id="timar" hidden></div>
+        <div class="verlinjer">
+          <div id="vmVind" hidden><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g id="vindpil"><path d="M12 20V4M6 10l6-6 6 6"/></g></svg><span></span></div>
+          <div id="vmSpenn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14.5V4a2 2 0 1 1 4 0v10.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg><span></span></div>
+          <div id="vmNedbor" hidden><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg><span></span></div>
+          <div id="sol" hidden><svg viewBox="0 0 28 20" fill="none" stroke="var(--aksent)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 15a8 8 0 0 1 16 0"/><path d="M2 18h24"/><path d="M14 2v3M4.5 6l2 2M23.5 6l-2 2"/></svg><span id="soltekst"></span></div>
+        </div>
+        <div class="dagar" id="dagar" hidden></div>
+      </div>
+    </section>
 
-  <section class="kort fodd" id="fodd" hidden>
-    <div class="topp">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V11h16v10z"/><path d="M4 15c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M8 11V8M12 11V8M16 11V8" stroke="var(--aksent)"/><path d="M8 5.5v.01M12 5.5v.01M16 5.5v.01" stroke="var(--aksent)" stroke-width="2.4"/></svg>
-      <div class="etikett">Fødd i dag</div>
-    </div>
-    <div id="foddListe"></div>
-  </section>
+    <section class="rad" id="ferje" hidden>
+      <div class="namn">Ferja</div>
+      <div class="verdi"><span class="tal" id="ferjetid"></span> <span class="aksent" id="ferjeom"></span><span class="under" id="ferjemerknad"></span></div>
+    </section>
+
+    <section class="rad fodd" id="fodd" hidden>
+      <div class="namn">Fødd i dag</div>
+      <div class="verdi" id="foddListe"></div>
+    </section>
+  </div>
+  <div class="punkt" id="punkt" aria-hidden="true"></div>
   </div>
 
   <footer>
@@ -252,7 +300,6 @@
   </footer>
 </div>
 <div class="nedteljing" id="nedteljing" aria-hidden="true"></div>
-
 <script>
 // ---- Innstillingar ---------------------------------------------------------
 const POS = { lat: 60.04, lon: 5.52 };                 // Våge, Tysnes kommune, Vestland (MET vil ha få desimalar)
@@ -283,6 +330,18 @@ document.documentElement.classList.add("v-" + VARIANT);
 const UTAN = new Set((H.get("utan") || "").split(",").map(s => s.trim()).filter(Boolean));
 const MED = k => !UTAN.has(k) || (k === "ver" && VARIANT === "vertavle");
 const FODD = H.get("fodd") === "1";
+// Skrift (#skrift=…): frå Google Fonts, som karusellane. Utan nett: standardskrifta (Ubuntu).
+// Fargar (#farge=…): standard «petrol» (sand og petrol) heile døgnet. Med #tema=… blir
+// eit tema frå tema.js brukt i staden; «farge=auto» gir det gamle (Lys om dagen, Kveld om kvelden).
+const FARGE = H.get("farge") === "auto" ? "" : H.get("farge") || (H.get("tema") ? "" : "petrol");
+const SKRIFTER = { inter: ["Inter", "Inter:wght@300;400;700"], poppins: ["Poppins", "Poppins:wght@300;400;700"],
+                   lora: ["Lora", "Lora:wght@400;700"] };
+const SKRIFT = H.get("skrift") || "poppins";   // «skrift=standard» gir Ubuntu
+if (SKRIFTER[SKRIFT]) {
+  const [namn, last] = SKRIFTER[SKRIFT];
+  document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=" + last + "&display=swap" }));
+  document.documentElement.style.setProperty("--skrift", `"${namn}", "Ubuntu", "DejaVu Sans", sans-serif`);
+}
 $("kjelde").textContent = [
   (MED("ver") || MED("sol") || MED("fare")) && "Vêr: MET Norge",
   MED("ferje") && "Ferje: Entur",
@@ -334,14 +393,15 @@ function teiknOpning() {
   const bt = spenn("betjent" in u ? u.betjent : (OPNING.betjent || {})[DAGKODE[d.getDay()]]);
   let klasse = "", hovud, meir;
   if (bt && t >= bt[0] && t < bt[1]) {
-    klasse = "betjent"; hovud = "Betjent"; meir = "til " + klKort(bt[1]) + (mo && mo[1] > bt[1] ? " · meirope til " + klKort(mo[1]) : "");
+    klasse = "betjent"; hovud = "Betjent til " + klKort(bt[1]); meir = mo && mo[1] > bt[1] ? "Meirope til " + klKort(mo[1]) : "";
   } else if (mo && t >= mo[0] && t < mo[1]) {
-    hovud = "Meirope"; meir = bt && t < bt[0] ? "· betjent frå " + klKort(bt[0]) : "til " + klKort(mo[1]);
+    hovud = "Meirope til " + klKort(mo[1]); meir = bt && t < bt[0] ? "Betjent frå " + klKort(bt[0]) : "Med nasjonalt lånekort";
   } else {
-    klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "· opnar " + klKort(mo[0]) : "";
+    klasse = "stengt"; hovud = "Stengt"; meir = mo && t < mo[0] ? "Opnar kl. " + klKort(mo[0]) : "";
   }
-  if (u.tekst) meir += (meir ? " · " : "· ") + u.tekst;
-  $("ope").className = "ope " + klasse;
+  if (u.tekst) meir += (meir ? " · " : "") + u.tekst;
+  $("ope").classList.remove("betjent", "stengt");
+  if (klasse) $("ope").classList.add(klasse);
   $("ope").hidden = !MED("ope");
   $("opeNo").textContent = hovud;
   $("opeMeir").textContent = meir;
@@ -559,7 +619,8 @@ function teiknFare() {
   if (!v) return;
   const farge = { 2: "Gult", 3: "Oransje", 4: "Raudt" }[v.nivå];
   $("fare").className = "fare " + { 2: "gult", 3: "oransje", 4: "raudt" }[v.nivå];
-  $("fareHovud").textContent = farge + " farevarsel" + (v.namn ? ": " + v.namn.toLowerCase() : "");
+  $("fareNiva").textContent = farge + " farevarsel";
+  $("fareHovud").textContent = v.namn ? v.namn.charAt(0).toUpperCase() + v.namn.slice(1).toLowerCase() : farge + " farevarsel";
   const frå = v.frå && new Date(v.frå), til = v.til && new Date(v.til);
   const tilTekst = til && frå && isoDato(til) === isoDato(frå) ? "kl. " + kl(til) : til && dagOgKl(til);
   $("fareMeir").textContent = (frå && frå > nu ? "Frå " + dagOgKl(frå) + (til ? " til " + tilTekst.replace(/^kl\. /, "") : "") : til ? "Til " + dagOgKl(til) : "")
@@ -610,7 +671,7 @@ function teiknVer() {
     if (VARIANT === "klokke") $("vind").textContent = "Vind " + vindTekst.replace("Stille", "0 m/s");
     else $("vind").textContent = ks != null && Math.abs(ks - nu.temp) >= 2 ? "Kjennest som " + ks + "°" : "";
     // Meir vêr: vind med pil, nedbør og (i variant=ver) høgast/lågast
-    $("vermeir").hidden = VARIANT === "klokke";
+    for (const id of ["vmVind", "vmNedbor"]) $(id).hidden = VARIANT === "klokke";
     if (VARIANT !== "klokke") {
       $("vmVind").querySelector("span").innerHTML = v >= 1 ? `Vind <b>${vindTekst}</b>` : "<b>Stille</b>";
       $("vindpil").setAttribute("transform", `rotate(${((nu.retning || 0) + 180) % 360} 12 12)`);
@@ -623,7 +684,6 @@ function teiknVer() {
       const sp = idag || imorgon;
       $("vmSpenn").hidden = VARIANT !== "ver" || !sp;
       if (sp) $("vmSpenn").querySelector("span").innerHTML = `${idag ? "I dag" : "I morgon"} <b>${sp.min}° til ${sp.max}°</b>`;
-      $("vmVind").classList.toggle("heil", $("vmSpenn").hidden);
     }
     // Vêrtavla: dei neste 6 timane, og i dag / i morgon
     $("timar").hidden = $("dagar").hidden = VARIANT !== "vertavle";
@@ -656,6 +716,9 @@ function teiknVer() {
   const t = no();
   const kveld = H.has("kveld") ? H.get("kveld") === "1" : (opp && ned ? (t < opp || t >= ned) : (t.getHours() < 8 || t.getHours() >= 16));
   // Tema som på karusellane: «Kveld» (standardfargane) etter solnedgang, «Lys» om dagen
+  // Eigne klokkefargar (#farge=…) gjeld heile døgnet; då blir ikkje tema frå tema.js brukt
+  const farge = FARGE;
+  if (farge) { document.documentElement.dataset.farge = farge; delete document.documentElement.dataset.tema; return; }
   const tema = H.get("tema") || (kveld ? "kveld" : "lys");
   if (tema === "kveld" || typeof TEMA_ETTER_ID === "undefined" || !TEMA_ETTER_ID[tema]) delete document.documentElement.dataset.tema;
   else document.documentElement.dataset.tema = tema;
@@ -704,7 +767,7 @@ function teiknFerje() {
   const forsein = Math.round((venta - rute) / 60e3);
   const innstilt = kom.indexOf(neste) > 0 && kom[0].innstilt;
   $("ferjemerknad").textContent = innstilt ? `Ferja kl. ${kl(new Date(kom[0].rute))} er innstilt`
-                                : forsein >= 3 ? `Forseinka – etter ruta kl. ${kl(rute)}` : "Ferje til Halhjem";
+                                : forsein >= 3 ? `Forseinka – etter ruta kl. ${kl(rute)}` : "Våge → Halhjem";
 }
 
 // ---- Fødd i dag (Wikidata + Bibliofil) ----------------------------------------
@@ -886,8 +949,8 @@ function teiknFødd() {
     const skild = nynorskYrke(String(f.skild || "").replace(/\s*\([^)]*\d{3,4}[^)]*\)/g, "").trim());
     const rad = document.createElement("div"); rad.className = "person";
     const tekst = document.createElement("div");
-    const namn = Object.assign(document.createElement("div"), { className: "namn", textContent: f.namn });
-    const om = Object.assign(document.createElement("div"), { className: "skild",
+    const namn = Object.assign(document.createElement("span"), { className: "pnamn", textContent: f.namn });
+    const om = Object.assign(document.createElement("span"), { className: "skild",
       textContent: [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && "fødd " + f.år].filter(Boolean).join(", ") });
     tekst.append(namn, om);
     rad.append(tekst);
@@ -917,10 +980,35 @@ let sistFerje = 0;
 window.addEventListener("message", e => {
   if (!e.data || e.data.nyheiter !== "vis") return;
   teljNed(Number(e.data.att) || Number(e.data.sekund) * 1000 || 60000, false, Number(e.data.sekund));
+  startVeksle(Number(e.data.sekund) || 0);
   foddNr++;   // neste forfattar kvar gong sida kjem fram
   teiknAlt();
   if (Date.now() - sistFerje > 60e3) { sistFerje = Date.now(); hentFerje(); }
 });
+
+// ---- Veksle (#veksle=1): éi rad om gongen ------------------------------------
+// Radene som har noko å vise (ikkje skjulte) kjem etter tur. Står sida i rotasjonen,
+// blir tida delt likt, så alt kjem fram éin gong medan sida står (minst 6 s per rad).
+const VEKSLE = H.get("veksle") !== "0";   // standard: veksle; «veksle=0» viser alt på éin gong
+document.documentElement.classList.toggle("veksle", VEKSLE);
+let veksleNr = 0, veksleTid = null, veksleMs = 8000;
+const synlegeRader = () => [...document.querySelectorAll(".rader .rad")].filter(r => !r.hidden);
+function visRad() {
+  const rader = synlegeRader();
+  if (!rader.length) return;
+  veksleNr %= rader.length;
+  document.querySelectorAll(".rader .rad").forEach(r => r.classList.toggle("aktiv", r === rader[veksleNr]));
+  $("punkt").replaceChildren(...(rader.length > 1 ? rader.map((r, i) => Object.assign(document.createElement("i"), { className: i === veksleNr ? "no" : "" })) : []));
+}
+function startVeksle(sekund) {
+  if (!VEKSLE) return;
+  clearInterval(veksleTid);
+  veksleNr = 0;
+  const n = Math.max(1, synlegeRader().length);
+  veksleMs = sekund > 0 ? Math.max(6000, sekund * 1000 / n) : 8000;
+  visRad();
+  veksleTid = setInterval(() => { veksleNr++; visRad(); }, veksleMs);
+}
 
 // ---- Får alt plass? ------------------------------------------------------------
 // Er det for mykje på sida (farevarsel, skuletime, ferje og Fødd i dag samstundes),
@@ -947,7 +1035,7 @@ function tilpass() {
 }
 
 // ---- I gang -------------------------------------------------------------------
-function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); }
+function teiknAlt() { teiknKlokke(); teiknSkule(); teiknOpning(); teiknVer(); teiknFerje(); teiknFødd(); tilpass(); if (VEKSLE) visRad(); }
 teiknAlt();
 // Klokka blir oppdatert rett etter kvart heile sekund
 (function tikk() { teiknKlokke(); teiknSkule(); tilpass(); setTimeout(tikk, 1000 - (Date.now() % 1000) + 20); })();
@@ -957,6 +1045,7 @@ window.addEventListener("load", tilpass);
 hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
+if (VEKSLE) startVeksle(0);
 melde("har"); melde("klar");
 </script>
 </body>
