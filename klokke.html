@@ -909,9 +909,29 @@ let BILETE = minne.les("bilete");
 const commons = p => fetch(COMMONS + new URLSearchParams({ format: "json", formatversion: "2", origin: "*", ...p }))
   .then(r => { if (!r.ok) throw new Error("Commons " + r.status); return r.json(); });
 // Enkel wikitekst til tekst: lenkjer blir til lenkjeteksten, malar og feit/kursiv blir borte
-const wikiTekst = t => String(t || "").replace(/\{\{[^{}]*\}\}/g, "").replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1")
-  .replace(/\[https?:\S+\s([^\]]*)\]/g, "$1").replace(/'{2,}/g, "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+const wikiTekst = t => String(t || "")
+  // Lenkjemalar som {{w|Vestland}} eller {{w|Side|tekst}}: behald teksten
+  .replace(/\{\{\s*(?:w|wp|en|nb|nn|no)\s*\|(?:[^|{}]*\|)?([^|{}]*)\}\}/gi, "$1")
+  .replace(/\{\{[^{}]*\}\}/g, "").replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1")
+  .replace(/\[https?:\S+\s([^\]]*)\]/g, "$1").replace(/'{2,}/g, "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").replace(/\s+([,.;:)])/g, "$1").replace(/\(\s*\)/g, "").trim();
 const htmlTekst = h => { const d = document.createElement("div"); d.innerHTML = String(h || ""); return d.textContent.replace(/\s+/g, " ").trim(); };
+// Malane på Commons er malkall, t.d. «{{Potd filename|1=Fil.jpg|2=2026|…}}» og
+// «{{Potd description|1=Tekst med [[lenkjer]]|2=nb|…}}». Gir første parameteren
+// (utan «1=»), eller heile teksten om det ikkje er eit malkall. Tek omsyn til [[…]] og {{…}} inni.
+function førstePar(t) {
+  t = String(t || "").trim();
+  const m = t.match(/^\{\{\s*[^|{}]+\|([\s\S]*)\}\}$/);
+  if (!m) return t;
+  let djup = 0, ut = "";
+  for (let i = 0; i < m[1].length; i++) {
+    const to = m[1].slice(i, i + 2);
+    if (to === "[[" || to === "{{") { djup++; ut += to; i++; continue; }
+    if ((to === "]]" || to === "}}") && djup > 0) { djup--; ut += to; i++; continue; }
+    if (m[1][i] === "|" && djup === 0) break;
+    ut += m[1][i];
+  }
+  return ut.replace(/^\s*1\s*=/, "").trim();
+}
 async function hentBilete() {
   if (!MED("bilete")) return;
   const dato = isoDato(new Date());
@@ -922,9 +942,9 @@ async function hentBilete() {
     const q = await commons({ action: "query", prop: "revisions", rvprop: "content", rvslots: "main", titles: titlar.join("|") });
     const innhald = {};
     for (const p of q?.query?.pages || []) innhald[p.title] = p.revisions?.[0]?.slots?.main?.content;
-    const fil = wikiTekst(innhald[mal]).replace(/^(File|Fil):/i, "");
-    if (!fil || !/\.(jpe?g|png|webp|tiff?|gif)$/i.test(fil)) throw new Error("ikkje eit bilete: " + fil);
-    const tekst = wikiTekst(innhald[mal + " (nn)"] || innhald[mal + " (nb)"] || innhald[mal + " (no)"] || "");
+    const fil = førstePar(innhald[mal]).replace(/^(File|Fil|Image):/i, "").trim();
+    if (!fil || !/\.(jpe?g|png|webp|tiff?|gif|svg)$/i.test(fil)) throw new Error("ikkje eit bilete: «" + fil + "» (malen: " + String(innhald[mal]).slice(0, 120) + ")");
+    const tekst = wikiTekst(førstePar(innhald[mal + " (nn)"] || innhald[mal + " (nb)"] || innhald[mal + " (no)"] || ""));
     const i = await commons({ action: "query", prop: "imageinfo", iiprop: "url|extmetadata", iiurlwidth: "1200", titles: "File:" + fil });
     const info = i?.query?.pages?.[0]?.imageinfo?.[0];
     if (!info) throw new Error("fann ikkje fila " + fil);
