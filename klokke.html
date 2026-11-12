@@ -15,7 +15,7 @@
   Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
     variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
-    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), bilete (Dagens bilete), fare (farevarsel)
+    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel)
     veksle=0            vis alt på éin gong (standard: éin ting om gongen under klokka, som vekslar)
     farge=petrol        eigne lyse fargar: petrol (standard), papir, mynte, rosa, kalk, betong, himmel,
                         salvie, aprikos, lavendel, sennep, havbla. farge=auto: Lys om dagen, Kveld om kvelden
@@ -32,7 +32,6 @@
     Ferje:      Entur (api.entur.io) — avgangar frå Våge kai (NSR:StopPlace:58466) mot Halhjem, henta kvart 2. min.
     Fødd i dag: Wikidata (query.wikidata.org) og Bibliofil (SRU), henta éin gong per døgn.
     Dagen i dag: nynorsk Wikipedia (nn.wikipedia.org) – boksen på framsida, henta éin gong per døgn.
-    Dagens bilete: Wikimedia Commons (commons.wikimedia.org), henta éin gong per døgn.
     Opningstid: Bibliotek.no (tysnesbibliotek.no/api/v1/libraries) — same tider som på nettsida, henta kvar time.
   Opningstidene blir endra på nettsida (redaktørverktøyet), ikkje her. Er nettsida nede, blir
   sist henta tider brukte; har sida aldri fått svar, blir opningstider.json brukt som reserve.
@@ -112,14 +111,6 @@
   .under b { color: var(--tekst); font-weight: 700; }
   .under:empty { display: none; }
   #dagMeir { white-space: pre-line; }
-  /* Dagens bilete: heile biletet (ikkje beskore), med tekst og fotograf under */
-  .rad.bilete { align-items: start; }
-  .bilete img { display: block; max-width: 100%; max-height: 30rem; border-radius: 1.2rem; object-fit: contain; }
-  :root.veksle .bilete img { max-height: 56rem; }
-  .bilete .under { font-size: 3.4rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .bilete .under:empty { display: none; }
-  :root.veksle .bilete .under { font-size: 4rem; }
-  .kreditt { display: block; font-size: 2.2rem; font-weight: 400; color: var(--dempa); opacity: .85; margin-top: 1.2rem; }
   #dagHovud .lett { font-weight: 400; }
   .aksent { color: var(--aksent-tekstfarge, var(--aksent)); }
   .gron, .skule.fri .verdi > span:first-child { color: var(--gron); }
@@ -300,11 +291,6 @@
       <div class="verdi"><span id="dagHovud"></span><span class="under" id="dagMeir"></span></div>
     </section>
 
-    <section class="rad bilete" id="bilete" hidden>
-      <div class="namn">Dagens bilete</div>
-      <div class="verdi"><img id="bileteImg" alt=""><span class="under" id="biletetekst"></span><span class="kreditt" id="biletekreditt"></span></div>
-    </section>
-
     <section class="rad fodd" id="fodd" hidden>
       <div class="namn">Fødd i dag</div>
       <div class="verdi" id="foddListe"></div>
@@ -369,7 +355,6 @@ $("kjelde").textContent = [
   MED("ferje") && "Ferje: Entur",
   FODD && "Fødd i dag: Wikidata",
   MED("dag") && "Dagen i dag: Wikipedia",
-  MED("bilete") && "Dagens bilete: Wikimedia Commons",
 ].filter(Boolean).join(" · ");
 
 const minne = { les(k) { try { return JSON.parse(localStorage.getItem("klokke:" + k)); } catch (e) { return null; } },
@@ -899,59 +884,6 @@ function teiknDag() {
   $("dagMeir").textContent = punkt.slice(1).join("\n");
 }
 
-// ---- Dagens bilete (Wikimedia Commons) ---------------------------------------
-// Commons vel eitt bilete kvar dag («Picture of the day»). Malen Template:Potd/ÅÅÅÅ-MM-DD
-// inneheld filnamnet; teksten finst på fleire språk (Potd/… (nn), (nb), (en)). Vi viser
-// teksten berre når han finst på norsk. Fotograf og lisens står alltid under biletet.
-// Henta éin gong per døgn; sjølve biletet blir lasta i høvande storleik (1200 px).
-const COMMONS = "https://commons.wikimedia.org/w/api.php?";
-let BILETE = minne.les("bilete");
-const commons = p => fetch(COMMONS + new URLSearchParams({ format: "json", formatversion: "2", origin: "*", ...p }))
-  .then(r => { if (!r.ok) throw new Error("Commons " + r.status); return r.json(); });
-// Enkel wikitekst til tekst: lenkjer blir til lenkjeteksten, malar og feit/kursiv blir borte
-const wikiTekst = t => String(t || "").replace(/\{\{[^{}]*\}\}/g, "").replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1")
-  .replace(/\[https?:\S+\s([^\]]*)\]/g, "$1").replace(/'{2,}/g, "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-const htmlTekst = h => { const d = document.createElement("div"); d.innerHTML = String(h || ""); return d.textContent.replace(/\s+/g, " ").trim(); };
-async function hentBilete() {
-  if (!MED("bilete")) return;
-  const dato = isoDato(new Date());
-  if (BILETE && BILETE.dato === dato) return teiknBilete();
-  try {
-    const mal = "Template:Potd/" + dato;
-    const titlar = [mal, mal + " (nn)", mal + " (nb)", mal + " (no)"];
-    const q = await commons({ action: "query", prop: "revisions", rvprop: "content", rvslots: "main", titles: titlar.join("|") });
-    const innhald = {};
-    for (const p of q?.query?.pages || []) innhald[p.title] = p.revisions?.[0]?.slots?.main?.content;
-    const fil = wikiTekst(innhald[mal]).replace(/^(File|Fil):/i, "");
-    if (!fil || !/\.(jpe?g|png|webp|tiff?|gif)$/i.test(fil)) throw new Error("ikkje eit bilete: " + fil);
-    const tekst = wikiTekst(innhald[mal + " (nn)"] || innhald[mal + " (nb)"] || innhald[mal + " (no)"] || "");
-    const i = await commons({ action: "query", prop: "imageinfo", iiprop: "url|extmetadata", iiurlwidth: "1200", titles: "File:" + fil });
-    const info = i?.query?.pages?.[0]?.imageinfo?.[0];
-    if (!info) throw new Error("fann ikkje fila " + fil);
-    const md = info.extmetadata || {};
-    BILETE = { dato, url: info.thumburl || info.url, tekst,
-      fotograf: htmlTekst(md.Artist?.value).replace(/^Photo(graph)? by\s*/i, "").slice(0, 80),
-      lisens: htmlTekst(md.LicenseShortName?.value) };
-    minne.skriv("bilete", BILETE);
-  } catch (e) { console.warn("Fekk ikkje henta Dagens bilete:", e.message); }
-  teiknBilete(); tilpass();
-}
-function teiknBilete() {
-  const b = MED("bilete") && BILETE && BILETE.dato === isoDato(new Date()) ? BILETE : null;
-  // Rada blir vist først når biletet faktisk er lasta (ikkje eit tomt bilete utan nett)
-  if (!b) { $("bilete").hidden = true; return; }
-  const img = $("bileteImg");
-  if (img.dataset.url !== b.url) {
-    img.dataset.url = b.url;
-    $("bilete").hidden = true;
-    img.onload = () => { $("bilete").hidden = false; tilpass(); };
-    img.onerror = () => { $("bilete").hidden = true; };
-    img.src = b.url;
-  } else $("bilete").hidden = !img.complete || !img.naturalWidth;
-  $("biletetekst").textContent = b.tekst || "";
-  $("biletekreditt").textContent = [b.fotograf && "Foto: " + b.fotograf, b.lisens, "Wikimedia Commons"].filter(Boolean).join(" · ");
-}
-
 async function hentFødd() {
   if (!FODD) return;
   const d = new Date(), dato = isoDato(d);
@@ -1167,7 +1099,6 @@ hentVer(); setInterval(hentVer, VER_KVAR_MS);
 window.addEventListener("load", tilpass);
 hentFødd(); setInterval(hentFødd, 30 * 60e3);   // hentar berre når datoen er ny
 hentDag(); setInterval(hentDag, 30 * 60e3);     // same her
-hentBilete(); setInterval(hentBilete, 30 * 60e3);
 hentFerje(); sistFerje = Date.now(); setInterval(() => { sistFerje = Date.now(); hentFerje(); }, FERJE_KVAR_MS);
 if (!iRotasjon) teljNed(20000, true, 20);
 if (VEKSLE) startVeksle(0);
