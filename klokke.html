@@ -919,8 +919,7 @@ const htmlTekst = h => { const d = document.createElement("div"); d.innerHTML = 
 // «{{Potd description|1=Tekst med [[lenkjer]]|2=nb|…}}». Gir første parameteren
 // (utan «1=»), eller heile teksten om det ikkje er eit malkall. Tek omsyn til [[…]] og {{…}} inni.
 function førstePar(t) {
-  // HTML-kommentarar (t.d. «<!--DON'T EDIT BELOW THIS LINE…-->») ut først
-  t = String(t || "").replace(/<!--[\s\S]*?-->/g, "").trim();
+  t = String(t || "").trim();
   const m = t.match(/^\{\{\s*[^|{}]+\|([\s\S]*)\}\}$/);
   if (!m) return t;
   let djup = 0, ut = "";
