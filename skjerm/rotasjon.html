@@ -171,8 +171,11 @@ function aktuelle(sider) {
   return faste.length ? faste : sider;
 }
 
-// Sider med «mellom»: true (plakatkarusellar) blir viste etter kvar av dei
-// andre sidene i staden for på sin eigen plass. Er det fleire, vekslar dei.
+// Prioritet (sett på oversikta):
+//   høg    = «mellom»: true – blir vist etter kvar av dei andre sidene i staden
+//            for på sin eigen plass. Er det fleire, vekslar dei.
+//   normal = éin gong per runde (ingen merknad på linja)
+//   låg    = «prioritet»: "låg" – blir berre vist annakvar runde (sjå vis())
 function flett(sider) {
   const mellom = sider.filter(s => s.mellom), andre = sider.filter(s => !s.mellom);
   if (!mellom.length || !andre.length) return sider;
@@ -268,12 +271,15 @@ function lastInn(r, url) {
 // ---- Rotasjonen -----------------------------------------------------------
 
 let hoppaOver = 0;
+let runde = 0;   // tel rundane, så sider med låg prioritet berre blir viste annakvar runde
+const lågNo = s => s && s.prioritet === "låg" && runde % 2 === 0;   // vist i runde 1, 3, 5 …
 let nesteTid = null, nesteNo = null;   // tidtakaren til neste side, så ein tom karusell kan avbryte han
 
 async function vis(n) {
   // Ny runde: finn ut kva sider som gjeld no (oppsett og klokke), og spør
   // etter eit ferskt oppsett til neste runde.
   if (n === 0) {
+    runde++;
     // På reserven (ingen sider svarte) blir vi verande til nettet er tilbake
     if (ALLE && (aktivJSON !== "reserve" || nyHenta)) {
       const sider = flett(aktuelle(ALLE)), json = JSON.stringify(sider);
@@ -289,6 +295,15 @@ async function vis(n) {
   // Karusell som har meldt at han ikkje har bøker: hopp over, så lenge
   // det finst andre sider å vise
   if (r.dataset.tom === "1" && andreHar(r)) return neste();
+
+  // Låg prioritet: hopp over denne runden (så lenge det finst andre vanlege sider).
+  // Står det ei side med høg prioritet rett etter, blir ho òg hoppa over, så ho
+  // ikkje kjem to gonger på rad.
+  if (lågNo(side) && SIDER.some(x => !x.mellom && !lågNo(x))) {
+    let m = (n + 1) % SIDER.length;
+    if (m !== 0 && SIDER[m].mellom) m = (m + 1) % SIDER.length;
+    return vis(m);
+  }
 
   // Nettsider blir sjekka før dei blir viste. Svarar dei ikkje, hoppar vi
   // over dei, og den førre sida blir ståande.

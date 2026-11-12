@@ -369,13 +369,16 @@ function tidsTekst(s) {
   if (s.tid) deler.push("kl. " + s.tid.replace("-", "–"));
   return deler.length ? deler.join(", ") : "Alltid";
 }
+// Prioritet: høg = mellom kvar side («mellom»), låg = annakvar runde («prioritet»: "låg")
+const prioritet = s => s.mellom ? "hog" : s.prioritet === "låg" ? "lag" : "normal";
+const PRIO_TEKST = { hog: "høg prioritet (mellom kvar side)", normal: "", lag: "låg prioritet (annakvar runde)" };
 function typeTekst(s) {
   if (s.lokal) return "Lokal fil på skjermen";
   if (/tysnesbibliotek\.no\/.*kanal/.test(s.url || "")) return "Kanalside på tysnesbibliotek.no";
   if (erPlakatkarusell(s)) {
     const pk = lesPk(s.url), n = pk.plakatar.length;
     const ute = pk.plakatar.filter(h => tilDatoAv(h) && tilDatoAv(h) < idagTekst()).length;
-    return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""}${s.mellom ? ` · ${pk.kvar === 2 ? "to" : "éin"} mellom kvar side` : " · alle samla"} · ${pk.sek} sek kvar`;
+    return `Plakatkarusell · ${n} ${n === 1 ? "plakat" : "plakatar"}${ute ? ` (${ute} ute på dato)` : ""}${s.mellom && pk.kvar === 2 ? " · to om gongen" : ""} · ${pk.sek} sek kvar`;
   }
   if (erVideo(s)) return `Video · ${String(lesVideo(s.url).fil).replace(/^video\//, "")}`;
   if (erPlakat(s)) {
@@ -464,7 +467,7 @@ const erKalender = s => {
   const p = new URLSearchParams((s.url.split("#")[1]) || "");
   return p.get("kjelde") === "kalender" || (p.get("kjelde") === "utval" && p.get("visning") === "kalender");
 };
-const detaljTekst = s => `${typeTekst(s)} · ${erKalender(s) ? "maks " : ""}${s.sekund} sek · ${tidsTekst(s)}`;
+const detaljTekst = s => `${typeTekst(s)} · ${erKalender(s) ? "maks " : ""}${s.sekund} sek · ${tidsTekst(s)}${PRIO_TEKST[prioritet(s)] ? " · " + PRIO_TEKST[prioritet(s)] : ""}`;
 const kalenderMerknad = s => erKalender(s) ? el("div", { class: "detaljar merknad" },
   "Julekalender: går vidare til neste side når dagens luke og opptil 5 eldre luker er viste, om lag 2 minutt. Sekunda er berre eit tak.") : null;
 // Opnar karusellen i byggjaren (utan vis=1), med beskjed om kvar han skal tilbake
@@ -753,8 +756,13 @@ function skjema(s, lk, i) {
       // For plakatkarusellar og video blir sekunda rekna ut og viste i boksen over; feltet ligg gøymt og blir lagra som før
       el("div", { hidden: erPlakatkarusell(s) || erVideo(s) }, el("label", { for: "f-sek" }, erKalender(s) ? "Sekund på skjermen (maks, julekalenderen går vidare sjølv)" : erPlakatkarusell(s) ? "Sekund på skjermen (rekna ut)" : "Sekund på skjermen"),
         el("input", { type: "number", id: "f-sek", min: 5, max: 3600, value: erVideo(s) && !s.sekund ? "" : s.sekund || 180, readonly: erVideo(s) })),
+      el("div", {}, el("label", { for: "f-prio" }, "Prioritet"),
+        el("select", { id: "f-prio" },
+          ...[["hog", "Høg"], ["normal", "Normal"], ["lag", "Låg"]]
+            .map(([v, t]) => { const o = new Option(t, v); o.selected = v === prioritet(s); return o; }))),
       el("div", { hidden: !erNettside(s) }, el("label", {}, " "),
         el("label", { class: "val" }, el("input", { type: "checkbox", id: "f-frisk", checked: !!s.frisk }), "Last sida på nytt kvar gong"))),
+    el("p", { class: "hjelp", id: "f-priohjelp" }),
     el("div", {}, el("label", {}, "Periode (tomt = heile året)"),
       el("div", { class: "rad" },
         el("input", { type: "date", id: "f-fra", value: tilDato(periode[0], iÅr), "aria-label": "Frå dato" }),
@@ -773,6 +781,24 @@ function skjema(s, lk, i) {
         i < 0 ? "Legg til" : "Bruk endringane"),
       el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")),
     fleireKnappar(s, lk, i));
+  // Prioritet: kort forklaring, og 30 sekund som framlegg når ei vanleg side blir sett til høg
+  {
+    const prio = f.querySelector("#f-prio"), sekF = f.querySelector("#f-sek"), hj = f.querySelector("#f-priohjelp");
+    const forklar = () => {
+      hj.textContent = {
+        hog: "Sida kjem fram mellom kvar av dei andre sidene, og står like lenge kvar gong. Passar for klokka og plakatar. Fleire sider med høg prioritet byter på.",
+        normal: "Sida kjem éin gong per runde, på plassen sin i lista.",
+        lag: "Sida kjem berre annakvar runde. Passar for karusellar du vil ha med, men sjeldnare.",
+      }[prio.value];
+    };
+    prio.addEventListener("change", () => {
+      if (prio.value === "hog" && !erPlakatkarusell(s) && !erVideo(s) && Number(sekF.value) > 60) {
+        sekF.value = 30;
+        forklar(); hj.textContent += " Sekunda er sette til 30, sidan sida no kjem ofte.";
+      } else forklar();
+    });
+    forklar();
+  }
   // «Gjenta kvart år» gjeld berre når det er vald ein periode: grå til begge datoane er fylte ut,
   // og får kryss av seg sjølv når periodefelta går frå tomme til utfylte
   {
@@ -822,22 +848,12 @@ function pkBoks(s, lk, i) {
   const sek = el("input", { type: "number", id: "pk-sek", min: 5, max: 600, value: pk.sek });
   const runde = el("p", { class: "hjelp" });
   let openK = null;   // plakaten som har vala sine opne
-  // Éitt val for når plakatane blir viste. Bak kulissene: «mellom» på linja og «kvar» i lenkja.
-  //   samla → på plassen sin i lista, alle plakatane     (mellom: nei, kvar: 0)
-  //   1 / 2 → mellom kvar side, 1 eller 2 plakatar kvar gong (mellom: ja, kvar: 1/2)
-  let visVal = s.mellom ? (pk.kvar === 2 ? "2" : "1") : "samla";
+  // Når plakatane blir viste, følgjer prioriteten i skjemaet. Bak kulissene: «mellom» på linja og «kvar» i lenkja.
+  //   høg            → mellom kvar side, éin plakat kvar gong (mellom: ja, kvar: 1; 2 om det alt var sett)
+  //   normal eller låg → alle plakatane samla, på plassen sin i lista (kvar: 0)
+  const toFrå = s.mellom && pk.kvar === 2;
+  let visVal = s.mellom ? (toFrå ? "2" : "1") : "samla";
   pk.kvar = visVal === "samla" ? 0 : Number(visVal);
-  const VISVAL = [
-    ["1", "Éin plakat mellom kvar side (tilrådd)"],
-    // «To mellom kvar side» blir berre vist for karusellar som alt brukar det
-    ...(visVal === "2" ? [["2", "To plakatar mellom kvar side"]] : []),
-    ["samla", "Alle plakatane samla, på plassen sin i lista"],
-  ];
-  const visboks = el("div", { class: "visval" }, ...VISVAL.map(([v, tittel]) =>
-    el("label", { class: "val" },
-      el("input", { type: "radio", name: "pk-vis", value: v, checked: v === visVal,
-        onchange: () => endre(() => { visVal = v; pk.kvar = v === "samla" ? 0 : Number(v); }) }),
-      tittel)));
   const døme = el("p", { class: "hjelp døme" });
   // Ein ny karusell blir oppretta når plakaten kjem tilbake frå byggjaren («…:ny:ny»)
   const lagret = !endra();
@@ -854,7 +870,7 @@ function pkBoks(s, lk, i) {
     el("div", {}, nyKnapp, el("span", { class: "hjelp" }, lagret ? " Til dømes ei kunngjering." : " Lagre oppsettet først for å lage ein ny plakat.")));
   const visSamandrag = el("summary");
   const fleire = el("details", {}, visSamandrag,
-    el("label", {}, "Når skal plakatane visast?"), visboks, døme,
+    døme,
     el("div", { class: "rad" },
       el("div", {}, el("label", { for: "pk-sek" }, "Sekund per plakat"), sek),
       el("div", {}, el("label", {}, " "), runde)));
@@ -877,6 +893,8 @@ function pkBoks(s, lk, i) {
 
   function teiknPk() {
     const f = finnSkjema();
+    // Prioriteten i skjemaet avgjer korleis plakatane blir viste (sjå over)
+    if (f && f.querySelector("#f-prio")) { visVal = f.querySelector("#f-prio").value === "hog" ? (toFrå ? "2" : "1") : "samla"; pk.kvar = visVal === "samla" ? 0 : Number(visVal); }
     if (f) f.querySelector("#f-url").value = lagPk(pk);
     const no = idagTekst();
     const n = pk.plakatar.length;
@@ -954,7 +972,7 @@ function pkBoks(s, lk, i) {
     const visTekst = { "1": "éin plakat mellom kvar side", "2": "to plakatar mellom kvar side", samla: "alle samla" }[visVal];
     visSamandrag.textContent = `Visning: ${visTekst}, ${pk.sek} sek per plakat`;
     // Døme med dei ekte sidene på skjermen, så det er lett å sjå kva valet gjer
-    if (f && !f.dataset.pkLytt) { f.dataset.pkLytt = "1"; f.querySelector("#f-skjerm").addEventListener("change", teiknPk); }
+    if (f && !f.dataset.pkLytt) { f.dataset.pkLytt = "1"; f.querySelector("#f-skjerm").addEventListener("change", teiknPk); f.querySelector("#f-prio").addEventListener("change", teiknPk); }
     const skjermLk = f ? f.querySelector("#f-skjerm").value : skjermFor(lk);
     const sider = aktuelle((oppsett[skjermLk] || []).filter(x => x !== s && !x.mellom)).map(x => x.namn || "side");
     const plak = pk.plakatar.filter(h => !tilDatoAv(h) || tilDatoAv(h) >= no).map(plakatNamn);
@@ -1202,7 +1220,7 @@ function brukSkjema(f, gammal, lk, i) {
   else return feil("Lenkja må byrje med https://");
   ny.sekund = sek;
   if (f.querySelector("#f-frisk").checked) ny.frisk = true;
-  { const v = f.querySelector('input[name="pk-vis"]:checked'); if (v && v.value !== "samla") ny.mellom = true; }
+  { const p = f.querySelector("#f-prio").value; if (p === "hog") ny.mellom = true; else if (p === "lag") ny.prioritet = "låg"; }
   // Periode
   const frå = v("f-fra"), til = v("f-til"), kvartÅr = f.querySelector("#f-kvartar").checked;
   if (frå || til) {
@@ -1264,7 +1282,7 @@ function tilJson(o) {
     if (Array.isArray(o[k])) {
       linjer.push(`  ${JSON.stringify(k)}: [`);
       o[k].forEach((s, si) => {
-        const rekkje = ["namn", "url", "lokal", "sekund", "frisk", "mellom", "periode", "dagar", "tid"];
+        const rekkje = ["namn", "url", "lokal", "sekund", "frisk", "mellom", "prioritet", "periode", "dagar", "tid"];
         const ordna = {};
         for (const n of rekkje) if (s[n] !== undefined) ordna[n] = s[n];
         for (const n of Object.keys(s)) if (!(n in ordna)) ordna[n] = s[n];
