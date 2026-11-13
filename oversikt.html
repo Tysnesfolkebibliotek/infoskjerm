@@ -776,9 +776,8 @@ function skjema(s, lk, i) {
         el("input", { type: "time", id: "f-tidtil", value: tidTil || "", "aria-label": "Til klokka" }))),
     el("p", { class: "hjelp", id: "f-feil" }),
     el("div", { class: "knappar" },
-      el("button", { type: "button", class: "hoved", onclick: () => erVideo(s) ? brukVideo(f, s, lk, i) : brukSkjema(f, s, lk, i) },
-        // Endringa blir berre lagd inn i lista; skjermane får henne først når ein klikkar Lagre nedst
-        i < 0 ? "Legg til" : "Bruk endringane"),
+      // Legg endringa inn i lista og lagrar med ein gong (saman med ev. andre endringar som ventar)
+      el("button", { type: "button", class: "hoved", onclick: () => lagreSkjema(f, s, lk, i) }, "Lagre"),
       el("button", { type: "button", onclick: () => { open = null; if ($("videodialog").open) $("videodialog").close(); teikn(); } }, "Avbryt")),
     fleireKnappar(s, lk, i));
   // Prioritet: kort forklaring, og 30 sekund som framlegg når ei vanleg side blir sett til høg
@@ -840,7 +839,7 @@ function arrTemaval(h, ved) {
 }
 
 // Lista over plakatane i ein plakatkarusell, inni skjemaet. Endringane blir
-// skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Legg til» / «Bruk endringane».
+// skrivne i lenkjefeltet (som er gøymt), og blir tekne i bruk med «Lagre» i skjemaet.
 function pkBoks(s, lk, i) {
   const pk = lesPk(s.url);
   const liste = el("ol");
@@ -1197,16 +1196,22 @@ async function brukVideo(f, s, lk, i) {
     } catch (e) { knapp.disabled = false; return feil("Fekk ikkje lasta opp videoen: " + e.message); }
   }
   f.querySelector("#f-url").value = lagVideo({ fil: f._videoSti || lesVideo(s.url).fil, tema });
-  const før = tilJson(oppsett);
-  brukSkjema(f, s, lk, i);
+  const ok = brukSkjema(f, s, lk, i);
   knapp.disabled = false;
-  if (tilJson(oppsett) !== før || i >= 0) {
+  if (ok) {
     if ($("videodialog").open) $("videodialog").close();
     // Når lagringa er ferdig: sei frå at GitHub Pages treng litt tid
-    if (i < 0) oppdaterStatus("Videoen er lasta opp og lagd til nedst. Klikk Lagre for å setje han på skjermen. GitHub Pages brukar om lag eitt minutt på å publisere fila, så vent litt med å førehandsvise.");
+    if (i < 0) oppdaterStatus("Videoen er lasta opp og lagd til nedst. GitHub Pages brukar om lag eitt minutt på å publisere fila, så vent litt med å førehandsvise.");
   }
+  return ok;
 }
 
+// «Lagre» i skjemaet: legg endringa inn i lista og lagrar alt med ein gong.
+// Er det ein feil i skjemaet, blir ingenting lagra (brukSkjema/brukVideo gir true berre når det gjekk bra).
+async function lagreSkjema(f, s, lk, i) {
+  const ok = erVideo(s) ? await brukVideo(f, s, lk, i) : brukSkjema(f, s, lk, i);
+  if (ok && endra()) await lagre();
+}
 function brukSkjema(f, gammal, lk, i) {
   const v = id => f.querySelector("#" + id).value.trim();
   const feil = t => { f.querySelector("#f-feil").textContent = t; f.querySelector("#f-feil").style.color = "var(--åtvar)"; };
@@ -1246,10 +1251,11 @@ function brukSkjema(f, gammal, lk, i) {
   if (tilLk !== lk && i >= 0 && lk === skjermFor(lk) && oppsett[lk].length <= 1) return feil("Minst éi side må vere publisert på kvar skjerm, så denne kan ikkje flyttast.");
   if (i < 0) (oppsett[tilLk] || (oppsett[tilLk] = [])).push(ny);
   else if (tilLk === lk) oppsett[lk][i] = ny;
-  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); return; }
+  else { oppsett[lk][i] = ny; flyttSide({ lk, i }, { lk: tilLk }); return true; }
   open = null;
   teikn();
-  oppdaterStatus(`«${ny.namn}» er ${i < 0 ? "lagd til" : "endra"}. Klikk Lagre for å sende det til skjermane.`);
+  oppdaterStatus(`«${ny.namn}» er ${i < 0 ? "lagd til" : "endra"}.`);
+  return true;
 }
 
 // Med filteret på byter sida plass med den næraste synlege sida
