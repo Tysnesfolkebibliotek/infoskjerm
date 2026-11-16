@@ -77,6 +77,7 @@
   .merke { font-size: 12px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
   .merke.no { background: var(--ok); color: #fff; }
   .merke.ikkje { background: var(--strek); color: var(--dempa); }
+  .merke.snart { background: transparent; color: var(--ok); border: 1px solid var(--ok); padding: 1px 7px; }
   .side .detaljar { font-size: 13px; color: var(--dempa); margin-top: 3px; }
   .side .detaljar.merknad { font-style: italic; }
   .side .knappar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -193,7 +194,7 @@
   <script src="navigasjon.js"></script>
   <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Ingenting blir endra på skjermane før du klikkar <b>Lagre</b> nedst. Etterpå kjem endringane fram innan om lag ein halvtime, ofte raskare.</p>
 
-  <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje er i bruk no</label>
+  <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje skal visast dei neste sju dagane</label>
 
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
 
@@ -348,6 +349,36 @@ function aktuelle(sider) {
   if (ut.length) return ut;
   const faste = sider.filter(s => !tidsstyrt(s));
   return faste.length ? faste : sider;
+}
+
+// ---- Når blir sida vist neste gong? -------------------------------------
+// Gir { dagar, tid } (dagar = 0 i dag, 1 i morgon …), eller null om sida aldri
+// blir vist att (eingongsperiode som er over). Ser opptil eitt år fram.
+function nesteVising(s, no = new Date()) {
+  const [a] = s.tid ? String(s.tid).split("-").map(x => { const [h, m] = x.trim().split(":").map(Number); return h * 60 + (m || 0); }) : [NaN];
+  const min = no.getHours() * 60 + no.getMinutes();
+  for (let k = 0; k <= 366; k++) {
+    const dag = new Date(no.getFullYear(), no.getMonth(), no.getDate() + k, 12);
+    if (s.periode && !iPeriode(s.periode, dag)) continue;
+    if (s.dagar && !påDag(s.dagar, dag)) continue;
+    if (!s.tid || isNaN(a)) return { dagar: k, tid: null, dato: dag };
+    if (k > 0 || min < a) return { dagar: k, tid: String(s.tid).split("-")[0].trim(), dato: dag };
+  }
+  return null;
+}
+// Ein eingongsperiode (med årstal) som er over
+const utgått = s => { const til = String(s.periode || "").split("/")[1]; return !!til && /^\d{4}-/.test(til.trim()) && til.trim() < idagTekst(); };
+const KORT_DAG = ["Søn.", "Mån.", "Tys.", "Ons.", "Tors.", "Fre.", "Laur."];
+// Merket på kvar side: { tekst, klasse, snart } – snart = blir vist innan sju dagar
+function statusMerke(s, vist) {
+  if (vist) return { tekst: "Vist no", klasse: "no", snart: true };
+  const n = nesteVising(s);
+  if (!n) return { tekst: "Avslutta", klasse: "ikkje", snart: false };
+  const kl = n.tid ? " kl. " + n.tid : "";
+  if (n.dagar === 0) return { tekst: n.tid ? "I dag frå kl. " + n.tid : "I dag", klasse: "snart", snart: true };
+  if (n.dagar === 1) return { tekst: "I morgon" + kl, klasse: "snart", snart: true };
+  if (n.dagar < 7) return { tekst: KORT_DAG[n.dato.getDay()] + kl, klasse: "snart", snart: true };
+  return { tekst: `Neste: ${n.dato.getDate()}. ${MÅNAD[n.dato.getMonth()]}`, klasse: "ikkje", snart: false };
 }
 
 // ---- Lesbare tekstar ------------------------------------------------------
@@ -543,7 +574,8 @@ function teikn() {
     const liste = el("ol", { class: "sider" });
     // Med filteret på blir sider som ikkje er i bruk no, gøymde (men ikkje den som er open for endring)
     const visAlle = $("visalle").checked;
-    const synlege = sider.map((s, i) => i).filter(i => visAlle || no.has(sider[i]) || erOpenFor(lk, i));
+    const merke = sider.map(s => statusMerke(s, no.has(s)));
+    const synlege = sider.map((s, i) => i).filter(i => visAlle || merke[i].snart || erOpenFor(lk, i));
     sider.forEach((s, i) => {
       if (!synlege.includes(i)) return;
       const erOpen = erOpenFor(lk, i);
@@ -552,7 +584,7 @@ function teikn() {
       liste.append(dra(el("li", { class: "side" + (vist ? " no" : "") },
         el("div", { class: "topp" },
           el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
-          el("span", { class: "merke " + (vist ? "no" : "ikkje") }, vist ? "Vist no" : "Ikkje no")),
+          el("span", { class: "merke " + merke[i].klasse }, merke[i].tekst)),
         el("div", { class: "detaljar" }, detaljTekst(s)),
         kalenderMerknad(s),
         el("div", { class: "knappar" },
@@ -589,7 +621,7 @@ function teikn() {
     boks.append(el("section", { class: "skjerm" },
       ...skjermHovud(lk),
       liste,
-      sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi ${sider.length - synlege.length === 1 ? "ho" : "dei"} ikkje er i bruk no. `,
+      sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi ${sider.length - synlege.length === 1 ? "ho" : "dei"} ikkje skal visast dei neste sju dagane. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
       // Nye sider kjem frå «+ Lag nytt ▾» øvst (eller frå byggjarane)
       nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1)) : null,
@@ -1325,11 +1357,33 @@ async function hent() {
   oppsett = JSON.parse(frå64(d.content));
   original = tilJson(oppsett);
   open = null;
+  if (nøkkel && !nøkkelAvvist) await ryddUtgåtte(nøkkel);
   teikn();
   if (nøkkelAvvist) {
     opneInnstilling("nokkelboks");
     oppdaterStatus("Nøkkelen din har gått ut eller er sletta. Du kan sjå oversikta, men må lage ein ny nøkkel for å lagre (sjå nedanfor).", "feil");
   }
+}
+
+// Sider med ein eingongsperiode som er over, blir flytta til Avpubliserte og
+// lagra med ein gong. Skjermane viser dei uansett ikkje, så ingenting endrar seg der.
+async function ryddUtgåtte(nøkkel) {
+  const flytta = [];
+  for (const { nøkkel: lk } of SKJERMAR) {
+    const l = oppsett[lk] || [];
+    for (let i = l.length - 1; i >= 0; i--) {
+      if (!utgått(l[i]) || l.length <= 1) continue;
+      const [side] = l.splice(i, 1);
+      (oppsett[AV(lk)] || (oppsett[AV(lk)] = [])).push(side);
+      flytta.push(side);
+    }
+  }
+  if (!flytta.length) return;
+  await lagreNo(nøkkel, tilJson(oppsett), "Flytta utgåtte sider til avpubliserte");
+  if (tilJson(oppsett) !== original) return;   // lagringa feila: meldinga frå lagreNo står
+  const omtale = s => `«${s.namn}» (gjekk ut ${datoTekst(s.periode.split("/")[1].trim()).replace(/ \d{4}$/, "")})`;
+  oppdaterStatus((flytta.length === 1 ? omtale(flytta[0]) + " er flytta" : flytta.map(omtale).join(", ") + " er flytta")
+    + " til Avpubliserte, sidan perioden er over.", "ok");
 }
 
 function endra() { return oppsett && tilJson(oppsett) !== original; }
@@ -1352,12 +1406,12 @@ async function lagre() {
   oppdaterStatus("Lagrar …");
   try { await lagreNo(nøkkel, innhald); } finally { lagrar = false; $("lagre").disabled = !endra(); $("angre").disabled = !endra(); }
 }
-async function lagreNo(nøkkel, innhald) {
+async function lagreNo(nøkkel, innhald, melding = "Endra oppsettet via oversiktssida") {
   const svar = await fetch(API, {
     method: "PUT",
     headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + nøkkel, "Content-Type": "application/json" },
     // Forfattar blir sett til noreply-adressa, så e-posten på kontoen ikkje hamnar i historikken
-    body: JSON.stringify({ message: "Endra oppsettet via oversiktssida", content: b64(innhald), sha,
+    body: JSON.stringify({ message: melding, content: b64(innhald), sha,
       author: FORFATTAR, committer: FORFATTAR }),
   });
   if (svar.status === 409 || svar.status === 422) {
@@ -1892,7 +1946,7 @@ $("nokkelfjern").addEventListener("click", () => {
 });
 window.addEventListener("beforeunload", e => { if (endra()) { e.preventDefault(); e.returnValue = ""; } });
 
-// Status «Vist no» blir rekna på nytt kvart minutt
+// Merka («Vist no», «I dag frå kl. 16» …) blir rekna på nytt kvart minutt
 setInterval(() => { if (oppsett && !open && !namnOpen) teikn(); }, 60000);
 
 // Ein byggjar opna med «Endre i byggjaren» hugsar sida han skal oppdatere.
