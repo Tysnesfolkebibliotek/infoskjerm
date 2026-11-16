@@ -26,6 +26,7 @@
     teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
     tid=19:30           lat som klokka er 19:30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
+    foddtest=03-21      «Fødd i dag» for ein annan dato (MM-DD), for å teste. Blir ikkje lagra
 
   Kjelder (alle opne og gratis):
     Vêr og sol: MET Norge (api.met.no) — Locationforecast, Sunrise og MetAlerts (farevarsel), henta kvar 30. min.
@@ -786,6 +787,12 @@ function teiknFerje() {
 // Blir henta éin gong per døgn. Kjem sida fram fleire gonger, blir det neste namnet vist.
 const SERVER = "https://strdbib.bib.no", AVDAR = ["tyfv", "tyfb"];
 let FØDD = minne.les("fodd"), foddNr = 0;
+// foddtest=MM-DD: vis «Fødd i dag» for ein annan dato (berre for testing, blir ikkje lagra)
+const FODDTEST = /^(\d\d)-(\d\d)$/.exec(H.get("foddtest") || "");
+const foddDag = () => FODDTEST ? new Date(new Date().getFullYear(), FODDTEST[1] - 1, +FODDTEST[2]) : new Date();
+// Forfattaryrka vi vel ut etter (same som i spørjinga under)
+const FORFATTARYRKE = new Set(["Q36180","Q6625963","Q49757","Q4853732","Q214917","Q482980","Q11774202","Q15949613",
+  "Q18844224","Q333634","Q1930187","Q201788","Q715301","Q644687"]);
 const ordAv = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").split(/[^a-z0-9æøð]+/).filter(Boolean);
 
 // SRU med JSONP, som i karusellane (index.html). Svaret kjem alltid til «callback», så éin om gongen.
@@ -886,9 +893,9 @@ function teiknDag() {
 
 async function hentFødd() {
   if (!FODD) return;
-  const d = new Date(), dato = isoDato(d);
-  // «v: 2» = med dødsår; eldre lagra lister (utan dødsår) blir henta på nytt
-  if (FØDD && FØDD.dato === dato && FØDD.v === 2) return teiknFødd();
+  const d = foddDag(), dato = isoDato(d);
+  // «v: 3» = med dødsår; eldre lagra lister (utan dødsår) blir henta på nytt
+  if (FØDD && FØDD.dato === dato && FØDD.v === 3 && !FODDTEST) return teiknFødd();
   try {
     // Yrke: forfattar, romanforfattar, poet, barnebokforfattar, dramatikar, forfattar (author), essayist,
     // novelleforfattar, sci-fi-forfattar, omsetjar, journalist, historikar, teikneserieskapar, illustratør.
@@ -902,7 +909,7 @@ async function hentFødd() {
     const md = p2(d.getMonth() + 1) + "-" + p2(d.getDate());
     const datoar = [];
     for (let år = 1600; år <= d.getFullYear() - 10; år++) datoar.push(`"${år}-${md}T00:00:00Z"^^xsd:dateTime`);
-    const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?daar ?sl ?land WHERE {
+    const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?daar ?sl ?land ?hy ?hyNamn WHERE {
       hint:Query hint:optimizer "None" .
       VALUES ?f { ${datoar.join(" ")} }
       ?p wdt:P569 ?f .
@@ -915,6 +922,8 @@ async function hentFødd() {
       BIND(YEAR(?f) AS ?aar)
       # Dødsår (P570) for dei som ikkje lever lenger
       OPTIONAL { ?p wdt:P570 ?dod . BIND(YEAR(?dod) AS ?daar) }
+      # Alle yrka til personen med nynorsk/bokmålsnamn, til skildringa når det ikkje finst anna
+      OPTIONAL { ?p wdt:P106 ?hy . ?hy rdfs:label ?hyNamn . FILTER(LANG(?hyNamn) IN ("nn", "nb")) }
       # Nordisk statsborgarskap (Noreg, Sverige, Danmark, Island, Finland, Færøyane). Ikkje BIND(EXISTS …):
       # med optimizer "None" gav det alltid «nei», så ingen vart merkte som norske.
       OPTIONAL { VALUES ?land { wd:Q20 wd:Q34 wd:Q35 wd:Q189 wd:Q33 wd:Q4628 } ?p wdt:P27 ?land . }
@@ -932,7 +941,10 @@ async function hentFødd() {
       if (!id) continue;
       const skild = b.pDescription?.["xml:lang"] === "en" ? fråEngelsk(b.pDescription.value) : b.pDescription?.value || "";
       const x = perP.get(id) || { namn: b.pLabel?.value || "", skild, år: Number(b.aar?.value) || null,
-                                  sl: Number(b.sl?.value) || 0, norsk: false, nordisk: false, død: null };
+                                  sl: Number(b.sl?.value) || 0, norsk: false, nordisk: false, død: null, yrke: {} };
+      // Yrke: nynorsk namn før bokmål
+      if (b.hy && b.hyNamn) { const q = b.hy.value.split("/").pop(), y = x.yrke[q];
+        if (!y || b.hyNamn["xml:lang"] === "nn") x.yrke[q] = b.hyNamn.value; }
       if (!x.død && Number(b.daar?.value) > 0) x.død = Number(b.daar.value);
       if (b.land) { x.nordisk = true; if (/\/Q20$/.test(b.land.value)) x.norsk = true; }
       perP.set(id, x);
@@ -953,14 +965,14 @@ async function hentFødd() {
       try {
         const tal = await talBøker(bunk, ix); svar++;
         for (const k of bunk) if (tal.get(k.namn) > 0) liste.push({ ...k, bøker: tal.get(k.namn) });
-        if (liste.length) { FØDD = { dato, v: 2, liste, kandidatar: namna }; teiknFødd(); tilpass(); }
+        if (liste.length) { FØDD = { dato, v: 3, liste, kandidatar: namna }; teiknFødd(); tilpass(); }
       } catch (e) { console.warn("Bibliofil:", e.message); }
     }
     // Svarte ikkje Bibliofil i det heile, viser vi dei tre første utan tal bøker
     if (!svar) liste = kandidatar.slice(0, 3).map(k => ({ ...k, bøker: null }));
     // «kandidatar» (alle frå Wikidata, med «(norsk)» o.l.) er lagra for feilsøking i konsollen
-    FØDD = { dato, v: 2, liste, kandidatar: namna };
-    if (svar || !kandidatar.length) minne.skriv("fodd", FØDD);   // prøv Bibliofil på nytt neste gong om det feila
+    FØDD = { dato, v: 3, liste, kandidatar: namna };
+    if ((svar || !kandidatar.length) && !FODDTEST) minne.skriv("fodd", FØDD);   // prøv Bibliofil på nytt neste gong om det feila
   } catch (e) { console.warn("Fekk ikkje henta Fødd i dag:", e.message); }
   teiknFødd(); tilpass();
 }
@@ -989,8 +1001,17 @@ const nynorskYrke = t => NYNORSK.reduce((x, [a, b]) => x.replace(a, b), t);
 // sida blir vist. Blir det for trongt (tilpass), blir det færre før boksen fell bort.
 const FODD_MAKS = 3;
 let foddVis = FODD_MAKS;
+// Siste utveg for skildringa: yrka frå Wikidata. Høgst to – eitt anna yrke (t.d. fotballspelar) først,
+// så eitt forfattaryrke – så det står kva personen eigentleg er, ikkje berre «forfattar».
+function yrkeTekst(yrke) {
+  const alle = Object.entries(yrke || {});
+  const andre = alle.filter(([q]) => !FORFATTARYRKE.has(q)).map(([, n]) => n);
+  const forf = alle.filter(([q]) => FORFATTARYRKE.has(q)).map(([, n]) => n);
+  const valde = andre.length ? [andre[0], forf[0]] : forf.slice(0, 2);
+  return nynorskYrke(valde.filter(Boolean).join(" og "));
+}
 function teiknFødd() {
-  const liste = FODD && FØDD && FØDD.dato === isoDato(new Date()) ? FØDD.liste || [] : [];
+  const liste = FODD && FØDD && FØDD.dato === isoDato(foddDag()) ? FØDD.liste || [] : [];
   $("fodd").hidden = !liste.length;
   $("fodd").dataset.har = liste.length ? "1" : "";
   if (!liste.length) return;
@@ -1007,7 +1028,7 @@ function teiknFødd() {
   $("foddListe").replaceChildren(...valde.map(f => {
     // Wikidata har ofte berre bokmålsskildring («russisk forfatter og dramatiker (1818–1883)»):
     // ta bort årstala i parentes og byt dei vanlegaste yrkesorda til nynorsk
-    const skild = nynorskYrke(String(f.skild || "").replace(/\s*\([^)]*\d{3,4}[^)]*\)/g, "").trim());
+    const skild = nynorskYrke(String(f.skild || "").replace(/\s*\([^)]*\d{3,4}[^)]*\)/g, "").trim()) || yrkeTekst(f.yrke);
     const rad = document.createElement("div"); rad.className = "person";
     const tekst = document.createElement("div");
     const namn = Object.assign(document.createElement("span"), { className: "pnamn", textContent: f.namn });
