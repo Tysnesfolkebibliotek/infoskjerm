@@ -1357,8 +1357,10 @@ async function hent() {
   oppsett = JSON.parse(frå64(d.content));
   original = tilJson(oppsett);
   open = null;
-  if (nøkkel && !nøkkelAvvist) await ryddUtgåtte(nøkkel);
+  const flyttMelding = nøkkel && !nøkkelAvvist ? await ryddUtgåtte(nøkkel) : "";
   teikn();
+  // teikn() set statusen til «Ingen endringar», så meldinga om flyttinga må kome etterpå
+  if (flyttMelding) oppdaterStatus(flyttMelding, "ok");
   if (nøkkelAvvist) {
     opneInnstilling("nokkelboks");
     oppdaterStatus("Nøkkelen din har gått ut eller er sletta. Du kan sjå oversikta, men må lage ein ny nøkkel for å lagre (sjå nedanfor).", "feil");
@@ -1378,12 +1380,12 @@ async function ryddUtgåtte(nøkkel) {
       flytta.push(side);
     }
   }
-  if (!flytta.length) return;
+  if (!flytta.length) return "";
   await lagreNo(nøkkel, tilJson(oppsett), "Flytta utgåtte sider til avpubliserte");
-  if (tilJson(oppsett) !== original) return;   // lagringa feila: meldinga frå lagreNo står
+  if (tilJson(oppsett) !== original) return "Fann sider som har gått ut, men klarte ikkje å lagre flyttinga til Avpubliserte. Klikk Lagre for å prøve igjen.";
   const omtale = s => `«${s.namn}» (gjekk ut ${datoTekst(s.periode.split("/")[1].trim()).replace(/ \d{4}$/, "")})`;
-  oppdaterStatus((flytta.length === 1 ? omtale(flytta[0]) + " er flytta" : flytta.map(omtale).join(", ") + " er flytta")
-    + " til Avpubliserte, sidan perioden er over.", "ok");
+  return (flytta.length === 1 ? omtale(flytta[0]) : flytta.map(omtale).join(", "))
+    + " er flytta til Avpubliserte, sidan perioden er over.";
 }
 
 function endra() { return oppsett && tilJson(oppsett) !== original; }
