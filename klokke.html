@@ -887,7 +887,8 @@ function teiknDag() {
 async function hentFødd() {
   if (!FODD) return;
   const d = new Date(), dato = isoDato(d);
-  if (FØDD && FØDD.dato === dato) return teiknFødd();
+  // «v: 2» = med dødsår; eldre lagra lister (utan dødsår) blir henta på nytt
+  if (FØDD && FØDD.dato === dato && FØDD.v === 2) return teiknFødd();
   try {
     // Yrke: forfattar, romanforfattar, poet, barnebokforfattar, dramatikar, forfattar (author), essayist,
     // novelleforfattar, sci-fi-forfattar, omsetjar, journalist, historikar, teikneserieskapar, illustratør.
@@ -901,7 +902,7 @@ async function hentFødd() {
     const md = p2(d.getMonth() + 1) + "-" + p2(d.getDate());
     const datoar = [];
     for (let år = 1600; år <= d.getFullYear() - 10; år++) datoar.push(`"${år}-${md}T00:00:00Z"^^xsd:dateTime`);
-    const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?sl ?land WHERE {
+    const q = `SELECT DISTINCT ?p ?pLabel ?pDescription ?aar ?daar ?sl ?land WHERE {
       hint:Query hint:optimizer "None" .
       VALUES ?f { ${datoar.join(" ")} }
       ?p wdt:P569 ?f .
@@ -912,6 +913,8 @@ async function hentFødd() {
       ?a schema:about ?p ; schema:isPartOf ?wiki .
       ?p wikibase:sitelinks ?sl .
       BIND(YEAR(?f) AS ?aar)
+      # Dødsår (P570) for dei som ikkje lever lenger
+      OPTIONAL { ?p wdt:P570 ?dod . BIND(YEAR(?dod) AS ?daar) }
       # Nordisk statsborgarskap (Noreg, Sverige, Danmark, Island, Finland, Færøyane). Ikkje BIND(EXISTS …):
       # med optimizer "None" gav det alltid «nei», så ingen vart merkte som norske.
       OPTIONAL { VALUES ?land { wd:Q20 wd:Q34 wd:Q35 wd:Q189 wd:Q33 wd:Q4628 } ?p wdt:P27 ?land . }
@@ -929,7 +932,8 @@ async function hentFødd() {
       if (!id) continue;
       const skild = b.pDescription?.["xml:lang"] === "en" ? fråEngelsk(b.pDescription.value) : b.pDescription?.value || "";
       const x = perP.get(id) || { namn: b.pLabel?.value || "", skild, år: Number(b.aar?.value) || null,
-                                  sl: Number(b.sl?.value) || 0, norsk: false, nordisk: false };
+                                  sl: Number(b.sl?.value) || 0, norsk: false, nordisk: false, død: null };
+      if (!x.død && Number(b.daar?.value) > 0) x.død = Number(b.daar.value);
       if (b.land) { x.nordisk = true; if (/\/Q20$/.test(b.land.value)) x.norsk = true; }
       perP.set(id, x);
     }
@@ -949,13 +953,13 @@ async function hentFødd() {
       try {
         const tal = await talBøker(bunk, ix); svar++;
         for (const k of bunk) if (tal.get(k.namn) > 0) liste.push({ ...k, bøker: tal.get(k.namn) });
-        if (liste.length) { FØDD = { dato, liste, kandidatar: namna }; teiknFødd(); tilpass(); }
+        if (liste.length) { FØDD = { dato, v: 2, liste, kandidatar: namna }; teiknFødd(); tilpass(); }
       } catch (e) { console.warn("Bibliofil:", e.message); }
     }
     // Svarte ikkje Bibliofil i det heile, viser vi dei tre første utan tal bøker
     if (!svar) liste = kandidatar.slice(0, 3).map(k => ({ ...k, bøker: null }));
     // «kandidatar» (alle frå Wikidata, med «(norsk)» o.l.) er lagra for feilsøking i konsollen
-    FØDD = { dato, liste, kandidatar: namna };
+    FØDD = { dato, v: 2, liste, kandidatar: namna };
     if (svar || !kandidatar.length) minne.skriv("fodd", FØDD);   // prøv Bibliofil på nytt neste gong om det feila
   } catch (e) { console.warn("Fekk ikkje henta Fødd i dag:", e.message); }
   teiknFødd(); tilpass();
@@ -1004,7 +1008,7 @@ function teiknFødd() {
     const tekst = document.createElement("div");
     const namn = Object.assign(document.createElement("span"), { className: "pnamn", textContent: f.namn });
     const om = Object.assign(document.createElement("span"), { className: "skild",
-      textContent: [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && "fødd " + f.år].filter(Boolean).join(", ") });
+      textContent: [skild.charAt(0).toUpperCase() + skild.slice(1), f.år > 0 && (f.død > 0 ? f.år + "–" + f.død : "fødd " + f.år)].filter(Boolean).join(", ") });
     tekst.append(namn, om);
     rad.append(tekst);
     return rad;
