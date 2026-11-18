@@ -6,7 +6,8 @@
 //   id       Det interne namnet som står i lenkja («tema=…»). IKKJE endre
 //            dette for eit tema som er i bruk – då mistar karusellane temaet.
 //   namn     Det som står i temavalet i byggjaren. Kan endrast fritt.
-//   gruppe   Kva gruppe temaet står i (sjå TEMAGRUPPER under).
+//   gruppe   Kva gruppe temaet står i (sjå TEMAGRUPPER under). «Skjulte» står
+//            ikkje i nokon temameny, men karusellar som alt brukar temaet, verkar.
 //   dato     Liten tekst ved sida av namnet, t.d. «8. mars». Valfritt.
 //   aktuell  Når temaet skal stå under «Aktuelt no» i byggjaren. Valfritt.
 //            "MM-DD/MM-DD" (kan gå over nyttår), "påske" eller "veke17".
@@ -40,29 +41,26 @@ const TEMA_LISTE = [
   {
     id: "fjord", namn: "Fjord", gruppe: "Faste",
     skrift: "par-klassisk",
-    fargar: { bakgrunn: "#0a1822", tekst: "#eef6fb", dempa: "#9db5c4", aksent: "#2fb2ee", "aksent-tekst": "#04141d", skugge: "10,24,34", "reserve-a": "#17384c", "reserve-b": "#0b1c27" },
+    fargar: { bakgrunn: "#dde9ec", tekst: "#0b2f45", dempa: "#46606e", aksent: "#136f9a", "aksent-tekst": "#ffffff", brikke: "rgba(11,47,69,.08)", skugge: "221,233,236", spor: "rgba(11,47,69,.14)", "reserve-a": "#c2d6dc", "reserve-b": "#a5c1ca", "bakteppe-lys": "1.15" },
   },
   {
     id: "skog", namn: "Skog", gruppe: "Faste",
     skrift: "par-venleg",
-    fargar: { bakgrunn: "#0e1712", tekst: "#f0f3ec", dempa: "#a9b8a6", aksent: "#9cc96b", "aksent-tekst": "#122008", skugge: "14,23,18", "reserve-a": "#233a2a", "reserve-b": "#111c15" },
+    fargar: { bakgrunn: "#e7eee2", tekst: "#1c2a1f", dempa: "#526150", aksent: "#4a7a32", "aksent-tekst": "#ffffff", brikke: "rgba(28,42,31,.08)", skugge: "231,238,226", spor: "rgba(28,42,31,.14)", "reserve-a": "#cddbc3", "reserve-b": "#b3c6a6", "bakteppe-lys": "1.15" },
   },
   {
     id: "lys", namn: "Lys", gruppe: "Faste",
     skrift: "par-litteraer",
     fargar: { bakgrunn: "#f4efe6", tekst: "#1f1b16", dempa: "#62584c", aksent: "#b8741a", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "244,239,230", spor: "rgba(0,0,0,.10)", "reserve-a": "#e4d8c4", "reserve-b": "#d3c3a9", "bakteppe-lys": "1.15" },
   },
-  // ---- Lyse tema (lagt til 18.11.2026: for få lyse tema frå før) ----
+  // ---- Lyse tema (lagt til 18.11.2026: for få lyse tema frå før).
+  // Fjord og Skog vart gjorde lyse same dag; Natt og Libry content vart skjulte.
   {
     id: "sand", namn: "Sand og petrol", gruppe: "Faste",
     skrift: "par-klassisk",
     fargar: { bakgrunn: "#efe6d6", tekst: "#123a40", dempa: "#4f6466", aksent: "#1f7a80", "aksent-tekst": "#ffffff", brikke: "rgba(18,58,64,.08)", skugge: "239,230,214", spor: "rgba(18,58,64,.14)", "reserve-a": "#dccfb6", "reserve-b": "#c7b796", "bakteppe-lys": "1.15" },
   },
-  {
-    id: "salvie", namn: "Salvie", gruppe: "Faste",
-    skrift: "par-venleg",
-    fargar: { bakgrunn: "#e7eee2", tekst: "#1c2a1f", dempa: "#526150", aksent: "#4a7a32", "aksent-tekst": "#ffffff", brikke: "rgba(28,42,31,.08)", skugge: "231,238,226", spor: "rgba(28,42,31,.14)", "reserve-a": "#cddbc3", "reserve-b": "#b3c6a6", "bakteppe-lys": "1.15" },
-  },
+
   {
     id: "fersken", namn: "Fersken", gruppe: "Faste",
     skrift: "par-elegant",
@@ -74,7 +72,7 @@ const TEMA_LISTE = [
     fargar: { bakgrunn: "#f6f6f3", tekst: "#18181a", dempa: "#5a5a5e", aksent: "#c8302a", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "246,246,243", spor: "rgba(0,0,0,.12)", "reserve-a": "#e2e2de", "reserve-b": "#cdcdc8", "bakteppe-lys": "1.15" },
   },
   {
-    id: "natt", namn: "Natt", gruppe: "Faste", overgang: "kryss",
+    id: "natt", namn: "Natt", gruppe: "Skjulte", overgang: "kryss",
     skrift: "par-historisk",
     fargar: { bakgrunn: "#070b1f", tekst: "#eef1ff", dempa: "#a9b1d6", aksent: "#9db4ff", "aksent-tekst": "#070b1f", skugge: "7,11,31", "reserve-a": "#22306b", "reserve-b": "#0c1230" },
     pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
@@ -101,7 +99,7 @@ const TEMA_LISTE = [
       :root[data-tema="kontrast"] .botnnamn { font-size: 3.2vw; }`,
   },
   {
-    id: "libry", namn: "Libry content", gruppe: "Faste",
+    id: "libry", namn: "Libry content", gruppe: "Skjulte",
     skrift: "sourcesans",
     fargar: { bakgrunn: "#333333", tekst: "#ffffff", dempa: "#c9c9c9", aksent: "#ffffff", "aksent-tekst": "#1f1f1f", brikke: "#555555", skugge: "51,51,51", spor: "rgba(255,255,255,.18)", "reserve-a": "#00474d", "reserve-b": "#002e33" },
     css: `
