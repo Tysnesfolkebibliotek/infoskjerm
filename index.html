@@ -314,7 +314,7 @@
   /* ================================================================== */
   body.byggjar { background: var(--b-bg); color: var(--b-tekst); font-size: 15px; line-height: 1.45; }
   .b-ramme { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; height: 100vh; }
-  .b-skjema { overflow-y: auto; padding: 24px 24px 40px; border-right: 1px solid var(--b-strek); background: var(--b-flate); }
+  .b-skjema { position: relative; overflow-y: auto; padding: 24px 24px 40px; border-right: 1px solid var(--b-strek); background: var(--b-flate); }
   .b-skjema h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
   .b-skjema .ingress { color: var(--b-dempa); margin: 4px 0 18px; font-size: 14px; }
 
@@ -421,7 +421,7 @@
   .temaalternativ[aria-checked="true"] { background: color-mix(in srgb, var(--b-aksent) 16%, transparent); }
   .temaalternativ .temadato { color: var(--b-dempa); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .temaalternativ .hake { margin-left: auto; color: var(--b-aksent); }
-  .segment { display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
+  .segment { position: relative; display: flex; border: 1px solid var(--b-strek); border-radius: 8px; overflow: hidden; }
   .segment label { flex: 1; text-align: center; padding: 8px 4px; white-space: nowrap; font-size: 14px; cursor: pointer; border-right: 1px solid var(--b-strek); }
   .segment label:last-child { border-right: 0; }
   .segment input { position: absolute; opacity: 0; pointer-events: none; }
