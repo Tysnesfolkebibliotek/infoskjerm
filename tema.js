@@ -52,6 +52,27 @@ const TEMA_LISTE = [
     skrift: "par-litteraer",
     fargar: { bakgrunn: "#f4efe6", tekst: "#1f1b16", dempa: "#62584c", aksent: "#b8741a", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "244,239,230", spor: "rgba(0,0,0,.10)", "reserve-a": "#e4d8c4", "reserve-b": "#d3c3a9", "bakteppe-lys": "1.15" },
   },
+  // ---- Lyse tema (lagt til 18.11.2026: for få lyse tema frå før) ----
+  {
+    id: "sand", namn: "Sand og petrol", gruppe: "Faste",
+    skrift: "par-klassisk",
+    fargar: { bakgrunn: "#efe6d6", tekst: "#123a40", dempa: "#4f6466", aksent: "#1f7a80", "aksent-tekst": "#ffffff", brikke: "rgba(18,58,64,.08)", skugge: "239,230,214", spor: "rgba(18,58,64,.14)", "reserve-a": "#dccfb6", "reserve-b": "#c7b796", "bakteppe-lys": "1.15" },
+  },
+  {
+    id: "salvie", namn: "Salvie", gruppe: "Faste",
+    skrift: "par-venleg",
+    fargar: { bakgrunn: "#e7eee2", tekst: "#1c2a1f", dempa: "#526150", aksent: "#4a7a32", "aksent-tekst": "#ffffff", brikke: "rgba(28,42,31,.08)", skugge: "231,238,226", spor: "rgba(28,42,31,.14)", "reserve-a": "#cddbc3", "reserve-b": "#b3c6a6", "bakteppe-lys": "1.15" },
+  },
+  {
+    id: "fersken", namn: "Fersken", gruppe: "Faste",
+    skrift: "par-elegant",
+    fargar: { bakgrunn: "#fbe8de", tekst: "#3a1e16", dempa: "#76564a", aksent: "#c24a2a", "aksent-tekst": "#ffffff", brikke: "rgba(58,30,22,.08)", skugge: "251,232,222", spor: "rgba(58,30,22,.14)", "reserve-a": "#f3cdb9", "reserve-b": "#e8b199", "bakteppe-lys": "1.15" },
+  },
+  {
+    id: "kritt", namn: "Kritt", gruppe: "Faste",
+    skrift: "par-plakat",
+    fargar: { bakgrunn: "#f6f6f3", tekst: "#18181a", dempa: "#5a5a5e", aksent: "#c8302a", "aksent-tekst": "#ffffff", brikke: "rgba(0,0,0,.07)", skugge: "246,246,243", spor: "rgba(0,0,0,.12)", "reserve-a": "#e2e2de", "reserve-b": "#cdcdc8", "bakteppe-lys": "1.15" },
+  },
   {
     id: "natt", namn: "Natt", gruppe: "Faste", overgang: "kryss",
     skrift: "par-historisk",
@@ -111,6 +132,29 @@ const TEMA_LISTE = [
       pynt.append(svg("0 0 100 100", "right:-3vw; top:6vh; width:14vw; fill:none; stroke:#dff3ff; stroke-width:1.6; stroke-linecap:round; opacity:.07;", krystall()));
       pynt.append(svg("0 0 100 100", "right:10vw; bottom:-4vh; width:18vw; fill:none; stroke:#dff3ff; stroke-width:1.6; stroke-linecap:round; opacity:.06;", krystall()));
       snøfall(14, 0.4);
+    },
+  },
+  {
+    id: "sno", namn: "Snø (lys vinter)", gruppe: "Årstider", overgang: "kryss",
+    aktuell: "12-01/02-28",
+    fargar: { bakgrunn: "#edf3f7", tekst: "#0f2233", dempa: "#4c6273", aksent: "#2a74a8", "aksent-tekst": "#ffffff", brikke: "rgba(15,34,51,.08)", skugge: "237,243,247", spor: "rgba(15,34,51,.14)", "reserve-a": "#d2e1eb", "reserve-b": "#b6cddd", "bakteppe-lys": "1.15" },
+    css: `:root[data-tema="sno"] .snø { background: #9dbcd3; }`,
+    pynt({ pynt, svg, tilf, vel, snøfall, stigande, dalande }) {
+      // Som Vinter, men blå iskrystallar og blåleg snø på lys botn
+      const krystall = () => {
+        let g = "";
+        for (let v = 0; v < 360; v += 60) {
+          g += `<g transform="rotate(${v} 50 50)"><line x1="50" y1="50" x2="50" y2="4"/>` +
+               `<line x1="50" y1="22" x2="40" y2="12"/><line x1="50" y1="22" x2="60" y2="12"/>` +
+               `<line x1="50" y1="34" x2="43" y2="27"/><line x1="50" y1="34" x2="57" y2="27"/></g>`;
+        }
+        return g;
+      };
+      const strek = "fill:none; stroke:#5d8fb3; stroke-width:1.6; stroke-linecap:round;";
+      pynt.append(svg("0 0 100 100", `left:-4vw; top:-3vh; width:24vw; ${strek} opacity:.16;`, krystall()));
+      pynt.append(svg("0 0 100 100", `right:-3vw; top:6vh; width:14vw; ${strek} opacity:.13;`, krystall()));
+      pynt.append(svg("0 0 100 100", `right:10vw; bottom:-4vh; width:18vw; ${strek} opacity:.11;`, krystall()));
+      snøfall(14, 0.5);
     },
   },
   {
