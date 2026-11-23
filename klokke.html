@@ -108,8 +108,13 @@
                  display: grid; place-items: center; animation: puls 2.4s ease-in-out infinite; }
   .avvik .ikon b { font-size: 7rem; font-weight: 700; line-height: 1; color: var(--aksent); }
   .avvik.heilt .ikon b { color: #a8261f; }
-  @keyframes puls { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 70%, transparent); }
-                    55% { box-shadow: 0 0 0 2.4rem color-mix(in srgb, currentColor 0%, transparent); } }
+  /* Pulsen: ring som vekst ut og blir borte, og ikonet sveller litt. Faste rgba-fargar –
+     color-mix med currentColor kan ikkje animerast jamt (hoppar berre mellom start og slutt). */
+  @keyframes puls { 0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.75); transform: scale(1); }
+                    20%  { transform: scale(1.1); }
+                    40%  { transform: scale(1); }
+                    70%  { box-shadow: 0 0 0 3.2rem rgba(255,255,255,0); }
+                    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); transform: scale(1); } }
   .avvik .tekst { min-width: 0; }
   .avvik .naar { font-size: 2.6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
   .avvik .hovud { font-size: 6.4rem; font-weight: 700; line-height: 1.1; margin-top: .8rem; }
