@@ -15,7 +15,8 @@
   Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
     variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
     variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
-    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel)
+    utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel),
+                        avvik (stripa om avvikande opningstid)
     veksle=0            vis alt på éin gong (standard: éin ting om gongen under klokka, som vekslar)
     farge=petrol        eigne lyse fargar: petrol (standard), papir, mynte, rosa, kalk, betong, himmel,
                         salvie, aprikos, lavendel, sennep, havbla. farge=auto: Lys om dagen, Kveld om kvelden
@@ -27,6 +28,12 @@
     tid=19:30           lat som klokka er 19:30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
     foddtest=03-21      «Fødd i dag» for ein annan dato (MM-DD), for å teste. Blir ikkje lagra
+    avvikstest=1        falske avvik for å sjå stripa: 1 ingen betjening i morgon, 2 periode om 5 dagar,
+                        3 periode som varer no, 4 heilt stengt i morgon
+
+  Avvikande opningstid (frå nettsida) blir vist som ei fast stripe øvst med «!»: enkeltdagar
+  dagen før og på dagen, periodar (fleire dagar på rad med same merknad) ei veke før og medan
+  dei varer. Betjent og meirope blir omtala kvar for seg; raud stripe berre når alt er stengt.
 
   Kjelder (alle opne og gratis):
     Vêr og sol: MET Norge (api.met.no) — Locationforecast, Sunrise og MetAlerts (farevarsel), henta kvar 30. min.
@@ -89,6 +96,26 @@
   .fare .namn { color: inherit; opacity: .75; }
   .fare b { display: block; font-size: 4.6rem; font-weight: 700; line-height: 1.15; }
   .fare span { display: block; font-size: 3.2rem; margin-top: .8rem; }
+
+  /* ---- Avvikande opningstid: fast stripe øvst (under farevarselet), står medan resten vekslar ----
+     Aksentfargen (petrol); raud når biblioteket er heilt stengt, også meirope. */
+  .avvik { display: flex; align-items: center; gap: 4rem; margin: 0 -7.56rem 6rem; padding: 4.4rem 7.56rem 4.2rem;
+           background: var(--aksent); color: var(--aksent-tekst); }
+  .fare[hidden] + .avvik { margin-top: -9.6rem; padding-top: 5.4rem; }
+  .fare:not([hidden]) + .avvik { margin-top: -6rem; }
+  .avvik.heilt { background: #a8261f; color: #fff; }
+  .avvik .ikon { flex: none; width: 10rem; height: 10rem; border-radius: 50%; background: currentColor;
+                 display: grid; place-items: center; animation: puls 2.4s ease-in-out infinite; }
+  .avvik .ikon b { font-size: 7rem; font-weight: 700; line-height: 1; color: var(--aksent); }
+  .avvik.heilt .ikon b { color: #a8261f; }
+  @keyframes puls { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 70%, transparent); }
+                    55% { box-shadow: 0 0 0 2.4rem color-mix(in srgb, currentColor 0%, transparent); } }
+  .avvik .tekst { min-width: 0; }
+  .avvik .naar { font-size: 2.6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
+  .avvik .hovud { font-size: 6.4rem; font-weight: 700; line-height: 1.1; margin-top: .8rem; }
+  .avvik .linje { font-size: 3.8rem; margin-top: 1rem; line-height: 1.25; }
+  .avvik .merk { font-size: 3.4rem; font-style: italic; margin-top: .8rem; opacity: .85; }
+  .avvik .merk:empty, .avvik .linje:empty { display: none; }
 
   /* ---- Klokka og datoen ---- */
   .klokkeblokk { padding-bottom: 5.6rem; }
@@ -244,6 +271,16 @@
   <section class="fare" id="fare" hidden>
     <div class="namn" id="fareNiva"></div>
     <div><b id="fareHovud"></b><span id="fareMeir"></span></div>
+  </section>
+
+  <section class="avvik" id="avvik" hidden>
+    <div class="ikon" aria-hidden="true"><b>!</b></div>
+    <div class="tekst">
+      <div class="naar" id="avvikNaar"></div>
+      <div class="hovud" id="avvikHovud"></div>
+      <div class="linje" id="avvikLinje"></div>
+      <div class="merk" id="avvikMerk"></div>
+    </div>
   </section>
 
   <div class="midt">
@@ -415,6 +452,121 @@ function teiknOpning() {
   $("ope").hidden = !MED("ope");
   $("opeNo").textContent = hovud;
   $("opeMeir").textContent = meir;
+  teiknAvvik();
+}
+
+// ---- Avvikande opningstid: stripe øvst ----------------------------------------
+// Enkeltdagar blir varsla dagen før (og står på sjølve dagen). Periodar (to eller fleire
+// dagar på rad med same merknad) blir varsla ei veke før, og står så lenge dei varer.
+// Betjent og meirope blir alltid omtala kvar for seg, så ingen trur døra er låst når
+// berre betjeninga er borte. «Heilt stengt» berre når også meirope er stengt (raud stripe).
+const VARSEL_PERIODE_DAGAR = 7;
+const leggTil = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
+const tidTekst = s => s ? klTal(s[0]) + "–" + klTal(s[1]) : "";
+const likSpenn = (a, b) => (!a && !b) || (a && b && a[0] === b[0] && a[1] === b[1]);
+// Tidene ein dato: { bt, mo } som faktisk gjeld, { btV, moV } som er vanleg den vekedagen
+function tiderFor(d) {
+  const kode = DAGKODE[d.getDay()], u = (OPNING.unntak || {})[isoDato(d)] || {};
+  const btV = spenn((OPNING.betjent || {})[kode]);
+  const moV = spenn(typeof OPNING.meirope === "object" ? (OPNING.meirope || {})[kode] : OPNING.meirope);
+  const bt = "betjent" in u ? spenn(u.betjent) : btV, mo = "meirope" in u ? spenn(u.meirope) : moV;
+  const har = isoDato(d) in (OPNING.unntak || {});
+  return { bt, mo, btV, moV, har, tekst: u.tekst || "", avvik: !likSpenn(bt, btV) || !likSpenn(mo, moV) };
+}
+// Kva som er annleis éin dag → { hovud, linje, heilt }
+function skildreDag(t) {
+  if (!t.bt && !t.mo) return { hovud: "Heilt stengt", linje: "Også meirope er stengt", heilt: true };
+  const btTekst = t.bt ? "Betjent " + tidTekst(t.bt) : "Ingen betjening";
+  const moTekst = t.mo ? "Meirope " + tidTekst(t.mo) : "Meirope stengt";
+  // Dag i ein periode som er som vanleg (t.d. laurdag i julestenginga, då det aldri er betjent)
+  if (!t.avvik) return t.bt ? { hovud: btTekst + " som vanleg", linje: moTekst + " som vanleg" } : { hovud: moTekst + " som vanleg", linje: "" };
+  if (!likSpenn(t.bt, t.btV)) return { hovud: btTekst, linje: moTekst + (likSpenn(t.mo, t.moV) ? " som vanleg" : "") };
+  return { hovud: moTekst, linje: t.bt ? btTekst + " som vanleg" : "" };
+}
+// Hard mellomrom mellom dato og månad, så «5. desember» ikkje blir delt over to liner
+const dagDato = d => DAGNAMN[d.getDay()].toLowerCase() + " " + d.getDate() + ".\u00a0" + MND[d.getMonth()];
+// Periode som byrjar på dato d (dagar på rad med avvik og same merknad) → [start, slutt]
+function periodeRundt(d) {
+  // Ein periode er dagar på rad som står i avvikslista med same merknad – også dagar der
+  // tidene ikkje er annleis enn vanleg (helg i julestenginga). Minst éin dag må vere avvik.
+  const t = tiderFor(d);
+  if (!t.har) return null;
+  const same = x => { const y = tiderFor(x); return y.har && y.tekst === t.tekst; };
+  let a = d, b = d;
+  if (t.tekst) {
+    for (let n = 0; n < 62 && same(leggTil(a, -1)); n++) a = leggTil(a, -1);
+    for (let n = 0; n < 62 && same(leggTil(b, 1)); n++) b = leggTil(b, 1);
+  }
+  for (let x = a; x <= b; x = leggTil(x, 1)) if (tiderFor(x).avvik) return [a, b];
+  return null;
+}
+// Samandrag for ein heil periode: same skildring alle dagane, eller «Avvikande opningstider»
+function skildrePeriode(a, b) {
+  const s = [];
+  for (let d = a; d <= b; d = leggTil(d, 1)) { const t = tiderFor(d); if (t.avvik) s.push(skildreDag(t)); }
+  if (s.every(x => x.heilt)) return { hovud: "Heilt stengt", linje: "Også meirope er stengt", heilt: true };
+  const likeHovud = s.every(x => x.hovud === s[0].hovud), likeLinje = s.every(x => x.linje === s[0].linje);
+  if (likeHovud) return { hovud: s[0].hovud,
+                          // «Meirope 08:00–22:00 som vanleg» → «Meirope som vanleg» (tida kan variere med vekedagen)
+                          linje: s.every(x => / som vanleg$/.test(x.linje)) ? s[0].linje.replace(/ [\d:–]+ som vanleg$/, " som vanleg")
+                               : likeLinje ? s[0].linje : "Ulike tider frå dag til dag" };
+  return { hovud: "Avvikande opningstider", linje: "" };
+}
+function finnAvvik() {
+  const d = no(), t = d.getHours() + d.getMinutes() / 60;
+  const idag = leggTil(d, 0), imorgon = leggTil(d, 1);
+  // Er dagen i dag over (alt har stengt), gjeld varselet frå i morgon
+  const ti = tiderFor(idag), slutt = Math.max(ti.bt ? ti.bt[1] : 0, ti.mo ? ti.mo[1] : 0);
+  const ref = t >= slutt ? imorgon : idag, refErIdag = ref === idag;
+  const kalla = x => x === idag ? "I dag" : +x === +imorgon ? "I morgon" : "";
+  // 1) Avvik på ref-dagen (i dag, eller i morgon når dagen er over)
+  // 2) Avvik i morgon (enkeltdag eller første dag i ein periode)
+  for (const x of refErIdag ? [idag, imorgon] : [imorgon]) {
+    const p = periodeRundt(x);
+    if (!p) continue;
+    const [a, b] = p, namn = kalla(x);
+    const tidleg = x === idag ? "" : " · " + dagDato(x);
+    let naar;
+    if (+a === +b) naar = namn + tidleg;
+    else if (+x === +b) naar = namn + " · siste dag";
+    else naar = namn + " · til og med " + b.getDate() + ".\u00a0" + MND[b.getMonth()];
+    return Object.assign({ naar, merk: tiderFor(x).tekst }, skildreDag(tiderFor(x)));
+  }
+  // 3) Periode som byrjar innan ei veke
+  for (let n = 2; n <= VARSEL_PERIODE_DAGAR; n++) {
+    const x = leggTil(idag, n), p = periodeRundt(x);
+    if (!p || +p[0] !== +x || +p[0] === +p[1]) continue;
+    // Datoane står i den vesle linja, så overskrifta blir kort: «Frå laurdag 28. november til og med 5. desember»
+    return Object.assign({ naar: "Frå " + dagDato(x) + " til og med " + p[1].getDate() + ".\u00a0" + MND[p[1].getMonth()], merk: tiderFor(x).tekst },
+                         skildrePeriode(p[0], p[1]));
+  }
+  return null;
+}
+// Test (#avvikstest=1–4): falske avvik, så stripa kan sjåast utan å endre nettsida.
+// 1 = ingen betjening i morgon (kurs), 2 = julestengt-periode om 5 dagar,
+// 3 = periode som varer no (kortare meirope i dag), 4 = heilt stengt i morgon
+function leggInnAvvikstest() {
+  const n = H.get("avvikstest");
+  if (!n) return;
+  const d = no(), u = OPNING.unntak = Object.assign({}, OPNING.unntak);
+  const set = (k, e) => { u[isoDato(leggTil(d, k))] = e; };
+  if (n === "1") set(1, { betjent: "", tekst: "Kurs" });
+  if (n === "2") for (let k = 5; k <= 12; k++) set(k, { betjent: "", tekst: "Julestengt (test)" });
+  if (n === "3") for (let k = -2; k <= 4; k++) set(k, k === 0 ? { betjent: "", meirope: "08-16", tekst: "Julestengt (test)" } : { betjent: "", tekst: "Julestengt (test)" });
+  if (n === "4") set(1, { betjent: "", meirope: "", tekst: "Nyttårsdag (test)" });
+}
+function teiknAvvik() {
+  const a = MED("avvik") ? finnAvvik() : null;
+  const før = $("avvik").hidden;
+  $("avvik").hidden = !a;
+  if (a) {
+    $("avvik").classList.toggle("heilt", !!a.heilt);
+    $("avvikNaar").textContent = a.naar;
+    $("avvikHovud").textContent = a.hovud;
+    $("avvikLinje").textContent = a.linje;
+    $("avvikMerk").textContent = a.merk;
+  }
+  if (før !== $("avvik").hidden && typeof tilpass === "function") tilpass();
 }
 // Opningstidene kjem frå Bibliotek.no (same som på tysnesbibliotek.no), så dei berre
 // treng å endrast éin stad. Rekkjefølgje: 1) opningstider.json (reserve + skuletimar),
@@ -463,6 +615,7 @@ async function hentOpning() {
     .then(j => j && ((j.data || []).find(x => /tysnes/i.test(x.name)) || (j.data || [])[0])).catch(() => null);
   if (b && b.openingHours) minne.skriv("bibno", b); else b = minne.les("bibno");
   if (b && b.openingHours) OPNING = Object.assign({}, OPNING, fraBibno(b));
+  leggInnAvvikstest();
   teiknOpning();
 }
 hentOpning();
