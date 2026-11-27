@@ -548,8 +548,10 @@ if (STIL === "polar") {
     const b = id === "mnd" ? 9 : BAND;
     lag("circle", { class: "band", id: "band-" + id, cx: 100, cy: 100, r, "stroke-width": b, pathLength: 100, stroke: farge,
                     "stroke-dasharray": "0 100", transform: "rotate(-90 100 100)" });
-    // Sirkelen teksten følgjer: frå toppen, med klokka
-    lag("path", { id: "bane-" + id, fill: "none", d: `M100,${100 - r} A${r},${r} 0 1,1 100,${100 + r} A${r},${r} 0 1,1 100,${100 - r}` });
+    // Sirkelen teksten følgjer: frå toppen, med klokka, to gonger rundt. Tekst heilt i starten
+    // av ein bane blir ikkje teikna rett i Chrome, så vi brukar andre runden (100–200 %).
+    const halv = `A${r},${r} 0 1,1 100,${100 + r} A${r},${r} 0 1,1 100,${100 - r}`;
+    lag("path", { id: "bane-" + id, fill: "none", d: `M100,${100 - r} ${halv} ${halv}` });
     const t = lag("text", { class: "etk" + (id === "mnd" ? " liten" : "") });
     if (id === "mnd") t.setAttribute("font-size", "5px");
     lag("textPath", { href: "#bane-" + id, id: "tekst-" + id }, t);
@@ -570,10 +572,13 @@ function teiknPolar(d) {
     const tp = $("tekst-" + id);
     if (tp.textContent !== tekst[id]) { tp.textContent = tekst[id]; delete tekstLengd[id]; }
     if (!(id in tekstLengd)) tekstLengd[id] = tp.parentNode.getComputedTextLength();
-    // Bandet er minst så langt at teksten får plass (som i originalen)
-    const omkrins = 2 * Math.PI * r, p = Math.max(del[id], (tekstLengd[id] + 7) / omkrins) * 100;
-    $("band-" + id).setAttribute("stroke-dasharray", p.toFixed(3) + " 100");
-    tp.setAttribute("startOffset", (p - 250 / omkrins).toFixed(3) + "%");
+    // Bandet viser alltid den eigentlege tida. Er det for kort til teksten, står teksten
+    // rett etter enden av bandet, i fargen til bandet, i staden for oppå det.
+    const omkrins = 2 * Math.PI * r, p = del[id] * 100, inni = (tekstLengd[id] + 7) / omkrins * 100 <= p;
+    $("band-" + id).setAttribute("stroke-dasharray", Math.max(p, .01).toFixed(3) + " 100");
+    tp.parentNode.style.textAnchor = inni ? "end" : "start";
+    tp.parentNode.style.fill = inni ? "" : $("band-" + id).getAttribute("stroke");
+    tp.setAttribute("startOffset", ((100 + (inni ? p - 250 / omkrins : p + 250 / omkrins)) / 2).toFixed(3) + "%");
   }
 }
 if (STIL === "polar") {
