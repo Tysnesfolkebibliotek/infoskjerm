@@ -19,7 +19,7 @@
     stil=avis           klokkestil (fargar, skrift og form): petrol (Sand og petrol, standard), avis (Avispapir),
                         havbla (Havblå), solgul (Solgul), mynte (Mynte), dognet (Dag og natt: lys om dagen,
                         mørk etter solnedgang), polar (Polar: klassisk polarklokke med tekst langs banda),
-                        kuber (Kuber: svarte kuber fyller eit kvitt rom, éi per minutt). Namna står òg i plakatmal.js (KLOKKESTILAR)
+                        kuber (Kuber: datoen i kuber som blir fylt gjennom døgnet). Namna står òg i plakatmal.js (KLOKKESTILAR)
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel),
                         avvik (stripa om avvikande opningstid)
     veksle=0            vis alt på éin gong, med enklare vêr (standard: éin ting om gongen under klokka,
@@ -142,8 +142,8 @@
   :root[data-stil="polar"] .dato { justify-content: center; }
   :root[data-stil="polar"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
   :root[data-stil="polar"] .rad { border-top-color: rgba(255,255,255,.14); }
-  /* Kuber: eit kvitt rom som blir fylt med svarte kuber, éi for kvart minutt i timen (nedanfrå og opp).
-     Kuba som held på å bli til, toner seg sakte inn gjennom minuttet. Timane som ei smal rad over. */
+  /* Kuber: datoen står stor i eit kvitt rom, bygd av små kuber. Silhuetten er grå og blir fylt
+     med svarte kuber nedanfrå og opp gjennom døgnet (tom ved midnatt, full rett før neste). */
   :root[data-stil="kuber"] { --bakgrunn: #ffffff; --tekst: #111; --dempa: #6f6f6f; --aksent: #111; --aksent-tekst: #fff; --gron: #2a7a4b;
                              --skrift: "Space Grotesk", "Ubuntu", sans-serif; --klokkeskrift: "Space Mono", "Ubuntu Mono", monospace; }
   :root[data-stil="kuber"] .klokke, :root[data-stil="kuber"] .dato { display: none; }
@@ -229,17 +229,15 @@
 
   /* Kubeklokke (berre i stilen «Kuber») */
   .kuber { display: none; }
-  .kuber .timar24 { display: grid; grid-template-columns: repeat(24, 1fr); gap: .8rem; margin-bottom: 3rem; }
-  .kuber .timar24 i { aspect-ratio: 1; background: #ececea; }
-  .kuber .timar24 i.fylt { background: #111; }
-  .kuber .rom { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1rem; padding: 1.6rem; border: .3rem solid #111; }
-  .kuber .rom i { aspect-ratio: 1; background: #111; opacity: 0; transition: opacity 1s linear; }
-  :root.tett .kuber .rom, :root.tettare .kuber .rom { width: 80%; margin: 0 auto; }
-  :root.tettare .kuber .rom { width: 64%; }
-  .kuber .tekst { display: flex; justify-content: space-between; margin-top: 2.4rem; font-family: var(--klokkeskrift);
+  .kuber .rom { display: grid; gap: .5rem; padding: 3rem; border: .3rem solid #111; }
+  .kuber .rom i { aspect-ratio: 1; background: transparent; position: relative; }
+  .kuber .rom i.form { background: #e4e4e1; }
+  .kuber .rom i.form::after { content: ""; position: absolute; inset: 0; background: #111; opacity: var(--o, 0); transition: opacity 1s linear; }
+  :root.tett .kuber .rom { width: 84%; margin: 0 auto; }
+  :root.tettare .kuber .rom { width: 68%; margin: 0 auto; }
+  .kuber .tekst { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2.4rem; font-family: var(--klokkeskrift);
                   font-size: 3rem; text-transform: uppercase; letter-spacing: .02em; }
   .kuber .tekst b { font-weight: 700; font-size: 5.2rem; line-height: 1; }
-  .kuber .tekst { align-items: baseline; }
   .kuber .tekst span { color: var(--dempa); }
 
   /* ---- Radene ---- */
@@ -405,7 +403,6 @@
       <circle cx="100" cy="100" r="1.6" fill="var(--bakgrunn)"/>
     </svg>
     <div class="kuber" id="kuber" aria-hidden="true">
-      <div class="timar24" id="timar24"></div>
       <div class="rom" id="kuberom"></div>
       <div class="tekst"><b id="kubetid"></b><span id="kubedato"></span></div>
     </div>
@@ -619,24 +616,46 @@ if (STIL === "polar") {
   // Når nettskrifta er lasta, er teksten ei anna breidd: mål på nytt
   document.fonts && document.fonts.ready.then(() => { for (const k in tekstLengd) delete tekstLengd[k]; });
 }
-// Kubeklokka: 60 plassar i rommet (10 × 6), fylte nedanfrå og opp, venstre mot høgre.
-// Fylte kuber = minutt som har gått denne timen. Den neste kuba toner seg inn med sekunda.
+// Kubeklokka: dagen i månaden med pikseltal (5 × 7), kvar piksel delt i 3 × 3 kuber.
+// Kubene i silhuetten blir fylte nedanfrå og opp (venstre mot høgre i kvar rad) gjennom døgnet;
+// kuba som er på veg, toner seg inn etter kor langt det har gått av tida hennar.
+const PIKSELTAL = {
+  0: ["01110", "10001", "10011", "10101", "11001", "10001", "01110"], 1: ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+  2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"], 3: ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+  4: ["00010", "00110", "01010", "10010", "11111", "00010", "00010"], 5: ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+  6: ["00110", "01000", "10000", "11110", "10001", "10001", "01110"], 7: ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+  8: ["01110", "10001", "10001", "01110", "10001", "10001", "01110"], 9: ["01110", "10001", "10001", "01111", "00001", "00010", "01100"] };
+const DEL = 3;
 if (STIL === "kuber") {
-  for (let i = 0; i < 24; i++) $("timar24").append(document.createElement("i"));
-  for (let i = 0; i < 60; i++) $("kuberom").append(document.createElement("i"));
-  // Rekkjefølgja i rutenettet er ovanfrå, så nedste rad (plass 0–9) er dei 10 siste elementa
-  const kube = n => $("kuberom").children[(5 - Math.floor(n / 10)) * 10 + n % 10];
+  let formDato = "", fyllOrden = [];
+  const bygg = d => {
+    // Rutenettet for datoen: siffera med éi tom kolonne mellom
+    const siffer = p2(d.getDate()).split("");   // alltid to siffer, så rommet har same form
+    const rader = PIKSELTAL[0].map((_, r) => siffer.map(t => PIKSELTAL[t][r]).join("0"));
+    const kol = rader[0].length * DEL, rom = $("kuberom");
+    rom.style.gridTemplateColumns = `repeat(${kol}, 1fr)`;
+    rom.replaceChildren();
+    const celler = [];
+    for (let y = 0; y < rader.length * DEL; y++)
+      for (let x = 0; x < kol; x++) {
+        const e = document.createElement("i");
+        if (rader[Math.floor(y / DEL)][Math.floor(x / DEL)] === "1") { e.className = "form"; celler.push([y, x, e]); }
+        rom.append(e);
+      }
+    // Nedste rad først, venstre mot høgre
+    fyllOrden = celler.sort((a, b) => b[0] - a[0] || a[1] - b[1]).map(c => c[2]);
+    formDato = isoDato(d);
+  };
   const teikn = () => {
-    const d = no(), m = d.getMinutes(), h = d.getHours();
-    [...$("timar24").children].forEach((e, i) => e.classList.toggle("fylt", i < h));
-    for (let n = 0; n < 60; n++) {
-      const e = kube(n), o = n < m ? 1 : n === m ? d.getSeconds() / 60 : 0;
-      // Ny time: tøm rommet utan overgang
-      if (o < parseFloat(e.style.opacity || 0)) e.style.transition = "none"; else e.style.transition = "";
-      e.style.opacity = o;
-    }
-    $("kubetid").textContent = p2(h) + ":" + p2(m);
-    $("kubedato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + "/" + (d.getMonth() + 1) + " · veke " + veke(d);
+    const d = no();
+    if (isoDato(d) !== formDato) bygg(d);
+    const del = (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 86400 * fyllOrden.length;
+    fyllOrden.forEach((e, i) => {
+      const o = Math.min(1, Math.max(0, del - i));
+      e.style.setProperty("--o", o.toFixed(3));
+    });
+    $("kubetid").textContent = p2(d.getHours()) + ":" + p2(d.getMinutes());
+    $("kubedato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()] + " · veke " + veke(d);
   };
   teikn(); setInterval(teikn, 1000);
 }
