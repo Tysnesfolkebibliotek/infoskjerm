@@ -18,7 +18,8 @@
   Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
     stil=avis           klokkestil (fargar, skrift og form): petrol (Sand og petrol, standard), avis (Avispapir),
                         havbla (Havblå), solgul (Solgul), mynte (Mynte), dognet (Dag og natt: lys om dagen,
-                        mørk etter solnedgang), polar (Polar: klassisk polarklokke med tekst langs banda). Namna står òg i plakatmal.js (KLOKKESTILAR)
+                        mørk etter solnedgang), polar (Polar: klassisk polarklokke med tekst langs banda),
+                        soyler (Søyler: fem kvite søyler frå timar til hundredels sekund). Namna står òg i plakatmal.js (KLOKKESTILAR)
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel),
                         avvik (stripa om avvikande opningstid)
     veksle=0            vis alt på éin gong, med enklare vêr (standard: éin ting om gongen under klokka,
@@ -141,6 +142,21 @@
   :root[data-stil="polar"] .dato { justify-content: center; }
   :root[data-stil="polar"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
   :root[data-stil="polar"] .rad { border-top-color: rgba(255,255,255,.14); }
+  /* Søyler: konstruktivistisk klokke (etter «Grid-Based Clock»). Fem kvite søyler heng ned frå
+     toppen, kant i kant: timar, minutt, sekund, tidels og hundredels sekund. Små etikettar under. */
+  :root[data-stil="soyler"] { --bakgrunn: #000; --tekst: #fff; --dempa: #9a9a9a; --aksent: #fff; --aksent-tekst: #000; --gron: #fff;
+                              --skrift: "Space Grotesk", "Ubuntu", sans-serif; --klokkeskrift: "Space Mono", "Ubuntu Mono", monospace; }
+  :root[data-stil="soyler"] .klokke, :root[data-stil="soyler"] .dato { display: none; }
+  :root[data-stil="soyler"] .soyler { display: block; }
+  :root[data-stil="soyler"] .namn, :root[data-stil="soyler"] .under, :root[data-stil="soyler"] .verlinjer { font-family: var(--klokkeskrift); }
+  :root[data-stil="soyler"] .namn { letter-spacing: .04em; }
+  :root[data-stil="soyler"] .rad { border-top: .2rem solid #fff; }
+  :root[data-stil="soyler"].veksle .klokkeblokk { border-bottom: .2rem solid #fff; }
+  /* Søylene går heilt opp til kanten av skjermen */
+  :root[data-stil="soyler"] .klokkeblokk { margin-top: -9.6rem; }
+  :root[data-stil="soyler"] .side .midt { margin-top: 0; }
+  /* Farevarsel og avviksstripe står over søylene */
+  :root[data-stil="soyler"] .fare:not([hidden]) ~ .midt .klokkeblokk, :root[data-stil="soyler"] .avvik:not([hidden]) ~ .midt .klokkeblokk { margin-top: -6rem; }
   /* Dag og natt: lys om dagen, mørk når sola har gått ned. Svært tynn klokke (Inter) */
   :root[data-stil="dognet"] { --bakgrunn: #f6f6f2; --tekst: #14171c; --dempa: #626a75; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b;
                               --skrift: "Inter", "Ubuntu", sans-serif; --klokkevekt: 200; --klokkespenn: -.05em; --ks: 1.05; }
@@ -216,6 +232,21 @@
   :root.tettare .polar { width: 48rem; height: 48rem; }
   .polar .band { fill: none; }
   .polar .etk { fill: #0b0b0c; font-family: var(--klokkeskrift); font-weight: 700; font-size: 6.4px; dominant-baseline: central; text-anchor: end; }
+
+  /* Søyleklokke (berre i stilen «Søyler») */
+  .soyler { display: none; margin: 0 -7.56rem; }
+  .soyler .rom { display: flex; height: 70rem; }
+  :root.veksle .soyler .rom { height: 80rem; }
+  :root.tett .soyler .rom { height: 56rem; }
+  :root.tettare .soyler .rom { height: 44rem; }
+  .soyler .kol { flex: 1; position: relative; }
+  .soyler .fyll { position: absolute; left: 0; right: 0; top: 0; background: #fff; }
+  .soyler .etk { display: flex; padding: 1.6rem 0 0; }
+  .soyler .etk div { flex: 1; padding-left: 1.2rem; font-family: var(--klokkeskrift); font-size: 2.2rem; line-height: 1.15;
+                     text-transform: uppercase; color: #fff; white-space: nowrap; overflow: hidden; }
+  .soyler .etk b { display: block; font-weight: 700; }
+  .soyler .etk span { color: var(--dempa); }
+  .soyler .datolinje { padding: 1.4rem 0 0 1.2rem; font-family: var(--klokkeskrift); font-size: 2.2rem; line-height: 1.3; text-transform: uppercase; }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -379,6 +410,8 @@
       <g id="sekundvisar"><line class="visar sek" x1="100" y1="124" x2="100" y2="20" stroke-width="1.2"/><circle cx="100" cy="100" r="4" fill="var(--aksent)"/></g>
       <circle cx="100" cy="100" r="1.6" fill="var(--bakgrunn)"/>
     </svg>
+    <div class="soyler" id="soyler" aria-hidden="true"><div class="rom" id="soylerom"></div><div class="etk" id="soyleetk"></div>
+      <div class="datolinje" id="soyledato"></div></div>
     <svg class="polar" id="polar" viewBox="0 0 200 200" aria-hidden="true"></svg>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
   </div>
@@ -487,6 +520,7 @@ const STILAR = {
   retro:    ["Righteous", "Quicksand:wght@400;600;700"],
   dognet:   ["Inter:wght@200;400;700"],
   polar:    ["Space+Mono:wght@700", "Space+Grotesk:wght@400;700"],
+  soyler:   ["Space+Mono:wght@400;700", "Space+Grotesk:wght@400;700"],
 };
 // Eldre lenkjer: farge=… blir til næraste stil, farge=auto til «Dag og natt»
 const GAMLE_FARGAR = { petrol: "petrol", papir: "klassisk", havbla: "havbla", himmel: "havbla", sennep: "solgul", aprikos: "retro",
@@ -587,6 +621,31 @@ if (STIL === "polar") {
   (function løkke(t) { if (t - sist > 33) { sist = t; teiknPolar(no()); } requestAnimationFrame(løkke); })(0);
   // Når nettskrifta er lasta, er teksten ei anna breidd: mål på nytt
   document.fonts && document.fonts.ready.then(() => { for (const k in tekstLengd) delete tekstLengd[k]; });
+}
+// Søyleklokka: fem søyler som heng ned frå toppen. Høgda er delen av ein heil runde.
+const SOYLER = [["tim", "Timar", 24], ["min", "Minutt", 60], ["sek", "Sekund", 60], ["tidel", "Tidels<br>sekund", 10], ["hundredel", "Hundredels<br>sekund", 100]];
+if (STIL === "soyler") {
+  for (const [id, namn] of SOYLER) {
+    $("soylerom").insertAdjacentHTML("beforeend", `<div class="kol"><div class="fyll" id="fyll-${id}"></div></div>`);
+    $("soyleetk").insertAdjacentHTML("beforeend", `<div>${namn.split("<br>")[0]}<br><span>${namn.split("<br>")[1] || "&nbsp;"}</span><b id="tal-${id}"></b></div>`);
+  }
+  let sist = 0, sistDato = "";
+  (function løkke(t) {
+    if (t - sist > 33) {
+      sist = t;
+      const d = no(), ms = d.getMilliseconds();
+      const v = { tim: d.getHours(), min: d.getMinutes(), sek: d.getSeconds(), tidel: Math.floor(ms / 100), hundredel: Math.floor(ms / 10) };
+      for (const [id, , maks] of SOYLER) {
+        // Litt over null, så ei tom søyle framleis syner som ei tynn stripe
+        $("fyll-" + id).style.height = (Math.max(v[id], .15) / maks * 100) + "%";
+        $("tal-" + id).textContent = id === "hundredel" ? p2(v[id]) : v[id];
+      }
+      const dt = isoDato(d);
+      if (dt !== sistDato) { sistDato = dt;
+        $("soyledato").textContent = DAGNAMN[d.getDay()] + " " + p2(d.getDate()) + "/" + p2(d.getMonth() + 1) + "/" + d.getFullYear() + " · veke " + veke(d); }
+    }
+    requestAnimationFrame(løkke);
+  })(0);
 }
 // Strekar og romartal på urskiva (éin gong)
 if (STIL === "klassisk") {
