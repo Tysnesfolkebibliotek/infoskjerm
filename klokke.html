@@ -235,9 +235,11 @@
   :root.tettare .gnomon svg { width: 68%; }
   .gnomon rect { fill: #e4e4e1; transform-box: fill-box; transform-origin: center; }
   .gnomon rect.fylt { fill: #111; }
-  .gnomon .linje { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2.8rem; font-family: var(--klokkeskrift);
+  .gnomon .linje { display: flex; justify-content: flex-start; align-items: baseline; margin-top: 2.8rem; font-family: var(--klokkeskrift);
                    font-size: 3rem; text-transform: uppercase; letter-spacing: .02em; color: var(--dempa); }
-  .gnomon .linje b { font-size: 5.2rem; line-height: 1; color: var(--tekst); }
+  .gnomon .tal { font-family: var(--klokkeskrift); font-weight: 700; text-anchor: middle; dominant-baseline: central;
+                 fill: #fff; letter-spacing: -.04em; pointer-events: none; }
+  .gnomon .tal.tom { fill: #9a9a96; }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -403,7 +405,7 @@
     </svg>
     <div class="gnomon" id="gnomon" aria-hidden="true">
       <svg id="gnomonflate" viewBox="0 0 38 18"></svg>
-      <div class="linje"><b id="gnomontid"></b><span id="gnomondato"></span></div>
+      <div class="linje"><span id="gnomondato"></span></div>
     </div>
     <svg class="polar" id="polar" viewBox="0 0 200 200" aria-hidden="true"></svg>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
@@ -645,6 +647,19 @@ if (STIL === "gnomon") {
                          { duration: 450, delay: i * ms, easing: "cubic-bezier(.5,0,.75,0)", fill: "both" });
     a.onfinish = () => a.cancel();
   });
+  // Talet i det siste fylte kvadratet (timetalet og minuttalet). Ved 0 står «00» grått i det første.
+  const talEl = {};
+  for (const del of ["tim", "min"]) {
+    const t = document.createElementNS(ns, "text");
+    t.setAttribute("class", "tal"); t.setAttribute("font-size", del === "tim" ? 2.1 : 1.05);
+    flate.append(t); talEl[del] = t;
+  }
+  const plasserTal = (del, n) => {
+    const [x, y, e] = GNOMON[del][Math.max(n - 1, 0)], t = talEl[del];
+    t.setAttribute("x", x + e / 2); t.setAttribute("y", y + e / 2 + e * .03);
+    t.textContent = p2(n);
+    t.classList.toggle("tom", n === 0);
+  };
   const førre = {};
   const teikn = () => {
     const d = no(), h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
@@ -657,7 +672,7 @@ if (STIL === "gnomon") {
       førre[del] = n;
       liste.forEach((el, i) => { el.style.opacity = i < n ? 1 : i === n ? frac : 0; });
     }
-    $("gnomontid").textContent = p2(h) + ":" + p2(m);
+    plasserTal("tim", h); plasserTal("min", m);
     $("gnomondato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()] + " · veke " + veke(d);
   };
   teikn(); setInterval(teikn, 1000);
