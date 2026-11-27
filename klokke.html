@@ -8,22 +8,23 @@
   klokke.html — klokkeside for infoskjermane: opningstid, klokke, vêr og neste ferje.
 
   Utforming frå 12.11.2026: «tavle» i sand og petrol med Poppins, éin ting om gongen under klokka.
+  27.11.2026: variantane (klokke / meir vêr / vêrtavle) er borte. Vekslar sida, er vêret detaljert
+  (to punkt: vêret no og vêret framover); viser ho alt på éin gong, er vêret enkelt. Eldre lenkjer
+  med variant=, farge= eller tema= verkar framleis (farge blir til næraste stil, resten blir oversett).
 
   Lenkje til oversikta («+ Legg til side»):
     https://tysnesfolkebibliotek.github.io/infoskjerm/klokke.html#vis=1
 
   Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
-    variant=ver         klokke med meir vêr (vind, nedbør, høgast/lågast i dag)
-    variant=vertavle    vêret i sentrum: lita klokke, dei neste 6 timane, i dag og i morgon
+    stil=avis           klokkestil (fargar, skrift og form): petrol (Sand og petrol, standard), avis (Avispapir),
+                        havbla (Havblå), solgul (Solgul), mynte (Mynte), dognet (Dag og natt: lys om dagen,
+                        mørk etter solnedgang). Namna står òg i plakatmal.js (KLOKKESTILAR)
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel),
                         avvik (stripa om avvikande opningstid)
-    veksle=0            vis alt på éin gong (standard: éin ting om gongen under klokka, som vekslar)
-    farge=petrol        eigne lyse fargar: petrol (standard), papir, mynte, rosa, kalk, betong, himmel,
-                        salvie, aprikos, lavendel, sennep, havbla. farge=auto: Lys om dagen, Kveld om kvelden
-    skrift=poppins      skrift frå Google Fonts: poppins (standard), inter, lora; skrift=standard gir Ubuntu
+    veksle=0            vis alt på éin gong, med enklare vêr (standard: éin ting om gongen under klokka,
+                        med meir detaljert vêr: vind, nedbør, høgast/lågast og eige punkt for vêret framover)
     fodd=1              «Fødd i dag»: forfattarar fødde i dag som biblioteket har bøker av
-    kveld=1 / kveld=0   med farge=auto: tving «Kveld» eller «Lys» (elles Kveld når sola har gått ned)
-    tema=fjord          bruk eit tema frå tema.js heile døgnet i staden for fargane under
+    kveld=1 / kveld=0   med stil=dognet: tving mørk eller lys (elles mørk når sola har gått ned)
     teljar=hjul         nedteljingshjul som på karusellane (standard: linje nedst som på plakatane)
     tid=19:30           lat som klokka er 19:30 (for å teste opningstida)
     dag=lør             lat som det er laurdag (for å teste opningstida)
@@ -64,21 +65,78 @@
           --etikett: 25rem;   /* breidda på etikettkolonnen */
           --verdi: 6rem;      /* storleiken på verdiane i radene */
           --rad: 4rem; }      /* luft over og under kvar rad */
-  :root[data-tema="lys"] { --gron: #2e7d4f; }
-  /* Eigne lyse fargar til klokkesida (#farge=…). Gjeld heile døgnet og går framfor tema. */
-  :root[data-farge] { --spor: color-mix(in srgb, var(--tekst) 14%, transparent); --brikke: color-mix(in srgb, var(--tekst) 8%, transparent); }
-  :root[data-farge="himmel"]   { --bakgrunn: #dcebf5; --tekst: #0f2a3d; --dempa: #4d6779; --aksent: #1f6fa8; --aksent-tekst: #fff; --gron: #2a7a4b; }
-  :root[data-farge="salvie"]   { --bakgrunn: #e1eadc; --tekst: #1b2a1d; --dempa: #55675a; --aksent: #4a7a33; --aksent-tekst: #fff; --gron: #2f7a3e; }
-  :root[data-farge="aprikos"]  { --bakgrunn: #f7e3d4; --tekst: #3a1e10; --dempa: #7c5a47; --aksent: #c2502a; --aksent-tekst: #fff; --gron: #2f7a4a; }
-  :root[data-farge="lavendel"] { --bakgrunn: #e8e4f3; --tekst: #231c3d; --dempa: #605a7b; --aksent: #6a4fb3; --aksent-tekst: #fff; --gron: #2e7a50; }
-  :root[data-farge="sennep"]   { --bakgrunn: #f3cd52; --tekst: #2a2006; --dempa: #66541c; --aksent: #2a2006; --aksent-tekst: #f3cd52; --gron: #1f5f35; }
-  :root[data-farge="papir"]    { --bakgrunn: #f4efe6; --tekst: #1d1b18; --dempa: #6e665c; --aksent: #c8102e; --aksent-tekst: #fff; --gron: #2a7a4b; }
-  :root[data-farge="mynte"]    { --bakgrunn: #d7efe3; --tekst: #0e3b2e; --dempa: #4a6c60; --aksent: #d9582f; --aksent-tekst: #fff; --gron: #1f7a46; }
-  :root[data-farge="rosa"]     { --bakgrunn: #f6dfe5; --tekst: #3d1730; --dempa: #7c5468; --aksent: #b5315f; --aksent-tekst: #fff; --gron: #2a7a4b; }
-  :root[data-farge="kalk"]     { --bakgrunn: #eeeee6; --tekst: #1a2340; --dempa: #5d6377; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b; }
-  :root[data-farge="petrol"]   { --bakgrunn: #efe4cf; --tekst: #133b45; --dempa: #5a6d6f; --aksent: #0f7c8a; --aksent-tekst: #fff; --gron: #2a7a4b; }
-  :root[data-farge="betong"]   { --bakgrunn: #e6e7e9; --tekst: #202326; --dempa: #5f6368; --aksent: #f05a14; --aksent-tekst: #fff; --gron: #2a7a4b; }
-  :root[data-farge="havbla"]   { --bakgrunn: #3a74b8; --tekst: #ffffff; --dempa: #d3e2f3; --aksent: #ffd36b; --aksent-tekst: #1b2a40; --gron: #b7f0c9; }
+  /* ---- Klokkestilar (#stil=…). Kvar stil har eigne fargar, eiga skrift og litt eiga form,
+     så dei skil seg meir frå kvarandre enn berre på fargen. Skriftene kjem frå Google Fonts
+     (sjå STILAR i skriptet); utan nett blir standardskrifta (Ubuntu) brukt. */
+  :root { --klokkeskrift: var(--skrift); --klokkevekt: 300; --klokkespenn: -.04em; --ks: 1; }
+  :root[data-stil] { --spor: color-mix(in srgb, var(--tekst) 14%, transparent); --brikke: color-mix(in srgb, var(--tekst) 8%, transparent); }
+  /* Sand og petrol: roleg, luftig, tynn klokke (standard) */
+  :root[data-stil="petrol"] { --bakgrunn: #efe4cf; --tekst: #133b45; --dempa: #5a6d6f; --aksent: #0f7c8a; --aksent-tekst: #fff; --gron: #2a7a4b;
+                              --skrift: "Poppins", "Ubuntu", sans-serif; }
+  /* Klassisk: analog urskive med romartal, krempapir, bordeaux og gull, Cormorant og Playfair.
+     Radene har doble skiljeliner og etikettar i kursiv. */
+  :root[data-stil="klassisk"] { --bakgrunn: #f5eee0; --tekst: #2a1d16; --dempa: #74645a; --aksent: #8c1c2b; --aksent-tekst: #fff; --gron: #2f6b3f;
+                                --gull: #b08a3e; --skrift: "Cormorant Garamond", Georgia, serif; --klokkeskrift: "Playfair Display", Georgia, serif;
+                                --klokkevekt: 500; --klokkespenn: -.01em; }
+  :root[data-stil="klassisk"] .namn { text-transform: none; letter-spacing: .01em; font-style: italic; font-weight: 500; font-size: 3.4rem; }
+  :root[data-stil="klassisk"].veksle .namn { font-size: 5rem; }
+  :root[data-stil="klassisk"] .verdi, :root[data-stil="klassisk"] .vernu .skildring { font-weight: 600; }
+  :root[data-stil="klassisk"] .under, :root[data-stil="klassisk"] .verlinjer { font-size: 3.8rem; }
+  :root[data-stil="klassisk"].veksle .under, :root[data-stil="klassisk"].veksle .verlinjer { font-size: 5.6rem; }
+  :root[data-stil="klassisk"] .rad { border-top: .7rem double color-mix(in srgb, var(--gull) 70%, transparent); }
+  :root[data-stil="klassisk"] .klokkeblokk { text-align: center; }
+  :root[data-stil="klassisk"] .dato { justify-content: center; font-style: italic; }
+  :root[data-stil="klassisk"] .dato b { font-style: normal; font-family: var(--klokkeskrift); }
+  :root[data-stil="klassisk"] .klokke { display: none; }
+  :root[data-stil="klassisk"] .analog { display: block; }
+  :root[data-stil="klassisk"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
+  /* Pynt: liten blomster-ornament mellom klokka og radene */
+  :root[data-stil="klassisk"] .ornament { display: block; }
+  /* Retro: 70-tal i kremgult, brunt og oransje, striper øvst og nedst, Righteous og Quicksand */
+  :root[data-stil="retro"] { --bakgrunn: #f2e4c4; --tekst: #43260f; --dempa: #7a5a3c; --aksent: #d65f22; --aksent-tekst: #fff; --gron: #4e7a2a;
+                             --skrift: "Quicksand", "Ubuntu", sans-serif; --klokkeskrift: "Righteous", "Ubuntu", sans-serif;
+                             --klokkevekt: 400; --klokkespenn: -.02em; --ks: .95; }
+  :root[data-stil="retro"] .side::before, :root[data-stil="retro"] .side::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 4.8rem;
+    background: linear-gradient(#e8a92a 0 33.3%, #d65f22 0 66.6%, #8f3a1c 0); }
+  :root[data-stil="retro"] .side::before { top: 0; }
+  :root[data-stil="retro"] .side::after { bottom: 0; transform: scaleY(-1); }
+  :root[data-stil="retro"] .side { padding-top: 12rem; padding-bottom: 10rem; }
+  :root[data-stil="retro"] .namn { font-family: var(--klokkeskrift); font-weight: 400; color: var(--aksent); }
+  :root[data-stil="retro"] .verdi { font-weight: 700; }
+  :root[data-stil="retro"] .rad { border-top: .5rem dotted color-mix(in srgb, var(--tekst) 35%, transparent); }
+  :root[data-stil="retro"] .dato b, :root[data-stil="retro"] .vernu .grad { font-family: var(--klokkeskrift); font-weight: 400; }
+  :root[data-stil="retro"] .fare, :root[data-stil="retro"] .avvik { margin-top: 0 !important; }
+  /* Havblå: sterk blå bakgrunn, feit og tett klokke, etikettane som gule pillar */
+  :root[data-stil="havbla"] { --bakgrunn: #2c66ab; --tekst: #ffffff; --dempa: #cfe0f3; --aksent: #ffd36b; --aksent-tekst: #1b2a40; --gron: #b7f0c9;
+                              --skrift: "Montserrat", "Ubuntu", sans-serif; --klokkevekt: 800; --klokkespenn: -.05em; --ks: .9; }
+  :root[data-stil="havbla"] .namn { display: inline-block; justify-self: start; background: var(--aksent); color: var(--aksent-tekst);
+                                    padding: .8rem 2rem; border-radius: 99rem; }
+  :root[data-stil="havbla"].veksle .namn { color: var(--aksent-tekst); padding: 1.2rem 3rem; }
+  :root[data-stil="havbla"] .rad { border-top-color: rgba(255,255,255,.22); }
+  /* Pynt: mjuke bølgjer i botnen */
+  :root[data-stil="havbla"] .side { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1080 260' preserveAspectRatio='none'%3E%3Cpath d='M0 90 Q135 40 270 90 T540 90 T810 90 T1080 90 V260 H0Z' fill='%23ffffff' fill-opacity='.07'/%3E%3Cpath d='M0 150 Q135 100 270 150 T540 150 T810 150 T1080 150 V260 H0Z' fill='%23ffffff' fill-opacity='.08'/%3E%3C/svg%3E") bottom / 100% 26rem no-repeat; }
+  /* Solgul: plakatgul med svart, smal og høg klokke (Oswald), tjukke svarte liner */
+  :root[data-stil="solgul"] { --bakgrunn: #f3cd52; --tekst: #1f1a08; --dempa: #5a4b14; --aksent: #1f1a08; --aksent-tekst: #f3cd52; --gron: #1f5f35;
+                              --skrift: "Oswald", "Ubuntu Condensed", "Ubuntu", sans-serif; --klokkevekt: 600; --klokkespenn: -.01em; --ks: 1.2; }
+  :root[data-stil="solgul"] .rad { border-top: .6rem solid var(--tekst); }
+  /* Pynt: ei stor sol som stikk inn frå hjørnet øvst til høgre */
+  :root[data-stil="solgul"] .side::before { content: ""; position: absolute; right: -22rem; top: -22rem; width: 56rem; height: 56rem;
+                                            border-radius: 50%; background: #f7a21b; z-index: -1; }
+  :root[data-stil="solgul"] .side { isolation: isolate; overflow: hidden; }
+  :root[data-stil="solgul"].veksle .klokkeblokk { border-bottom: .8rem solid var(--tekst); }
+  :root[data-stil="solgul"] .dato b, :root[data-stil="solgul"] .verdi { text-transform: uppercase; letter-spacing: .01em; }
+  :root[data-stil="solgul"] .under, :root[data-stil="solgul"] .verlinjer, :root[data-stil="solgul"] .vernu .skildring span { text-transform: none; }
+  /* Mynte: mjuk og rund (Nunito), radene som avrunda kort i staden for skiljeliner */
+  :root[data-stil="mynte"] { --bakgrunn: #d7efe3; --tekst: #0e3b2e; --dempa: #4a6c60; --aksent: #d9582f; --aksent-tekst: #fff; --gron: #1f7a46;
+                             --skrift: "Nunito", "Ubuntu", sans-serif; --klokkevekt: 800; --klokkespenn: -.03em; --ks: .95; }
+  :root[data-stil="mynte"] .rad { border: 0; background: rgba(255,255,255,.55); border-radius: 3.2rem; padding: var(--rad) 4rem; margin-top: 2rem; }
+  :root[data-stil="mynte"].veksle .rad { padding: 5.6rem 6rem; border-radius: 5rem; }
+  :root[data-stil="mynte"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 3rem; }
+  /* Dag og natt: lys om dagen, mørk når sola har gått ned. Svært tynn klokke (Inter) */
+  :root[data-stil="dognet"] { --bakgrunn: #f6f6f2; --tekst: #14171c; --dempa: #626a75; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b;
+                              --skrift: "Inter", "Ubuntu", sans-serif; --klokkevekt: 200; --klokkespenn: -.05em; --ks: 1.05; }
+  :root[data-stil="dognet"][data-kveld] { --bakgrunn: #0e1522; --tekst: #eef1f6; --dempa: #9aa6b8; --aksent: #ffb547; --aksent-tekst: #1b140c; --gron: #7fd1a0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; overflow: hidden; cursor: none; background: var(--bakgrunn); color: var(--tekst);
                font-family: var(--skrift); transition: background 1s, color 1s; }
@@ -124,12 +182,25 @@
 
   /* ---- Klokka og datoen ---- */
   .klokkeblokk { padding-bottom: 5.6rem; }
-  .klokke { font-size: 24rem; font-weight: 300; line-height: .85; letter-spacing: -.04em; white-space: nowrap; margin-left: -.06em; }
+  .klokke { font-size: calc(24rem * var(--ks)); font-family: var(--klokkeskrift); font-weight: var(--klokkevekt); line-height: .85;
+            letter-spacing: var(--klokkespenn); white-space: nowrap; margin-left: -.06em; }
   .klokke .kolon { transition: opacity .5s ease-in-out; }
   .klokke .kolon.av { opacity: .25; }
   .dato { display: flex; align-items: baseline; gap: 2.4rem; margin-top: 3.2rem; white-space: nowrap; }
   .dato b { font-size: 4.6rem; font-weight: 700; }
   .dato span { font-size: 3.4rem; color: var(--dempa); }
+
+  /* Analog urskive (berre i stilen «Klassisk») */
+  .analog { display: none; width: 60rem; height: 60rem; margin: 0 auto; }
+  :root.veksle .analog { width: 66rem; height: 66rem; }
+  :root.tett .analog { width: 48rem; height: 48rem; }
+  :root.tettare .analog { width: 38rem; height: 38rem; }
+  .analog .skive { fill: color-mix(in srgb, #fff 55%, var(--bakgrunn)); stroke: var(--gull, var(--aksent)); }
+  .analog .strek { stroke: var(--tekst); }
+  .analog .tal { fill: var(--tekst); font-family: var(--klokkeskrift); font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+  .analog .visar { stroke: var(--tekst); stroke-linecap: round; }
+  .analog .sek { stroke: var(--aksent); }
+  .ornament { display: none; text-align: center; color: var(--gull, var(--aksent)); font-size: 5rem; line-height: 1; margin-top: 2.4rem; }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -157,7 +228,7 @@
   /* Vêret no: temperatur, ikon og skildring på éi linje */
   .vernu { display: flex; align-items: center; gap: 2.8rem; }
   .vernu svg { width: 9rem; height: 8rem; flex: none; }
-  .vernu .grad { font-size: 11rem; font-weight: 300; line-height: .9; letter-spacing: -.03em; white-space: nowrap; }
+  .vernu .grad { font-size: 11rem; font-family: var(--klokkeskrift); font-weight: var(--klokkevekt); line-height: .9; letter-spacing: -.03em; white-space: nowrap; }
   .vernu .skildring { font-size: 4.6rem; font-weight: 700; line-height: 1.15; min-width: 0; }
   .vernu .skildring span { display: block; font-size: 3.4rem; font-weight: 400; color: var(--dempa); margin-top: .6rem; }
   .vernu .skildring span:empty { display: none; }
@@ -167,7 +238,7 @@
   .verlinjer svg { margin-top: .4rem; }
   .verlinjer svg { width: 3.6rem; height: 3.6rem; flex: none; }
 
-  /* Vêrtavla: dei neste timane og dei neste dagane, utan ramer */
+  /* Vêret framover (berre når sida vekslar): dei neste timane og dei neste dagane, utan ramer */
   .timar { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 3.6rem; }
   .timar > div { display: flex; flex-direction: column; align-items: flex-start; gap: .8rem; }
   .timar span { font-size: 2.8rem; font-weight: 400; color: var(--dempa); }
@@ -180,12 +251,6 @@
   .dagar span { display: inline-block; min-width: 17rem; font-size: 3.6rem; font-weight: 400; color: var(--dempa); }
   .dagar b { font-size: 4.4rem; font-weight: 700; white-space: nowrap; }
 
-  /* Vêrtavla: lita klokke, større vêr */
-  :root.v-vertavle .klokke { font-size: 14rem; }
-  :root.v-vertavle .dato { margin-top: 2rem; }
-  :root.v-vertavle .vernu .grad { font-size: 15rem; }
-  :root.v-vertavle .vernu svg { width: 12rem; height: 10.5rem; }
-
   /* Fødd i dag: namn og skildring, éin per linje */
   #foddListe { display: flex; flex-direction: column; gap: 2.4rem; }
   .person .pnamn { display: block; font-size: 4.6rem; font-weight: 700; line-height: 1.1; }
@@ -196,14 +261,12 @@
   :root.luft { --rad: 4.8rem; }
   /* Når alt ikkje får plass, blir sida tettare i to steg (sjå tilpass()) */
   :root.tett { --rad: 3rem; --verdi: 5.4rem; }
-  :root.tett .klokke { font-size: 19rem; }
+  :root.tett .klokke { font-size: calc(19rem * var(--ks)); }
   :root.tett .klokkeblokk { padding-bottom: 4rem; }
   :root.tett .vernu .grad { font-size: 9rem; }
-  :root.tett.v-vertavle .klokke { font-size: 11rem; }
-  :root.tett.v-vertavle .vernu .grad { font-size: 12rem; }
   :root.tett .timar, :root.tett .dagar, :root.tett .verlinjer { margin-top: 2.4rem; }
   :root.tettare { --rad: 2.2rem; --verdi: 4.8rem; }
-  :root.tettare .klokke { font-size: 15rem; }
+  :root.tettare .klokke { font-size: calc(15rem * var(--ks)); }
   :root.tettare .dato { margin-top: 1.6rem; }
   :root.tettare .dato b { font-size: 4rem; }
   :root.tettare .klokkeblokk { padding-bottom: 3rem; }
@@ -214,7 +277,7 @@
   /* ---- Veksle (#veksle=1): klokka står fast, éi rad om gongen under, i stor skrift ---- */
   .punkt { display: none; }
   :root.veksle .midt { margin-block: auto; }
-  :root.veksle .klokke { font-size: 26rem; }
+  :root.veksle .klokke { font-size: calc(26rem * var(--ks)); }
   :root.veksle .dato b { font-size: 5.6rem; }
   :root.veksle .dato span { font-size: 4rem; }
   :root.veksle .klokkeblokk { padding-bottom: 7rem; border-bottom: .2rem solid var(--spor); margin-bottom: 7rem; }
@@ -236,11 +299,13 @@
   :root.veksle .verlinjer { font-size: 4.8rem; margin-top: 4.8rem; gap: 2rem; }
   :root.veksle .verlinjer svg { width: 5rem; height: 5rem; }
   :root.veksle .timar { margin-top: 4.4rem; }
-  :root.veksle .timar span { font-size: 3.4rem; }
-  :root.veksle .timar svg { width: 8rem; height: 7rem; }
-  :root.veksle .timar b { font-size: 5rem; }
-  :root.veksle .dagar span { font-size: 4.2rem; min-width: 20rem; }
-  :root.veksle .dagar b { font-size: 5.2rem; }
+  :root.veksle .timar > div { gap: 1.4rem; }
+  :root.veksle .timar span { font-size: 4.4rem; }
+  :root.veksle .timar svg { width: 11rem; height: 9.6rem; }
+  :root.veksle .timar b { font-size: 7rem; }
+  :root.veksle .dagar svg { width: 9rem; height: 8rem; }
+  :root.veksle .dagar span { font-size: 5rem; min-width: 26rem; }
+  :root.veksle .dagar b { font-size: 7rem; }
   :root.veksle #foddListe { gap: 3.6rem; }
   :root.veksle .person .pnamn { font-size: 7.6rem; }
   :root.veksle .person .skild { font-size: 4.6rem; }
@@ -249,8 +314,8 @@
   :root.veksle .punkt { display: flex; gap: 1.6rem; margin-top: 4rem; }
   .punkt i { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--spor); transition: background .5s, width .5s; }
   .punkt i.no { background: var(--aksent); width: 4.4rem; border-radius: 99rem; }
-  /* Vêrtavla med veksling: klokka litt mindre, så timane får plass */
-  :root.veksle.v-vertavle .klokke { font-size: 22rem; }
+  :root.veksle .timar { margin-top: 0; }
+  :root.veksle .dagar { margin-top: 5rem; gap: 2.4rem; }
 
   /* Botnen som på karusellane og plakatane (index.html / plakat.html) */
   footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 3rem; }
@@ -269,7 +334,6 @@
   :root.hjul-teljar .nedteljing { display: none; }
   #hjul { stroke: var(--aksent); stroke-linecap: round; stroke-dasharray: 94.25px; stroke-dashoffset: 0px; }
 </style>
-<script src="tema.js"></script>
 </head>
 <body>
 <div class="side">
@@ -291,7 +355,17 @@
   <div class="midt">
   <div class="klokkeblokk">
     <div class="klokke tal"><span id="tim">--</span><span class="kolon" id="kolon">:</span><span id="min">--</span></div>
+    <svg class="analog" id="analog" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="skive" cx="100" cy="100" r="95" stroke-width="3"/>
+      <circle cx="100" cy="100" r="89" fill="none" stroke="var(--gull, var(--aksent))" stroke-width=".8"/>
+      <g id="strekar"></g>
+      <line class="visar" id="timevisar" x1="100" y1="112" x2="100" y2="52" stroke-width="5.5"/>
+      <line class="visar" id="minuttvisar" x1="100" y1="116" x2="100" y2="26" stroke-width="3.2"/>
+      <g id="sekundvisar"><line class="visar sek" x1="100" y1="124" x2="100" y2="20" stroke-width="1.2"/><circle cx="100" cy="100" r="4" fill="var(--aksent)"/></g>
+      <circle cx="100" cy="100" r="1.6" fill="var(--bakgrunn)"/>
+    </svg>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
+    <div class="ornament" aria-hidden="true">❦</div>
   </div>
 
   <div class="rader">
@@ -313,14 +387,20 @@
           <svg id="vericon" viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
           <div class="skildring"><b id="vertekst"></b><span id="vind"></span></div>
         </div>
-        <div class="timar" id="timar" hidden></div>
         <div class="verlinjer">
           <div id="vmVind" hidden><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g id="vindpil"><path d="M12 20V4M6 10l6-6 6 6"/></g></svg><span></span></div>
           <div id="vmSpenn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14.5V4a2 2 0 1 1 4 0v10.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg><span></span></div>
           <div id="vmNedbor" hidden><svg viewBox="0 0 24 24" fill="none" stroke="var(--aksent)" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/></svg><span></span></div>
           <div id="sol" hidden><svg viewBox="0 0 28 20" fill="none" stroke="var(--aksent)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 15a8 8 0 0 1 16 0"/><path d="M2 18h24"/><path d="M14 2v3M4.5 6l2 2M23.5 6l-2 2"/></svg><span id="soltekst"></span></div>
         </div>
-        <div class="dagar" id="dagar" hidden></div>
+      </div>
+    </section>
+
+    <section class="rad" id="framover" hidden>
+      <div class="namn">Vêret framover</div>
+      <div class="verdi">
+        <div class="timar" id="timar"></div>
+        <div class="dagar" id="dagar"></div>
       </div>
     </section>
 
@@ -375,24 +455,30 @@ const DAGNAMN = ["Sundag", "Måndag", "Tysdag", "Onsdag", "Torsdag", "Fredag", "
 const MND = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
 const isoDato = d => d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
 
-// Variant og boksar (frå plakatbyggjaren). Vêrtavla viser alltid vêret.
-const VARIANT = ["ver", "vertavle"].includes(H.get("variant")) ? H.get("variant") : "klokke";
-document.documentElement.classList.add("v-" + VARIANT);
+// Boksar (frå plakatbyggjaren)
 const UTAN = new Set((H.get("utan") || "").split(",").map(s => s.trim()).filter(Boolean));
-const MED = k => !UTAN.has(k) || (k === "ver" && VARIANT === "vertavle");
+const MED = k => !UTAN.has(k);
 const FODD = H.get("fodd") === "1";
-// Skrift (#skrift=…): frå Google Fonts, som karusellane. Utan nett: standardskrifta (Ubuntu).
-// Fargar (#farge=…): standard «petrol» (sand og petrol) heile døgnet. Med #tema=… blir
-// eit tema frå tema.js brukt i staden; «farge=auto» gir det gamle (Lys om dagen, Kveld om kvelden).
-const FARGE = H.get("farge") === "auto" ? "" : H.get("farge") || (H.get("tema") ? "" : "petrol");
-const SKRIFTER = { inter: ["Inter", "Inter:wght@300;400;700"], poppins: ["Poppins", "Poppins:wght@300;400;700"],
-                   lora: ["Lora", "Lora:wght@400;700"] };
-const SKRIFT = H.get("skrift") || "poppins";   // «skrift=standard» gir Ubuntu
-if (SKRIFTER[SKRIFT]) {
-  const [namn, last] = SKRIFTER[SKRIFT];
-  document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=" + last + "&display=swap" }));
-  document.documentElement.style.setProperty("--skrift", `"${namn}", "Ubuntu", "DejaVu Sans", sans-serif`);
-}
+// Vekslar sida (standard), blir vêret detaljert; viser ho alt på éin gong, blir det enkelt
+const VEKSLE = H.get("veksle") !== "0";
+// Klokkestil (#stil=…). Skriftene kjem frå Google Fonts; utan nett blir Ubuntu brukt.
+// Namna til byggjaren står i plakatmal.js (KLOKKESTILAR).
+const STILAR = {
+  petrol:   ["Poppins:wght@300;400;700"],
+  klassisk: ["Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500", "Playfair+Display:wght@500;700"],
+  havbla:   ["Montserrat:wght@400;700;800"],
+  solgul:   ["Oswald:wght@400;600;700"],
+  mynte:    ["Nunito:wght@400;700;800"],
+  retro:    ["Righteous", "Quicksand:wght@400;600;700"],
+  dognet:   ["Inter:wght@200;400;700"],
+};
+// Eldre lenkjer: farge=… blir til næraste stil, farge=auto til «Dag og natt»
+const GAMLE_FARGAR = { petrol: "petrol", papir: "klassisk", havbla: "havbla", himmel: "havbla", sennep: "solgul", aprikos: "retro",
+                       mynte: "mynte", salvie: "mynte", auto: "dognet", avis: "klassisk" };
+const STIL = STILAR[H.get("stil")] ? H.get("stil") : GAMLE_FARGAR[H.get("stil") || H.get("farge")] || "petrol";
+document.documentElement.dataset.stil = STIL;
+document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet",
+  href: "https://fonts.googleapis.com/css2?" + STILAR[STIL].map(f => "family=" + f).join("&") + "&display=swap" }));
 $("kjelde").textContent = [
   (MED("ver") || MED("sol") || MED("fare")) && "Vêr: MET Norge",
   MED("ferje") && "Ferje: Entur",
@@ -427,6 +513,29 @@ function teiknKlokke() {
   $("kolon").classList.toggle("av", d.getSeconds() % 2 === 1);
   $("dato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()];
   $("veke").textContent = "Veke " + veke(d);
+  if (STIL === "klassisk") {
+    const sek = d.getSeconds(), min = d.getMinutes() + sek / 60, tim = (d.getHours() % 12) + min / 60;
+    $("timevisar").setAttribute("transform", `rotate(${tim * 30} 100 100)`);
+    $("minuttvisar").setAttribute("transform", `rotate(${min * 6} 100 100)`);
+    $("sekundvisar").setAttribute("transform", `rotate(${sek * 6} 100 100)`);
+  }
+}
+// Strekar og romartal på urskiva (éin gong)
+if (STIL === "klassisk") {
+  const ns = "http://www.w3.org/2000/svg", g = $("strekar");
+  const ROM = { 0: "XII", 3: "III", 6: "VI", 9: "IX" };
+  for (let i = 0; i < 60; i++) {
+    const v = i * 6 * Math.PI / 180, stor = i % 5 === 0;
+    if (i % 15 === 0) {
+      const t = document.createElementNS(ns, "text");
+      t.setAttribute("class", "tal"); t.setAttribute("x", 100 + 72 * Math.sin(v)); t.setAttribute("y", 100 - 72 * Math.cos(v));
+      t.textContent = ROM[i / 5]; g.append(t); continue;
+    }
+    const l = document.createElementNS(ns, "line"), r1 = stor ? 78 : 83, r2 = 87;
+    Object.entries({ class: "strek", x1: 100 + r1 * Math.sin(v), y1: 100 - r1 * Math.cos(v), x2: 100 + r2 * Math.sin(v), y2: 100 - r2 * Math.cos(v),
+                     "stroke-width": stor ? 2.4 : .8 }).forEach(([k, x]) => l.setAttribute(k, x));
+    g.append(l);
+  }
 }
 
 // ---- Opningstid --------------------------------------------------------------
@@ -829,6 +938,7 @@ function teiknVer() {
   const fersk = VER && Date.now() - VER.henta < VER_GAMAL_MS;
   const nu = fersk && VER.serie.filter(t => new Date(t.tid) <= new Date(d.getTime() + 30 * 60e3)).pop();
   $("ver").hidden = !MED("ver") || !nu || !nu.kode;
+  if (!nu || !nu.kode) $("framover").hidden = true;
   if (nu && nu.kode) {
     $("vericon").innerHTML = verIkon(nu.kode);
     $("grad").textContent = Math.round(nu.temp) + "°";
@@ -836,11 +946,11 @@ function teiknVer() {
     const v = Math.round(nu.vind);
     const vindTekst = (v >= 4 && nu.retning != null ? v + " m/s frå " + VINDRETNING[Math.round(nu.retning / 45) % 8] : v >= 1 ? v + " m/s" : "Stille");
     const ks = kjennestSom(nu.temp, nu.vind);
-    if (VARIANT === "klokke") $("vind").textContent = "Vind " + vindTekst.replace("Stille", "0 m/s");
+    // Alt på éin gong: enkelt vêr (vinden under skildringa). Veksling: meir detaljar.
+    if (!VEKSLE) $("vind").textContent = "Vind " + vindTekst.replace("Stille", "0 m/s");
     else $("vind").textContent = ks != null && Math.abs(ks - nu.temp) >= 2 ? "Kjennest som " + ks + "°" : "";
-    // Meir vêr: vind med pil, nedbør og (i variant=ver) høgast/lågast
-    for (const id of ["vmVind", "vmNedbor"]) $(id).hidden = VARIANT === "klokke";
-    if (VARIANT !== "klokke") {
+    for (const id of ["vmVind", "vmNedbor", "vmSpenn"]) $(id).hidden = !VEKSLE;
+    if (VEKSLE) {
       $("vmVind").querySelector("span").innerHTML = v >= 1 ? `Vind <b>${vindTekst}</b>` : "<b>Stille</b>";
       $("vindpil").setAttribute("transform", `rotate(${((nu.retning || 0) + 180) % 360} 12 12)`);
       $("vindpil").style.visibility = v >= 1 && nu.retning != null ? "" : "hidden";
@@ -850,12 +960,12 @@ function teiknVer() {
       // I dag fram til kl. 15 (om det er att nok av dagen), elles i morgon
       const idag = d.getHours() < 15 && dagSpenn(VER.serie, d), imorgon = dagSpenn(VER.serie, new Date(d.getTime() + 864e5));
       const sp = idag || imorgon;
-      $("vmSpenn").hidden = VARIANT !== "ver" || !sp;
+      $("vmSpenn").hidden = !sp;
       if (sp) $("vmSpenn").querySelector("span").innerHTML = `${idag ? "I dag" : "I morgon"} <b>${sp.min}° til ${sp.max}°</b>`;
     }
-    // Vêrtavla: dei neste 6 timane, og i dag / i morgon
-    $("timar").hidden = $("dagar").hidden = VARIANT !== "vertavle";
-    if (VARIANT === "vertavle") {
+    // Vêret framover (eige punkt i vekslinga): dei neste 6 timane, og i dag / i morgon
+    $("framover").hidden = true;
+    if (VEKSLE && MED("ver")) {
       const neste = VER.serie.filter(t => new Date(t.tid) > d && t.nedbor != null).slice(0, 6);
       $("timar").innerHTML = neste.map(t => `<div><span>${p2(new Date(t.tid).getHours())}</span>`
         + `<svg viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${verIkon(t.kode)}</svg>`
@@ -868,6 +978,7 @@ function teiknVer() {
       $("dagar").innerHTML = dagar.map(([namn, s]) => `<div><svg viewBox="0 0 34 30" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">`
         + `${verIkon(String(s.kode).replace(/_night$/, "_day"))}</svg><div><span>${namn}</span><b>${s.min}° / ${s.max}°</b></div></div>`).join("");
       $("dagar").hidden = !dagar.length;
+      $("framover").hidden = !neste.length && !dagar.length;
     }
   }
   const idag = SOL && SOL.dato === isoDato(d);
@@ -880,16 +991,10 @@ function teiknVer() {
       : oppIm ? `Sola går opp <b>${kl(oppIm)}</b> i morgon` : `Sola gjekk ned ${kl(ned)}`;
   }
   teiknFare();
-  // Mørke fargar når sola er nede (eller kveld=1/0 i lenkja)
+  // «Dag og natt»: mørk når sola er nede (eller kveld=1/0 i lenkja)
   const t = no();
   const kveld = H.has("kveld") ? H.get("kveld") === "1" : (opp && ned ? (t < opp || t >= ned) : (t.getHours() < 8 || t.getHours() >= 16));
-  // Tema som på karusellane: «Kveld» (standardfargane) etter solnedgang, «Lys» om dagen
-  // Eigne klokkefargar (#farge=…) gjeld heile døgnet; då blir ikkje tema frå tema.js brukt
-  const farge = FARGE;
-  if (farge) { document.documentElement.dataset.farge = farge; delete document.documentElement.dataset.tema; return; }
-  const tema = H.get("tema") || (kveld ? "kveld" : "lys");
-  if (tema === "kveld" || typeof TEMA_ETTER_ID === "undefined" || !TEMA_ETTER_ID[tema]) delete document.documentElement.dataset.tema;
-  else document.documentElement.dataset.tema = tema;
+  document.documentElement.toggleAttribute("data-kveld", STIL === "dognet" && kveld);
 }
 
 // ---- Ferje (Entur) ------------------------------------------------------------
@@ -1229,7 +1334,6 @@ window.addEventListener("message", e => {
 // ---- Veksle (#veksle=1): éi rad om gongen ------------------------------------
 // Radene som har noko å vise (ikkje skjulte) kjem etter tur. Står sida i rotasjonen,
 // blir tida delt likt, så alt kjem fram éin gong medan sida står (minst 6 s per rad).
-const VEKSLE = H.get("veksle") !== "0";   // standard: veksle; «veksle=0» viser alt på éin gong
 document.documentElement.classList.toggle("veksle", VEKSLE);
 let veksleNr = 0, veksleTid = null, veksleMs = 8000;
 const synlegeRader = () => [...document.querySelectorAll(".rader .rad")].filter(r => !r.hidden);

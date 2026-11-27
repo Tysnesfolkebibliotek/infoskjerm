@@ -54,18 +54,27 @@ function løysPlakat(data, h) {
 
 // Sider som kan stå i ein plakatkarusell som om dei var plakatar («side=klokke»).
 // Dei blir opna som eiga side i staden for plakat.html.
-// Vala frå plakatbyggjaren (variant=…, utan=…, fodd=1, tema=…) står i same lenkja og blir sende vidare.
+// Vala frå plakatbyggjaren (stil=…, utan=…, fodd=1, veksle=0) står i same lenkja og blir sende vidare.
 const PLAKATSIDER = {
   klokke: { namn: "Klokke, vêr og ferje", fil: "klokke.html" },
 };
-const KLOKKEVARIANTAR = { klokke: "Klokke", ver: "Klokke og meir vêr", vertavle: "Vêrtavle" };
+// Klokkestilane (stil=… i klokke.html, der fargane og skriftene står). Rekkjefølgja er den i byggjaren.
+const KLOKKESTILAR = {
+  petrol:   { namn: "Sand og petrol", skildring: "roleg og luftig (standard)" },
+  klassisk: { namn: "Klassisk",       skildring: "analog urskive med romartal" },
+  havbla:   { namn: "Havblå",         skildring: "feit klokke og bølgjer" },
+  solgul:   { namn: "Solgul",         skildring: "plakat med stor sol" },
+  mynte:    { namn: "Mynte",          skildring: "rund og mjuk, med kort" },
+  retro:    { namn: "Retro",          skildring: "70-tal med striper" },
+  dognet:   { namn: "Dag og natt",    skildring: "lys om dagen, mørk om kvelden" },
+};
 const plakatside = h => PLAKATSIDER[new URLSearchParams(h).get("side")] || null;
-// Namnet på ei plakatside, med varianten: «Klokke, vêr og ferje (Vêrtavle)»
+// Namnet på ei plakatside, med stilen: «Klokke, vêr og ferje (Klassisk)»
 function plakatsideNamn(h) {
   const s = plakatside(h), p = new URLSearchParams(h);
   if (!s) return "";
-  const v = p.get("side") === "klokke" && p.get("variant") && KLOKKEVARIANTAR[p.get("variant")];
-  return s.namn + (v ? " (" + v + ")" : "") + (p.get("fodd") === "1" ? " + Fødd i dag" : "");
+  const st = p.get("side") === "klokke" && p.get("stil") && KLOKKESTILAR[p.get("stil")];
+  return s.namn + (st ? " (" + st.namn + ")" : "") + (p.get("fodd") === "1" ? " + Fødd i dag" : "");
 }
 // Adressa ein plakat (eller ei plakatside) blir opna med, relativt til mappa på GitHub Pages
 function plakatAdresse(data, h) {

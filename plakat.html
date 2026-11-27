@@ -308,17 +308,15 @@
 
     <div class="del" id="klokkedel" hidden><h2>Klokke, vêr og ferje</h2>
       <details class="hjelpknapp"><summary title="Forklaring" aria-label="Forklaring">?</summary><p class="hjelp">Klokkesida hentar opningstid, vêr, ferje og farevarsel av seg sjølv. Boksar som ikkje har noko å vise, blir borte (skuletimane utanom skuletida, farevarsel når det ikkje er noko). Blir det for trongt, blir sida tettare, og «Fødd i dag» fell bort først.</p><p class="hjelp" style="margin-top:6px">Tips: set prioriteten til «Høg» på oversikta, så kjem klokka mellom kvar av dei andre sidene. 20–30 sekund passar.</p></details>
-      <label class="felt"><span>Variant</span><select id="kvariant">
-        <option value="klokke">Klokke: stor klokke og vêret no</option>
-        <option value="ver">Klokke og meir vêr: vind, nedbør, høgast og lågast</option>
-        <option value="vertavle">Vêrtavle: lita klokke, dei neste timane, i dag og i morgon</option></select></label>
+      <label class="felt"><span>Stil</span><select id="kstil"></select></label>
       <label class="felt"><span>Visning</span><select id="kvisning">
-        <option value="veksle">Éin ting om gongen under klokka (vekslar)</option>
-        <option value="alt">Alt på éin gong</option></select></label>
+        <option value="veksle">Éin ting om gongen (vekslar) – med detaljert vêr</option>
+        <option value="alt">Alt på éin gong – med enkelt vêr</option></select>
+        <small>Vekslar klokka, får vêret to punkt: vêret no (vind, nedbør, høgast/lågast) og vêret framover (timane og dagane).</small></label>
       <div class="felt"><span>Vis</span></div>
       <label class="avkryss"><input type="checkbox" id="kv-ope" checked> Opningstida (betjent, meirope eller stengt)</label>
       <label class="avkryss"><input type="checkbox" id="kv-skule" checked> Skuletimar og friminutt (på skuledagar)</label>
-      <label class="avkryss" id="kv-ver-rad"><input type="checkbox" id="kv-ver" checked> Vêret</label>
+      <label class="avkryss"><input type="checkbox" id="kv-ver" checked> Vêret</label>
       <label class="avkryss"><input type="checkbox" id="kv-sol" checked> Sol opp og ned (i vêrboksen)</label>
       <label class="avkryss"><input type="checkbox" id="kv-ferje" checked> Neste ferje Våge → Halhjem</label>
       <label class="avkryss"><input type="checkbox" id="kv-fare" checked> Farevarsel frå MET (berre når det finst)</label>
@@ -353,7 +351,7 @@
       <label class="felt"><span>Tekst ved QR-koden</span><input type="text" name="qrtekst" placeholder="Skann for å kome i gang"></label>
     </div>
 
-    <div class="del"><h2>Utsjånad</h2>
+    <div class="del" id="utsjanaddel"><h2>Utsjånad</h2>
       <div class="rad">
         <label class="felt"><span>Tema</span><select name="tema" id="tema"></select></label>
         <label class="felt" id="skriftfelt"><span>Skrift</span><select name="skrift" id="skrift"></select></label>
@@ -913,20 +911,15 @@ async function startByggjar() {
   mal.append(sider);
   const erKlokke = () => mal.value === "klokke";
   const KLOKKEBOKSAR = ["ope", "skule", "ver", "sol", "ferje", "fare", "dag", "avvik"];
-  // Temaet «Automatisk» (lys om dagen, kveld etter solnedgang) finst berre for klokka
-  function autoTema(på) {
-    const sel = $("tema"), finst = sel.querySelector('option[value="auto"]');
-    if (på && !finst) sel.prepend(new Option("Sand og petrol (standard for klokka)", "auto"));
-    if (!på && finst) { if (sel.value === "auto") sel.value = "lys"; finst.remove(); }
-  }
+  // Klokkestilane (KLOKKESTILAR i plakatmal.js). Eldre klokker med farge=… får næraste stil.
+  for (const [id, st] of Object.entries(KLOKKESTILAR)) $("kstil").append(new Option(st.namn + " – " + st.skildring, id));
+  const GAMLE_FARGAR = { papir: "klassisk", havbla: "havbla", himmel: "havbla", sennep: "solgul", aprikos: "retro", mynte: "mynte", salvie: "mynte", auto: "dognet" };
   function fyllKlokke(cfg) {
     const utan = new Set(String(cfg.utan || "").split(",").filter(Boolean));
-    $("kvariant").value = ["ver", "vertavle"].includes(cfg.variant) ? cfg.variant : "klokke";
+    $("kstil").value = KLOKKESTILAR[cfg.stil] ? cfg.stil : GAMLE_FARGAR[cfg.farge] || "petrol";
     for (const k of KLOKKEBOKSAR) $("kv-" + k).checked = !utan.has(k);
     $("kv-fodd").checked = cfg.fodd === "1";
     $("kvisning").value = cfg.veksle === "0" ? "alt" : "veksle";
-    autoTema(true);
-    felt("tema").value = cfg.tema && TEMA[cfg.tema] ? cfg.tema : "auto";
   }
 
   // Tema og skrift
@@ -970,7 +963,6 @@ async function startByggjar() {
   // Fyll ut skjemaet frå ein mal
   function brukMal(id) {
     if (id === "klokke") { mal.value = id; fyllKlokke({}); oppdater(); return; }
-    autoTema(false);
     const t = teneste(id);
     const tema = felt("tema").value, skrift = felt("skrift").value;
     skjema.reset();
@@ -1002,10 +994,10 @@ async function startByggjar() {
   function lesSkjema() {
     const id = mal.value, t = teneste(id);
     if (id === "klokke") {
-      // Vêrtavla viser alltid vêret; sola står i vêrboksen
-      const utan = KLOKKEBOKSAR.filter(k => !$("kv-" + k).checked && !(k === "ver" && $("kvariant").value === "vertavle"));
-      return { mal: id, side: "klokke", variant: $("kvariant").value === "klokke" ? "" : $("kvariant").value, utan: utan.join(","),
-               fodd: $("kv-fodd").checked ? "1" : "", veksle: $("kvisning").value === "alt" ? "0" : "", tema: felt("tema").value === "auto" ? "" : felt("tema").value, overskrift: "Klokke" };
+      // Sola står i vêrboksen
+      const utan = KLOKKEBOKSAR.filter(k => !$("kv-" + k).checked);
+      return { mal: id, side: "klokke", stil: $("kstil").value === "petrol" ? "" : $("kstil").value, utan: utan.join(","),
+               fodd: $("kv-fodd").checked ? "1" : "", veksle: $("kvisning").value === "alt" ? "0" : "", overskrift: "Klokke" };
     }
     const sel = $("bileteval").value;
     let bilete = "", biletform = "", kjelde = "";
@@ -1070,17 +1062,16 @@ async function startByggjar() {
     const p = new URLSearchParams();
     if (vis) p.set("vis", "1");
     p.set("side", "klokke");
-    for (const k of ["variant", "utan", "fodd", "veksle", "tema"]) if (cfg[k]) p.set(k, cfg[k]);
+    for (const k of ["stil", "utan", "fodd", "veksle"]) if (cfg[k]) p.set(k, cfg[k]);
     return p.toString();
   }
   function oppdater() {
     const cfg = lesSkjema();
     const klokke = erKlokke();
-    for (const id of ["innhalddel", "qrdel", "skriftfelt"]) $(id).hidden = klokke;
+    for (const id of ["innhalddel", "qrdel", "utsjanaddel"]) $(id).hidden = klokke;
     $("klokkedel").hidden = !klokke;
     if (klokke) {
-      $("kv-ver-rad").hidden = $("kvariant").value === "vertavle";
-      $("kv-sol").disabled = !$("kv-ver").checked && $("kvariant").value !== "vertavle";
+      $("kv-sol").disabled = !$("kv-ver").checked;
       $("malboks").hidden = true;
       const hash = klokkeHash(cfg, false);
       history.replaceState(null, "", "#" + hash);
