@@ -9,7 +9,8 @@ Karusellar og rotasjon for dei to infoskjermane på Tysnes folkebibliotek.
 | `index.html` | Karusellbyggjaren, og sjølve karusellen når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/> |
 | `plakat.html` | Plakatbyggjaren for digitale tenester og arrangement, og sjølve plakaten når lenkja har `#vis=1`. Opne <https://tysnesfolkebibliotek.github.io/infoskjerm/plakat.html> |
 | `plakatkarusell.html` | Fleire plakatar etter tur på éi linje i oppsettet. Blir laga og endra på oversikta med **+ Lag nytt ▾ → Plakatkarusell** |
-| `navigasjon.js` | Felles navigasjon: menyen **+ Lag nytt ▾** på oversikta (lista `NYTT`, éi linje per type) og toppstripa «← Tilbake til oversikta» i byggjarane. Byggjarane hentar ho berre i byggjarmodus, så skjermane les ho aldri |
+| `navigasjon.js` | Felles navigasjon: menyen til venstre (stripe med «Meny» på mobil) på oversikta og i byggjarane, og **+ Lag nytt ▾** (lista `NYTT`, éi linje per type). Byggjarane hentar ho berre i byggjarmodus, så skjermane les ho aldri |
+| `admin.css` | Felles utsjånad for oversikta og byggjarane (fargar, skrift, knappar, menyen). Skjermane les ho aldri |
 | `plakatmal.js` | Lagar ein plakat rett frå ein mal i `tenester.json`. Blir brukt av oversikta og plakatkarusellen |
 | `tenester.json` | Dei digitale tenestene i plakatbyggjaren: namn, tekst, merkelapp, lenkje, ikon, logo og bilete |
 | `skrifter.js` | Skriftene (Google Fonts) som karusellane og plakatane deler |

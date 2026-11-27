@@ -8,88 +8,130 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="ikon/apple-touch-icon.png">
 <link rel="icon" href="ikon/ikon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="admin.css">
 <meta name="apple-mobile-web-app-title" content="Infoskjerm">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#171513" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1d2a2e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1416" media="(prefers-color-scheme: dark)">
 <title>Infoskjermar – oversikt</title>
 <style>
+  /* Fargar og skrift kjem frå admin.css (felles for oversikta og byggjarane) */
   :root {
-    --bg: #f6f3ee; --flate: #ffffff; --tekst: #22201d; --dempa: #6f675d; --strek: #e3ddd3;
-    --aksent: #b8741a; --aksent-tekst: #ffffff; --fokus: #e8a33d; --ok: #2f7d4a; --åtvar: #b3401f;
-    --no-bg: #e6f2e9; --seinare-bg: #f2efe9;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #171513; --flate: #211e1b; --tekst: #f1ebe2; --dempa: #a99f92; --strek: #36312b;
-      --aksent: #e8a33d; --aksent-tekst: #1b140c; --ok: #6cc28b; --åtvar: #f08a6a;
-      --no-bg: #1f2e23; --seinare-bg: #26221e;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #171513; --flate: #211e1b; --tekst: #f1ebe2; --dempa: #a99f92; --strek: #36312b;
-    --aksent: #e8a33d; --aksent-tekst: #1b140c; --ok: #6cc28b; --åtvar: #f08a6a;
-    --no-bg: #1f2e23; --seinare-bg: #26221e;
+    --bg: var(--a-bg); --flate: var(--a-flate); --tekst: var(--a-tekst); --dempa: var(--a-dempa); --strek: var(--a-strek);
+    --aksent: var(--a-aksent); --aksent-tekst: var(--a-aksent-tekst); --fokus: var(--a-fokus); --ok: var(--a-ok); --åtvar: var(--a-åtvar);
+    --no-bg: var(--a-flate); --seinare-bg: var(--a-flate2);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--tekst); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif; }
-  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
-  h1 { font-size: 26px; margin: 0 0 4px; }
-  .ingress { color: var(--dempa); margin: 0 0 20px; }
-  .skjermar { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
-  @media (max-width: 480px) { .skjermar { grid-template-columns: 1fr; } }
-  .skjerm { background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 16px; }
-  .skjerm h2 { font-size: 18px; margin: 0; }
-  .skjerm .kva { color: var(--dempa); font-size: 13px; margin-bottom: 12px; }
-  .skjerm .hovud { display: flex; align-items: baseline; gap: 8px; }
-  .skjerm .hovud h2 { flex: 1; min-width: 0; }
-  .skjerm .hovud button { font-size: 12px; padding: 2px 8px; }
-  .namnskjema { margin-bottom: 12px; display: grid; gap: 8px; }
+  body { margin: 0; background: var(--bg); color: var(--tekst); font: 15px/1.45 var(--a-skrift); }
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 28px 110px; }
+  @media (max-width: 600px) { main { padding: 18px 12px 110px; } }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -.015em; }
+  .ingress { color: var(--dempa); margin: 4px 0 0; font-size: 14px; }
+  .toppline { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .toppline > div:first-child { flex: 1 1 420px; }
+  .toppline .knappar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-left: auto; }
+  .toppline .knapp { text-decoration: none; }
+  .filter { font-size: 13.5px; color: var(--dempa); border: 1px solid var(--strek); background: var(--flate); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  /* Faner: éin skjerm om gongen */
+  .faner { display: flex; gap: 2px; border-bottom: 1px solid var(--strek); margin-bottom: 14px; overflow-x: auto; }
+  .faner button { font: inherit; font-size: 14.5px; font-weight: 500; color: var(--dempa); background: none; border: 0; border-bottom: 2px solid transparent;
+    border-radius: 0; padding: 10px 14px; margin-bottom: -1px; white-space: nowrap; cursor: pointer; }
+  .faner button:hover { color: var(--tekst); }
+  .faner button[aria-selected="true"] { color: var(--tekst); font-weight: 600; border-bottom-color: var(--aksent); }
+  .faner .tal { display: inline-block; margin-left: 7px; font-size: 12px; font-weight: 500; color: var(--dempa); background: color-mix(in srgb, var(--tekst) 7%, transparent); border-radius: 99px; padding: 1px 7px; }
+  .faner .kva { font-weight: 400; color: var(--dempa); }
+  .faner button.slipp-her { background: var(--a-aksent-lys); border-radius: 8px 8px 0 0; }
+  @media (max-width: 600px) { .faner .kva { display: none; } .faner button { flex: 1; } }
+  .skjermar { display: block; }
+  .skjerm { display: none; }
+  .skjerm.aktiv { display: block; }
+  .skjerm .hovud { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+  .skjerm .hovud h2 { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; color: var(--dempa); margin: 0; }
+  .skjerm .hovud button { font-size: 12.5px; padding: 3px 9px; }
+  .skjerm .kva { display: none; }
+  .namnskjema { margin-bottom: 12px; display: grid; gap: 8px; background: var(--flate); border: 1px solid var(--strek); border-radius: 10px; padding: 12px 14px; }
   .namnskjema label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
-  .namnskjema input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--bg); color: var(--tekst); }
+  .namnskjema input { width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--strek); border-radius: 8px; background: var(--flate); color: var(--tekst); }
   .namnskjema .knappar { display: flex; gap: 6px; flex-wrap: wrap; }
-  ol.sider { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-  .side { border: 1px solid var(--strek); border-radius: 10px; padding: 10px 12px; background: var(--seinare-bg); }
-  .filter { margin: 0 0 14px; }
-  .toppline { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .toppline .knapp { text-decoration: none; color: inherit; }
-  .gøymde { font-size: 13px; color: var(--dempa); margin: 8px 2px 0; }
+  /* Lista: rolege liner i éin boks */
+  ol.sider { list-style: none; padding: 0; margin: 0; background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; }
+  .side:first-child, .side:first-child .linje { border-radius: 11px 11px 0 0; }
+  .side:last-child, .side:last-child .linje:last-child, .side:last-child .skjema { border-radius: 0 0 11px 11px; }
+  .side:only-child, .side:only-child .linje:only-child { border-radius: 11px; }
+  ol.sider:empty { min-height: 54px; border-style: dashed; background: transparent; }
+  .side { border-top: 1px solid var(--strek); background: var(--flate); }
+  .side:first-child { border-top: 0; }
+  .side .linje { display: grid; grid-template-columns: 16px 34px minmax(0, 1fr) minmax(0, 190px) 128px 116px; gap: 12px; align-items: center; padding: 10px 12px 10px 8px; cursor: pointer; }
+  .side .linje:hover { background: var(--a-flate2); }
+  .side.open .linje { background: var(--a-flate2); }
+  .grep { color: var(--a-av); opacity: .7; cursor: grab; display: grid; place-items: center; }
+  .grep svg { width: 14px; height: 14px; }
+  .typeikon { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--a-aksent-lys); color: var(--aksent); }
+  .typeikon svg { width: 18px; height: 18px; }
+  .side .namn { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side .type { font-size: 13px; color: var(--dempa); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side .naar { font-size: 13px; color: var(--dempa); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .side .naar .prio { display: block; font-size: 12px; }
+  .side .detaljar.merknad { font-size: 12.5px; color: var(--dempa); font-style: italic; padding: 0 14px 10px 70px; margin-top: -4px; }
+  .statusprikk { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; white-space: nowrap; }
+  .statusprikk i { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--a-av); }
+  .statusprikk.no i { background: var(--a-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--a-ok) 18%, transparent); }
+  .statusprikk.snart i { background: var(--a-snart); }
+  .statusprikk.ikkje, .statusprikk.av { color: var(--dempa); }
+  .handling { display: flex; gap: 4px; align-items: center; justify-content: flex-end; }
+  .handling button { padding: 5px 9px; }
+  .meirknapp { font-size: 17px !important; line-height: 1; padding: 4px 9px 8px !important; letter-spacing: 1px; }
+  .meirmeny { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 190px; padding: 5px; background: var(--flate);
+    border: 1px solid var(--strek); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.16); display: flex; flex-direction: column; }
+  .meirmeny button { border: 0; text-align: left; padding: 7px 10px; font-size: 14px; background: none; }
+  .meirmeny button:hover:not(:disabled) { background: var(--bg); }
+  .meirmeny hr { border: 0; border-top: 1px solid var(--strek); margin: 4px 2px; }
+  .meirboks { position: relative; }
+  .meirmeny[hidden] { display: none; }
+  .side .mobilnaar { display: none; font-size: 12.5px; color: var(--dempa); }
+  @media (max-width: 700px) {
+    .side .linje { grid-template-columns: 34px minmax(0, 1fr) auto auto; gap: 10px; padding: 10px; }
+    .side .linje .grep, .side .linje .naar { display: none; }
+    .side .linje .statusprikk span { display: none; }
+    .side .linje .handling > button { display: none; }
+    .side .mobilnaar { display: block; }
+    .side .detaljar.merknad { padding-left: 54px; }
+  }
+  .gøymde { font-size: 13px; color: var(--dempa); margin: 10px 2px 0; }
   .gøymde button { font: inherit; font-size: 13px; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
-  .side[draggable=true] { cursor: grab; }
+  .side[draggable=true] .grep { cursor: grab; }
   .side.drar { opacity: .4; }
-  .side.slipp-før { box-shadow: 0 -4px 0 var(--aksent); }
-  .side.slipp-etter { box-shadow: 0 4px 0 var(--aksent); }
-  .sider.slipp-her, .avgruppe.slipp-her, .avslipp.slipp-her { outline: 2px dashed var(--aksent); outline-offset: 4px; border-radius: 10px; }
+  .side.slipp-før { box-shadow: inset 0 3px 0 var(--aksent); }
+  .side.slipp-etter { box-shadow: inset 0 -3px 0 var(--aksent); }
+  .sider.slipp-her, .avgruppe.slipp-her, .avslipp.slipp-her { outline: 2px dashed var(--aksent); outline-offset: 4px; border-radius: 12px; }
   .sider { min-height: 24px; }
-  .avslipp { display: none; margin-top: 12px; font-size: 12.5px; color: var(--dempa); text-align: center; padding: 6px; border-radius: 8px; opacity: .7; }
+  .avslipp { display: none; margin-top: 12px; font-size: 12.5px; color: var(--dempa); text-align: center; padding: 10px; border-radius: 10px; border: 1px dashed var(--strek); }
   body.drar-no .avslipp { display: block; }
-  .side.av { opacity: .75; border-style: dashed; }
-  .avgruppe { margin-top: 12px; }
-  .avgruppe summary { cursor: pointer; font-size: 13px; font-weight: 650; color: var(--dempa); padding: 4px 2px; }
+  .side.av .namn, .side.av .typeikon { opacity: .65; }
+  .avgruppe { margin-top: 22px; }
+  .avgruppe summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--dempa); padding: 4px 2px; }
   .avgruppe .sider { margin-top: 8px; }
-  button.publiser { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 650; }
+  button.publiser { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 600; }
   button.fare { color: var(--åtvar); border-color: color-mix(in srgb, var(--åtvar) 45%, var(--strek)); }
   button.fare:hover { background: color-mix(in srgb, var(--åtvar) 12%, transparent); }
-  .side.no { background: var(--no-bg); border-color: color-mix(in srgb, var(--ok) 40%, var(--strek)); }
-  .side .topp { display: flex; align-items: center; gap: 8px; }
-  .side .namn { font-weight: 650; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .merke { font-size: 12px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
-  .merke.no { background: var(--ok); color: #fff; }
-  .merke.ikkje { background: var(--strek); color: var(--dempa); }
-  .merke.snart { background: transparent; color: var(--ok); border: 1px solid var(--ok); padding: 1px 7px; }
-  .side .detaljar { font-size: 13px; color: var(--dempa); margin-top: 3px; }
-  .side .detaljar.merknad { font-style: italic; }
-  .side .knappar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-  .skjema .knappar.fleire { margin-top: 0; padding-top: 10px; border-top: 1px dashed var(--strek); }
-  button, .knapp { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--strek);
+  .merke.ikkje { background: color-mix(in srgb, var(--tekst) 8%, transparent); color: var(--dempa); }
+  .skjema .knappar.fleire { margin-top: 0; padding-top: 12px; border-top: 1px solid var(--strek); }
+  .knappar { display: flex; gap: 6px; flex-wrap: wrap; }
+  button, .knapp { font: inherit; font-size: 13.5px; font-weight: 500; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--strek);
     background: var(--flate); color: var(--tekst); cursor: pointer; text-decoration: none; display: inline-block; }
-  button.hoved { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 650; font-size: 15px; padding: 8px 16px; }
+  button:hover:not(:disabled), .knapp:hover { border-color: color-mix(in srgb, var(--dempa) 45%, var(--strek)); }
+  button.hoved, .knapp.hoved { background: var(--aksent); color: var(--aksent-tekst); border-color: var(--aksent); font-weight: 600; font-size: 14px; padding: 8px 15px; }
+  button.hoved:hover:not(:disabled), .knapp.hoved:hover { filter: brightness(1.08); border-color: var(--aksent); }
   button:disabled { opacity: .45; cursor: not-allowed; }
-  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--fokus); outline-offset: 1px; }
+  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--fokus); outline-offset: 1px; }
   .leggtil { margin-top: 10px; width: 100%; border-style: dashed; padding: 8px; }
   /* Skjema for éi side */
-  .skjema { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--strek); display: grid; gap: 10px; }
+  .skjema { padding: 16px 18px 18px; border-top: 1px solid var(--strek); background: var(--a-flate2); display: grid; gap: 12px; }
+  .nyside { margin-top: 14px; background: var(--flate); border: 1px solid var(--aksent); border-radius: 12px; overflow: hidden; }
+  .nyside > .skjema { border-top: 0; }
+  .nyside .nytittel { padding: 12px 18px 0; font-weight: 600; background: var(--a-flate2); }
   .skjema label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px; }
   .skjema select, .skjema input[type=text], .skjema input[type=url], .skjema input[type=number], .skjema input[type=date], .skjema input[type=time] {
     width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--flate); color: var(--tekst); }
@@ -134,17 +176,25 @@
   .pk .visval { display: grid; gap: 4px; margin-top: 6px; }
   .pk .døme { margin: 0; padding: 6px 8px; border-radius: 7px; background: var(--seinare-bg); }
   .pk .velliste label { font-weight: 400; display: flex; gap: 6px; align-items: center; font-size: 14px; margin: 0; }
-  /* Botnlinje for lagring */
-  .lagrelinje { position: sticky; bottom: 0; margin-top: 24px; background: var(--flate); border: 1px solid var(--strek);
-    border-radius: 12px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
-  .status { flex: 1; min-width: 200px; font-size: 14px; }
+  /* Botnlinje for lagring: syner berre når det er noko å seie eller lagre */
+  .lagrelinje { position: fixed; left: 50%; bottom: 16px; transform: translate(-50%, 140%); width: min(1000px, calc(100% - 24px));
+    background: var(--a-meny); color: #fff; border-radius: 12px; padding: 10px 12px 10px 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    box-shadow: 0 12px 34px rgba(0,0,0,.28); z-index: 35; transition: transform .2s ease, opacity .2s; opacity: 0; pointer-events: none; }
+  .lagrelinje.synleg { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+  @media (min-width: 901px) { .lagrelinje { left: calc(50% + var(--a-menybreidd) / 2); width: min(1000px, calc(100% - var(--a-menybreidd) - 48px)); } }
+  .lagrelinje button { background: transparent; color: #fff; border-color: #ffffff40; }
+  .lagrelinje button.hoved { background: #fff; color: var(--a-meny); border-color: #fff; }
+  .lagrelinje button:disabled { opacity: .4; }
+  .status { flex: 1; min-width: 180px; font-size: 14px; }
+  .lagrelinje .status.feil { color: #ffb59c; }
+  .lagrelinje .status.ok { color: #9ee0b4; }
   .status.feil { color: var(--åtvar); }
   .status.ok { color: var(--ok); }
-  details.innstillingar { margin-top: 24px; }
-  details.innstillingar > summary { cursor: pointer; font-weight: 650; color: var(--dempa); }
+  details.innstillingar { margin-top: 32px; }
+  details.innstillingar > summary { cursor: pointer; font-weight: 600; color: var(--dempa); }
   details.innstillingar details.nokkel { margin-top: 12px; }
-  details.nokkel { margin-top: 20px; background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 12px 16px; }
-  details.nokkel summary { cursor: pointer; font-weight: 650; }
+  details.nokkel { margin-top: 12px; background: var(--flate); border: 1px solid var(--strek); border-radius: 12px; padding: 14px 18px; }
+  details.nokkel summary { cursor: pointer; font-weight: 600; }
   details.nokkel input { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--strek); border-radius: 7px; background: var(--bg); color: var(--tekst); margin: 6px 0; }
   details.nokkel ol { padding-left: 20px; }
   /* Førehandsvising i ståande skjermformat (1080 × 1920, skalert ned) */
@@ -190,11 +240,13 @@
 </head>
 <body>
 <main>
-  <div class="toppline"><h1>Infoskjermar</h1><span id="nyttmeny"></span></div>
+  <div class="toppline">
+    <div><h1>Skjermane</h1>
+    <p class="ingress">Kva skjermane viser. Ingenting blir endra på skjermane før du klikkar <b>Lagre</b>. Etterpå kjem endringane fram innan om lag ein halvtime.</p></div>
+    <div class="knappar"><label class="val filter"><input type="checkbox" id="visalle"> Vis alle sider</label><span id="nyttmeny"></span></div>
+  </div>
   <script src="navigasjon.js"></script>
-  <p class="ingress">Kva skjermane viser. Grøne linjer blir viste akkurat no. Ingenting blir endra på skjermane før du klikkar <b>Lagre</b> nedst. Etterpå kjem endringane fram innan om lag ein halvtime, ofte raskare.</p>
-
-  <label class="val filter"><input type="checkbox" id="visalle"> Vis òg sider som ikkje skal visast dei neste sju dagane</label>
+  <div class="faner" id="faner" role="tablist"></div>
 
   <div class="skjermar" id="skjermar"><p>Hentar oppsettet …</p></div>
 
@@ -242,9 +294,9 @@
   </details>
   </details>
 
-  <div class="lagrelinje">
+  <div class="lagrelinje" id="lagrelinje" role="status">
     <span class="status" id="status">Ingen endringar.</span>
-    <button type="button" id="angre" disabled>Angre endringar</button>
+    <button type="button" id="angre" disabled>Angre</button>
     <button type="button" class="hoved" id="lagre" disabled>Lagre</button>
   </div>
 </main>
@@ -563,53 +615,119 @@ const skjermFor = lk => lk.replace(/_avpublisert$/, "");
 const erNettside = s => !!s.nettside || (!!s.url && !/tysnesfolkebibliotek\.github\.io\/infoskjerm\//.test(s.url));
 const erOpenFor = (lk, i) => open && open.lk === lk && open.i === i;
 
+// Kva fane (skjerm) som er vald. Hugsa i nettlesaren.
+const FANE_LAGER = "infoskjerm-oversikt-fane";
+let aktivFane = (() => { try { return localStorage.getItem(FANE_LAGER) || "skjerm1"; } catch (e) { return "skjerm1"; } })();
+// Skildringa utan maskinnamnet: «tysnes-infoskjerm, sakprosaavdelinga» → «sakprosaavdelinga»
+const fanetekst = kva => String(kva || "").split(",").map(x => x.trim()).filter(x => x && !/^tysnes-infoskjerm/.test(x)).join(", ");
+function velFane(lk) { if (open && skjermFor(open.lk) !== lk) open = null; aktivFane = lk; try { localStorage.setItem(FANE_LAGER, lk); } catch (e) {} teikn(); }
+
+// Ikon for typen side (ikona kjem frå navigasjon.js)
+function typeIkon(s) {
+  const I = window.INFOSKJERM_IKON || {};
+  const namn = s.lokal ? "lokal" : erPlakatkarusell(s) ? "plakatkarusell" : erVideo(s) ? "video"
+    : /klokke\.html#|side=klokke/.test(s.url || "") ? "klokke" : erPlakat(s) ? "plakat" : erKarusell(s) ? "karusell" : "nettside";
+  const sp = el("span", { class: "typeikon", "aria-hidden": "true" });
+  sp.innerHTML = I[namn] || "";
+  return sp;
+}
+const GREP = '<svg viewBox="0 0 14 14" fill="currentColor"><circle cx="4.5" cy="3" r="1.3"/><circle cx="9.5" cy="3" r="1.3"/><circle cx="4.5" cy="7" r="1.3"/><circle cx="9.5" cy="7" r="1.3"/><circle cx="4.5" cy="11" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/></svg>';
+// Kort tekst om kor lenge sida står: «3 min», «40 sek»
+const lengdTekst = s => { const n = Number(s.sekund) || 0; return (erKalender(s) ? "maks " : "") + (n >= 120 && n % 60 === 0 ? n / 60 + " min" : n + " sek"); };
+
+// «⋯»-menyen på kvar linje. Berre éin open om gongen.
+let openMeir = null;
+function meirMeny(val) {
+  const boks = el("div", { class: "meirboks" });
+  const knapp = el("button", { type: "button", class: "meirknapp", title: "Fleire val", "aria-haspopup": "menu", "aria-expanded": "false" }, "⋯");
+  const meny = el("div", { class: "meirmeny", role: "menu", hidden: true });
+  for (const v of val) {
+    if (!v) continue;
+    if (v === "-") { meny.append(el("hr")); continue; }
+    meny.append(el("button", { type: "button", role: "menuitem", class: v.klasse || null, disabled: !!v.av,
+      onclick: e => { e.stopPropagation(); lukkMeir(); v.gjer(); } }, v.tekst));
+  }
+  knapp.addEventListener("click", e => {
+    e.stopPropagation();
+    const var_open = !meny.hidden;
+    lukkMeir();
+    if (!var_open) { meny.hidden = false; knapp.setAttribute("aria-expanded", "true"); openMeir = { meny, knapp }; }
+  });
+  boks.append(knapp, meny);
+  return boks;
+}
+function lukkMeir() { if (openMeir) { openMeir.meny.hidden = true; openMeir.knapp.setAttribute("aria-expanded", "false"); openMeir = null; } }
+document.addEventListener("click", e => { if (openMeir && !openMeir.meny.parentNode.contains(e.target)) lukkMeir(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") lukkMeir(); });
+
+// Éi linje i lista. Klikk på linja opnar (eller lukkar) skjemaet.
+function sideLinje(s, lk, i, { vist, merke, av, pos, synlege }) {
+  const erOpen = erOpenFor(lk, i);
+  const vekslar = () => { open = erOpen ? null : { lk, i }; teikn(); };
+  const prio = PRIO_TEKST[prioritet(s)];
+  const status = av ? { tekst: "Avpublisert", klasse: "av" } : merke;
+  const grep = el("span", { class: "grep", title: "Dra for å flytte" }); grep.innerHTML = GREP;
+  const linje = el("div", { class: "linje", onclick: e => { if (!e.target.closest("button, a, .meirboks")) vekslar(); } },
+    grep,
+    typeIkon(s),
+    el("div", { class: "tekst" },
+      el("div", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
+      el("div", { class: "type" }, `${typeTekst(s)} · ${lengdTekst(s)}`),
+      el("div", { class: "mobilnaar" }, av ? "Avpublisert" : `${merke.tekst} · ${tidsTekst(s)}`)),
+    el("div", { class: "naar", title: tidsTekst(s) + (prio ? " · " + prio : "") }, tidsTekst(s),
+      prio ? el("span", { class: "prio" }, prioritet(s) === "hog" ? "Mellom kvar side" : "Annakvar runde") : null),
+    el("span", { class: "statusprikk " + status.klasse }, el("i"), el("span", {}, status.tekst)),
+    el("div", { class: "handling" },
+      av ? el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser")
+         : el("button", { type: "button", onclick: vekslar }, erOpen ? "Lukk" : "Endre"),
+      meirMeny([
+        adresse(s) ? { tekst: "Førehandsvis", gjer: () => førehandsvis(s) } : null,
+        av ? { tekst: erOpen ? "Lukk" : "Endre", gjer: vekslar } : null,
+        av ? null : { tekst: "Flytt opp", av: pos === 0, gjer: () => flytt(lk, i, -1, synlege) },
+        av ? null : { tekst: "Flytt ned", av: pos === synlege.length - 1, gjer: () => flytt(lk, i, 1, synlege) },
+        ...SKJERMAR.filter(x => x.nøkkel !== skjermFor(lk)).map(x => ({ tekst: `Flytt til ${skjermInfo(x.nøkkel).namn}`, gjer: () => flyttSide({ lk, i }, { lk: av ? AV(x.nøkkel) : x.nøkkel }) })),
+      ])));
+  // På mobil: trykk på prikken/linja opnar òg skjemaet; ⋯ ligg i skjemaet (sjå fleireKnappar)
+  return dra(el("li", { class: "side" + (vist ? " no" : "") + (av ? " av" : "") + (erOpen ? " open" : "") },
+    linje, kalenderMerknad(s), erOpen ? skjema(s, lk, i) : null), lk, i);
+}
+
 function teikn() {
+  lukkMeir();
   const boks = $("skjermar");
   boks.replaceChildren();
+  // Er eit skjema ope, skal fana til den skjermen vere vald
+  if (open) aktivFane = skjermFor(open.lk);
+  if (!SKJERMAR.some(x => x.nøkkel === aktivFane)) aktivFane = SKJERMAR[0].nøkkel;
+  const visAlle = $("visalle").checked;
+  const faner = $("faner");
+  faner.replaceChildren();
   for (const sk of SKJERMAR) {
     const lk = sk.nøkkel;
     const sider = oppsett[lk] || (oppsett[lk] = []);
     const avsider = oppsett[AV(lk)] || [];
     const no = new Set(aktuelle(sider));
+    const info = skjermInfo(lk);
+    // Fana. Ei side kan òg slippast på fana til den andre skjermen.
+    const fane = el("button", { type: "button", role: "tab", "aria-selected": String(lk === aktivFane), onclick: () => velFane(lk) },
+      info.namn, fanetekst(info.kva) ? el("span", { class: "kva" }, " · " + fanetekst(info.kva)) : null,
+      el("span", { class: "tal" }, String(sider.filter(s => no.has(s)).length)));
+    fane.title = `${info.namn}: ${sider.filter(s => no.has(s)).length} sider blir viste no`;
+    slippMål(fane, lk);
+    faner.append(fane);
+
     const liste = el("ol", { class: "sider" });
-    // Med filteret på blir sider som ikkje er i bruk no, gøymde (men ikkje den som er open for endring)
-    const visAlle = $("visalle").checked;
     const merke = sider.map(s => statusMerke(s, no.has(s)));
     const synlege = sider.map((s, i) => i).filter(i => visAlle || merke[i].snart || erOpenFor(lk, i));
     sider.forEach((s, i) => {
       if (!synlege.includes(i)) return;
-      const erOpen = erOpenFor(lk, i);
-      const vist = no.has(s);
-      const pos = synlege.indexOf(i);
-      liste.append(dra(el("li", { class: "side" + (vist ? " no" : "") },
-        el("div", { class: "topp" },
-          el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
-          el("span", { class: "merke " + merke[i].klasse }, merke[i].tekst)),
-        el("div", { class: "detaljar" }, detaljTekst(s)),
-        kalenderMerknad(s),
-        el("div", { class: "knappar" },
-          el("button", { type: "button", title: "Flytt opp", onclick: () => flytt(lk, i, -1, synlege), disabled: pos === 0 }, "↑"),
-          el("button", { type: "button", title: "Flytt ned", onclick: () => flytt(lk, i, 1, synlege), disabled: pos === synlege.length - 1 }, "↓"),
-          ...felleKnappar(s, lk, i, erOpen)),
-        erOpen ? skjema(s, lk, i) : null), lk, i));
+      liste.append(sideLinje(s, lk, i, { vist: no.has(s), merke: merke[i], av: false, pos: synlege.indexOf(i), synlege }));
     });
     // Avpubliserte: samanfalda, men opne når ei av dei blir endra eller filteret er av
     let avgruppe = null;
     if (avsider.length) {
       const avliste = el("ol", { class: "sider" });
-      avsider.forEach((s, i) => {
-        const erOpen = erOpenFor(AV(lk), i);
-        avliste.append(dra(el("li", { class: "side av" },
-          el("div", { class: "topp" },
-            el("span", { class: "namn", title: s.namn || "" }, s.namn || "(utan namn)"),
-            el("span", { class: "merke ikkje" }, "Avpublisert")),
-          el("div", { class: "detaljar" }, detaljTekst(s)),
-          kalenderMerknad(s),
-          el("div", { class: "knappar" },
-            el("button", { type: "button", class: "publiser", title: "Set sida tilbake på skjermen", onclick: () => publiser(lk, i) }, "Publiser"),
-            ...felleKnappar(s, AV(lk), i, erOpen)),
-          erOpen ? skjema(s, AV(lk), i) : null), AV(lk), i));
-      });
+      avsider.forEach((s, i) => avliste.append(sideLinje(s, AV(lk), i, { vist: false, merke: null, av: true })));
       avgruppe = slippMål(el("details", { class: "avgruppe" }, el("summary", {}, `Avpubliserte (${avsider.length})`), avliste), AV(lk));
       avgruppe.open = visAlle || (open && open.lk === AV(lk)) || avOpne.has(lk);
       avgruppe.addEventListener("toggle", () => { if (avgruppe.open) avOpne.add(lk); else avOpne.delete(lk); });
@@ -618,13 +736,14 @@ function teikn() {
     // Er det ingen avpubliserte, kan ein likevel dra ei side hit for å avpublisere henne
     if (!avgruppe) avgruppe = slippMål(el("div", { class: "avslipp" }, "Dra ei side hit for å avpublisere henne"), AV(lk));
     slippMål(liste, lk);
-    boks.append(el("section", { class: "skjerm" },
+    const gøymde = sider.length - synlege.length;
+    boks.append(el("section", { class: "skjerm" + (lk === aktivFane ? " aktiv" : ""), role: "tabpanel" },
       ...skjermHovud(lk),
       liste,
-      sider.length > synlege.length ? el("p", { class: "gøymde" }, `${sider.length - synlege.length} ${sider.length - synlege.length === 1 ? "side er gøymd" : "sider er gøymde"} fordi ${sider.length - synlege.length === 1 ? "ho" : "dei"} ikkje skal visast dei neste sju dagane. `,
+      gøymde ? el("p", { class: "gøymde" }, `${gøymde} ${gøymde === 1 ? "side er gøymd" : "sider er gøymde"} fordi ${gøymde === 1 ? "ho" : "dei"} ikkje skal visast dei neste sju dagane. `,
         el("button", { type: "button", onclick: () => { $("visalle").checked = true; lagreFilter(); teikn(); } }, "Vis alle")) : null,
       // Nye sider kjem frå «+ Lag nytt ▾» øvst (eller frå byggjarane)
-      nyOpen ? el("div", { class: "side" }, skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1)) : null,
+      nyOpen ? el("div", { class: "nyside" }, el("div", { class: "nytittel" }, "Ny side"), skjema(nyFørehand || { namn: "", url: "", sekund: 180 }, lk, -1)) : null,
       avgruppe));
   }
   oppdaterStatus();
@@ -635,9 +754,8 @@ const avOpne = new Set();
 function skjermHovud(lk) {
   const info = skjermInfo(lk);
   if (namnOpen !== lk) return [
-    el("div", { class: "hovud" }, el("h2", {}, info.namn),
-      el("button", { type: "button", title: "Endre namnet og skildringa som blir viste her på oversikta", onclick: () => { namnOpen = lk; teikn(); setTimeout(() => $("n-namn").select(), 0); } }, "Endre namn")),
-    info.kva ? el("div", { class: "kva" }, info.kva) : el("div", { class: "kva" })];
+    el("div", { class: "hovud" }, el("h2", {}, info.kva || info.namn),
+      el("button", { type: "button", title: "Endre namnet og skildringa som blir viste her på oversikta", onclick: () => { namnOpen = lk; teikn(); setTimeout(() => $("n-namn").select(), 0); } }, "Endre namn"))];
   const bruk = () => {
     const namn = $("n-namn").value.trim(), kva = $("n-kva").value.trim();
     const alle = { ...(oppsett[NAMN_NØKKEL] || {}) };
@@ -726,14 +844,6 @@ function slippMål(elem, lk) {
   elem.addEventListener("drop", e => { if (!drege) return; e.preventDefault(); const fra = drege; drege = null; flyttSide(fra, { lk }); });
   return elem;
 }   // kva skjermar som har den avpubliserte lista open
-
-// Knappar som er like for publiserte og avpubliserte sider
-function felleKnappar(s, lk, i, erOpen) {
-  return [
-    el("button", { type: "button", onclick: () => { open = erOpen ? null : { lk, i }; teikn(); } }, erOpen ? "Lukk" : "Endre"),
-    adresse(s) ? el("button", { type: "button", onclick: () => førehandsvis(s) }, "Førehandsvis") : null,
-  ];
-}
 
 // Sjeldnare handlingar ligg nedst i skjemaet (Endre), så linjene ikkje blir fulle av knappar
 function fleireKnappar(s, lk, i) {
@@ -1395,6 +1505,13 @@ function oppdaterStatus(tekst, klasse) {
   st.textContent = tekst || (endra() ? "Du har endringar som ikkje er lagra." : "Ingen endringar.");
   $("lagre").disabled = !endra() || lagrar;
   $("angre").disabled = !endra() || lagrar;
+  // Stripa nedst syner berre når det er noko å lagre eller ei melding å lese.
+  // «Lagra.» o.l. forsvinn av seg sjølv etter ei stund.
+  clearTimeout(oppdaterStatus.gøym);
+  const vis = endra() || lagrar || !!tekst;
+  $("lagrelinje").classList.toggle("synleg", vis);
+  if (vis && !endra() && !lagrar && klasse !== "feil")
+    oppdaterStatus.gøym = setTimeout(() => { if (!endra()) $("lagrelinje").classList.remove("synleg"); }, 8000);
 }
 let lagrar = false;   // hindrar at eit dobbeltklikk på Lagre sender to lagringar
 
@@ -1956,7 +2073,17 @@ setInterval(() => { if (oppsett && !open && !namnOpen) teikn(); }, 60000);
 // «Oppdater …»-knapp for ei gamal side). Det byggjaren sender med, står i adressa.
 try { sessionStorage.removeItem("infoskjerm-retur"); } catch (e) {}
 
-hent().then(fråByggjaren).catch(e => {
+// Frå menyen i ein byggjar: «oversikt.html#lag=video» og «oversikt.html#innstillingar»
+function fråMenyen() {
+  const h = location.hash.slice(1);
+  if (h === "innstillingar") { history.replaceState(null, "", location.pathname + location.search); visInnstillingar(); }
+  const lag = new URLSearchParams(h).get("lag");
+  if (lag) { history.replaceState(null, "", location.pathname + location.search); document.dispatchEvent(new CustomEvent("lag-nytt", { detail: lag })); }
+}
+function visInnstillingar() { $("innstillingar").open = true; $("innstillingar").scrollIntoView({ behavior: "smooth", block: "start" }); }
+document.addEventListener("opne-innstillingar", visInnstillingar);
+
+hent().then(fråByggjaren).then(fråMenyen).catch(e => {
   $("skjermar").replaceChildren(el("p", {}, "Fekk ikkje henta oppsettet frå GitHub: " + e.message + ". Prøv å laste sida på nytt."));
 });
 </script>

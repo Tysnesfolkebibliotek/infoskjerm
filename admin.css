@@ -1,0 +1,107 @@
+/* admin.css — felles utsjånad for oversikta og byggjarane («CMS-et»).
+ *
+ * Berre admin-sidene les denne fila: oversikt.html har ho i <head>, og
+ * byggjarane hentar ho via navigasjon.js når dei blir opna som byggjar.
+ * Skjermane (#vis=1) les ho aldri, så ho kan ikkje øydeleggje det som står
+ * på skjermane.
+ *
+ * Fargane ligg som --a-* her. Oversikta (--bg, --tekst …) og byggjarane
+ * (--b-bg, --b-tekst …) les sine eigne namn, som peikar hit.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --a-skrift: "Inter", system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif;
+  --a-bg: #f5f3ef; --a-flate: #ffffff; --a-flate2: #faf9f6; --a-tekst: #1d2326; --a-dempa: #687074; --a-strek: #e4e0d8;
+  --a-aksent: #1f6f78; --a-aksent-tekst: #ffffff; --a-aksent-lys: #e2eff0; --a-fokus: #3a9aa4;
+  --a-ok: #2f8a4e; --a-snart: #c08a1e; --a-av: #a9a59e; --a-åtvar: #b3401f;
+  --a-meny: #1d2a2e; --a-meny-tekst: #c9d5d7; --a-meny-dempa: #7f9296;
+  --a-menybreidd: 220px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --a-bg: #15191b; --a-flate: #1d2326; --a-flate2: #20272a; --a-tekst: #eef1f1; --a-dempa: #9aa5a8; --a-strek: #2f383b;
+    --a-aksent: #5fb4bc; --a-aksent-tekst: #0d1a1c; --a-aksent-lys: #20393c; --a-fokus: #5fb4bc;
+    --a-ok: #62c487; --a-snart: #e2b04f; --a-av: #6b7376; --a-åtvar: #f08a6a;
+    --a-meny: #0f1416; --a-meny-tekst: #c9d5d7; --a-meny-dempa: #6f8286;
+  }
+}
+:root[data-theme="dark"] {
+  --a-bg: #15191b; --a-flate: #1d2326; --a-flate2: #20272a; --a-tekst: #eef1f1; --a-dempa: #9aa5a8; --a-strek: #2f383b;
+  --a-aksent: #5fb4bc; --a-aksent-tekst: #0d1a1c; --a-aksent-lys: #20393c; --a-fokus: #5fb4bc;
+  --a-ok: #62c487; --a-snart: #e2b04f; --a-av: #6b7376; --a-åtvar: #f08a6a;
+  --a-meny: #0f1416; --a-meny-tekst: #c9d5d7; --a-meny-dempa: #6f8286;
+}
+
+/* ---- Byggjarane: same fargar og skrift som oversikta -------------------- */
+body.byggjar, body.bygg {
+  --b-bg: var(--a-bg); --b-flate: var(--a-flate); --b-tekst: var(--a-tekst); --b-dempa: var(--a-dempa);
+  --b-strek: var(--a-strek); --b-aksent: var(--a-aksent); --b-aksent-tekst: var(--a-aksent-tekst); --b-fokus: var(--a-fokus);
+  font-family: var(--a-skrift);
+}
+body.byggjar .b-skjema, body.bygg .b-skjema { padding-top: 28px; }
+body.byggjar .b-skjema h1, body.bygg .b-skjema h1 { font-size: 22px; font-weight: 700; letter-spacing: -.015em; }
+body.byggjar .b-forhand, body.bygg .b-forhand { background: var(--a-bg); }
+body.byggjar .b-skjerm, body.bygg .b-skjerm { box-shadow: 0 0 0 8px #1d2326, 0 24px 60px rgba(0,0,0,.28); }
+body.byggjar input[type=text], body.byggjar textarea, body.byggjar input[type=search], body.byggjar input[type=number], body.byggjar select,
+body.bygg input[type=text], body.bygg textarea, body.bygg input[type=search], body.bygg input[type=number], body.bygg input[type=url],
+body.bygg input[type=date], body.bygg input[type=time], body.bygg select {
+  background-color: var(--a-flate); border-color: var(--a-strek); border-radius: 8px;
+}
+body.byggjar .temaknapp { background-color: var(--a-flate); }
+/* Same pil på nedtrekkslistene i alle byggjarane */
+body.bygg select:not([multiple]) { appearance: none; -webkit-appearance: none; padding-right: 30px; background-repeat: no-repeat; background-position: right 10px center; background-size: 12px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23687074' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+body.byggjar input:hover:not(:disabled), body.byggjar select:hover:not(:disabled), body.byggjar textarea:hover,
+body.bygg input:hover:not(:disabled), body.bygg select:hover:not(:disabled), body.bygg textarea:hover { border-color: color-mix(in srgb, var(--a-dempa) 45%, var(--a-strek)); }
+body.byggjar input:focus, body.byggjar select:focus, body.byggjar textarea:focus,
+body.bygg input:focus, body.bygg select:focus, body.bygg textarea:focus { border-color: var(--a-aksent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--a-aksent) 18%, transparent); }
+
+/* ---- Menyen til venstre (PC) / stripa øvst (mobil) ----------------------- */
+.adminmeny { font-family: var(--a-skrift); background: var(--a-meny); color: var(--a-meny-tekst); font-size: 14px; z-index: 40; }
+.adminmeny a, .adminmeny button.lenkje { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: 7px;
+  color: inherit; text-decoration: none; background: none; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.adminmeny a:hover, .adminmeny button.lenkje:hover { background: #ffffff10; color: #fff; }
+.adminmeny a.aktiv { background: #ffffff18; color: #fff; font-weight: 600; }
+.adminmeny a:focus-visible, .adminmeny button:focus-visible { outline: 2px solid var(--a-fokus); outline-offset: -2px; }
+.adminmeny svg { width: 17px; height: 17px; flex: none; opacity: .85; }
+.adminmeny .merkenamn { display: block; padding: 2px 10px 18px; color: #fff; font-weight: 700; font-size: 15px; line-height: 1.25; text-decoration: none; }
+.adminmeny .merkenamn small { display: block; font-weight: 400; font-size: 12px; color: var(--a-meny-dempa); }
+.adminmeny .gruppe { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--a-meny-dempa); padding: 14px 10px 6px; }
+.adminmeny .skil { height: 1px; background: #ffffff18; margin: 10px 4px; }
+.adminmeny .lenkjer { display: flex; flex-direction: column; gap: 2px; }
+.adminmeny .menyknapp { display: none; }
+
+@media (min-width: 901px) {
+  .adminmeny { position: fixed; inset: 0 auto 0 0; width: var(--a-menybreidd); padding: 22px 12px; overflow-y: auto; }
+  body.har-meny { padding-left: var(--a-menybreidd); }
+}
+@media (max-width: 900px) {
+  .adminmeny { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; }
+  .adminmeny .merkenamn { padding: 0; font-size: 15px; }
+  .adminmeny .merkenamn small { display: none; }
+  .adminmeny .menyknapp { display: inline-flex; align-items: center; gap: 6px; background: #ffffff14; color: #fff; border: 0; border-radius: 8px;
+    padding: 7px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+  .adminmeny .lenkjer { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--a-meny); padding: 6px 10px 14px;
+    box-shadow: 0 12px 24px rgba(0,0,0,.25); max-height: calc(100vh - 56px); overflow-y: auto; }
+  .adminmeny.open .lenkjer { display: flex; }
+  .adminmeny .gruppe { padding-top: 10px; }
+}
+
+/* Byggjarane: plass til menyen (heile høgda minus stripa på mobil) */
+@media (min-width: 821px) and (max-width: 900px) {
+  body.har-meny .b-ramme { height: calc(100vh - 54px); }
+  body.har-meny .b-skjerm { max-height: calc(100vh - 160px); }
+}
+
+/* ---- «+ Lag nytt ▾»-menyen ---------------------------------------------- */
+.nyttmeny { position: relative; display: inline-block; }
+.nyttliste { position: absolute; right: 0; top: calc(100% + 6px); z-index: 50; min-width: 260px; padding: 6px;
+  background: var(--a-flate); border: 1px solid var(--a-strek); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.16); }
+.nyttliste[hidden] { display: none; }
+.nyttliste a, .nyttliste button { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; font: inherit; font-size: 14px; color: var(--a-tekst);
+  background: none; border: 0; border-radius: 7px; padding: 8px 10px; text-decoration: none; cursor: pointer; }
+.nyttliste a:hover, .nyttliste button:hover, .nyttliste a:focus-visible, .nyttliste button:focus-visible { background: var(--a-bg); outline: none; }
+.nyttliste svg { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--a-aksent); }
+.nyttliste b { display: block; font-weight: 600; }
+.nyttliste small { display: block; font-size: 12.5px; color: var(--a-dempa); }
