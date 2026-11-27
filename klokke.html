@@ -18,7 +18,7 @@
   Valfritt i lenkja (etter #) – vel det helst i plakatbyggjaren (malen «Klokke, vêr og ferje»):
     stil=avis           klokkestil (fargar, skrift og form): petrol (Sand og petrol, standard), avis (Avispapir),
                         havbla (Havblå), solgul (Solgul), mynte (Mynte), dognet (Dag og natt: lys om dagen,
-                        mørk etter solnedgang), polar (Polar: tida som ringar). Namna står òg i plakatmal.js (KLOKKESTILAR)
+                        mørk etter solnedgang), polar (Polar: klassisk polarklokke med tekst langs banda). Namna står òg i plakatmal.js (KLOKKESTILAR)
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel),
                         avvik (stripa om avvikande opningstid)
     veksle=0            vis alt på éin gong, med enklare vêr (standard: éin ting om gongen under klokka,
@@ -131,16 +131,16 @@
   :root[data-stil="mynte"] .rad { border: 0; background: rgba(255,255,255,.55); border-radius: 3.2rem; padding: var(--rad) 4rem; margin-top: 2rem; }
   :root[data-stil="mynte"].veksle .rad { padding: 5.6rem 6rem; border-radius: 5rem; }
   :root[data-stil="mynte"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 3rem; }
-  /* Polar: tida som fem ringar som fyller seg (sekund innst, dag i månaden ytst), klokkeslettet i midten */
-  :root[data-stil="polar"] { --bakgrunn: #f4f1ea; --tekst: #1c2230; --dempa: #646b78; --aksent: #e2553a; --aksent-tekst: #fff; --gron: #2a7a4b;
-                             --skrift: "Outfit", "Ubuntu", sans-serif; --klokkevekt: 300; --klokkespenn: -.02em;
-                             --r1: #e2553a; --r2: #f08a24; --r3: #e9b824; --r4: #3aa39a; --r5: #3b6fb6; }
+  /* Polar: den klassiske polarklokka – seks tjukke band som fyller seg, med tida skriven langs
+     enden av kvart band (sekund ytst, månad inst). Svart bakgrunn som originalen, monospace-skrift. */
+  :root[data-stil="polar"] { --bakgrunn: #0b0b0c; --tekst: #f4f4f2; --dempa: #a3a3a8; --aksent: #10d0ab; --aksent-tekst: #0b0b0c; --gron: #7fe0a6;
+                             --skrift: "Space Grotesk", "Ubuntu", sans-serif; --klokkeskrift: "Space Mono", "Ubuntu Mono", monospace; }
   :root[data-stil="polar"] .klokke { display: none; }
   :root[data-stil="polar"] .polar { display: block; }
   :root[data-stil="polar"] .klokkeblokk { text-align: center; }
   :root[data-stil="polar"] .dato { justify-content: center; }
   :root[data-stil="polar"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
-  :root[data-stil="polar"] .rad { border-top: .3rem solid color-mix(in srgb, var(--tekst) 10%, transparent); }
+  :root[data-stil="polar"] .rad { border-top-color: rgba(255,255,255,.14); }
   /* Dag og natt: lys om dagen, mørk når sola har gått ned. Svært tynn klokke (Inter) */
   :root[data-stil="dognet"] { --bakgrunn: #f6f6f2; --tekst: #14171c; --dempa: #626a75; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b;
                               --skrift: "Inter", "Ubuntu", sans-serif; --klokkevekt: 200; --klokkespenn: -.05em; --ks: 1.05; }
@@ -210,17 +210,12 @@
   .analog .sek { stroke: var(--aksent); }
 
   /* Polarklokke (berre i stilen «Polar») */
-  .polar { display: none; width: 64rem; height: 64rem; margin: 0 auto; }
-  :root.veksle .polar { width: 70rem; height: 70rem; }
-  :root.tett .polar { width: 50rem; height: 50rem; }
-  :root.tettare .polar { width: 40rem; height: 40rem; }
-  .polar .spor { fill: none; stroke: var(--tekst); stroke-opacity: .07; }
-  .polar .ring { fill: none; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
-  .polar .ring.null { transition: none; }
-  .polar .midt { fill: var(--tekst); font-family: var(--klokkeskrift); font-weight: var(--klokkevekt); font-size: 27px;
-                 text-anchor: middle; dominant-baseline: central; letter-spacing: -.02em; }
-  .polar .etk { fill: var(--dempa); font-family: var(--skrift); font-size: 5.2px; font-weight: 700; letter-spacing: .12em;
-                text-anchor: end; dominant-baseline: central; text-transform: uppercase; }
+  .polar { display: none; width: 76rem; height: 76rem; margin: 0 auto; }
+  :root.veksle .polar { width: 84rem; height: 84rem; }
+  :root.tett .polar { width: 60rem; height: 60rem; }
+  :root.tettare .polar { width: 48rem; height: 48rem; }
+  .polar .band { fill: none; }
+  .polar .etk { fill: #0b0b0c; font-family: var(--klokkeskrift); font-weight: 700; font-size: 6.4px; dominant-baseline: central; text-anchor: end; }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -491,7 +486,7 @@ const STILAR = {
   mynte:    ["Nunito:wght@400;700;800"],
   retro:    ["Righteous", "Quicksand:wght@400;600;700"],
   dognet:   ["Inter:wght@200;400;700"],
-  polar:    ["Outfit:wght@300;500;700"],
+  polar:    ["Space+Mono:wght@700", "Space+Grotesk:wght@400;700"],
 };
 // Eldre lenkjer: farge=… blir til næraste stil, farge=auto til «Dag og natt»
 const GAMLE_FARGAR = { petrol: "petrol", papir: "klassisk", havbla: "havbla", himmel: "havbla", sennep: "solgul", aprikos: "retro",
@@ -542,32 +537,42 @@ function teiknKlokke() {
     $("sekundvisar").setAttribute("transform", `rotate(${sek * 6} 100 100)`);
   }
 }
-// Polarklokka: fem ringar, utanfrå og inn: dag i månaden, vekedag, time, minutt, sekund.
-// Kvar ring er ein sirkel med pathLength 100, så stroke-dasharray «p 100» fyller p prosent.
-const POLAR = [["mnd", 92, "--r5"], ["dag", 78, "--r4"], ["tim", 64, "--r3"], ["min", 50, "--r2"], ["sek", 36, "--r1"]];
+// Polarklokka: seks band, utanfrå og inn: sekund, minutt, time, vekedag, dato, månad.
+// Kvart band er ein sirkel med pathLength 100, så stroke-dasharray «p 100» fyller p prosent.
+// Teksten står langs ein sirkel med same radius og sluttar ved enden av bandet.
+const POLAR = [["sek", 92, "#10d0ab"], ["min", 77, "#1b9be2"], ["tim", 62, "#f2361e"], ["dag", 47, "#e9cf1f"], ["dato", 32, "#e8b51b"], ["mnd", 17.5, "#e9a21a"]];
+const BAND = 13;
 if (STIL === "polar") {
   const ns = "http://www.w3.org/2000/svg", svg = $("polar");
-  const lag = (namn, attr) => { const e = document.createElementNS(ns, namn); for (const [k, v] of Object.entries(attr)) e.setAttribute(k, v); svg.append(e); return e; };
+  const lag = (namn, attr, mor = svg) => { const e = document.createElementNS(ns, namn); for (const [k, v] of Object.entries(attr)) e.setAttribute(k, v); mor.append(e); return e; };
   for (const [id, r, farge] of POLAR) {
-    lag("circle", { class: "spor", cx: 100, cy: 100, r, "stroke-width": 10 });
-    lag("circle", { class: "ring", id: "ring-" + id, cx: 100, cy: 100, r, "stroke-width": 10, pathLength: 100,
-                    stroke: `var(${farge})`, "stroke-dasharray": "0 100", transform: "rotate(-90 100 100)" });
+    const b = id === "mnd" ? 9 : BAND;
+    lag("circle", { class: "band", id: "band-" + id, cx: 100, cy: 100, r, "stroke-width": b, pathLength: 100, stroke: farge,
+                    "stroke-dasharray": "0 100", transform: "rotate(-90 100 100)" });
+    // Sirkelen teksten følgjer: frå toppen, med klokka
+    lag("path", { id: "bane-" + id, fill: "none", d: `M100,${100 - r} A${r},${r} 0 1,1 100,${100 + r} A${r},${r} 0 1,1 100,${100 - r}` });
+    const t = lag("text", { class: "etk" + (id === "mnd" ? " liten" : "") });
+    if (id === "mnd") t.setAttribute("font-size", "5px");
+    lag("textPath", { href: "#bane-" + id, id: "tekst-" + id }, t);
   }
-  lag("text", { class: "midt", id: "polartid", x: 100, y: 101 });
 }
+const VEKEDAG = ["sundag", "måndag", "tysdag", "onsdag", "torsdag", "fredag", "laurdag"];
 function teiknPolar(d) {
   const dagarIMnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  const sek = d.getSeconds(), min = d.getMinutes() + sek / 60, tim = d.getHours() + min / 60;
-  const verdi = { sek: sek / 60, min: min / 60, tim: tim / 24, dag: ((d.getDay() + 6) % 7 + tim / 24) / 7,
-                  mnd: (d.getDate() - 1 + tim / 24) / dagarIMnd };
-  for (const [id] of POLAR) {
-    const e = $("ring-" + id), p = Math.max(.01, verdi[id] * 100);
-    // Når ringen byrjar på nytt (59 → 0 sekund), skal han ikkje gli bakover
-    const før = parseFloat(e.getAttribute("stroke-dasharray"));
-    e.classList.toggle("null", p < før);
-    e.setAttribute("stroke-dasharray", p.toFixed(2) + " 100");
+  const s = d.getSeconds(), m = d.getMinutes(), h = d.getHours();
+  const del = { sek: s / 60, min: (m + s / 60) / 60, tim: (h + m / 60) / 24, dag: ((d.getDay() + 6) % 7 + (h + m / 60) / 24) / 7,
+                dato: (d.getDate() - 1 + (h + m / 60) / 24) / dagarIMnd, mnd: (d.getMonth() + (d.getDate() - 1) / dagarIMnd) / 12 };
+  const tekst = { sek: s + " sekund", min: m + " minutt", tim: h + (h === 1 ? " time" : " timar"), dag: VEKEDAG[d.getDay()],
+                  dato: d.getDate() + ".", mnd: MND[d.getMonth()] };
+  for (const [id, r] of POLAR) {
+    const tp = $("tekst-" + id);
+    tp.textContent = tekst[id];
+    // Bandet er minst så langt at teksten får plass (som i originalen)
+    const omkrins = 2 * Math.PI * r, tekstDel = (tp.parentNode.getComputedTextLength() + 7) / omkrins;
+    const p = Math.max(del[id], tekstDel) * 100;
+    $("band-" + id).setAttribute("stroke-dasharray", p.toFixed(2) + " 100");
+    tp.setAttribute("startOffset", (p - 2.5 / omkrins * 100).toFixed(2) + "%");
   }
-  $("polartid").textContent = p2(d.getHours()) + ":" + p2(d.getMinutes());
 }
 // Strekar og romartal på urskiva (éin gong)
 if (STIL === "klassisk") {
