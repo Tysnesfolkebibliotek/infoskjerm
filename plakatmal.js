@@ -68,7 +68,7 @@ const KLOKKESTILAR = {
   retro:    { namn: "Retro",          skildring: "70-tal med striper" },
   dognet:   { namn: "Dag og natt",    skildring: "lys om dagen, mørk om kvelden" },
   polar:    { namn: "Polar",          skildring: "klassisk polarklokke med tekst langs banda" },
-  kuber:    { namn: "Kuber",          skildring: "datoen i kuber som blir fylt gjennom døgnet" },
+  gnomon:   { namn: "Gnomon",         skildring: "kvadrat i L-former som blir fylte gjennom døgnet" },
 };
 const plakatside = h => PLAKATSIDER[new URLSearchParams(h).get("side")] || null;
 // Namnet på ei plakatside, med stilen: «Klokke, vêr og ferje (Klassisk)»

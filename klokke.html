@@ -19,7 +19,7 @@
     stil=avis           klokkestil (fargar, skrift og form): petrol (Sand og petrol, standard), avis (Avispapir),
                         havbla (Havblå), solgul (Solgul), mynte (Mynte), dognet (Dag og natt: lys om dagen,
                         mørk etter solnedgang), polar (Polar: klassisk polarklokke med tekst langs banda),
-                        kuber (Kuber: datoen i kuber som blir fylt gjennom døgnet). Namna står òg i plakatmal.js (KLOKKESTILAR)
+                        gnomon (Gnomon: ei flate av kvadrat som blir fylt gjennom døgnet). Namna står òg i plakatmal.js (KLOKKESTILAR)
     utan=skule,ferje    ta bort boksar: ope (opningstid), skule, ver, sol, ferje, dag (Dagen i dag), fare (farevarsel),
                         avvik (stripa om avvikande opningstid)
     veksle=0            vis alt på éin gong, med enklare vêr (standard: éin ting om gongen under klokka,
@@ -142,15 +142,16 @@
   :root[data-stil="polar"] .dato { justify-content: center; }
   :root[data-stil="polar"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
   :root[data-stil="polar"] .rad { border-top-color: rgba(255,255,255,.14); }
-  /* Kuber: datoen står stor i eit kvitt rom, bygd av små kuber. Silhuetten er grå og blir fylt
-     med svarte kuber nedanfrå og opp gjennom døgnet (tom ved midnatt, full rett før neste). */
-  :root[data-stil="kuber"] { --bakgrunn: #ffffff; --tekst: #111; --dempa: #6f6f6f; --aksent: #111; --aksent-tekst: #fff; --gron: #2a7a4b;
-                             --skrift: "Space Grotesk", "Ubuntu", sans-serif; --klokkeskrift: "Space Mono", "Ubuntu Mono", monospace; }
-  :root[data-stil="kuber"] .klokke, :root[data-stil="kuber"] .dato { display: none; }
-  :root[data-stil="kuber"] .kuber { display: block; }
-  :root[data-stil="kuber"] .namn { font-family: var(--klokkeskrift); letter-spacing: .04em; }
-  :root[data-stil="kuber"] .rad { border-top: .2rem solid #111; }
-  :root[data-stil="kuber"].veksle .klokkeblokk { border-bottom: .2rem solid #111; }
+  /* Gnomon: éi flate på 38 × 18 einingar som blir fylt gjennom døgnet. Timane er 24 store kvadrat (6 × 4),
+     minutta 60 mellomstore som ei L rundt timane, sekunda 60 små som ei ny L rundt minutta (gnomonen frå
+     gresk matematikk). 384 + 240 + 60 = 684 = 38 × 18, så flata går opp utan hol. */
+  :root[data-stil="gnomon"] { --bakgrunn: #ffffff; --tekst: #111; --dempa: #6f6f6f; --aksent: #111; --aksent-tekst: #fff; --gron: #2a7a4b;
+                              --skrift: "Space Grotesk", "Ubuntu", sans-serif; --klokkeskrift: "Space Mono", "Ubuntu Mono", monospace; }
+  :root[data-stil="gnomon"] .klokke, :root[data-stil="gnomon"] .dato { display: none; }
+  :root[data-stil="gnomon"] .gnomon { display: block; }
+  :root[data-stil="gnomon"] .namn { font-family: var(--klokkeskrift); letter-spacing: .04em; }
+  :root[data-stil="gnomon"] .rad { border-top: .2rem solid #111; }
+  :root[data-stil="gnomon"].veksle .klokkeblokk { border-bottom: .2rem solid #111; }
   /* Dag og natt: lys om dagen, mørk når sola har gått ned. Svært tynn klokke (Inter) */
   :root[data-stil="dognet"] { --bakgrunn: #f6f6f2; --tekst: #14171c; --dempa: #626a75; --aksent: #e4572e; --aksent-tekst: #fff; --gron: #2a7a4b;
                               --skrift: "Inter", "Ubuntu", sans-serif; --klokkevekt: 200; --klokkespenn: -.05em; --ks: 1.05; }
@@ -227,25 +228,16 @@
   .polar .band { fill: none; }
   .polar .etk { fill: #0b0b0c; font-family: var(--klokkeskrift); font-weight: 700; font-size: 6.4px; dominant-baseline: central; text-anchor: end; }
 
-  /* Kubeklokke (berre i stilen «Kuber») */
-  .kuber { display: none; }
-  .kuber .rom { display: grid; gap: .5rem; padding: 3rem; border: .3rem solid #111; }
-  .kuber .rom i { aspect-ratio: 1; background: transparent; position: relative; }
-  .kuber .rom i.form { background: #e4e4e1; }
-  .kuber .rom i.form::after { content: ""; position: absolute; inset: 0; background: #111; opacity: var(--o, 0); transition: opacity 1s linear; }
-  :root.tett .kuber .rom { width: 84%; margin: 0 auto; }
-  :root.tettare .kuber .rom { width: 68%; margin: 0 auto; }
-  /* Tida under rommet: stor kube med timetalet, mellomstor med minutta (botnen i linje) */
-  .kuber .tid { display: flex; align-items: flex-end; gap: 1.6rem; margin-top: 2.4rem; }
-  .kuber .kube { display: grid; place-items: center; background: #111; color: #fff; font-family: var(--klokkeskrift); font-weight: 700;
-                 letter-spacing: -.04em; line-height: 1; }
-  .kuber .kube.stor { width: 24rem; height: 24rem; font-size: 13rem; }
-  .kuber .kube.middels { width: 15rem; height: 15rem; font-size: 8rem; }
-  :root.tett .kuber .kube.stor, :root.tettare .kuber .kube.stor { width: 18rem; height: 18rem; font-size: 10rem; }
-  :root.tett .kuber .kube.middels, :root.tettare .kuber .kube.middels { width: 11.5rem; height: 11.5rem; font-size: 6rem; }
-  .kuber .info { margin-left: auto; text-align: right; font-family: var(--klokkeskrift); font-size: 3rem; line-height: 1.35;
-                 text-transform: uppercase; letter-spacing: .02em; color: var(--dempa); }
-  .kuber .info b { display: block; color: var(--tekst); }
+  /* Gnomonklokke (berre i stilen «Gnomon») */
+  .gnomon { display: none; }
+  .gnomon svg { display: block; width: 100%; height: auto; }
+  :root.tett .gnomon svg { width: 84%; }
+  :root.tettare .gnomon svg { width: 68%; }
+  .gnomon rect { fill: #e4e4e1; }
+  .gnomon rect.fylt { fill: #111; }
+  .gnomon .linje { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2.8rem; font-family: var(--klokkeskrift);
+                   font-size: 3rem; text-transform: uppercase; letter-spacing: .02em; color: var(--dempa); }
+  .gnomon .linje b { font-size: 5.2rem; line-height: 1; color: var(--tekst); }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -409,12 +401,9 @@
       <g id="sekundvisar"><line class="visar sek" x1="100" y1="124" x2="100" y2="20" stroke-width="1.2"/><circle cx="100" cy="100" r="4" fill="var(--aksent)"/></g>
       <circle cx="100" cy="100" r="1.6" fill="var(--bakgrunn)"/>
     </svg>
-    <div class="kuber" id="kuber" aria-hidden="true">
-      <div class="rom" id="kuberom"></div>
-      <div class="tid">
-        <div class="kube stor" id="kubetim"></div><div class="kube middels" id="kubemin"></div>
-        <div class="info"><b id="kubedag"></b><span id="kubedato"></span></div>
-      </div>
+    <div class="gnomon" id="gnomon" aria-hidden="true">
+      <svg id="gnomonflate" viewBox="0 0 38 18"></svg>
+      <div class="linje"><b id="gnomontid"></b><span id="gnomondato"></span></div>
     </div>
     <svg class="polar" id="polar" viewBox="0 0 200 200" aria-hidden="true"></svg>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
@@ -524,7 +513,7 @@ const STILAR = {
   retro:    ["Righteous", "Quicksand:wght@400;600;700"],
   dognet:   ["Inter:wght@200;400;700"],
   polar:    ["Space+Mono:wght@700", "Space+Grotesk:wght@400;700"],
-  kuber:    ["Space+Mono:wght@400;700", "Space+Grotesk:wght@400;700"],
+  gnomon:   ["Space+Mono:wght@400;700", "Space+Grotesk:wght@400;700"],
 };
 // Eldre lenkjer: farge=… blir til næraste stil, farge=auto til «Dag og natt»
 const GAMLE_FARGAR = { petrol: "petrol", papir: "klassisk", havbla: "havbla", himmel: "havbla", sennep: "solgul", aprikos: "retro",
@@ -626,48 +615,38 @@ if (STIL === "polar") {
   // Når nettskrifta er lasta, er teksten ei anna breidd: mål på nytt
   document.fonts && document.fonts.ready.then(() => { for (const k in tekstLengd) delete tekstLengd[k]; });
 }
-// Kubeklokka: dagen i månaden med pikseltal (5 × 7), kvar piksel delt i 3 × 3 kuber.
-// Kubene i silhuetten blir fylte nedanfrå og opp (venstre mot høgre i kvar rad) gjennom døgnet;
-// kuba som er på veg, toner seg inn etter kor langt det har gått av tida hennar.
-const PIKSELTAL = {
-  0: ["01110", "10001", "10011", "10101", "11001", "10001", "01110"], 1: ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
-  2: ["01110", "10001", "00001", "00010", "00100", "01000", "11111"], 3: ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
-  4: ["00010", "00110", "01010", "10010", "11111", "00010", "00010"], 5: ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
-  6: ["00110", "01000", "10000", "11110", "10001", "10001", "01110"], 7: ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
-  8: ["01110", "10001", "10001", "01110", "10001", "10001", "01110"], 9: ["01110", "10001", "10001", "01111", "00001", "00010", "01100"] };
-const DEL = 3;
-if (STIL === "kuber") {
-  let formDato = "", fyllOrden = [];
-  const bygg = d => {
-    // Rutenettet for datoen: siffera med éi tom kolonne mellom
-    const siffer = p2(d.getDate()).split("");   // alltid to siffer, så rommet har same form
-    const rader = PIKSELTAL[0].map((_, r) => siffer.map(t => PIKSELTAL[t][r]).join("0"));
-    const kol = rader[0].length * DEL, rom = $("kuberom");
-    rom.style.gridTemplateColumns = `repeat(${kol}, 1fr)`;
-    rom.replaceChildren();
-    const celler = [];
-    for (let y = 0; y < rader.length * DEL; y++)
-      for (let x = 0; x < kol; x++) {
-        const e = document.createElement("i");
-        if (rader[Math.floor(y / DEL)][Math.floor(x / DEL)] === "1") { e.className = "form"; celler.push([y, x, e]); }
-        rom.append(e);
-      }
-    // Nedste rad først, venstre mot høgre
-    fyllOrden = celler.sort((a, b) => b[0] - a[0] || a[1] - b[1]).map(c => c[2]);
-    formDato = isoDato(d);
-  };
+// Gnomonklokka. Kvar del er ei liste over kvadrat [x, y, side] i einingar, i den rekkjefølgja dei blir fylte.
+// Timar: 6 × 4 store (side 4). Minutt: rada under timane (12) og blokka til høgre (6 × 8), side 2.
+// Sekund: stripa nedst (14 × 2) og stripa heilt til høgre (2 × 16), side 1.
+const omr = (x0, y0, kol, rader, e) => Array.from({ length: kol * rader }, (_, i) => [x0 + (i % kol) * e, y0 + Math.floor(i / kol) * e, e]);
+const GNOMON = { tim: omr(0, 0, 6, 4, 4), min: [...omr(0, 16, 12, 1, 2), ...omr(24, 0, 6, 8, 2)],
+                 sek: [...omr(24, 16, 14, 2, 1), ...omr(36, 0, 2, 16, 1)] };
+if (STIL === "gnomon") {
+  const ns = "http://www.w3.org/2000/svg", flate = $("gnomonflate"), GAP = .14;
+  const ruter = {};
+  for (const [del, liste] of Object.entries(GNOMON)) ruter[del] = liste.map(([x, y, e]) => {
+    const r = document.createElementNS(ns, "rect");
+    Object.entries({ x: x + GAP / 2, y: y + GAP / 2, width: e - GAP, height: e - GAP }).forEach(([k, v]) => r.setAttribute(k, v));
+    // Ruta som er på veg: eit svart lag oppå som toner seg inn
+    const lag = document.createElementNS(ns, "rect");
+    for (const k of ["x", "y", "width", "height"]) lag.setAttribute(k, r.getAttribute(k));
+    lag.setAttribute("class", "fylt"); lag.style.opacity = 0; lag.style.transition = "opacity 1s linear";
+    flate.append(r, lag);
+    return [r, lag];
+  });
   const teikn = () => {
-    const d = no();
-    if (isoDato(d) !== formDato) bygg(d);
-    const del = (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 86400 * fyllOrden.length;
-    fyllOrden.forEach((e, i) => {
-      const o = Math.min(1, Math.max(0, del - i));
-      e.style.setProperty("--o", o.toFixed(3));
-    });
-    $("kubetim").textContent = p2(d.getHours());
-    $("kubemin").textContent = p2(d.getMinutes());
-    $("kubedag").textContent = DAGNAMN[d.getDay()];
-    $("kubedato").innerHTML = d.getDate() + ". " + MND[d.getMonth()] + "<br>veke " + veke(d);
+    const d = no(), h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+    const tal = { tim: [h, m / 60 + s / 3600], min: [m, s / 60], sek: [s, 0] };
+    for (const [del, [n, frac]] of Object.entries(tal))
+      ruter[del].forEach(([r, lag], i) => {
+        r.classList.toggle("fylt", i < n);
+        const o = i === n ? frac : 0;
+        // Når ein del byrjar på nytt, skal ingenting tone seg ut
+        lag.style.transition = o < parseFloat(lag.style.opacity || 0) ? "none" : "opacity 1s linear";
+        lag.style.opacity = o;
+      });
+    $("gnomontid").textContent = p2(h) + ":" + p2(m);
+    $("gnomondato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()] + " · veke " + veke(d);
   };
   teikn(); setInterval(teikn, 1000);
 }
