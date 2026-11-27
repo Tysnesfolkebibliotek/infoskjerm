@@ -90,8 +90,6 @@
   :root[data-stil="klassisk"] .klokke { display: none; }
   :root[data-stil="klassisk"] .analog { display: block; }
   :root[data-stil="klassisk"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
-  /* Pynt: liten blomster-ornament mellom klokka og radene */
-  :root[data-stil="klassisk"] .ornament { display: block; }
   /* Retro: 70-tal i kremgult, brunt og oransje, striper øvst og nedst, Righteous og Quicksand */
   :root[data-stil="retro"] { --bakgrunn: #f2e4c4; --tekst: #43260f; --dempa: #7a5a3c; --aksent: #d65f22; --aksent-tekst: #fff; --gron: #4e7a2a;
                              --skrift: "Quicksand", "Ubuntu", sans-serif; --klokkeskrift: "Righteous", "Ubuntu", sans-serif;
@@ -200,7 +198,6 @@
   .analog .tal { fill: var(--tekst); font-family: var(--klokkeskrift); font-size: 13px; text-anchor: middle; dominant-baseline: central; }
   .analog .visar { stroke: var(--tekst); stroke-linecap: round; }
   .analog .sek { stroke: var(--aksent); }
-  .ornament { display: none; text-align: center; color: var(--gull, var(--aksent)); font-size: 5rem; line-height: 1; margin-top: 2.4rem; }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -365,7 +362,6 @@
       <circle cx="100" cy="100" r="1.6" fill="var(--bakgrunn)"/>
     </svg>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
-    <div class="ornament" aria-hidden="true">❦</div>
   </div>
 
   <div class="rader">
