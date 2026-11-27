@@ -529,7 +529,6 @@ function teiknKlokke() {
   $("kolon").classList.toggle("av", d.getSeconds() % 2 === 1);
   $("dato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()];
   $("veke").textContent = "Veke " + veke(d);
-  if (STIL === "polar") teiknPolar(d);
   if (STIL === "klassisk") {
     const sek = d.getSeconds(), min = d.getMinutes() + sek / 60, tim = (d.getHours() % 12) + min / 60;
     $("timevisar").setAttribute("transform", `rotate(${tim * 30} 100 100)`);
@@ -557,22 +556,32 @@ if (STIL === "polar") {
   }
 }
 const VEKEDAG = ["sundag", "måndag", "tysdag", "onsdag", "torsdag", "fredag", "laurdag"];
+// Teiknar banda ut frå tida med millisekund, så dei glir jamt (som originalen) i staden for å hoppe.
+// Tekstlengdene blir lagra og målte på nytt berre når teksten endrar seg eller skrifta er lasta.
+const tekstLengd = {};
 function teiknPolar(d) {
   const dagarIMnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  const s = d.getSeconds(), m = d.getMinutes(), h = d.getHours();
-  const del = { sek: s / 60, min: (m + s / 60) / 60, tim: (h + m / 60) / 24, dag: ((d.getDay() + 6) % 7 + (h + m / 60) / 24) / 7,
+  const s = d.getSeconds(), m = d.getMinutes(), h = d.getHours(), sf = s + d.getMilliseconds() / 1000;
+  const del = { sek: sf / 60, min: (m + sf / 60) / 60, tim: (h + m / 60) / 24, dag: ((d.getDay() + 6) % 7 + (h + m / 60) / 24) / 7,
                 dato: (d.getDate() - 1 + (h + m / 60) / 24) / dagarIMnd, mnd: (d.getMonth() + (d.getDate() - 1) / dagarIMnd) / 12 };
   const tekst = { sek: s + " sekund", min: m + " minutt", tim: h + (h === 1 ? " time" : " timar"), dag: VEKEDAG[d.getDay()],
                   dato: d.getDate() + ".", mnd: MND[d.getMonth()] };
   for (const [id, r] of POLAR) {
     const tp = $("tekst-" + id);
-    tp.textContent = tekst[id];
+    if (tp.textContent !== tekst[id]) { tp.textContent = tekst[id]; delete tekstLengd[id]; }
+    if (!(id in tekstLengd)) tekstLengd[id] = tp.parentNode.getComputedTextLength();
     // Bandet er minst så langt at teksten får plass (som i originalen)
-    const omkrins = 2 * Math.PI * r, tekstDel = (tp.parentNode.getComputedTextLength() + 7) / omkrins;
-    const p = Math.max(del[id], tekstDel) * 100;
-    $("band-" + id).setAttribute("stroke-dasharray", p.toFixed(2) + " 100");
-    tp.setAttribute("startOffset", (p - 2.5 / omkrins * 100).toFixed(2) + "%");
+    const omkrins = 2 * Math.PI * r, p = Math.max(del[id], (tekstLengd[id] + 7) / omkrins) * 100;
+    $("band-" + id).setAttribute("stroke-dasharray", p.toFixed(3) + " 100");
+    tp.setAttribute("startOffset", (p - 250 / omkrins).toFixed(3) + "%");
   }
+}
+if (STIL === "polar") {
+  // Eiga løkke, uavhengig av resten av sida: startar med ein gong, ca. 30 bilete i sekundet
+  let sist = 0;
+  (function løkke(t) { if (t - sist > 33) { sist = t; teiknPolar(no()); } requestAnimationFrame(løkke); })(0);
+  // Når nettskrifta er lasta, er teksten ei anna breidd: mål på nytt
+  document.fonts && document.fonts.ready.then(() => { for (const k in tekstLengd) delete tekstLengd[k]; });
 }
 // Strekar og romartal på urskiva (éin gong)
 if (STIL === "klassisk") {
