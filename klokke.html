@@ -235,10 +235,17 @@
   .kuber .rom i.form::after { content: ""; position: absolute; inset: 0; background: #111; opacity: var(--o, 0); transition: opacity 1s linear; }
   :root.tett .kuber .rom { width: 84%; margin: 0 auto; }
   :root.tettare .kuber .rom { width: 68%; margin: 0 auto; }
-  .kuber .tekst { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2.4rem; font-family: var(--klokkeskrift);
-                  font-size: 3rem; text-transform: uppercase; letter-spacing: .02em; }
-  .kuber .tekst b { font-weight: 700; font-size: 5.2rem; line-height: 1; }
-  .kuber .tekst span { color: var(--dempa); }
+  /* Tida under rommet: stor kube med timetalet, mellomstor med minutta (botnen i linje) */
+  .kuber .tid { display: flex; align-items: flex-end; gap: 1.6rem; margin-top: 2.4rem; }
+  .kuber .kube { display: grid; place-items: center; background: #111; color: #fff; font-family: var(--klokkeskrift); font-weight: 700;
+                 letter-spacing: -.04em; line-height: 1; }
+  .kuber .kube.stor { width: 24rem; height: 24rem; font-size: 13rem; }
+  .kuber .kube.middels { width: 15rem; height: 15rem; font-size: 8rem; }
+  :root.tett .kuber .kube.stor, :root.tettare .kuber .kube.stor { width: 18rem; height: 18rem; font-size: 10rem; }
+  :root.tett .kuber .kube.middels, :root.tettare .kuber .kube.middels { width: 11.5rem; height: 11.5rem; font-size: 6rem; }
+  .kuber .info { margin-left: auto; text-align: right; font-family: var(--klokkeskrift); font-size: 3rem; line-height: 1.35;
+                 text-transform: uppercase; letter-spacing: .02em; color: var(--dempa); }
+  .kuber .info b { display: block; color: var(--tekst); }
 
   /* ---- Radene ---- */
   /* Klokka og radene står midt i den ledige plassen mellom farevarselet og botnen */
@@ -404,7 +411,10 @@
     </svg>
     <div class="kuber" id="kuber" aria-hidden="true">
       <div class="rom" id="kuberom"></div>
-      <div class="tekst"><b id="kubetid"></b><span id="kubedato"></span></div>
+      <div class="tid">
+        <div class="kube stor" id="kubetim"></div><div class="kube middels" id="kubemin"></div>
+        <div class="info"><b id="kubedag"></b><span id="kubedato"></span></div>
+      </div>
     </div>
     <svg class="polar" id="polar" viewBox="0 0 200 200" aria-hidden="true"></svg>
     <div class="dato"><b id="dato"></b><span id="veke"></span></div>
@@ -654,8 +664,10 @@ if (STIL === "kuber") {
       const o = Math.min(1, Math.max(0, del - i));
       e.style.setProperty("--o", o.toFixed(3));
     });
-    $("kubetid").textContent = p2(d.getHours()) + ":" + p2(d.getMinutes());
-    $("kubedato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()] + " · veke " + veke(d);
+    $("kubetim").textContent = p2(d.getHours());
+    $("kubemin").textContent = p2(d.getMinutes());
+    $("kubedag").textContent = DAGNAMN[d.getDay()];
+    $("kubedato").innerHTML = d.getDate() + ". " + MND[d.getMonth()] + "<br>veke " + veke(d);
   };
   teikn(); setInterval(teikn, 1000);
 }
