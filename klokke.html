@@ -648,7 +648,8 @@ if (STIL === "gnomon") {
   const førre = {};
   const teikn = () => {
     const d = no(), h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-    const tal = { tim: [h, m / 60 + s / 3600], min: [m, s / 60], sek: [s, 0] };
+    // Eit kvadrat er anten fylt eller ikkje – ingen gradvis overgang (tal fullførte timar/minutt/sekund)
+    const tal = { tim: [h, 0], min: [m, 0], sek: [s, 0] };
     for (const [del, [n, frac]] of Object.entries(tal)) {
       const liste = ruter[del], før = førre[del];
       if (før != null && n > før) for (let i = før; i < n; i++) del === "sek" ? sprett(liste[i]) : dunk(liste[i], del === "tim" ? 1.12 : 1.25);
