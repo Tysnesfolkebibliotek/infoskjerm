@@ -142,9 +142,9 @@
   :root[data-stil="polar"] .dato { justify-content: center; }
   :root[data-stil="polar"].veksle .klokkeblokk { border-bottom: 0; margin-bottom: 2rem; }
   :root[data-stil="polar"] .rad { border-top-color: rgba(255,255,255,.14); }
-  /* Gnomon: éi flate på 38 × 18 einingar som blir fylt gjennom døgnet. Timane er 24 store kvadrat (6 × 4),
-     minutta 60 mellomstore som ei L rundt timane, sekunda 60 små som ei ny L rundt minutta (gnomonen frå
-     gresk matematikk). 384 + 240 + 60 = 684 = 38 × 18, så flata går opp utan hol. */
+  /* Gnomon: éi flate på 38 × 18 einingar som blir fylt gjennom døgnet. Timane er 24 store kvadrat (8 × 3),
+     minutta 60 mellomstore som ei L rundt timane (armar 2 og 3 kvadrat tjukke), sekunda 60 små i hjørnet
+     og langs høgre kant (gnomonen frå gresk matematikk). 384 + 240 + 60 = 684 = 38 × 18, utan hol. */
   :root[data-stil="gnomon"] { --bakgrunn: #ffffff; --tekst: #111; --dempa: #6f6f6f; --aksent: #111; --aksent-tekst: #fff; --gron: #2a7a4b;
                               --skrift: "Space Grotesk", "Ubuntu", sans-serif; --klokkeskrift: "Space Mono", "Ubuntu Mono", monospace; }
   :root[data-stil="gnomon"] .klokke, :root[data-stil="gnomon"] .dato { display: none; }
@@ -618,11 +618,11 @@ if (STIL === "polar") {
   document.fonts && document.fonts.ready.then(() => { for (const k in tekstLengd) delete tekstLengd[k]; });
 }
 // Gnomonklokka. Kvar del er ei liste over kvadrat [x, y, side] i einingar, i den rekkjefølgja dei blir fylte.
-// Timar: 6 × 4 store (side 4). Minutt: rada under timane (12) og blokka til høgre (6 × 8), side 2.
-// Sekund: stripa nedst (14 × 2) og stripa heilt til høgre (2 × 16), side 1.
+// Timar: 8 × 3 store (side 4). Minutt: ei L rundt timane, armen til høgre (2 × 6) og armen under (16 × 3), side 2.
+// Sekund: hjørnet L-en lèt stå att (4 × 6) og stripa heilt til høgre (2 × 18), side 1.
 const omr = (x0, y0, kol, rader, e) => Array.from({ length: kol * rader }, (_, i) => [x0 + (i % kol) * e, y0 + Math.floor(i / kol) * e, e]);
-const GNOMON = { tim: omr(0, 0, 6, 4, 4), min: [...omr(0, 16, 12, 1, 2), ...omr(24, 0, 6, 8, 2)],
-                 sek: [...omr(24, 16, 14, 2, 1), ...omr(36, 0, 2, 16, 1)] };
+const GNOMON = { tim: omr(0, 0, 8, 3, 4), min: [...omr(32, 0, 2, 6, 2), ...omr(0, 12, 16, 3, 2)],
+                 sek: [...omr(32, 12, 4, 6, 1), ...omr(36, 0, 2, 18, 1)] };
 if (STIL === "gnomon") {
   const ns = "http://www.w3.org/2000/svg", flate = $("gnomonflate"), GAP = .14;
   const ruter = {};
