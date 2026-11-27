@@ -233,7 +233,7 @@
   .gnomon svg { display: block; width: 100%; height: auto; }
   :root.tett .gnomon svg { width: 84%; }
   :root.tettare .gnomon svg { width: 68%; }
-  .gnomon rect { fill: #e4e4e1; }
+  .gnomon rect { fill: #e4e4e1; transform-box: fill-box; transform-origin: center; }
   .gnomon rect.fylt { fill: #111; }
   .gnomon .linje { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2.8rem; font-family: var(--klokkeskrift);
                    font-size: 3rem; text-transform: uppercase; letter-spacing: .02em; color: var(--dempa); }
@@ -625,26 +625,37 @@ if (STIL === "gnomon") {
   const ns = "http://www.w3.org/2000/svg", flate = $("gnomonflate"), GAP = .14;
   const ruter = {};
   for (const [del, liste] of Object.entries(GNOMON)) ruter[del] = liste.map(([x, y, e]) => {
-    const r = document.createElementNS(ns, "rect");
-    Object.entries({ x: x + GAP / 2, y: y + GAP / 2, width: e - GAP, height: e - GAP }).forEach(([k, v]) => r.setAttribute(k, v));
-    // Ruta som er på veg: eit svart lag oppå som toner seg inn
-    const lag = document.createElementNS(ns, "rect");
-    for (const k of ["x", "y", "width", "height"]) lag.setAttribute(k, r.getAttribute(k));
-    lag.setAttribute("class", "fylt"); lag.style.opacity = 0; lag.style.transition = "opacity 1s linear";
+    const attr = { x: x + GAP / 2, y: y + GAP / 2, width: e - GAP, height: e - GAP };
+    const r = document.createElementNS(ns, "rect"), lag = document.createElementNS(ns, "rect");
+    for (const [k, v] of Object.entries(attr)) { r.setAttribute(k, v); lag.setAttribute(k, v); }
+    lag.setAttribute("class", "fylt"); lag.style.opacity = 0;
     flate.append(r, lag);
-    return [r, lag];
+    return lag;   // det svarte laget oppå den grå ruta
   });
+  const MJUK = "cubic-bezier(.2,.9,.3,1.25)";
+  // Nytt kvadrat: sprett fram frå ingenting med ein kvart vri
+  const sprett = el => el.animate([{ transform: "scale(0) rotate(-90deg)", opacity: 1 }, { transform: "scale(1) rotate(0deg)", opacity: 1 }],
+                                  { duration: 650, easing: MJUK });
+  // Kvadrat som har tona seg inn, er fullt: eit lite dunk
+  const dunk = (el, styrke) => el.animate([{ transform: "scale(1)" }, { transform: `scale(${styrke})`, offset: .35 }, { transform: "scale(1)" }],
+                                         { duration: 700, easing: "ease-out" });
+  // Ein full del blir tømd: kvadrata klappar saman i ei bølgje, i same rekkjefølgje som dei vart fylte
+  const klappSaman = (liste, ms) => liste.forEach((el, i) => {
+    const a = el.animate([{ transform: "scale(1) rotate(0deg)", opacity: 1 }, { transform: "scale(0) rotate(90deg)", opacity: 1 }],
+                         { duration: 450, delay: i * ms, easing: "cubic-bezier(.5,0,.75,0)", fill: "both" });
+    a.onfinish = () => a.cancel();
+  });
+  const førre = {};
   const teikn = () => {
     const d = no(), h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
     const tal = { tim: [h, m / 60 + s / 3600], min: [m, s / 60], sek: [s, 0] };
-    for (const [del, [n, frac]] of Object.entries(tal))
-      ruter[del].forEach(([r, lag], i) => {
-        r.classList.toggle("fylt", i < n);
-        const o = i === n ? frac : 0;
-        // Når ein del byrjar på nytt, skal ingenting tone seg ut
-        lag.style.transition = o < parseFloat(lag.style.opacity || 0) ? "none" : "opacity 1s linear";
-        lag.style.opacity = o;
-      });
+    for (const [del, [n, frac]] of Object.entries(tal)) {
+      const liste = ruter[del], før = førre[del];
+      if (før != null && n > før) for (let i = før; i < n; i++) del === "sek" ? sprett(liste[i]) : dunk(liste[i], del === "tim" ? 1.12 : 1.25);
+      if (før != null && n < før) klappSaman(liste.slice(0, før), { sek: 14, min: 10, tim: 30 }[del]);
+      førre[del] = n;
+      liste.forEach((el, i) => { el.style.opacity = i < n ? 1 : i === n ? frac : 0; });
+    }
     $("gnomontid").textContent = p2(h) + ":" + p2(m);
     $("gnomondato").textContent = DAGNAMN[d.getDay()] + " " + d.getDate() + ". " + MND[d.getMonth()] + " · veke " + veke(d);
   };
